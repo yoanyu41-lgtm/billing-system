@@ -3,17 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Installment;
-use App\Models\Payment;
 use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PaymentMethod;
+use App\Services\TelegramService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
+    public function __construct(private readonly TelegramService $telegramService)
+    {
+    }
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Payment::with('installment.customer', 'user');
+        $query = Payment::with('installment.customer', 'paymentMethod', 'user');
 
         if ($user->role === 'user') {
             $query->whereHas('installment', function ($q) use ($user) {
@@ -32,26 +36,28 @@ class PaymentController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $installments = Installment::with('customer');
+        $installments = Installment::with('customer', 'product');
 
         if ($user->role === 'user') {
             $installments->where('created_by', $user->id);
         }
 
         $installments = $installments->where('status', 'active')->get();
-        return view('payments.create', compact('installments'));
+        $paymentMethods = $this->getPaymentMethods();
+
+        return view('payments.create', compact('installments', 'paymentMethods'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'installment_id' => 'required|exists:installments,id',
-            'amount' => 'required|numeric',
+            'payment_method_id' => 'required|exists:payment_methods,id',
+            'amount' => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
             'qr_image' => 'nullable|image',
         ]);
 
-        $installment = Installment::find($request->installment_id);
         $qrPath = null;
 
         if ($request->hasFile('qr_image')) {
@@ -60,6 +66,7 @@ class PaymentController extends Controller
 
         Payment::create([
             'installment_id' => $request->installment_id,
+            'payment_method_id' => $request->payment_method_id,
             'amount' => $request->amount,
             'payment_date' => $request->payment_date,
             'qr_image' => $qrPath,
@@ -76,21 +83,28 @@ class PaymentController extends Controller
             'approved_by' => auth()->id(),
         ]);
 
-        // Update remaining balance
         $installment = $payment->installment;
         $installment->remaining_balance -= $payment->amount;
         $installment->save();
 
-        // Generate invoice
         Invoice::create([
             'payment_id' => $payment->id,
             'invoice_number' => 'INV-' . $payment->id,
         ]);
 
-        // Send Telegram notification (simulate)
-        // Here you would call Telegram API
+        $message = "✅ Payment approved\n"
+            . "Customer: {$installment->customer->name}\n"
+            . "Amount: $" . number_format($payment->amount, 2) . "\n"
+            . "Method: " . ($payment->paymentMethod->name ?? 'System') . "\n"
+            . "Remaining: $" . number_format($installment->remaining_balance, 2);
 
-        return redirect()->route('payments.index')->with('success', 'Payment approved.');
+        $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
+
+        $flashMessage = $telegramResult['ok']
+            ? 'Payment approved and Telegram message sent.'
+            : 'Payment approved. Telegram notice: ' . $telegramResult['reason'];
+
+        return redirect()->route('payments.index')->with('success', $flashMessage);
     }
 
     public function reject(Payment $payment)
@@ -101,6 +115,29 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
+        $payment->load('installment.customer', 'paymentMethod', 'user');
+
         return view('payments.show', compact('payment'));
+    }
+
+    private function getPaymentMethods()
+    {
+        $defaults = [
+            ['name' => 'QR', 'details' => 'QR code payment option for fast scanning.'],
+            ['name' => 'Credit Card', 'details' => 'Standard card payment via Visa or Mastercard.'],
+            ['name' => 'Other Third Party', 'details' => 'External payment gateway or partner service.'],
+            ['name' => 'Direct Credit Card', 'details' => 'Direct card charge flow without extra gateway steps.'],
+            ['name' => 'Test Basic Security', 'details' => 'Basic security check flow for payment testing.'],
+            ['name' => 'AI Predict', 'details' => 'AI-assisted payment screening and prediction option.'],
+        ];
+
+        foreach ($defaults as $method) {
+            PaymentMethod::firstOrCreate(
+                ['name' => $method['name']],
+                ['details' => $method['details']]
+            );
+        }
+
+        return PaymentMethod::orderBy('name')->get();
     }
 }

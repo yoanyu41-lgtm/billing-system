@@ -10,6 +10,7 @@ class Payment extends Model
         'installment_id',
         'amount',
         'payment_date',
+        'payment_method_id',
         'status',
         'qr_image',
         'approved_by',
@@ -18,6 +19,11 @@ class Payment extends Model
     public function installment()
     {
         return $this->belongsTo(Installment::class);
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
     }
 
     public function user()

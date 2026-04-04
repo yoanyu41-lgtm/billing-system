@@ -3,7 +3,7 @@
 @section('content')
 <h1 class="text-2xl font-bold mb-4">Add User</h1>
 
-<form method="POST" action="{{ route('admin.users.store') }}" class="bg-white p-6 rounded shadow">
+<form method="POST" action="{{ route('admin.users.store') }}" enctype="multipart/form-data" class="bg-white p-6 rounded shadow">
     @csrf
     <div class="mb-4">
         <label class="block">Name</label>
@@ -23,6 +23,10 @@
             <option value="user">User</option>
             <option value="admin">Admin</option>
         </select>
+    </div>
+    <div class="mb-4">
+        <label class="block">Profile Image</label>
+        <input type="file" name="profile_image" accept="image/*" class="w-full border px-2 py-1">
     </div>
     <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Create</button>
 </form>

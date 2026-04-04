@@ -17,6 +17,8 @@ class Installment extends Model
         'remaining_balance',
         'status',
         'created_by',
+        'next_due_date',
+        'last_reminder_sent_at',
     ];
 
     public function customer()

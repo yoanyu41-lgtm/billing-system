@@ -61,6 +61,7 @@ class InstallmentController extends Controller
             'monthly_payment' => $monthlyPayment,
             'remaining_balance' => $remainingBalance,
             'created_by' => auth()->id(),
+            'next_due_date' => now()->addMonth()->toDateString(),
         ]);
 
         return redirect()->route('installments.index')->with('success', 'Installment created successfully.');

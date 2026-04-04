@@ -8,25 +8,41 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50">
+<body class="bg-slate-200 text-slate-800">
     <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <h1 class="text-2xl font-bold">💼 City Tech</h1>
-                    <span class="text-blue-100">| Billing Management</span>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div class="text-sm">
-                        <span class="text-blue-100">Welcome,</span>
-                        <span class="font-semibold">{{ auth()->user()->name }}</span>
-                        <span class="text-blue-200 ml-2">({{ auth()->user()->role }})</span>
+    <nav class="sticky top-0 z-40 border-b border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 text-slate-100 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-3">
+                    <!-- <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shadow-md">
+                        <i class="fas fa-layer-group text-lg"></i>
+                    </div> -->
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-white leading-tight">CityTech Computer Shop</h1>
+                        <p class="text-xs sm:text-sm text-slate-300">Installment & Billing Management System</p>
                     </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 md:justify-end">
+                    <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-sm">
+                        <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-500 bg-slate-700 flex items-center justify-center shadow-sm">
+                            @if(auth()->user()->profile_image)
+                                <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                            @else
+                                <i class="fas fa-user text-slate-200"></i>
+                            @endif
+                        </div>
+                        <div class="leading-tight">
+                            <p class="text-sm font-semibold text-white">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-slate-300">{{ ucfirst(auth()->user()->role) }}</p>
+                        </div>
+                    </div>
+
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition duration-200">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-600">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </button>
                     </form>
                 </div>
@@ -36,66 +52,76 @@
 
     <div class="flex">
         <!-- Sidebar -->
-        <div class="w-64 bg-gray-900 text-white min-h-screen shadow-xl">
+        <div class="w-64 bg-slate-950 text-slate-100 min-h-screen border-r border-slate-800 shadow-xl">
             <ul class="space-y-2 p-4">
                 <li>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-home w-5"></i>Dashboard
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-home w-5 text-cyan-400"></i>Dashboard
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-users w-5"></i>Customers
+                    <a href="{{ route('customers.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-users w-5 text-cyan-400"></i>Customers
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('installments.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-file-contract w-5"></i>Installments
+                    <a href="{{ route('installments.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-file-contract w-5 text-cyan-400"></i>Installments
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('payments.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-credit-card w-5"></i>Payments
+                    <a href="{{ route('payments.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-credit-card w-5 text-cyan-400"></i>Payments
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-receipt w-5"></i>Invoices
+                    <a href="{{ route('invoices.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-receipt w-5 text-cyan-400"></i>Invoices
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('late-payments.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                        <i class="fas fa-exclamation-triangle w-5"></i>Late Payments
+                    <a href="{{ route('late-payments.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                        <i class="fas fa-exclamation-triangle w-5 text-cyan-400"></i>Late Payments
                     </a>
                 </li>
 
                 @if(auth()->user()->role === 'admin')
-                    <li class="border-t border-gray-700 pt-4 mt-4">
-                        <p class="px-3 py-2 text-gray-400 font-semibold text-xs uppercase">ADMIN PANEL</p>
+                    <li class="mt-4 border-t border-slate-800 pt-4">
+                        <p class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Admin Panel</p>
                     </li>
                     <li>
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                            <i class="fas fa-user-tie w-5"></i>Staff Management
+                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-user-tie w-5 text-cyan-400"></i>Staff Management
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.products.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                            <i class="fas fa-box w-5"></i>Products
+                        <a href="{{ route('admin.products.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-box w-5 text-cyan-400"></i>Products
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.reports.daily') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                            <i class="fas fa-chart-bar w-5"></i>Reports
+                        <a href="{{ route('admin.payment-methods.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-wallet w-5 text-cyan-400"></i>Payment Methods
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.settings.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                            <i class="fas fa-cog w-5"></i>Settings
+                        <a href="{{ route('admin.reports.daily') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-chart-bar w-5 text-cyan-400"></i>Reports
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.backups.index') }}" class="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-lg transition duration-200">
-                            <i class="fas fa-database w-5"></i>Backups
+                        <a href="{{ route('admin.settings.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-cog w-5 text-cyan-400"></i>Settings
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.telegram-logs.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fab fa-telegram-plane w-5 text-cyan-400"></i>Telegram Center
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.backups.index') }}" class="flex items-center gap-3 rounded-xl p-3 text-slate-200 hover:bg-slate-800 hover:text-white transition duration-200">
+                            <i class="fas fa-database w-5 text-cyan-400"></i>Backups
                         </a>
                     </li>
                 @endif
@@ -103,7 +129,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 p-8">
+        <div class="flex-1 bg-slate-100 p-4 sm:p-6 lg:p-8">
             @if(session('success'))
                 <div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg">
                     <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}

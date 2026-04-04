@@ -3,6 +3,11 @@
 @section('content')
 <h1 class="text-2xl font-bold mb-4">Late Payments</h1>
 
+<form method="POST" action="{{ route('late-payments.due-reminders') }}" class="mb-4">
+    @csrf
+    <button type="submit" class="bg-emerald-500 text-white px-4 py-2 rounded">Send Due-Date Reminders (Today)</button>
+</form>
+
 <table class="w-full bg-white rounded shadow">
     <thead>
         <tr class="bg-gray-200">

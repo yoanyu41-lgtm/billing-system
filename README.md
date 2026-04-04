@@ -5,10 +5,6 @@
 This is a Laravel project for managing installment billing.
 
 ## ⚙️ Features
-- Customer Management
-- Payment System
-- Reports
-
 ## 🚀 How to run
 1. composer install
 2. cp .env.example .env

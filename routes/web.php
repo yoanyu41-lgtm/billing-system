@@ -8,9 +8,11 @@ use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LatePaymentController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\TelegramLogController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +42,7 @@ Route::middleware('auth')->group(function () {
     // Late Payments
     Route::get('late-payments', [LatePaymentController::class, 'index'])->name('late-payments.index');
     Route::post('late-payments/{installment}/remind', [LatePaymentController::class, 'sendReminder'])->name('late-payments.remind');
+    Route::post('late-payments/due-reminders', [LatePaymentController::class, 'sendDueDateReminders'])->name('late-payments.due-reminders');
 
     // Admin routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
@@ -49,6 +52,9 @@ Route::middleware('auth')->group(function () {
 
         // Products
         Route::resource('products', ProductController::class);
+
+        // Payment Methods
+        Route::resource('payment-methods', PaymentMethodController::class)->except(['create', 'show', 'edit']);
 
         // Reports
         Route::get('reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
@@ -60,6 +66,9 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::get('telegram-logs', [TelegramLogController::class, 'index'])->name('telegram-logs.index');
+        Route::post('telegram-logs/set-webhook', [TelegramLogController::class, 'setWebhook'])->name('telegram-logs.set-webhook');
+        Route::post('telegram-logs/send-test', [TelegramLogController::class, 'sendTestMessage'])->name('telegram-logs.send-test');
 
         // Backups
         Route::get('backups', [BackupController::class, 'index'])->name('backups.index');

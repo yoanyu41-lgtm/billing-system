@@ -19,12 +19,22 @@
         }
 
         body, html { 
-            margin: 0; padding: 0; height: 100%; 
+            margin: 0; padding: 0; min-height: 100%; 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg-soft); overflow: hidden; 
+            background: var(--bg-soft);
+            overflow-x: hidden;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
-        .wrapper { display: flex; height: 100vh; width: 100vw; }
+        body::-webkit-scrollbar,
+        html::-webkit-scrollbar {
+            display: none;
+            width: 0;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; width: 100%; }
 
         /* Left Side: Tech Visual */
         .side-visual {
@@ -78,6 +88,14 @@
             background: var(--bg-soft); 
             display: flex; align-items: center; justify-content: center;
             padding: 60px; position: relative;
+            overflow-y: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .login-area::-webkit-scrollbar {
+            display: none;
+            width: 0;
         }
 
         /* បង្កើត Shadow ស្រាលៗជុំវិញ Form ឱ្យឃើញដាច់ពី Background */

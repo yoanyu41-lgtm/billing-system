@@ -10,6 +10,7 @@
 <table class="w-full bg-white rounded shadow">
     <thead>
         <tr class="bg-gray-200">
+            <th class="p-2">Image</th>
             <th class="p-2">Name</th>
             <th class="p-2">Email</th>
             <th class="p-2">Role</th>
