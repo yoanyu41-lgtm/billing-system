@@ -105,10 +105,7 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
-                                <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 stock-in-btn" data-id="{{ $product->id }}" data-name="{{ $product->name }}">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    Quick In
-                                </button>
+
                                 <button type="button" class="inline-flex items-center px-3 py-2 border border-gray-300 text-xs font-semibold rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 adjust-stock-btn" data-name="{{ $product->name }}" data-url="{{ route('admin.products.stock.update', $product) }}">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                     Adjust
@@ -131,64 +128,7 @@
     {{ $products->links() }}
 </div>
 
-<!-- Inventory Stock In Modal -->
-<div id="stockInModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
-        <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-gray-800">Quick Stock In</h3>
-            <button id="closeStockIn" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        
-        <form method="POST" action="{{ route('admin.purchases.store') }}" id="stockInForm" class="p-6">
-            @csrf
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Product</label>
-                <input type="text" id="stockProductName" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 text-gray-600 focus:outline-none" readonly>
-                <input type="hidden" name="items[0][product_id]" id="stockProductId">
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Supplier <span class="text-red-500">*</span></label>
-                <select name="supplier_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    <option value="">-- Select supplier --</option>
-                    @foreach($suppliers as $s)
-                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Purchase Date</label>
-                    <input type="date" name="purchase_date" value="{{ date('Y-m-d') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Quantity <span class="text-red-500">*</span></label>
-                    <input type="number" name="items[0][quantity]" value="1" min="1" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Unit Cost Price</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span class="text-gray-500 sm:text-sm">$</span>
-                    </div>
-                    <input type="number" step="0.01" name="items[0][cost_price]" class="w-full border border-gray-300 rounded-lg pl-8 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0.00">
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Leave blank to use the product's current cost price.</p>
-            </div>
-            
-            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" id="cancelStockIn" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150">Cancel</button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition duration-150">Record Purchase</button>
-            </div>
-        </form>
-    </div>
-</div>
+
 
 <!-- Adjust Stock Modal -->
 <div id="adjustStockModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
@@ -237,26 +177,7 @@
 
 <script>
     // Modal handlers
-    document.querySelectorAll('.stock-in-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = btn.getAttribute('data-id');
-            const name = btn.getAttribute('data-name');
-            document.getElementById('stockProductId').value = id;
-            document.getElementById('stockProductName').value = name;
-            const modal = document.getElementById('stockInModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            // focus on supplier
-            const sup = modal.querySelector('select[name="supplier_id"]');
-            if (sup) sup.focus();
-        });
-    });
-    document.getElementById('closeStockIn').addEventListener('click', ()=>{
-        const modal = document.getElementById('stockInModal'); modal.classList.add('hidden'); modal.classList.remove('flex');
-    });
-    document.getElementById('cancelStockIn').addEventListener('click', ()=>{
-        const modal = document.getElementById('stockInModal'); modal.classList.add('hidden'); modal.classList.remove('flex');
-    });
+
 
     // Adjust Stock Modal handlers
     document.querySelectorAll('.adjust-stock-btn').forEach(btn => {
