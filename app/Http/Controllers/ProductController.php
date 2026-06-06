@@ -180,7 +180,8 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products.stock')->with('success', 'Product created successfully.');
+        $redirectRoute = $request->input('from') === 'stock' ? 'admin.products.stock' : 'admin.products.index';
+        return redirect()->route($redirectRoute)->with('success', 'Product created successfully.');
     }
 
     public function show(Product $product)
@@ -244,7 +245,8 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products.stock')->with('success', 'Product updated successfully.');
+        $redirectRoute = $request->input('from') === 'stock' ? 'admin.products.stock' : 'admin.products.index';
+        return redirect()->route($redirectRoute)->with('success', 'Product updated successfully.');
     }
 
     public function destroy(Product $product)

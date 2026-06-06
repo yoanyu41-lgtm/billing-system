@@ -7,13 +7,20 @@
             <h1 class="text-3xl font-bold text-gray-800">Edit Product</h1>
             <p class="text-sm text-gray-500 mt-1">Update the details and pricing for {{ $product->name }}.</p>
         </div>
+        @if(request('from') === 'stock')
         <a href="{{ route('admin.products.stock') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Back to Manage Stock
         </a>
+        @else
+        <a href="{{ route('admin.products.index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Product List
+        </a>
+        @endif
     </div>
 
-    <form method="POST" action="{{ route('admin.products.update', $product) }}" enctype="multipart/form-data" class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <form method="POST" action="{{ route('admin.products.update', [$product, 'from' => request('from')]) }}" enctype="multipart/form-data" class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         @csrf @method('PUT')
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -168,9 +175,12 @@
             @enderror
         </div>
 
-        <!-- Action Buttons -->
         <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
+            @if(request('from') === 'stock')
             <a href="{{ route('admin.products.stock') }}" class="px-6 py-2.5 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Cancel</a>
+            @else
+            <a href="{{ route('admin.products.index') }}" class="px-6 py-2.5 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Cancel</a>
+            @endif
             <button type="submit" class="px-6 py-2.5 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition duration-150">Update Product</button>
         </div>
     </form>
