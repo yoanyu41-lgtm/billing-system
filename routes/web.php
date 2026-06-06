@@ -128,4 +128,22 @@ Route::middleware('auth')->group(function () {
     Route::post('telegram-logs/send-test', [TelegramLogController::class, 'sendTestMessage'])->name('telegram-logs.send-test');
 });
 
+Route::get('/import-database-temp', function () {
+    $sqlFile = base_path('db_backup.sql');
+    if (!file_exists($sqlFile)) {
+        return response("Error: db_backup.sql not found at " . $sqlFile, 404);
+    }
+    
+    $sql = file_get_contents($sqlFile);
+    
+    try {
+        \Illuminate\Support\Facades\DB::unprepared("SET FOREIGN_KEY_CHECKS = 0;");
+        \Illuminate\Support\Facades\DB::unprepared($sql);
+        \Illuminate\Support\Facades\DB::unprepared("SET FOREIGN_KEY_CHECKS = 1;");
+        return "SUCCESS: Database imported successfully on Laravel Cloud!";
+    } catch (\Exception $e) {
+        return "DATABASE ERROR: " . $e->getMessage();
+    }
+});
+
 require __DIR__.'/auth.php';
