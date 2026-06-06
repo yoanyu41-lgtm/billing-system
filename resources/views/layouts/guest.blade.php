@@ -14,100 +14,139 @@
             --citytech-blue: #0f172a;
             --accent-cyan: #06b6d4;
             --primary-blue: #2563eb;
-            /* កែពណ៌ Background ឱ្យទៅជា Soft Matte Gray (លែងឆ្លុះភ្នែក) */
-            --bg-soft: #f1f5f9; 
+            --bg-soft: #f8fafc; 
         }
 
         body, html { 
             margin: 0; padding: 0; min-height: 100%; 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg-soft);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
             overflow-x: hidden;
             overflow-y: auto;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
         }
 
-        body::-webkit-scrollbar,
-        html::-webkit-scrollbar {
-            display: none;
-            width: 0;
+        .wrapper { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            width: 100%; 
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
 
-        .wrapper { display: flex; min-height: 100vh; width: 100%; }
-
-        /* Left Side: Tech Visual */
-        .side-visual {
-            flex: 1; background: var(--citytech-blue);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; padding: 60px; color: white;
-            /* បន្ថែមពន្លឺឱ្យតិចជាងមុន ដើម្បីកុំឱ្យចាំង */
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.1) 0px, transparent 50%);
-        }
-
-        /* Modern Rounded Image Card */
-        .image-card-wrapper {
-            position: relative;
-            width: 85%;
-            max-width: 400px;
-            margin-bottom: 40px;
-            z-index: 5;
-        }
-
-        .modern-image-card {
+        .auth-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 44px 36px;
             width: 100%;
-            height: 460px;
-            background: #1e293b;
-            border-radius: 50px; 
-            overflow: hidden;
+            max-width: 460px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.03);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        /* Common Form Elements */
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        .form-input-wrapper {
             position: relative;
-            z-index: 2;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
         }
 
-        .modern-image-card img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: 0.6s ease;
-        }
-
-        /* បន្ថែម Overlay លើរូបភាពឱ្យងងឹតបន្តិច លែងឆ្លុះ */
-        .modern-image-card::after {
-            content: '';
+        .form-input-icon {
             position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, transparent 60%, rgba(15, 23, 42, 0.7));
-            z-index: 3;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 16px;
+            pointer-events: none;
         }
 
-        /* Right Side: Form Area (ប្តូរពណ៌ពី White មកជា Soft Gray) */
-        .login-area {
-            flex: 1.2; 
-            background: var(--bg-soft); 
-            display: flex; align-items: center; justify-content: center;
-            padding: 60px; position: relative;
-            overflow-y: auto;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .login-area::-webkit-scrollbar {
-            display: none;
-            width: 0;
-        }
-
-        /* បង្កើត Shadow ស្រាលៗជុំវិញ Form ឱ្យឃើញដាច់ពី Background */
-        .form-container {
+        .form-input {
             width: 100%;
-            max-width: 420px;
-            padding: 20px;
+            padding: 14px 16px 14px 44px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s ease;
+            background: #f8fafc;
+            box-sizing: border-box;
+            color: #1e293b;
         }
 
-        @media (max-width: 1024px) {
-            .side-visual { display: none; }
-            .login-area { flex: 1; padding: 30px; }
+        .form-input:focus {
+            border-color: #2563eb;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #0f172a, #020617);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .auth-logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .auth-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0f172a, #2563eb);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            color: white;
+            font-size: 18px;
+        }
+
+        .auth-logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #0f172a;
         }
     </style>
 </head>

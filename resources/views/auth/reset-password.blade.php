@@ -1,109 +1,68 @@
 <x-guest-layout>
-    <style>
-        .form-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    <div class="auth-card">
+        <!-- Logo Section -->
+        <div class="auth-logo-header">
+            <div class="auth-logo-icon">
+                <i class="fas fa-desktop"></i>
+            </div>
+            <span class="auth-logo-text">City<span style="color: #2563eb;">Tech</span></span>
+        </div>
 
-        .form-subtitle {
-            color: #6b7280;
-            font-size: 0.95rem;
-            margin-top: 0.25rem;
-            margin-bottom: 1.5rem;
-        }
-    </style>
+        <!-- Title Section -->
+        <div style="margin-bottom: 30px; text-align: center;">
+            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;">Reset Password</h2>
+            <p style="color: #64748b; font-size: 15px; margin: 0;">Enter your new password below</p>
+        </div>
 
-    <!-- Title -->
-    <div style="margin-bottom: 1.5rem;">
-        <h2 class="form-title"><i class="fas fa-lock"></i> Reset Password</h2>
-        <p class="form-subtitle">Enter your new password below</p>
+        <!-- Validation Errors -->
+        @if ($errors->any())
+            <div style="background: rgba(220, 38, 38, 0.05); border-left: 4px solid #dc2626; padding: 14px; border-radius: 10px; margin-bottom: 25px;">
+                @foreach ($errors->all() as $error)
+                    <div style="color: #991b1b; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <i class="fas fa-times-circle"></i> {{ $error }}
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- Reset Password Form -->
+        <form method="POST" action="{{ route('password.store') }}">
+            @csrf
+
+            <!-- Password Reset Token -->
+            <input type="hidden" name="token" value="{{ $request->route('token') }}">
+
+            <!-- Email Address -->
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <div class="form-input-wrapper">
+                    <i class="far fa-envelope form-input-icon"></i>
+                    <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required readonly class="form-input" style="opacity: 0.7; cursor: not-allowed; background: #e2e8f0;">
+                </div>
+            </div>
+
+            <!-- New Password -->
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <div class="form-input-wrapper">
+                    <i class="far fa-lock form-input-icon"></i>
+                    <input id="password" type="password" name="password" required autocomplete="new-password" placeholder="Enter your new password" class="form-input">
+                </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label class="form-label">Confirm Password</label>
+                <div class="form-input-wrapper">
+                    <i class="fas fa-check-double form-input-icon"></i>
+                    <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Confirm your new password" class="form-input">
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-submit">
+                Reset Password
+            </button>
+        </form>
     </div>
-
-    <!-- Validation Errors -->
-    @if ($errors->any())
-        <div class="status-alert" style="background: rgba(220, 38, 38, 0.1); border-color: rgba(220, 38, 38, 0.3); color: #991b1b;">
-            <i class="fas fa-exclamation-circle"></i> 
-            @foreach ($errors->all() as $error)
-                <div>{{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
-
-    <!-- Reset Password Form -->
-    <form method="POST" action="{{ route('password.store') }}">
-        @csrf
-
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-        <!-- Email Address -->
-        <div class="form-group">
-            <label for="email" class="form-label">
-                <i class="fas fa-envelope"></i> Email Address
-            </label>
-            <input 
-                id="email" 
-                type="email" 
-                name="email"
-                class="form-input {{ $errors->has('email') ? 'border-red-500' : '' }}"
-                value="{{ old('email', $request->email) }}"
-                required 
-                autofocus
-                autocomplete="username"
-                placeholder="Your registered email"
-                readonly
-            />
-            @error('email')
-                <div class="error-message"><i class="fas fa-times-circle"></i> {{ $message }}</div>
-            @enderror
-        </div>
-
-        <!-- New Password -->
-        <div class="form-group">
-            <label for="password" class="form-label">
-                <i class="fas fa-lock"></i> New Password
-            </label>
-            <input 
-                id="password" 
-                type="password" 
-                name="password"
-                class="form-input {{ $errors->has('password') ? 'border-red-500' : '' }}"
-                required 
-                autocomplete="new-password"
-                placeholder="Enter your new password"
-            />
-            @error('password')
-                <div class="error-message"><i class="fas fa-times-circle"></i> {{ $message }}</div>
-            @enderror
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="form-group">
-            <label for="password_confirmation" class="form-label">
-                <i class="fas fa-lock"></i> Confirm Password
-            </label>
-            <input 
-                id="password_confirmation" 
-                type="password" 
-                name="password_confirmation"
-                class="form-input {{ $errors->has('password_confirmation') ? 'border-red-500' : '' }}"
-                required 
-                autocomplete="new-password"
-                placeholder="Confirm your new password"
-            />
-            @error('password_confirmation')
-                <div class="error-message"><i class="fas fa-times-circle"></i> {{ $message }}</div>
-            @enderror
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit" class="btn-submit" style="margin-top: 1.5rem;">
-            <i class="fas fa-check-circle"></i> Reset Password
-        </button>
-    </form>
 </x-guest-layout>
