@@ -514,30 +514,45 @@
             }
         }
         .stat-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: var(--radius); padding: 18px 16px 14px;
-            color: #fff; position: relative; overflow: hidden;
+            color: #0f172a; position: relative; overflow: hidden;
             min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
         .stat-card .sc-icon {
             width: 44px; height: 44px; border-radius: 12px;
-            background: rgba(255,255,255,0.2);
             display: flex; align-items: center; justify-content: center;
             font-size: 20px; margin-bottom: 10px;
         }
-        .stat-card .sc-label { font-size: 11px; font-weight: 600; opacity: 0.85; }
-        .stat-card .sc-value { font-size: 26px; font-weight: 800; line-height: 1; margin-top: 2px; }
-        .stat-card .sc-trend { font-size: 10px; opacity: 0.8; margin-top: 4px; }
+        .stat-card .sc-label { font-size: 12px; font-weight: 600; color: #64748b; }
+        .stat-card .sc-value { font-size: 28px; font-weight: 800; line-height: 1; margin-top: 4px; color: #0f172a; }
+        .stat-card .sc-trend { font-size: 11px; color: #64748b; margin-top: 6px; font-weight: 500; }
         .stat-card .sc-wave {
             position: absolute; bottom: 0; left: 0; right: 0; height: 36px;
-            opacity: 0.2;
+            pointer-events: none;
         }
 
-        .sc-blue   { background: var(--brand); }
-        .sc-green  { background: var(--accent); }
-        .sc-amber  { background: var(--warning); }
-        .sc-purple { background: var(--secondary); }
-        .sc-red    { background: var(--danger); }
+        .sc-blue .sc-icon { background: rgba(30, 58, 95, 0.1); color: #1e3a5f; }
+        .sc-blue .sc-wave polyline { stroke: #1e3a5f !important; stroke-opacity: 0.15; }
+
+        .sc-green .sc-icon { background: rgba(5, 150, 105, 0.1); color: #059669; }
+        .sc-green .sc-wave polyline { stroke: #059669 !important; stroke-opacity: 0.15; }
+
+        .sc-amber .sc-icon { background: rgba(217, 119, 6, 0.1); color: #d97706; }
+        .sc-amber .sc-wave polyline { stroke: #d97706 !important; stroke-opacity: 0.15; }
+
+        .sc-purple .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .sc-purple .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
+
+        .sc-red .sc-icon { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+        .sc-red .sc-wave polyline { stroke: #dc2626 !important; stroke-opacity: 0.15; }
 
         /* ── Cards ── */
         .card {
