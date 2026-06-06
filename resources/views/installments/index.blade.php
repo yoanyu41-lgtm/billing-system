@@ -21,8 +21,8 @@
     <tbody>
         @foreach($installments as $installment)
         <tr>
-            <td class="p-2">{{ $installment->customer->name }}</td>
-            <td class="p-2">{{ $installment->product->name }}</td>
+            <td class="p-2">{{ $installment->customer?->name ?? 'N/A' }}</td>
+            <td class="p-2">{{ $installment->product?->name ?? 'N/A' }}</td>
             <td class="p-2">${{ $installment->monthly_payment }}</td>
             <td class="p-2">${{ $installment->remaining_balance }}</td>
             <td class="p-2">{{ $installment->status }}</td>

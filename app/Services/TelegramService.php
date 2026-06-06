@@ -63,13 +63,15 @@ class TelegramService
                 'response' => $response->body(),
             ]);
 
+            $apiError = data_get($response->json(), 'description', 'Telegram API rejected the request.');
+
             TelegramLog::create([
                 'customer_id' => $customer->id,
-                'message' => '[FAILED] ' . $message . ' | Reason: Telegram API rejected the request.',
+                'message' => '[FAILED] ' . $message . ' | Reason: ' . $apiError,
                 'sent_at' => now(),
             ]);
 
-            return ['ok' => false, 'reason' => 'Telegram API rejected the request.'];
+            return ['ok' => false, 'reason' => $apiError];
         } catch (\Throwable $e) {
             Log::error('Telegram send failed.', [
                 'customer_id' => $customer->id,

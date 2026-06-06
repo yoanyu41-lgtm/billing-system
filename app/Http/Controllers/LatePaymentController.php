@@ -19,7 +19,7 @@ class LatePaymentController extends Controller
             ->where('remaining_balance', '>', 0)
             ->where('status', 'active');
 
-        if ($user->role === 'user') {
+        if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
         }
 

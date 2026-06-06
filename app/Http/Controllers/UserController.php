@@ -61,11 +61,18 @@ class UserController extends Controller
 
         $data = $request->only(['name', 'email', 'role']);
 
-        if ($request->hasFile('profile_image')) {
+        // Handle image removal
+        if ($request->input('remove_image') == '1') {
             if ($user->profile_image) {
                 Storage::disk('public')->delete($user->profile_image);
             }
-
+            $data['profile_image'] = null;
+        }
+        // Handle new image upload
+        elseif ($request->hasFile('profile_image')) {
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
             $data['profile_image'] = $request->file('profile_image')->store('users', 'public');
         }
 

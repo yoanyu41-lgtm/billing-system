@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
@@ -19,7 +20,7 @@ class PaymentController extends Controller
         $user = auth()->user();
         $query = Payment::with('installment.customer', 'paymentMethod', 'user');
 
-        if ($user->role === 'user') {
+        if (!in_array($user->role, ['admin', 'staff'])) {
             $query->whereHas('installment', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
             });
@@ -38,7 +39,7 @@ class PaymentController extends Controller
         $user = auth()->user();
         $installments = Installment::with('customer', 'product');
 
-        if ($user->role === 'user') {
+        if (!in_array($user->role, ['admin', 'staff'])) {
             $installments->where('created_by', $user->id);
         }
 
@@ -78,6 +79,8 @@ class PaymentController extends Controller
 
     public function approve(Payment $payment)
     {
+        Gate::authorize('approve-payment');
+
         $payment->update([
             'status' => 'approved',
             'approved_by' => auth()->id(),
@@ -109,6 +112,7 @@ class PaymentController extends Controller
 
     public function reject(Payment $payment)
     {
+        Gate::authorize('approve-payment');
         $payment->update(['status' => 'rejected']);
         return redirect()->route('payments.index')->with('success', 'Payment rejected.');
     }

@@ -12,7 +12,12 @@
 <div class="mb-6 grid gap-4 md:grid-cols-3">
     <div class="rounded-xl bg-white p-5 shadow">
         <p class="text-sm font-semibold text-slate-500">Telegram Token</p>
-        <p class="mt-2 text-sm text-slate-900">{{ !empty($settings['telegram_token']) ? 'Configured' : 'Not configured yet' }}</p>
+        <p class="mt-2 text-sm text-slate-900">
+            {{ $tokenConfigured ? 'Configured' : 'Not configured yet' }}
+            @if($tokenConfigured)
+                <span class="text-xs text-slate-500">({{ !empty($settings['telegram_token']) ? 'settings' : 'env' }})</span>
+            @endif
+        </p>
     </div>
     <div class="rounded-xl bg-white p-5 shadow">
         <p class="text-sm font-semibold text-slate-500">Webhook URL</p>
@@ -28,7 +33,7 @@
     <div class="rounded-xl bg-white p-6 shadow">
         <h2 class="mb-3 text-lg font-semibold text-slate-900">Set Webhook</h2>
         <p class="mb-3 text-sm text-slate-600">Use a public <strong>HTTPS</strong> URL so Telegram can call your system.</p>
-        <form method="POST" action="{{ route('admin.telegram-logs.set-webhook') }}" class="space-y-3">
+        <form method="POST" action="{{ route('telegram-logs.set-webhook') }}" class="space-y-3">
             @csrf
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">Webhook URL</label>
@@ -40,7 +45,7 @@
 
     <div class="rounded-xl bg-white p-6 shadow">
         <h2 class="mb-3 text-lg font-semibold text-slate-900">Send Test Message</h2>
-        <form method="POST" action="{{ route('admin.telegram-logs.send-test') }}" class="space-y-3">
+        <form method="POST" action="{{ route('telegram-logs.send-test') }}" class="space-y-3">
             @csrf
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">Customer</label>

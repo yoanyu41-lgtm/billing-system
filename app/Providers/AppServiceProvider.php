@@ -23,16 +23,34 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Staff + admin can view/edit any customer; regular user only owns
         Gate::define('manage-customer', fn($user, Customer $customer) =>
-            $user->role === 'admin' || $customer->created_by === $user->id
+            in_array($user->role, ['admin', 'staff']) || $customer->created_by === $user->id
         );
 
+        // Only admin can delete customers
+        Gate::define('delete-customer', fn($user) =>
+            $user->role === 'admin'
+        );
+
+        // Staff + admin can manage any installment; regular user only owns
         Gate::define('manage-installment', fn($user, Installment $installment) =>
-            $user->role === 'admin' || $installment->created_by === $user->id
+            in_array($user->role, ['admin', 'staff']) || $installment->created_by === $user->id
         );
 
+        // Only admin can approve or reject payments
+        Gate::define('approve-payment', fn($user) =>
+            $user->role === 'admin'
+        );
+
+        // Only admin can manage products (create/edit/delete)
         Gate::define('manage-product', fn($user) =>
             $user->role === 'admin'
+        );
+
+        // Admin + staff can view products
+        Gate::define('view-product', fn($user) =>
+            in_array($user->role, ['admin', 'staff'])
         );
     }
 }

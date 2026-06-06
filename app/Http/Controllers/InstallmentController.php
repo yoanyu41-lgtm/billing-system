@@ -15,7 +15,7 @@ class InstallmentController extends Controller
         $user = auth()->user();
         $query = Installment::with('customer', 'product');
 
-        if ($user->role === 'user') {
+        if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
         }
 

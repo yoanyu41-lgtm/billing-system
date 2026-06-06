@@ -14,6 +14,8 @@
             <script src="https://cdn.tailwindcss.com"></script>
         @endif
 
+        @include('partials.brand')
+
         <style>
             * {
                 margin: 0;
@@ -23,13 +25,13 @@
 
             body {
                 font-family: 'instrument-sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: linear-gradient(to bottom right, #f0f9ff 0%, #f3e8ff 50%, #f5f3ff 100%);
+                background: var(--bg);
                 min-height: 100vh;
             }
 
             .blob {
                 position: absolute;
-                background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+                background: rgba(30, 58, 95, 0.05);
                 border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
                 filter: blur(40px);
                 animation: blobAnimation 8s infinite;
@@ -52,11 +54,7 @@
             }
 
             .gradient-text {
-                background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                color: transparent;
+                color: var(--brand);
             }
 
             .feature-card {
@@ -91,12 +89,13 @@
                 display: flex;
                 align-items: center;
                 gap: 12px;
+                min-width: 0;
             }
 
             .logo-icon {
                 width: 40px;
                 height: 40px;
-                background: linear-gradient(to bottom right, #3b82f6, #8b5cf6);
+                background: var(--brand);
                 border-radius: 8px;
                 display: flex;
                 align-items: center;
@@ -108,9 +107,29 @@
             .logo-text {
                 font-size: 20px;
                 font-weight: bold;
-                background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+                color: var(--brand);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .container {
+                max-width: 80rem;
+                width: min(100%, 80rem);
+                margin: 0 auto;
+                padding: 0 1rem;
+            }
+
+            .hero {
+                padding: 80px 0;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 48px;
+                align-items: center;
+            }
+
+            .hero > div {
+                min-width: 0;
             }
 
             .nav-links {
@@ -134,26 +153,26 @@
             }
 
             .nav-links a.login:hover {
-                color: #2563eb;
+                color: var(--brand);
             }
 
             .nav-links a.btn-start {
-                background: #2563eb;
+                background: var(--brand);
                 color: white;
             }
 
             .nav-links a.btn-start:hover {
-                background: #1d4ed8;
+                background: var(--brand-hover);
             }
 
             .nav-links button {
-                background: #ef4444;
+                background: var(--danger);
                 color: white;
                 padding: 8px 16px;
             }
 
             .nav-links button:hover {
-                background: #dc2626;
+                background: #b91c1c;
             }
 
             section {
@@ -209,24 +228,24 @@
             }
 
             .cta-buttons .btn-primary {
-                background: linear-gradient(135deg, #2563eb, #1e40af);
+                background: var(--brand);
                 color: white;
-                box-shadow: 0 10px 15px rgba(37, 99, 235, 0.3);
+                box-shadow: var(--shadow-brand);
             }
 
             .cta-buttons .btn-primary:hover {
-                transform: scale(1.05);
-                box-shadow: 0 15px 25px rgba(37, 99, 235, 0.4);
+                transform: translateY(-2px);
+                background: var(--brand-hover);
             }
 
             .cta-buttons .btn-secondary {
                 background: transparent;
-                color: #2563eb;
-                border: 2px solid #2563eb;
+                color: var(--brand);
+                border: 2px solid var(--brand);
             }
 
             .cta-buttons .btn-secondary:hover {
-                background: rgba(37, 99, 235, 0.05);
+                background: rgba(30, 58, 95, 0.05);
             }
 
             .feature-highlights {
@@ -260,10 +279,10 @@
                 flex-shrink: 0;
             }
 
-            .blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-            .purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-            .green { background: linear-gradient(135deg, #10b981, #059669); }
-            .orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+            .blue { background: var(--brand); }
+            .purple { background: var(--secondary); }
+            .green { background: var(--accent); }
+            .orange { background: var(--warning); }
 
             .highlight-content h3 {
                 font-weight: 600;
@@ -277,10 +296,11 @@
             }
 
             .features-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 32px;
-                padding: 80px 0;
+            display: grid;
+            /* នេះជាការកំណត់ឱ្យវាបង្ហាញ ៣ ជួរស្មើគ្នានៅលើកុំព្យូទ័រ */
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 32px;
+            padding: 80px 0;
             }
 
             .feature-card {
@@ -343,9 +363,7 @@
             .stat-card .stat-number {
                 font-size: 2.25rem;
                 font-weight: bold;
-                background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
+                color: var(--brand);
                 margin-bottom: 8px;
             }
 
@@ -355,13 +373,13 @@
             }
 
             .cta-section {
-                background: linear-gradient(135deg, #2563eb, #8b5cf6);
+                background: var(--brand);
                 border-radius: 24px;
                 padding: 64px;
                 text-align: center;
                 color: white;
                 margin: 80px 0;
-                box-shadow: 0 25px 50px rgba(37, 99, 235, 0.3);
+                box-shadow: var(--shadow-lg);
             }
 
             .cta-section h2 {
@@ -382,7 +400,7 @@
                 gap: 8px;
                 padding: 16px 32px;
                 background: white;
-                color: #2563eb;
+                color: var(--brand);
                 text-decoration: none;
                 border-radius: 8px;
                 font-weight: 600;
@@ -420,7 +438,7 @@
             }
 
             .footer-brand i {
-                color: #2563eb;
+                color: var(--brand);
                 font-size: 20px;
             }
 
@@ -470,14 +488,12 @@
         <nav>
             <div class="container">
                 <div class="logo">
-                  <div class="logo">
-    <!-- <img src="{{ asset('images/logo computer.vaif') }}" height="40"> -->
-</div>
-                    <span class="logo-text"> Installment Management System for CityTech Computer Shop</span>
+                    <!-- <img src="{{ asset('images/logo computer.vaif') }}" height="40"> -->
+                    <span class="logo-text">Installment Management System for CityTech Computer Shop</span>
                 </div>
                 <div class="nav-links">
                     @auth
-                        <a href="{{ url('/dashboard') }}" style="color: #2563eb;">
+                        <a href="{{ url('/dashboard') }}" style="color: var(--brand);">
                             <i class="fas fa-chart-line"></i> Dashboard
                         </a>
                         <form method="POST" action="{{ route('logout') }}" style="display: inline;">
@@ -604,7 +620,7 @@
 
                     <!-- Feature 4 -->
                     <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <div class="feature-icon" style="background: var(--danger);">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <h3>Late Payment Tracking</h3>
@@ -622,7 +638,7 @@
 
                     <!-- Feature 6 -->
                     <div class="feature-card">
-                        <div class="feature-icon" style="background: linear-gradient(135deg, #4f46e5, #4338ca);">
+                        <div class="feature-icon" style="background: var(--brand);">
                             <i class="fas fa-robot"></i>
                         </div>
                         <h3>Telegram Integration</h3>

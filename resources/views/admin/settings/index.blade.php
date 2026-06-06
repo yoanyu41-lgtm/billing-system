@@ -45,7 +45,7 @@
                 {{ !empty($settings['telegram_token']) ? 'Configured' : 'Not configured' }}
             </span>
         </p>
-        <a href="{{ route('admin.telegram-logs.index') }}" class="mt-4 inline-flex rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">Open Telegram Center</a>
+        <a href="{{ route('telegram-logs.index') }}" class="mt-4 inline-flex rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-700">Open Telegram Center</a>
     </div>
 </div>
 @endsection

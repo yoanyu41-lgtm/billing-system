@@ -19,8 +19,9 @@ class TelegramLogController extends Controller
         $telegramLogs = TelegramLog::with('customer')->latest('sent_at')->paginate(15);
         $settings = Setting::pluck('value', 'key')->toArray();
         $customers = Customer::whereNotNull('telegram_id')->orderBy('name')->get();
+        $tokenConfigured = ! blank($settings['telegram_token'] ?? null) || ! blank(config('services.telegram.bot_token'));
 
-        return view('admin.telegram-logs.index', compact('telegramLogs', 'settings', 'customers'));
+        return view('admin.telegram-logs.index', compact('telegramLogs', 'settings', 'customers', 'tokenConfigured'));
     }
 
     public function setWebhook(Request $request)
@@ -31,7 +32,7 @@ class TelegramLogController extends Controller
 
         $result = $this->telegramService->setWebhook($validated['webhook_url']);
 
-        return redirect()->route('admin.telegram-logs.index')
+        return redirect()->route('telegram-logs.index')
             ->with($result['ok'] ? 'success' : 'error', $result['reason']);
     }
 
@@ -47,7 +48,7 @@ class TelegramLogController extends Controller
             $validated['test_message']
         );
 
-        return redirect()->route('admin.telegram-logs.index')
+        return redirect()->route('telegram-logs.index')
             ->with($result['ok'] ? 'success' : 'error', $result['reason']);
     }
 }
