@@ -180,7 +180,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
+        return redirect()->route('admin.products.stock')->with('success', 'Product created successfully.');
     }
 
     public function show(Product $product)
