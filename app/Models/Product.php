@@ -15,6 +15,10 @@ class Product extends Model
         'category',
         'brand',
         'model',
+        'cpu',
+        'ram',
+        'storage',
+        'graphics_card',
         'image',
         'description',
     ];

@@ -120,6 +120,22 @@
                     <td class="px-6 py-4">
                         <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
                         <div class="text-sm text-gray-500">{{ $product->code }}</div>
+                        @if($product->cpu || $product->ram || $product->storage || $product->graphics_card)
+                            <div class="text-xs mt-1.5 flex flex-wrap gap-1.5 items-center">
+                                @if($product->cpu)
+                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
+                                @endif
+                                @if($product->ram)
+                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">RAM: {{ $product->ram }}</span>
+                                @endif
+                                @if($product->storage)
+                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">Storage: {{ $product->storage }}</span>
+                                @endif
+                                @if($product->graphics_card)
+                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">GPU: {{ $product->graphics_card }}</span>
+                                @endif
+                            </div>
+                        @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $product->category }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ number_format($product->price, 2) }}</td>

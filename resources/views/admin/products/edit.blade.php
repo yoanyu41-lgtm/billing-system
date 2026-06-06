@@ -99,6 +99,36 @@
             </div>
         </div>
 
+        <!-- Computer Specifications Section -->
+        <div class="mb-8 border-t border-gray-100 pt-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Computer Specifications (Optional)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- CPU -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">CPU</label>
+                    <input type="text" name="cpu" value="{{ old('cpu', $product->cpu) }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Intel Core i5">
+                </div>
+
+                <!-- RAM -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">RAM</label>
+                    <input type="text" name="ram" value="{{ old('ram', $product->ram) }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., 16GB DDR4">
+                </div>
+
+                <!-- Storage -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Storage (SSD/HDD)</label>
+                    <input type="text" name="storage" value="{{ old('storage', $product->storage) }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., 512GB NVMe SSD">
+                </div>
+
+                <!-- Graphics Card -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Graphics Card</label>
+                    <input type="text" name="graphics_card" value="{{ old('graphics_card', $product->graphics_card) }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Intel Iris Xe / NVIDIA RTX 3050">
+                </div>
+            </div>
+        </div>
+
         <!-- Product Image -->
         <div class="mb-6">
             <label class="block text-gray-700 text-sm font-medium mb-2">Product Image</label>

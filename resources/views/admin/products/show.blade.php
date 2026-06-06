@@ -71,6 +71,38 @@
                     </div>
                 </div>
 
+                @if($product->cpu || $product->ram || $product->storage || $product->graphics_card)
+                <div class="border-t border-gray-100 pt-6 mt-4">
+                    <div class="text-sm font-medium text-gray-500 mb-3">Computer Specifications</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 bg-indigo-50/20 p-5 rounded-xl border border-indigo-100/50">
+                        @if($product->cpu)
+                        <div>
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">CPU</div>
+                            <div class="text-base text-gray-900 font-semibold">{{ $product->cpu }}</div>
+                        </div>
+                        @endif
+                        @if($product->ram)
+                        <div>
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">RAM</div>
+                            <div class="text-base text-gray-900 font-semibold">{{ $product->ram }}</div>
+                        </div>
+                        @endif
+                        @if($product->storage)
+                        <div>
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Storage</div>
+                            <div class="text-base text-gray-900 font-semibold">{{ $product->storage }}</div>
+                        </div>
+                        @endif
+                        @if($product->graphics_card)
+                        <div>
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Graphics Card</div>
+                            <div class="text-base text-gray-900 font-semibold">{{ $product->graphics_card }}</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
                 <div class="border-t border-gray-100 pt-6 mt-4">
                     <div class="text-sm font-medium text-gray-500 mb-3">Description</div>
                     <div class="text-base text-gray-800 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100">

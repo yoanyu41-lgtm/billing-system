@@ -79,7 +79,7 @@ class ProductController extends Controller
             "Expires"             => "0"
         ];
 
-        $columns = ['ID', 'Code', 'Name', 'Category', 'Brand', 'Model', 'Price', 'Cost Price', 'Stock', 'Description'];
+        $columns = ['ID', 'Code', 'Name', 'Category', 'Brand', 'Model', 'CPU', 'RAM', 'Storage', 'Graphics Card', 'Price', 'Cost Price', 'Stock', 'Description'];
 
         $callback = function() use($products, $columns) {
             $file = fopen('php://output', 'w');
@@ -96,6 +96,10 @@ class ProductController extends Controller
                     $product->category,
                     $product->brand,
                     $product->model,
+                    $product->cpu,
+                    $product->ram,
+                    $product->storage,
+                    $product->graphics_card,
                     $product->price,
                     $product->cost_price,
                     $product->stock,
@@ -146,11 +150,15 @@ class ProductController extends Controller
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
             'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'cpu' => 'nullable|string|max:255',
+            'ram' => 'nullable|string|max:255',
+            'storage' => 'nullable|string|max:255',
+            'graphics_card' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'description']);
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -187,11 +195,15 @@ class ProductController extends Controller
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
             'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'cpu' => 'nullable|string|max:255',
+            'ram' => 'nullable|string|max:255',
+            'storage' => 'nullable|string|max:255',
+            'graphics_card' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'description']);
 
         if ($request->hasFile('image')) {
             if ($product->image) {
