@@ -52,6 +52,20 @@
                 @enderror
             </div>
 
+            <!-- Brand -->
+            <div>
+                <label class="block text-gray-700 text-sm font-medium mb-2">Brand</label>
+                <select name="brand" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('brand') ? 'border-red-500' : 'border-gray-300' }}">
+                    <option value="">-- Select brand --</option>
+                    @foreach(config('products.brands', []) as $brand)
+                        <option value="{{ $brand }}" {{ old('brand', $product->brand) === $brand ? 'selected' : '' }}>{{ $brand }}</option>
+                    @endforeach
+                </select>
+                @error('brand')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Stock -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">Stock Quantity <span class="text-red-500">*</span></label>

@@ -136,7 +136,8 @@ class ProductController extends Controller
     {
         Gate::authorize('manage-product');
         $categories = Category::orderBy('name')->pluck('name');
-        return view('admin.products.create', compact('categories'));
+        $suppliers = Supplier::orderBy('name')->get();
+        return view('admin.products.create', compact('categories', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -156,6 +157,7 @@ class ProductController extends Controller
             'graphics_card' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
+            'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
         $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'description']);
@@ -164,7 +166,19 @@ class ProductController extends Controller
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        Product::create($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $request) {
+            $product = Product::create($data);
+
+            if ($product->stock > 0) {
+                \App\Models\StockMovement::create([
+                    'product_id' => $product->id,
+                    'type' => 'in',
+                    'quantity' => $product->stock,
+                    'supplier_id' => $request->supplier_id,
+                    'note' => 'Initial stock input'
+                ]);
+            }
+        });
 
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
     }
@@ -212,7 +226,23 @@ class ProductController extends Controller
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        $product->update($data);
+        $oldStock = $product->stock;
+        $newStock = $request->stock;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($product, $data, $oldStock, $newStock) {
+            $product->update($data);
+
+            if ($oldStock != $newStock) {
+                $type = $newStock > $oldStock ? 'in' : 'out';
+                $qty = abs($newStock - $oldStock);
+                \App\Models\StockMovement::create([
+                    'product_id' => $product->id,
+                    'type' => $type,
+                    'quantity' => $qty,
+                    'note' => 'Manual adjustment during product edit'
+                ]);
+            }
+        });
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }

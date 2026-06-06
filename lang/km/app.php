@@ -339,6 +339,7 @@ return [
     'error_occurred'        => 'មានបញ្ហាកើតឡើង',
     'access_denied'         => 'គ្មានសិទ្ធិចូលប្រើ',
     'confirm_delete'        => 'តើអ្នកប្រាកដជាចង់លុបទេ?',
+    'confirm_delete_product' => 'តើអ្នកប្រាកដជាចង់លុបផលិតផលនេះទេ?',
     'no_file_chosen'        => 'មិនទាន់ជ្រើសឯកសារ',
     'file_too_large'        => 'ឯកសារធំពេក',
     'invalid_file_type'     => 'ប្រភេទឯកសារមិនត្រឹមត្រូវ',

@@ -334,6 +334,7 @@ return [
     'error_occurred'        => 'An error occurred',
     'access_denied'         => 'Access denied',
     'confirm_delete'        => 'Are you sure you want to delete?',
+    'confirm_delete_product' => 'Are you sure you want to delete this product?',
     'no_file_chosen'        => 'No file chosen',
     'file_too_large'        => 'File too large',
     'invalid_file_type'     => 'Invalid file type',
