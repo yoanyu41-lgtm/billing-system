@@ -244,7 +244,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
+        return redirect()->route('admin.products.stock')->with('success', 'Product updated successfully.');
     }
 
     public function destroy(Product $product)
@@ -252,7 +252,7 @@ class ProductController extends Controller
         Gate::authorize('manage-product');
 
         $product->delete();
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
+        return redirect()->route('admin.products.stock')->with('success', 'Product deleted successfully.');
     }
 
     public function updateStock(Request $request, Product $product)
