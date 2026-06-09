@@ -2,6 +2,12 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8 max-w-5xl">
+    @if(session('success'))
+        <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow-sm">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm">{{ session('error') }}</div>
+    @endif
     <!-- Header Section -->
     <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

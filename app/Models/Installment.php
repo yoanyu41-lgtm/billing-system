@@ -47,4 +47,31 @@ class Installment extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    /**
+     * Outstanding principal balance (excludes future interest).
+     * Used for early payoff (settlement) calculations.
+     */
+    public function outstandingPrincipal(): float
+    {
+        $principalBase = max($this->total_price - $this->down_payment, 0);
+        $duration = max($this->duration_months, 1);
+        $monthlyPrincipal = $principalBase / $duration;
+        $monthlyInterest = ($principalBase * $this->interest_rate / 100) / 12;
+        $amountDue = $monthlyPrincipal + $monthlyInterest;
+
+        // Total of normal approved payments already made (exclude settlement payments).
+        $paid = $this->payments()
+            ->where('status', 'approved')
+            ->where('is_settlement', false)
+            ->sum('amount');
+
+        // How many monthly instalments those payments fully cover.
+        $paidMonths = $amountDue > 0 ? floor($paid / $amountDue) : 0;
+        $paidMonths = min($paidMonths, $duration);
+
+        $principalPaid = $monthlyPrincipal * $paidMonths;
+
+        return round(max($principalBase - $principalPaid, 0), 2);
+    }
 }

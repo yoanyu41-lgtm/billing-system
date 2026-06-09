@@ -90,7 +90,10 @@ Route::middleware('auth')->group(function () {
 
     // Installments
     Route::resource('installments', InstallmentController::class);
+    Route::get('pay-offs', [InstallmentController::class, 'payOffIndex'])->name('installments.pay-off-index');
+    Route::post('installments/{installment}/pay-off', [InstallmentController::class, 'payOff'])->name('installments.pay-off');
     Route::get('payment-schedules', [InstallmentController::class, 'scheduleIndex'])->name('installments.schedule-index');
+    Route::get('contracts', [InstallmentController::class, 'contractIndex'])->name('installments.contract-index');
     Route::get('installments/{installment}/schedule', [InstallmentController::class, 'paymentSchedule'])->name('installments.schedule');
     Route::get('installments/{installment}/contract', [InstallmentController::class, 'printContract'])->name('installments.contract');
     Route::post('installments/{installment}/upload-contract', [InstallmentController::class, 'uploadContract'])->name('installments.uploadContract');
@@ -152,8 +155,11 @@ Route::middleware('auth')->group(function () {
         Route::get('purchases/{purchase}/edit', [App\Http\Controllers\PurchaseController::class, 'edit'])->name('purchases.edit');
         Route::put('purchases/{purchase}', [App\Http\Controllers\PurchaseController::class, 'update'])->name('purchases.update');
         Route::delete('purchases/{purchase}', [App\Http\Controllers\PurchaseController::class, 'destroy'])->name('purchases.destroy');
+        Route::get('sales', [App\Http\Controllers\SaleController::class, 'index'])->name('sales.index');
         Route::get('sales/create', [App\Http\Controllers\SaleController::class, 'create'])->name('sales.create');
         Route::post('sales', [App\Http\Controllers\SaleController::class, 'store'])->name('sales.store');
+        Route::get('sales/{sale}', [App\Http\Controllers\SaleController::class, 'show'])->name('sales.show');
+        Route::delete('sales/{sale}', [App\Http\Controllers\SaleController::class, 'destroy'])->name('sales.destroy');
 
         // Stock movements
         Route::get('stock-movements', [App\Http\Controllers\StockMovementController::class, 'index'])->name('stock-movements.index');

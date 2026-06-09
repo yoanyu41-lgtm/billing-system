@@ -158,12 +158,14 @@ class ProductController extends Controller
             'storage' => 'nullable|string|max:255',
             'graphics_card' => 'nullable|string|max:255',
             'color' => 'nullable|string|max:255',
+            'warranty' => 'nullable|string|max:255',
+            'condition' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
             'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
@@ -225,11 +227,13 @@ class ProductController extends Controller
             'storage' => 'nullable|string|max:255',
             'graphics_card' => 'nullable|string|max:255',
             'color' => 'nullable|string|max:255',
+            'warranty' => 'nullable|string|max:255',
+            'condition' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {

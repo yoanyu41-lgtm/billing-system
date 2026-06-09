@@ -3,7 +3,7 @@
         <!-- Logo Section -->
         <div class="auth-logo-header">
             <div class="auth-logo-icon">
-                <img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
+                <img src="{{ $companyLogo }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
             </div>
             <span class="auth-logo-text">City<span style="color: #2563eb;">Tech</span></span>
         </div>

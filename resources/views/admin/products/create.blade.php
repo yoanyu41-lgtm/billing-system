@@ -184,6 +184,17 @@
                     <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.warranty') }}</label>
                     <input type="text" name="warranty" value="{{ old('warranty') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="{{ __('app.warranty_placeholder') }}">
                 </div>
+
+                <!-- Condition -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.condition') }}</label>
+                    <select name="condition" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
+                        <option value="new" {{ old('condition', 'new') === 'new' ? 'selected' : '' }}>{{ __('app.condition_new') }}</option>
+                        <option value="demo" {{ old('condition') === 'demo' ? 'selected' : '' }}>{{ __('app.condition_demo') }}</option>
+                        <option value="used" {{ old('condition') === 'used' ? 'selected' : '' }}>{{ __('app.condition_used') }}</option>
+                        <option value="refurbished" {{ old('condition') === 'refurbished' ? 'selected' : '' }}>{{ __('app.condition_refurbished') }}</option>
+                    </select>
+                </div>
             </div>
         </div>
 

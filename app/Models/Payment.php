@@ -12,8 +12,13 @@ class Payment extends Model
         'payment_date',
         'payment_method_id',
         'status',
+        'is_settlement',
         'qr_image',
         'approved_by',
+    ];
+
+    protected $casts = [
+        'is_settlement' => 'boolean',
     ];
 
     public function installment()
