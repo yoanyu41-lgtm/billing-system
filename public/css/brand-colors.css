@@ -1,0 +1,288 @@
+/**
+ * CityTech Brand Color Utilities
+ * Based on approved color guidelines
+ * Use these classes for consistent branding
+ */
+
+/* ================================================================
+   🎨 BACKGROUND COLORS (200-level for backgrounds)
+   ================================================================ */
+
+/* Green - Success/Paid */
+.bg-brand-green-50  { background-color: #f0fdf4; }
+.bg-brand-green-100 { background-color: #dcfce7; }
+.bg-brand-green-200 { background-color: #bbf7d0; }
+
+/* Red - Overdue/Error */
+.bg-brand-red-50  { background-color: #fef2f2; }
+.bg-brand-red-100 { background-color: #fee2e2; }
+.bg-brand-red-200 { background-color: #fecaca; }
+
+/* Yellow - Pending/Warning */
+.bg-brand-yellow-50  { background-color: #fffbeb; }
+.bg-brand-yellow-100 { background-color: #fef3c7; }
+.bg-brand-yellow-200 { background-color: #fde68a; }
+
+/* Blue - Information */
+.bg-brand-blue-50  { background-color: #eff6ff; }
+.bg-brand-blue-100 { background-color: #dbeafe; }
+.bg-brand-blue-200 { background-color: #bfdbfe; }
+
+/* Gray - Inactive/Disabled */
+.bg-brand-gray-50  { background-color: #f8fafc; }
+.bg-brand-gray-100 { background-color: #f1f5f9; }
+.bg-brand-gray-200 { background-color: #e2e8f0; }
+
+
+/* ================================================================
+   📝 TEXT COLORS (600-level for text on white)
+   ================================================================ */
+
+/* Green - Success/Paid */
+.text-brand-green { color: #059669; }
+.text-brand-green-dark { color: #047857; }
+
+/* Red - Overdue/Error */
+.text-brand-red { color: #dc2626; }
+.text-brand-red-dark { color: #b91c1c; }
+
+/* Yellow - Pending/Warning */
+.text-brand-yellow { color: #d97706; }
+.text-brand-yellow-dark { color: #b45309; }
+
+/* Blue - Information */
+.text-brand-blue { color: #2563eb; }
+.text-brand-blue-dark { color: #1d4ed8; }
+
+/* Gray - Inactive/Disabled */
+.text-brand-gray { color: #64748b; }
+.text-brand-gray-dark { color: #475569; }
+
+
+/* ================================================================
+   🔲 BORDER COLORS (500-level)
+   ================================================================ */
+
+/* Green - Success/Paid */
+.border-brand-green { border-color: #10b981; }
+
+/* Red - Overdue/Error */
+.border-brand-red { border-color: #ef4444; }
+
+/* Yellow - Pending/Warning */
+.border-brand-yellow { border-color: #f59e0b; }
+
+/* Blue - Information */
+.border-brand-blue { border-color: #3b82f6; }
+
+/* Gray - Inactive/Disabled */
+.border-brand-gray { border-color: #94a3b8; }
+
+
+/* ================================================================
+   🏷️ STATUS BADGES (Pre-built components)
+   ================================================================ */
+
+.badge-paid {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #059669;
+    background-color: #dcfce7;
+    border: 1.5px solid #bbf7d0;
+}
+
+.badge-overdue {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #dc2626;
+    background-color: #fee2e2;
+    border: 1.5px solid #fecaca;
+}
+
+.badge-pending {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #d97706;
+    background-color: #fef3c7;
+    border: 1.5px solid #fde68a;
+}
+
+.badge-info {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+    background-color: #dbeafe;
+    border: 1.5px solid #bfdbfe;
+}
+
+.badge-inactive {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    background-color: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+}
+
+
+/* ================================================================
+   🔘 BUTTONS (Brand color buttons)
+   ================================================================ */
+
+.btn-brand-green {
+    background-color: #059669;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-brand-green:hover {
+    background-color: #047857;
+    transform: translateY(-1px);
+}
+
+.btn-brand-red {
+    background-color: #dc2626;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-brand-red:hover {
+    background-color: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.btn-brand-blue {
+    background-color: #2563eb;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-brand-blue:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-brand-yellow {
+    background-color: #d97706;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-brand-yellow:hover {
+    background-color: #b45309;
+    transform: translateY(-1px);
+}
+
+
+/* ================================================================
+   ⚠️ ALERT BOXES
+   ================================================================ */
+
+.alert-brand-success {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+}
+
+.alert-brand-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.alert-brand-warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #d97706;
+}
+
+.alert-brand-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+}
+
+
+/* ================================================================
+   💡 USAGE EXAMPLES
+   ================================================================ */
+
+/*
+   Status Badge:
+   <span class="badge-paid">Paid</span>
+   <span class="badge-overdue">Overdue</span>
+   <span class="badge-pending">Pending</span>
+
+   Buttons:
+   <button class="btn-brand-green">Confirm Payment</button>
+   <button class="btn-brand-red">Delete</button>
+   <button class="btn-brand-blue">View Details</button>
+
+   Alerts:
+   <div class="alert-brand-success">
+       <i class="fas fa-check-circle"></i>
+       <span>Payment successful!</span>
+   </div>
+
+   Custom Colors:
+   <div class="bg-brand-green-100 text-brand-green border-brand-green">
+       Custom component
+   </div>
+*/

@@ -22,7 +22,11 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    // Redirect to dashboard if authenticated, otherwise to login
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 
 Route::get('/lang/{locale}', function ($locale) {
@@ -98,7 +102,7 @@ Route::middleware('auth')->group(function () {
         Route::get('reports/{type}/export', [ReportController::class, 'exportPdf'])->name('reports.export');
 
         // Suppliers, Purchases, Sales
-        Route::resource('suppliers', App\Http\Controllers\SupplierController::class)->only(['index','create','store']);
+        Route::resource('suppliers', App\Http\Controllers\SupplierController::class)->except(['show']);
         Route::get('purchases', [App\Http\Controllers\PurchaseController::class, 'index'])->name('purchases.index');
         Route::get('purchases/create', [App\Http\Controllers\PurchaseController::class, 'create'])->name('purchases.create');
         Route::post('purchases', [App\Http\Controllers\PurchaseController::class, 'store'])->name('purchases.store');

@@ -137,7 +137,9 @@ class ProductController extends Controller
         Gate::authorize('manage-product');
         $categories = Category::orderBy('name')->pluck('name');
         $suppliers = Supplier::orderBy('name')->get();
-        return view('admin.products.create', compact('categories', 'suppliers'));
+        // Get unique brands from categories table
+        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
+        return view('admin.products.create', compact('categories', 'suppliers', 'brands'));
     }
 
     public function store(Request $request)
@@ -150,7 +152,7 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
-            'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'brand' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
             'storage' => 'nullable|string|max:255',
@@ -194,7 +196,9 @@ class ProductController extends Controller
     {
         Gate::authorize('manage-product');
         $categories = Category::orderBy('name')->pluck('name');
-        return view('admin.products.edit', compact('product', 'categories'));
+        // Get unique brands from categories table
+        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
+        return view('admin.products.edit', compact('product', 'categories', 'brands'));
     }
 
     public function update(Request $request, Product $product)
@@ -209,7 +213,7 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
-            'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'brand' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
             'storage' => 'nullable|string|max:255',
@@ -252,6 +256,10 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         Gate::authorize('manage-product');
+
+        if ($product->installments()->exists()) {
+            return redirect()->route('admin.products.stock')->with('error', __('app.cannot_delete_product_has_installments'));
+        }
 
         $product->delete();
         return redirect()->route('admin.products.stock')->with('success', 'Product deleted successfully.');

@@ -30,9 +30,13 @@ class CategoryController extends Controller
 
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')],
+            'brand' => ['nullable', 'string', 'max:255'],
         ]);
 
-        Category::create(['name' => $request->name]);
+        Category::create([
+            'name' => $request->name,
+            'brand' => $request->brand,
+        ]);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category created successfully.');
     }
@@ -50,9 +54,13 @@ class CategoryController extends Controller
 
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
+            'brand' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $category->update(['name' => $request->name]);
+        $category->update([
+            'name' => $request->name,
+            'brand' => $request->brand,
+        ]);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully.');
     }

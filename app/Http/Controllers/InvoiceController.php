@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $query = Invoice::with('payment.installment.customer');
@@ -20,7 +20,24 @@ class InvoiceController extends Controller
             });
         }
 
-        $invoices = $query->paginate(10);
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('payment.installment.customer', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Date filter
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $invoices = $query->latest()->paginate(10)->withQueryString();
         return view('invoices.index', compact('invoices'));
     }
 
@@ -31,12 +48,32 @@ class InvoiceController extends Controller
 
     public function download(Invoice $invoice)
     {
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+        // Load all necessary relationships
+        $invoice->load([
+            'payment.installment.customer',
+            'payment.installment.product',
+            'payment.installment.user',
+        ]);
+
+        // Get settings for company info
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'settings'));
         return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
     public function print(Invoice $invoice)
     {
-        return view('invoices.print', compact('invoice'));
+        // Load all necessary relationships
+        $invoice->load([
+            'payment.installment.customer',
+            'payment.installment.product',
+            'payment.installment.user',
+        ]);
+
+        // Get settings for company info
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        return view('invoices.print', compact('invoice', 'settings'));
     }
 }

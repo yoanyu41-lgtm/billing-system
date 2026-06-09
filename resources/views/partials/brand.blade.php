@@ -1,55 +1,106 @@
 {{-- ============================================================
      CityTech Billing — Brand Design Tokens (Navy + Emerald)
+     ប្រព័ន្ធពណ៌ និងការរចនា - CityTech Billing
+     
      Single source of truth for colors, radius, shadows.
+     ប្រភពតែមួយគត់សម្រាប់ពណ៌, radius, shadows
+     
      Premium, flat, NO gradients. See DESIGN-SYSTEM.md.
+     រចនាបែប Premium, ផ្ទះស្មើ, គ្មាន gradients
+     
      Included in every layout <head>.
+     បញ្ចូលក្នុងគ្រប់ layout <head>
+     
+     🔤 FONT SYSTEM - ប្រព័ន្ធពុម្ពអក្សរ:
+        📝 English & Khmer: Khmer OS Siemreap
+        អង់គ្លេស និង ខ្មែរ: Khmer OS Siemreap
+     
+     🎨 BRAND COLOR SYSTEM - ប្រព័ន្ធពណ៌ BRAND:
+     ✅ ពណ៌ដែលគួរប្រើ (Recommended Colors):
+        🟢 Green (#059669)  - បង់រួច, ជោគជ័យ, ផ្ទៀងផ្ទាត់ (Paid, Success, Confirmed)
+        🔴 Red (#DC2626)    - លើសកំណត់, មិនទាន់បង់, កំហុស (Overdue, Unpaid, Error)
+        🟡 Yellow (#D97706) - កំពុងរង់ចាំ, ជិតដល់កាលកំណត់, ការព្រមាន (Pending, Due Soon, Warning)
+        🔵 Blue (#2563EB)   - ព័ត៌មាន, សកម្មភាព (Information, Actions)
+        ⚫ Gray (#64748B)   - មិនសកម្ម, បិទប្រើប្រាស់ (Inactive, Disabled)
+     
+     ❌ ពណ៌ដែលអត់គួរប្រើ (Colors to AVOID):
+        - Neon/Fluorescent colors (ពណ៌ភ្លឺខ្លាំង - ឈឺភ្នែក)
+        - Pure black backgrounds (ផ្ទៃខ្មៅសុទ្ធ - លើកលែងតែ dark mode)
+        - Purple (ពណ៌ស្វាយ - មិន professional សម្រាប់ payments)
+        - Brown/muddy colors (ពណ៌កខ្វក់ - មិនស្អាត)
+        - Random colors without system (ពណ៌ចៃដន្យគ្មានប្រព័ន្ធ)
 ============================================================ --}}
 <style>
+    /* ── Font Configuration - ការកំណត់ពុម្ពអក្សរ ── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    /* Font family setup - ការដំឡើងពុម្ពអក្សរ */
+    /* Both English & Khmer: Khmer OS Siemreap */
+    * {
+        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+    }
+    
+    /* English text - អត្ថបទអង់គ្លេស - Khmer OS Siemreap */
+    *:lang(en) {
+        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+    }
+    
+    /* Khmer text - អត្ថបទខ្មែរ - Khmer OS Siemreap */
+    *:lang(km) {
+        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+        line-height: 1.8; /* Better spacing for Khmer - គម្លាតល្អសម្រាប់ខ្មែរ */
+    }
+    
+    /* Fallback for mixed content - សម្រាប់អត្ថបទចម្រុះ */
+    body {
+        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+    }
+
     :root {
-        /* ── Brand ── */
-        --brand:            #1E3A5F;   /* deep professional navy (primary)   */
-        --brand-hover:      #162D47;   /* navy hover / pressed               */
-        --brand-active:     #112138;   /* navy darkest                       */
+        /* ── Brand - ពណ៌ Brand ── */
+        --brand:            #1E3A5F;   /* deep professional navy (primary) - ខៀវចាស់ professional */
+        --brand-hover:      #162D47;   /* navy hover / pressed - ពេលចុច */
+        --brand-active:     #112138;   /* navy darkest - ខ្មៅបំផុត */
         --on-brand:         #FFFFFF;
 
-        --secondary:        #2563EB;   /* support blue                       */
+        --secondary:        #2563EB;   /* support blue - ខៀវជំនួយ */
         --secondary-hover:  #1D4ED8;
 
-        --accent:           #059669;   /* emerald — "paid / success"         */
+        --accent:           #059669;   /* emerald — "paid / success" - បៃតង "បង់រួច / ជោគជ័យ" */
         --accent-hover:     #047857;
-        --accent-soft:      #34D399;   /* emerald highlight on dark surfaces */
+        --accent-soft:      #34D399;   /* emerald highlight on dark surfaces - បៃតងភ្លឺលើផ្ទៃងងឹត */
 
-        /* ── Sidebar (dark navy surface) ── */
+        /* ── Sidebar (dark navy surface) - របារចំហៀង (ផ្ទៃខៀវងងឹត) ── */
         --sidebar:          #0F1E33;
         --sidebar-raised:   #18293F;
         --sidebar-text:     #94A3B8;
         --sidebar-text-hi:  #E2E8F0;
         --sidebar-hover:    rgba(255,255,255,0.06);
 
-        /* ── Semantic status ── */
-        --success:          #059669;
-        --warning:          #D97706;
-        --danger:           #DC2626;
-        --info:             #2563EB;
+        /* ── Semantic status - ស្ថានភាពអត្ថន័យ ── */
+        --success:          #059669;   /* Green - បង់រួច/ជោគជ័យ */
+        --warning:          #D97706;   /* Yellow - ការព្រមាន/កំពុងរង់ចាំ */
+        --danger:           #DC2626;   /* Red - លើសកំណត់/កំហុស */
+        --info:             #2563EB;   /* Blue - ព័ត៌មាន */
 
-        /* ── Surfaces & text ── */
-        --bg:               #F1F5F9;
-        --surface:          #FFFFFF;
-        --surface-muted:    #F8FAFC;
-        --text:             #0F172A;
-        --text-muted:       #64748B;
-        --text-subtle:      #94A3B8;
-        --border:           #E2E8F0;
-        --border-strong:    #CBD5E1;
+        /* ── Surfaces & text - ផ្ទៃ & អត្ថបទ ── */
+        --bg:               #F1F5F9;   /* Background - ផ្ទៃខាងក្រោយ */
+        --surface:          #FFFFFF;   /* Surface - ផ្ទៃ */
+        --surface-muted:    #F8FAFC;   /* Muted surface - ផ្ទៃស្រាល */
+        --text:             #0F172A;   /* Text - អត្ថបទ */
+        --text-muted:       #64748B;   /* Muted text - អត្ថបទស្រាល */
+        --text-subtle:      #94A3B8;   /* Subtle text - អត្ថបទស្រាលជាង */
+        --border:           #E2E8F0;   /* Border - ស្រទាប់ */
+        --border-strong:    #CBD5E1;   /* Strong border - ស្រទាប់ខ្លាំង */
         --ring:             #1E3A5F;
 
-        /* ── Radius ── */
+        /* ── Radius - កាត់ជ្រុង ── */
         --radius-sm: 10px;
         --radius:    14px;
         --radius-lg: 18px;
         --radius-pill: 999px;
 
-        /* ── Premium layered shadows (soft, never harsh) ── */
+        /* ── Premium layered shadows (soft, never harsh) - ស្រមោលទន់ ── */
         --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
         --shadow:    0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.04);
         --shadow-md: 0 4px 14px rgba(15,23,42,.08);

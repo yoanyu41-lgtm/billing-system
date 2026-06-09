@@ -4,12 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CityTech — Installment System</title>
+    
+    <!-- Font Configuration -->
+    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Brand Tokens -->
     @include('partials.brand')
     <style>
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        /* Font: Khmer OS Siemreap for both English and Khmer */
+        * { 
+            font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
         body { margin: 0; padding: 0; background: var(--bg); overflow-x: hidden; }
         html { margin: 0; padding: 0; }
 
@@ -70,7 +84,6 @@
         .sb-nav a:hover {
             background: var(--sidebar-hover);
             color: var(--sidebar-text-hi);
-            transform: translateX(4px);
         }
         .sb-nav a.active {
             background: var(--accent);
@@ -166,7 +179,6 @@
         .sb-logout a:hover { 
             background: rgba(239,68,68,0.1); 
             color: #fca5a5;
-            transform: translateX(4px);
         }
         .sb-logout a i { width: 20px; text-align: center; font-size: 16px; }
 
@@ -295,6 +307,7 @@
         .notification-item.unread:hover {
             background: #dbeafe;
         }
+        /* ── Notification Icon Colors (Brand System) ── */
         .notification-icon {
             width: 40px;
             height: 40px;
@@ -305,10 +318,11 @@
             flex-shrink: 0;
             font-size: 16px;
         }
-        .notification-icon.blue { background: #dbeafe; color: #3b82f6; }
-        .notification-icon.green { background: #dcfce7; color: #22c55e; }
-        .notification-icon.orange { background: #fed7aa; color: #f97316; }
-        .notification-icon.red { background: #fee2e2; color: #ef4444; }
+        .notification-icon.blue { background: #eff6ff; color: #2563eb; }    /* Blue - Information */
+        .notification-icon.green { background: #ecfdf5; color: #059669; }   /* Green - Success/Paid */
+        .notification-icon.orange { background: #fffbeb; color: #d97706; }  /* Yellow - Pending */
+        .notification-icon.red { background: #fef2f2; color: #dc2626; }     /* Red - Overdue */
+        .notification-icon.gray { background: #f8fafc; color: #64748b; }    /* Gray - Inactive */
         .notification-content {
             flex: 1;
         }
@@ -539,20 +553,26 @@
             pointer-events: none;
         }
 
-        .sc-blue .sc-icon { background: rgba(30, 58, 95, 0.1); color: #1e3a5f; }
-        .sc-blue .sc-wave polyline { stroke: #1e3a5f !important; stroke-opacity: 0.15; }
+        /* ── Brand Color System for Stat Cards ── */
+        /* Blue - Information/General */
+        .sc-blue .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .sc-blue .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
 
+        /* Green - Success/Paid */
         .sc-green .sc-icon { background: rgba(5, 150, 105, 0.1); color: #059669; }
         .sc-green .sc-wave polyline { stroke: #059669 !important; stroke-opacity: 0.15; }
 
+        /* Yellow/Orange - Pending/Warning */
         .sc-amber .sc-icon { background: rgba(217, 119, 6, 0.1); color: #d97706; }
         .sc-amber .sc-wave polyline { stroke: #d97706 !important; stroke-opacity: 0.15; }
 
-        .sc-purple .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
-        .sc-purple .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
-
+        /* Red - Overdue/Error */
         .sc-red .sc-icon { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
         .sc-red .sc-wave polyline { stroke: #dc2626 !important; stroke-opacity: 0.15; }
+
+        /* Gray - Inactive/Disabled */
+        .sc-gray .sc-icon { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+        .sc-gray .sc-wave polyline { stroke: #64748b !important; stroke-opacity: 0.15; }
 
         /* ── Cards ── */
         .card {
@@ -585,18 +605,23 @@
         .tbl tbody td { font-size: 12px; color: #334155; padding: 9px 10px; }
         .tbl tbody td.mono { font-family: monospace; font-size: 11px; }
 
+        /* ── Status Pills (Brand Color System) ── */
         .pill {
             display: inline-block; padding: 3px 10px; border-radius: 999px;
             font-size: 10px; font-weight: 700; border: 1.5px solid;
         }
-        .pill-ongoing { color: #d97706; border-color: #fde68a; background: #fffbeb; }
-        .pill-paid    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
-        .pill-overdue { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-        .pill-qr      { color: #6d28d9; border-color: #ddd6fe; background: #f5f3ff; }
-        .pill-aba     { color: #0369a1; border-color: #bae6fd; background: #f0f9ff; }
-        .pill-cc      { color: #b45309; border-color: #fde68a; background: #fffbeb; }
-        .pill-wing    { color: #065f46; border-color: #a7f3d0; background: #ecfdf5; }
-        .pill-other   { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }
+        /* Payment Status */
+        .pill-ongoing { color: #d97706; border-color: #fde68a; background: #fffbeb; }  /* Yellow - Pending */
+        .pill-paid    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }  /* Green - Success/Paid */
+        .pill-overdue { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* Red - Overdue */
+        .pill-pending { color: #d97706; border-color: #fde68a; background: #fffbeb; }  /* Yellow - Pending */
+        
+        /* Payment Methods */
+        .pill-qr      { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-aba     { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-cc      { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-wing    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }  /* Green - Success */
+        .pill-other   { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }  /* Gray - Inactive */
 
         /* ── Quick Shortcuts ── */
         .shortcut-btn {
@@ -608,15 +633,17 @@
         }
         .shortcut-btn:last-child { margin-bottom: 0; }
         .shortcut-btn:hover { border-color: var(--border-strong); background: var(--surface-muted); }
+        /* ── Shortcut Button Icons (Brand Colors) ── */
         .shortcut-icon {
             width: 34px; height: 34px; border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
             font-size: 15px; flex-shrink: 0;
         }
-        .si-blue   { background: #eef2f8; color: var(--brand); }
-        .si-green  { background: #ecfdf5; color: var(--accent); }
-        .si-purple { background: #eff6ff; color: var(--secondary); }
-        .si-amber  { background: #fffbeb; color: var(--warning); }
+        .si-blue   { background: #eff6ff; color: #2563eb; }     /* Blue - Information */
+        .si-green  { background: #ecfdf5; color: #059669; }     /* Green - Success */
+        .si-amber  { background: #fffbeb; color: #d97706; }     /* Yellow - Pending */
+        .si-red    { background: #fef2f2; color: #dc2626; }     /* Red - Overdue */
+        .si-gray   { background: #f8fafc; color: #64748b; }     /* Gray - Inactive */
 
         /* ── Donut ── */
         .donut-wrap { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
@@ -632,10 +659,12 @@
         .sysrow .sk { font-size: 12px; color: #64748b; }
         .sysrow .sv { font-size: 12px; font-weight: 600; color: #0f172a; }
 
-        /* ── Alert ── */
+        /* ── Alert Messages (Brand Color System) ── */
         .alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; margin-bottom: 18px; }
-        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-        .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+        .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; }  /* Green - Success */
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #d97706; }  /* Yellow - Warning */
+        .alert-error   { background: #fef2f2; border: 1px solid: #fecaca; color: #dc2626; }  /* Red - Error */
+        .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; }  /* Blue - Info */
 
         /* View All btn */
         .btn-viewall {
@@ -754,22 +783,25 @@
             </div>
 
             {{-- Product Management (visible to admin & staff) --}}
-            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-box-open"></i>
                     <span>{{ __('app.products') }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.index') || request()->routeIs('admin.products.show') ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.product_list') }}
                     </a>
                     @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.products.stock') }}" class="{{ request()->routeIs('admin.products.stock') ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
                     <a href="{{ route('admin.purchases.create') }}" class="{{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
                         <i class="fas fa-truck-loading"></i> {{ __('app.stock_in') }}
+                    </a>
+                    <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
+                        <i class="fas fa-sign-out-alt"></i> {{ __('app.stock_out') }}
                     </a>
                     <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}
@@ -1011,17 +1043,6 @@
 
         {{-- Content --}}
         <main class="content">
-
-            @if(session('success'))
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>{{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>{{ session('error') }}
-                </div>
-            @endif
 
             @yield('content')
 
@@ -1291,6 +1312,35 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isCollapsed) {
         document.getElementById('sidebar').classList.add('collapsed');
         document.querySelector('.main-wrapper').classList.add('expanded');
+    }
+    
+    // Restore sidebar scroll position
+    const sidebar = document.querySelector('.sb-nav');
+    const savedScrollPos = sessionStorage.getItem('sidebarScrollPos');
+    if (savedScrollPos && sidebar) {
+        sidebar.scrollTop = parseInt(savedScrollPos);
+    }
+});
+
+// Save sidebar scroll position before navigating
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.sb-nav');
+    if (sidebar) {
+        // Save scroll position when clicking sidebar links
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPos', sidebar.scrollTop);
+            });
+        });
+        
+        // Also save on dropdown toggle
+        const dropdownToggles = document.querySelectorAll('.sb-dropdown-toggle');
+        dropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPos', sidebar.scrollTop);
+            });
+        });
     }
 });
 </script>

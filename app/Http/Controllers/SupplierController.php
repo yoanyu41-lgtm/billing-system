@@ -31,4 +31,30 @@ class SupplierController extends Controller
 
         return redirect()->route('admin.suppliers.index')->with('success','Supplier created.');
     }
+
+    public function edit(Supplier $supplier)
+    {
+        return view('admin.suppliers.edit', compact('supplier'));
+    }
+
+    public function update(Request $request, Supplier $supplier)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+            'address' => 'nullable|string',
+        ]);
+
+        $supplier->update($request->only(['name','phone','email','address']));
+
+        return redirect()->route('admin.suppliers.index')->with('success','Supplier updated successfully.');
+    }
+
+    public function destroy(Supplier $supplier)
+    {
+        $supplier->delete();
+
+        return redirect()->route('admin.suppliers.index')->with('success','Supplier deleted successfully.');
+    }
 }

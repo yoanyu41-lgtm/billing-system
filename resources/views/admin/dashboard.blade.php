@@ -41,7 +41,7 @@
         </svg>
     </div>
 
-    <div class="stat-card sc-purple">
+    <div class="stat-card sc-blue">
         <div>
             <div class="sc-icon"><i class="fas fa-file-invoice"></i></div>
             <div class="sc-label">{{ __('app.active_installments') }}</div>
@@ -149,8 +149,8 @@
                 <span style="color:#0f172a;">{{ __('app.add_new_product') }}</span>
             </a>
             <a href="{{ route('installments.create') }}" class="shortcut-btn">
-                <div class="shortcut-icon si-purple"><i class="fas fa-file-invoice-dollar"></i></div>
-                <span style="color:#6366f1;">{{ __('app.new_installment') }}</span>
+                <div class="shortcut-icon si-blue"><i class="fas fa-file-invoice-dollar"></i></div>
+                <span style="color:#2563eb;">{{ __('app.new_installment') }}</span>
             </a>
             <a href="{{ route('payments.create') }}" class="shortcut-btn">
                 <div class="shortcut-icon si-amber"><i class="fas fa-credit-card"></i></div>

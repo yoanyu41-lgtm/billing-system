@@ -135,7 +135,6 @@
                 <div class="grid grid-cols-2 gap-3">
                     @foreach([
                         ['key' => 'id_card_photo', 'label' => __('app.id_card_photo'), 'emoji' => '🪪'],
-                        ['key' => 'family_photo',  'label' => __('app.family_photo'),  'emoji' => '👨‍👩‍👧'],
                         ['key' => 'income_proof',  'label' => __('app.income_proof'),  'emoji' => '💰'],
                         ['key' => 'guarantor_doc', 'label' => __('app.guarantor_doc'), 'emoji' => '📋'],
                     ] as $doc)
@@ -353,6 +352,7 @@
                                         <option value="">— Select —</option>
                                         <option value="spouse">Spouse (ប្តីប្រពន្ធ)</option>
                                         <option value="parent">Parent (មាតាបិតា)</option>
+                                        <option value="grandparent">Grandparent (ជីដូនជីតា/យាយតា/ពូមីង)</option>
                                         <option value="sibling">Sibling (បងប្អូន)</option>
                                         <option value="friend">Friend (មិត្តភក្តិ)</option>
                                         <option value="colleague">Colleague (សហការី)</option>

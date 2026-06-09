@@ -4,7 +4,7 @@
 <h1 class="mb-4 text-2xl font-bold text-slate-900">Payment Details</h1>
 
 <div class="space-y-3 rounded-xl bg-white p-6 shadow">
-    <p><strong>Customer:</strong> {{ $payment->installment->customer->name }}</p>
+    <p><strong>Customer:</strong> {{ $payment->installment?->customer?->name ?? 'N/A' }}</p>
     <p><strong>Payment Method:</strong> {{ $payment->paymentMethod->name ?? 'N/A' }}</p>
     <p><strong>Amount:</strong> ${{ number_format($payment->amount, 2) }}</p>
     <p><strong>Date:</strong> {{ $payment->payment_date }}</p>
@@ -16,7 +16,7 @@
         </div>
     @endif
     @if($payment->approved_by)
-        <p><strong>Approved By:</strong> {{ $payment->user->name }}</p>
+        <p><strong>Approved By:</strong> {{ $payment->user?->name ?? 'N/A' }}</p>
     @endif
 </div>
 @endsection

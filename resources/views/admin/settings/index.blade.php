@@ -19,6 +19,10 @@
             <input type="text" name="shop_phone" value="{{ $settings['shop_phone'] ?? '' }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
         </div>
         <div class="mb-4">
+            <label class="block">Shop Email</label>
+            <input type="email" name="shop_email" value="{{ $settings['shop_email'] ?? '' }}" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="info@example.com">
+        </div>
+        <div class="mb-4">
             <label class="block">Currency</label>
             <input type="text" name="currency" value="{{ $settings['currency'] ?? 'USD' }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
         </div>

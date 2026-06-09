@@ -64,7 +64,7 @@
                 <label class="block text-gray-700 text-sm font-medium mb-2">Brand</label>
                 <select name="brand" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('brand') ? 'border-red-500' : 'border-gray-300' }}">
                     <option value="">-- Select brand --</option>
-                    @foreach(config('products.brands', []) as $brand)
+                    @foreach($brands as $brand)
                         <option value="{{ $brand }}" {{ old('brand', $product->brand) === $brand ? 'selected' : '' }}>{{ $brand }}</option>
                     @endforeach
                 </select>

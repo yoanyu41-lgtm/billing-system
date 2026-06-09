@@ -31,7 +31,7 @@
         <tbody>
             @forelse($payments as $payment)
                 <tr class="border-t border-slate-100">
-                    <td class="p-3">{{ $payment->installment->customer->name }}</td>
+                    <td class="p-3">{{ $payment->installment?->customer?->name ?? 'N/A' }}</td>
                     <td class="p-3">{{ $payment->paymentMethod->name ?? 'N/A' }}</td>
                     <td class="p-3 font-semibold">${{ number_format($payment->amount, 2) }}</td>
                     <td class="p-3">{{ $payment->payment_date }}</td>
