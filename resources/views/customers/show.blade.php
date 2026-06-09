@@ -72,7 +72,7 @@
                     <img src="{{ asset('storage/' . $customer->photo) }}" alt="{{ $customer->name }}"
                          class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md mx-auto">
                 @else
-                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto shadow-md">
+                    <div class="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center mx-auto shadow-md">
                         <span class="text-white text-3xl font-bold">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
                     </div>
                 @endif
@@ -136,7 +136,6 @@
                     @foreach([
                         ['key' => 'id_card_photo', 'label' => __('app.id_card_photo'), 'emoji' => '🪪'],
                         ['key' => 'income_proof',  'label' => __('app.income_proof'),  'emoji' => '💰'],
-                        ['key' => 'guarantor_doc', 'label' => __('app.guarantor_doc'), 'emoji' => '📋'],
                     ] as $doc)
                     <div>
                         <p class="text-xs text-gray-400 mb-1.5">{{ $doc['emoji'] }} {{ $doc['label'] }}</p>
@@ -348,16 +347,8 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">Relationship</label>
-                                    <select name="relationship" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">— Select —</option>
-                                        <option value="spouse">Spouse (ប្តីប្រពន្ធ)</option>
-                                        <option value="parent">Parent (មាតាបិតា)</option>
-                                        <option value="grandparent">Grandparent (ជីដូនជីតា/យាយតា/ពូមីង)</option>
-                                        <option value="sibling">Sibling (បងប្អូន)</option>
-                                        <option value="friend">Friend (មិត្តភក្តិ)</option>
-                                        <option value="colleague">Colleague (សហការី)</option>
-                                        <option value="other">Other</option>
-                                    </select>
+                                    <input type="text" name="relationship" placeholder="e.g., Brother, Sister, Friend, etc."
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">Gender</label>
@@ -415,7 +406,7 @@
                         @if($g->photo)
                             <img src="{{ asset('storage/' . $g->photo) }}" class="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0">
                         @else
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
                                 <span class="text-white font-bold">{{ strtoupper(substr($g->name,0,1)) }}</span>
                             </div>
                         @endif
@@ -555,13 +546,9 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.employment_status') }}</label>
-                                    <select name="employment_status" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">{{ __('app.select') }}</option>
-                                        <option value="employed">{{ __('app.employed') }}</option>
-                                        <option value="self-employed">{{ __('app.self_employed') }}</option>
-                                        <option value="unemployed">{{ __('app.unemployed') }}</option>
-                                        <option value="student">{{ __('app.student') }}</option>
-                                    </select>
+                                    <input type="text" name="employment_status" placeholder="e.g., Employed, Self-employed, Student, etc."
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           oninput="calcScore()">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.monthly_income') }} ($)</label>
@@ -577,11 +564,8 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.decision') }}</label>
-                                    <select name="status" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="pending">{{ __('app.pending') }}</option>
-                                        <option value="approved">{{ __('app.approved') }} ✅</option>
-                                        <option value="rejected">{{ __('app.rejected') }} ❌</option>
-                                    </select>
+                                    <input type="text" name="status" required placeholder="e.g., Pending, Approved, Rejected, etc."
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.notes') }}</label>
@@ -717,10 +701,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (['installments','payments','guarantors','credit'].includes(hash)) {
         switchTab(hash);
     }
-
-    // Re-calc score when employment changes
-    const empSelect = document.querySelector('[name=employment_status]');
-    if (empSelect) empSelect.addEventListener('change', calcScore);
 });
 
 // ── Lightbox ──

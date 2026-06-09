@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">{{ __('app.product_list') }}</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage your products, pricing, and view current stock levels.</p>
+            <p class="text-sm text-gray-500 mt-1">{{ __('app.product_list_subtitle') }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
             @if(auth()->user()->role === 'admin')
@@ -62,7 +62,7 @@
             <!-- Sort -->
             <div class="flex space-x-2">
                 <div class="w-3/5">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Sort By</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.sort_by') }}</label>
                     <select name="sort" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
                         <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>{{ __('app.name') }}</option>
                         <option value="price" {{ request('sort') == 'price' ? 'selected' : '' }}>{{ __('app.price') }}</option>
@@ -70,10 +70,10 @@
                     </select>
                 </div>
                 <div class="w-2/5">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Direction</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.direction') }}</label>
                     <select name="direction" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                        <option value="asc" {{ request('direction') == 'asc' ? 'selected' : '' }}>Asc</option>
-                        <option value="desc" {{ request('direction') == 'desc' ? 'selected' : '' }}>Desc</option>
+                        <option value="asc" {{ request('direction') == 'asc' ? 'selected' : '' }}>{{ __('app.ascending') }}</option>
+                        <option value="desc" {{ request('direction') == 'desc' ? 'selected' : '' }}>{{ __('app.descending') }}</option>
                     </select>
                 </div>
             </div>

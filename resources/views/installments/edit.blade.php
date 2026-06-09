@@ -93,33 +93,33 @@
 
         <!-- Right: Preview Calculator -->
         <div class="lg:col-span-1">
-            <div class="bg-indigo-900 text-white rounded-xl p-6 shadow-md border border-indigo-950 sticky top-24">
-                <h3 class="text-lg font-bold mb-4 flex items-center">
+            <div class="bg-white text-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 sticky top-24">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-indigo-700">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M15 11h.01M12 14h.01M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path></svg>
                     Updated Calculator
                 </h3>
                 
                 <div class="space-y-4">
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Principal Balance</span>
-                        <span class="font-semibold" id="previewPrincipal">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">Principal Balance</span>
+                        <span class="font-semibold text-gray-900" id="previewPrincipal">$0.00</span>
                     </div>
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Monthly Interest</span>
-                        <span class="font-semibold" id="previewInterest">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">Monthly Interest</span>
+                        <span class="font-semibold text-gray-900" id="previewInterest">$0.00</span>
                     </div>
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Total Remaining</span>
-                        <span class="font-semibold" id="previewRemaining">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">Total Remaining</span>
+                        <span class="font-semibold text-gray-900" id="previewRemaining">$0.00</span>
                     </div>
-                    <div class="pt-4 text-center">
-                        <span class="block text-indigo-200 text-xs uppercase tracking-wider font-semibold mb-1">Estimated Monthly Payment</span>
-                        <span class="text-3xl font-extrabold text-amber-300" id="previewMonthly">$0.00</span>
+                    <div class="pt-4 text-center bg-indigo-50 rounded-lg py-4 border border-indigo-100">
+                        <span class="block text-indigo-400 text-xs uppercase tracking-wider font-semibold mb-1">Estimated Monthly Payment</span>
+                        <span class="text-3xl font-extrabold text-indigo-600" id="previewMonthly">$0.00</span>
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 rounded-lg bg-indigo-950/40 text-xs text-indigo-200 leading-relaxed border border-indigo-950/60">
-                    <strong class="text-white font-semibold">Active Details:</strong><br>
+                <div class="mt-6 p-4 rounded-lg bg-gray-50 text-xs text-gray-500 leading-relaxed border border-gray-100">
+                    <strong class="text-gray-700 font-semibold">Active Details:</strong><br>
                     Customer: {{ $installment->customer?->name ?? 'N/A' }}<br>
                     Product: {{ $installment->product?->name ?? 'N/A' }}
                 </div>

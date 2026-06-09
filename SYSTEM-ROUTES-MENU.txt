@@ -1,0 +1,539 @@
+================================================================================
+            CITYTECH BILLING SYSTEM - ROUTES, MENU & SYSTEM BUILD
+================================================================================
+
+System: CityTech Computer Shop - Installment Management System
+Framework: Laravel 10+ (PHP)
+Frontend: Blade Templates + Tailwind CSS (CDN)
+Authentication: Laravel Breeze + Sanctum (API)
+Database: MySQL / MariaDB
+Languages: English (en) + Khmer (km)
+
+================================================================================
+                          SYSTEM BUILD / TECH STACK
+================================================================================
+
+BACKEND:
+--------
+- Framework        : Laravel 10+ (PHP 8.1+)
+- ORM              : Eloquent
+- Authentication   : Laravel Breeze (web) + Laravel Sanctum (API tokens)
+- Database         : MySQL / MariaDB
+- Queue System     : Laravel Queue (notifications)
+- Task Scheduling  : Laravel Scheduler (cron jobs)
+- File Storage     : Laravel Storage (public disk)
+
+FRONTEND:
+---------
+- Template Engine  : Blade
+- CSS Framework    : Tailwind CSS (via CDN)
+- Icons            : Font Awesome 6.4.0
+- Fonts            : Khmer OS Siemreap (Khmer + English)
+- Theme            : Light/Dark mode support (forced light)
+
+INTEGRATIONS:
+-------------
+- Telegram Bot API : Customer notifications & payment reminders
+- PDF Generation   : Invoice & contract printing
+- Database Backup  : Automated backup/restore system
+
+KEY FEATURES:
+-------------
+- Multi-language (English/Khmer) with locale switching
+- Role-based access control (admin/staff/user)
+- Global search (customers + products)
+- Real-time notifications
+- Dashboard analytics (revenue & collection charts)
+- Soft deletes for customers
+
+MIDDLEWARE:
+-----------
+- auth          : Requires authentication
+- admin         : Admin-only access (AdminMiddleware)
+- guest         : Non-authenticated users only
+- auth:sanctum  : API token authentication
+- SetLocale     : Language localization
+
+ARTISAN COMMANDS:
+-----------------
+- BackupDatabase.php          : Database backup automation
+- SendDuePaymentReminders.php : Payment reminder notifications
+
+================================================================================
+                          DASHBOARD MENU STRUCTURE
+================================================================================
+
+The sidebar navigation menu (resources/views/layouts/app.blade.php):
+
+┌──────────────────────────────────────────────────────────────────┐
+│  COMPUTER SHOP - Installment System                                │
+└──────────────────────────────────────────────────────────────────┘
+
+GENERAL MENU (All authenticated users):
+----------------------------------------
+📊  Dashboard                    → route('dashboard')
+👥  Customers                    → route('customers.index')
+💰  Installment Plans            → route('installments.index')
+📄  Invoices                     → route('invoices.index')
+
+💳  Payments [DROPDOWN]
+    ├─ 📋  All Payments          → route('payments.index')
+    ├─ ➕  New Payment           → route('payments.create')
+    └─ ⚠️  Late Payments         → route('late-payments.index')
+
+📦  Products [DROPDOWN]
+    ├─ 📋  Product List          → route('admin.products.index')
+    ├─ 📦  Manage Stock          → route('admin.products.stock')      [ADMIN]
+    ├─ 🚚  Stock In              → route('admin.purchases.create')    [ADMIN]
+    ├─ ↗️  Stock Out             → route('admin.sales.create')        [ADMIN]
+    ├─ 📋  Purchase History      → route('admin.purchases.index')     [ADMIN]
+    ├─ 🔄  Stock Movements       → route('admin.stock-movements.index')[ADMIN]
+    ├─ 🏷️  Categories            → route('admin.categories.index')    [ADMIN]
+    └─ 🚛  Suppliers             → route('admin.suppliers.index')     [ADMIN]
+
+ADMIN ONLY MENU:
+----------------
+👤  User Management              → route('admin.users.index')
+
+📈  Reports [DROPDOWN]
+    ├─ 📅  Daily Report          → route('admin.reports.daily')
+    ├─ 📆  Monthly Report        → route('admin.reports.monthly')
+    ├─ 👥  Customer Report       → route('admin.reports.customer')
+    └─ 💲  Income Report         → route('admin.reports.income')
+
+✈️  Telegram Center              → route('telegram-logs.index')
+⚙️  Settings                     → route('admin.settings.index')
+🗄️  Backup & Restore            → route('admin.backups.index')
+
+🚪  Logout                       → route('logout')
+
+TOPBAR FEATURES:
+----------------
+- Sidebar toggle (hamburger)
+- Theme switcher (Light/Dark/Auto)
+- Language switcher (KH/EN)
+- Global search (Ctrl+K)
+- Notifications bell (with unread count)
+- User profile dropdown
+
+================================================================================
+                        WEB ROUTES (routes/web.php)
+================================================================================
+
+PUBLIC / GENERAL ROUTES:
+------------------------
+GET     /                                    → Redirect (dashboard or login)
+GET     /lang/{locale}                       → lang.switch (en/km)
+GET     /api/search                          → Global search [auth]
+
+DASHBOARD ROUTES [auth]:
+------------------------
+GET     /dashboard                           → dashboard
+GET     /dashboard/monthly-revenue           → dashboard.monthly-revenue
+GET     /dashboard/monthly-collection        → dashboard.monthly-collection
+
+CUSTOMER ROUTES [auth]:
+-----------------------
+GET     /customers                           → customers.index
+GET     /customers/create                    → customers.create
+POST    /customers                           → customers.store
+GET     /customers/{customer}                → customers.show
+GET     /customers/{customer}/edit           → customers.edit
+PUT     /customers/{customer}                → customers.update
+DELETE  /customers/{customer}                → customers.destroy
+
+GUARANTOR ROUTES [auth]:
+------------------------
+POST    /customers/{customer}/guarantors                    → guarantors.store
+PUT     /customers/{customer}/guarantors/{guarantor}        → guarantors.update
+DELETE  /customers/{customer}/guarantors/{guarantor}        → guarantors.destroy
+
+CREDIT CHECK ROUTES [auth]:
+---------------------------
+POST    /customers/{customer}/credit-checks                 → credit-checks.store
+PUT     /customers/{customer}/credit-checks/{creditCheck}   → credit-checks.update
+DELETE  /customers/{customer}/credit-checks/{creditCheck}   → credit-checks.destroy
+
+INSTALLMENT ROUTES [auth]:
+--------------------------
+GET     /installments                        → installments.index
+GET     /installments/create                 → installments.create
+POST    /installments                        → installments.store
+GET     /installments/{installment}          → installments.show
+GET     /installments/{installment}/edit     → installments.edit
+PUT     /installments/{installment}          → installments.update
+DELETE  /installments/{installment}          → installments.destroy
+GET     /installments/{installment}/contract           → installments.contract
+POST    /installments/{installment}/upload-contract    → installments.uploadContract
+GET     /installments/{installment}/download-contract  → installments.downloadContract
+DELETE  /installments/{installment}/delete-contract    → installments.deleteContract
+
+PAYMENT ROUTES [auth]:
+----------------------
+GET     /payments                            → payments.index
+GET     /payments/create                     → payments.create
+POST    /payments                            → payments.store
+GET     /payments/{payment}                  → payments.show
+DELETE  /payments/{payment}                  → payments.destroy
+POST    /payments/{payment}/approve          → payments.approve
+POST    /payments/{payment}/reject           → payments.reject
+(Note: edit & update excluded)
+
+INVOICE ROUTES [auth]:
+----------------------
+GET     /invoices                            → invoices.index
+GET     /invoices/{invoice}                  → invoices.show
+GET     /invoices/{invoice}/download         → invoices.download
+GET     /invoices/{invoice}/print            → invoices.print
+
+LATE PAYMENT ROUTES [auth]:
+---------------------------
+GET     /late-payments                       → late-payments.index
+POST    /late-payments/{installment}/remind  → late-payments.remind
+POST    /late-payments/due-reminders         → late-payments.due-reminders
+
+NOTIFICATION ROUTES [auth]:
+---------------------------
+GET     /notifications                       → notifications.index
+GET     /notifications/unread-count          → notifications.unread-count
+POST    /notifications/{id}/read             → notifications.read
+POST    /notifications/mark-all-read         → notifications.mark-all-read
+DELETE  /notifications/{id}                  → notifications.destroy
+
+TELEGRAM CENTER ROUTES [auth]:
+------------------------------
+GET     /telegram-logs                       → telegram-logs.index
+POST    /telegram-logs/set-webhook           → telegram-logs.set-webhook
+POST    /telegram-logs/send-test             → telegram-logs.send-test
+
+────────────────────────────────────────────────────────────────────
+                    ADMIN ROUTES [auth + admin]
+              Prefix: /admin    Name: admin.
+────────────────────────────────────────────────────────────────────
+
+USER MANAGEMENT [admin]:
+------------------------
+GET     /admin/users                         → admin.users.index
+GET     /admin/users/create                  → admin.users.create
+POST    /admin/users                         → admin.users.store
+GET     /admin/users/{user}                  → admin.users.show
+GET     /admin/users/{user}/edit             → admin.users.edit
+PUT     /admin/users/{user}                  → admin.users.update
+DELETE  /admin/users/{user}                  → admin.users.destroy
+POST    /admin/users/{user}/reset-password   → admin.users.reset-password
+
+PRODUCT MANAGEMENT [admin]:
+---------------------------
+GET     /admin/products/stock                → admin.products.stock
+POST    /admin/products/{product}/stock      → admin.products.stock.update
+GET     /admin/products                      → admin.products.index
+GET     /admin/products/create               → admin.products.create
+POST    /admin/products                      → admin.products.store
+GET     /admin/products/{product}            → admin.products.show
+GET     /admin/products/{product}/edit       → admin.products.edit
+PUT     /admin/products/{product}            → admin.products.update
+DELETE  /admin/products/{product}            → admin.products.destroy
+
+CATEGORY MANAGEMENT [admin]:
+----------------------------
+GET     /admin/categories                    → admin.categories.index
+GET     /admin/categories/create             → admin.categories.create
+POST    /admin/categories                    → admin.categories.store
+GET     /admin/categories/{category}/edit    → admin.categories.edit
+PUT     /admin/categories/{category}         → admin.categories.update
+DELETE  /admin/categories/{category}         → admin.categories.destroy
+(Note: show excluded)
+
+PAYMENT METHODS [admin]:
+------------------------
+GET     /admin/payment-methods               → admin.payment-methods.index
+POST    /admin/payment-methods               → admin.payment-methods.store
+PUT     /admin/payment-methods/{paymentMethod}    → admin.payment-methods.update
+DELETE  /admin/payment-methods/{paymentMethod}    → admin.payment-methods.destroy
+(Note: create, show, edit excluded)
+
+REPORTS [admin]:
+----------------
+GET     /admin/reports/daily                 → admin.reports.daily
+GET     /admin/reports/monthly               → admin.reports.monthly
+GET     /admin/reports/customer              → admin.reports.customer
+GET     /admin/reports/income                → admin.reports.income
+GET     /admin/reports/{type}/export         → admin.reports.export
+
+SUPPLIERS [admin]:
+------------------
+GET     /admin/suppliers                     → admin.suppliers.index
+GET     /admin/suppliers/create              → admin.suppliers.create
+POST    /admin/suppliers                     → admin.suppliers.store
+GET     /admin/suppliers/{supplier}/edit     → admin.suppliers.edit
+PUT     /admin/suppliers/{supplier}          → admin.suppliers.update
+DELETE  /admin/suppliers/{supplier}          → admin.suppliers.destroy
+(Note: show excluded)
+
+PURCHASES [admin]:
+------------------
+GET     /admin/purchases                     → admin.purchases.index
+GET     /admin/purchases/create              → admin.purchases.create
+POST    /admin/purchases                     → admin.purchases.store
+GET     /admin/purchases/{purchase}/edit     → admin.purchases.edit
+PUT     /admin/purchases/{purchase}          → admin.purchases.update
+DELETE  /admin/purchases/{purchase}          → admin.purchases.destroy
+
+SALES [admin]:
+--------------
+GET     /admin/sales/create                  → admin.sales.create
+POST    /admin/sales                         → admin.sales.store
+
+STOCK MOVEMENTS [admin]:
+------------------------
+GET     /admin/stock-movements               → admin.stock-movements.index
+
+SETTINGS [admin]:
+-----------------
+GET     /admin/settings                      → admin.settings.index
+POST    /admin/settings                      → admin.settings.update
+POST    /admin/settings/company              → admin.settings.company.update
+
+BACKUPS [admin]:
+----------------
+GET     /admin/backups                       → admin.backups.index
+POST    /admin/backups                       → admin.backups.create
+GET     /admin/backups/{filename}            → admin.backups.download
+POST    /admin/backups/restore               → admin.backups.restore
+
+================================================================================
+                       AUTH ROUTES (routes/auth.php)
+================================================================================
+
+GUEST ROUTES [guest]:
+---------------------
+GET     /register                            → register
+POST    /register                            → (RegisteredUserController@store)
+GET     /login                               → login
+POST    /login                               → (AuthenticatedSessionController@store)
+GET     /forgot-password                     → password.request
+POST    /forgot-password                     → password.email
+GET     /reset-password/{token}              → password.reset
+POST    /reset-password                      → password.store
+
+AUTHENTICATED ROUTES [auth]:
+----------------------------
+GET     /verify-email                        → verification.notice
+GET     /verify-email/{id}/{hash}            → verification.verify [signed, throttle]
+POST    /email/verification-notification     → verification.send [throttle]
+GET     /confirm-password                    → password.confirm
+POST    /confirm-password                    → (ConfirmablePasswordController@store)
+PUT     /password                            → password.update
+POST    /logout                              → logout
+
+PROFILE ROUTES [auth]:
+----------------------
+GET     /profile                             → profile.edit
+POST    /profile/picture                     → profile.update-picture
+DELETE  /profile/picture                     → profile.remove-picture
+PATCH   /profile/info                        → profile.update-info
+
+================================================================================
+              API ROUTES (routes/api.php) - Prefix: /api/v1
+================================================================================
+
+PUBLIC API (No Auth):
+---------------------
+POST    /api/v1/telegram/webhook             → api.v1.telegram.webhook
+
+AUTHENTICATED API [auth:sanctum]:
+---------------------------------
+
+USER API:
+GET     /api/v1/user                         → api.v1.user.me
+GET     /api/v1/users                        → api.v1.users.index    [admin]
+GET     /api/v1/users/{user}                 → api.v1.users.show     [admin]
+
+CUSTOMER API (apiResource):
+GET     /api/v1/customers                    → customers.index
+POST    /api/v1/customers                    → customers.store
+GET     /api/v1/customers/{customer}         → customers.show
+PUT     /api/v1/customers/{customer}         → customers.update
+DELETE  /api/v1/customers/{customer}         → customers.destroy
+
+PRODUCT API (apiResource):
+GET     /api/v1/products                     → products.index
+POST    /api/v1/products                     → products.store
+GET     /api/v1/products/{product}           → products.show
+PUT     /api/v1/products/{product}           → products.update
+DELETE  /api/v1/products/{product}           → products.destroy
+
+CATEGORY API (apiResource):
+GET     /api/v1/categories                   → categories.index
+POST    /api/v1/categories                   → categories.store
+GET     /api/v1/categories/{category}        → categories.show
+PUT     /api/v1/categories/{category}        → categories.update
+DELETE  /api/v1/categories/{category}        → categories.destroy
+
+SUPPLIER API (apiResource):
+GET     /api/v1/suppliers                    → suppliers.index
+POST    /api/v1/suppliers                    → suppliers.store
+GET     /api/v1/suppliers/{supplier}         → suppliers.show
+PUT     /api/v1/suppliers/{supplier}         → suppliers.update
+DELETE  /api/v1/suppliers/{supplier}         → suppliers.destroy
+
+SALES API:
+GET     /api/v1/sales                        → (SaleApiController@index)
+GET     /api/v1/sales/{sale}                 → (SaleApiController@show)
+POST    /api/v1/sales                        → (SaleApiController@store)
+DELETE  /api/v1/sales/{sale}                 → (SaleApiController@destroy)
+
+PURCHASES API:
+GET     /api/v1/purchases                    → (PurchaseApiController@index)
+GET     /api/v1/purchases/{purchase}         → (PurchaseApiController@show)
+POST    /api/v1/purchases                    → (PurchaseApiController@store)
+DELETE  /api/v1/purchases/{purchase}         → (PurchaseApiController@destroy)
+
+REPORTS API:
+GET     /api/v1/reports/revenue              → (ReportController@income)
+GET     /api/v1/reports/{type}/export        → (ReportController@exportPdf)
+
+================================================================================
+                    CONTROLLER FUNCTIONS SUMMARY
+================================================================================
+
+DashboardController:
+    - index()                 : Main dashboard view
+    - monthlyRevenue()        : Revenue chart data (year filter)
+    - monthlyCollection()     : Collection chart data (year filter)
+
+CustomerController (Resource):
+    - index(), create(), store(), show(), edit(), update(), destroy()
+
+GuarantorController:
+    - store(), update(), destroy()
+
+CustomerCreditCheckController:
+    - store(), update(), destroy()
+
+InstallmentController (Resource +):
+    - index(), create(), store(), show(), edit(), update(), destroy()
+    - printContract()         : Generate contract PDF
+    - uploadContract()        : Upload signed contract
+    - downloadContract()      : Download signed contract
+    - deleteContract()        : Delete signed contract
+
+PaymentController (Resource - edit/update):
+    - index(), create(), store(), show(), destroy()
+    - approve()               : Approve a payment
+    - reject()                : Reject a payment
+
+InvoiceController (index, show only):
+    - index(), show()
+    - download()              : Download invoice PDF
+    - print()                 : Print invoice
+
+LatePaymentController:
+    - index()                 : List overdue payments
+    - sendReminder()          : Send single reminder
+    - sendDueDateReminders()  : Send batch due reminders
+
+NotificationController:
+    - index(), unreadCount(), markAsRead(), markAllAsRead(), destroy()
+
+UserController (Resource +):
+    - index(), create(), store(), show(), edit(), update(), destroy()
+    - resetPassword()         : Admin reset user password
+
+ProductController (Resource +):
+    - index(), create(), store(), show(), edit(), update(), destroy()
+    - stockIndex()            : Stock management view
+    - updateStock()           : Update product stock
+
+CategoryController (Resource - show):
+    - index(), create(), store(), edit(), update(), destroy()
+
+PaymentMethodController (index/store/update/destroy):
+    - index(), store(), update(), destroy()
+
+ReportController:
+    - daily(), monthly(), customer(), income()
+    - exportPdf()             : Export report to PDF
+
+SupplierController (Resource - show):
+    - index(), create(), store(), edit(), update(), destroy()
+
+PurchaseController:
+    - index(), create(), store(), edit(), update(), destroy()
+
+SaleController:
+    - create(), store()
+
+StockMovementController:
+    - index()
+
+SettingController:
+    - index()                      : Settings page (tabs)
+    - update()                     : Update general settings
+    - updateCompanySettings()      : Update company info
+
+BackupController:
+    - index(), create(), download(), restore()
+
+TelegramLogController:
+    - index(), setWebhook(), sendTestMessage()
+
+ProfileController:
+    - edit(), updatePicture(), removePicture(), updateInfo()
+
+================================================================================
+                       API CONTROLLERS SUMMARY
+================================================================================
+
+AuthApiController       : Login/logout, token generation
+UserApiController       : me(), index(), show()
+CustomerApiController   : Full CRUD (apiResource)
+ProductApiController    : Full CRUD (apiResource)
+CategoryApiController   : Full CRUD (apiResource)
+SupplierApiController   : Full CRUD (apiResource)
+SaleApiController       : index(), show(), store(), destroy()
+PurchaseApiController   : index(), show(), store(), destroy()
+TelegramController      : webhook() - Telegram bot handler
+
+================================================================================
+                          ROUTE COUNT SUMMARY
+================================================================================
+
+Web Routes (general)        : ~55 routes
+Admin Routes                : ~45 routes
+Auth Routes                 : ~20 routes
+API Routes                  : ~30 routes
+─────────────────────────────────────────
+TOTAL                       : ~150 routes
+
+================================================================================
+                         ACCESS CONTROL SUMMARY
+================================================================================
+
+PUBLIC (Guest):
+    - Login, Register, Password Reset
+    - Telegram Webhook (API)
+
+AUTHENTICATED (All Users):
+    - Dashboard, Customers, Installments, Invoices
+    - Payments, Late Payments, Notifications
+    - Telegram Center, Profile
+    - Product List (view only)
+
+ADMIN ONLY:
+    - User Management
+    - Product/Category/Supplier Management
+    - Stock Management (In/Out/Movements)
+    - Purchases
+    - Reports (Daily/Monthly/Customer/Income)
+    - Settings
+    - Backup & Restore
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================
+Generated: June 2026
+System: CityTech Computer Shop - Billing & Installment Management System
+Framework: Laravel 10+
+Total Routes: ~150
+================================================================================

@@ -168,6 +168,31 @@ document.getElementById('items-container').addEventListener('click', (e) => {
     }
 });
 
+// Auto-fill cost price when a product is selected (still editable)
+document.getElementById('items-container').addEventListener('change', (e) => {
+    const select = e.target.closest('select[name$="[product_id]"]');
+    if (!select) return;
+    fillCostPrice(select);
+});
+
+function fillCostPrice(select) {
+    const row = select.closest('.item-row');
+    const costInput = row.querySelector('input[name$="[cost_price]"]');
+    if (!costInput) return;
+
+    const product = productsJson.find(p => String(p.id) === String(select.value));
+    if (product && product.cost_price !== null && product.cost_price !== undefined) {
+        costInput.value = parseFloat(product.cost_price).toFixed(2);
+    } else {
+        costInput.value = '';
+    }
+}
+
+// Pre-fill cost price for the first row if a product is already selected on load
+document.querySelectorAll('select[name$="[product_id]"]').forEach(select => {
+    if (select.value) fillCostPrice(select);
+});
+
 updateRemoveButtons();
 </script>
 @endsection

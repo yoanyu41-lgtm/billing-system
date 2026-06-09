@@ -84,7 +84,7 @@
         --info:             #2563EB;   /* Blue - ព័ត៌មាន */
 
         /* ── Surfaces & text - ផ្ទៃ & អត្ថបទ ── */
-        --bg:               #F1F5F9;   /* Background - ផ្ទៃខាងក្រោយ */
+        --bg:               #FFFFFF;   /* Background - ផ្ទៃខាងក្រោយពណ៌ស */
         --surface:          #FFFFFF;   /* Surface - ផ្ទៃ */
         --surface-muted:    #F8FAFC;   /* Muted surface - ផ្ទៃស្រាល */
         --text:             #0F172A;   /* Text - អត្ថបទ */

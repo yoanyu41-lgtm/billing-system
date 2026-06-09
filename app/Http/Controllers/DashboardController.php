@@ -36,6 +36,16 @@ class DashboardController extends Controller
                     $q->where('payment_date', '<', now()->subDays(30));
                 })->count();
 
+            // ── Low Stock Products ───────────────────────────────
+            $lowStockProducts = Product::where('is_active', true)
+                ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
+                ->orderBy('stock')
+                ->take(8)
+                ->get();
+            $lowStockCount = Product::where('is_active', true)
+                ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
+                ->count();
+
             // ── Monthly Revenue Chart ────────────────────────────
             $monthlyIncome = Payment::where('status', 'approved')
                 ->whereYear('payment_date', now()->year)
@@ -91,6 +101,8 @@ class DashboardController extends Controller
                 'pendingPayments',
                 'completedInstallments',
                 'lateCustomers',
+                'lowStockProducts',
+                'lowStockCount',
                 'monthlyIncome',
                 'monthlyCollection',
                 'installmentStatus',

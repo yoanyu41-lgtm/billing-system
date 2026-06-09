@@ -80,7 +80,7 @@
                                     <img src="{{ asset('storage/' . $customer->photo) }}" alt="{{ $customer->name }}"
                                          class="w-9 h-9 rounded-full object-cover border border-gray-200 flex-shrink-0">
                                 @else
-                                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
                                         <span class="text-white text-sm font-bold">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
                                     </div>
                                 @endif

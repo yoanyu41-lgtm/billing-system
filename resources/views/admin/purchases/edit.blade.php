@@ -5,12 +5,12 @@
     <!-- Header Section -->
     <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">Edit Purchase</h1>
-            <p class="text-sm text-gray-500 mt-1">Modify the items, supplier, or date of purchase record #{{ $purchase->id }}.</p>
+            <h1 class="text-3xl font-bold text-gray-800">{{ __('app.edit_purchase') }}</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ __('app.edit_purchase_subtitle') }} #{{ $purchase->id }}.</p>
         </div>
         <a href="{{ route('admin.purchases.index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2.5 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            {{ __('app.back') }} to {{ __('app.purchase_history') }}
+            {{ __('app.back_to_purchase_history') }}
         </a>
     </div>
 
@@ -23,7 +23,7 @@
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.supplier') }} <span class="text-red-500">*</span></label>
                 <select name="supplier_id" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" required>
-                    <option value="">-- Select supplier --</option>
+                    <option value="">{{ __('app.select_supplier') }}</option>
                     @foreach($suppliers as $s)
                         <option value="{{ $s->id }}" {{ old('supplier_id', $purchase->supplier_id) == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
                     @endforeach
@@ -56,7 +56,7 @@
                     <div class="col-span-6">
                         <label class="block md:hidden text-xs font-semibold text-gray-500 uppercase mb-1">{{ __('app.product') }}</label>
                         <select name="items[{{ $idx }}][product_id]" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white transition duration-150" required>
-                            <option value="">-- Choose Product --</option>
+                            <option value="">{{ __('app.choose_product') }}</option>
                             @foreach($products as $p)
                                 <option value="{{ $p->id }}" {{ old('items.'.$idx.'.product_id', $item->product_id) == $p->id ? 'selected' : '' }}>
                                     {{ $p->name }} ({{ $p->code }})
@@ -92,7 +92,7 @@
                 {{ __('app.cancel') }}
             </a>
             <button type="submit" class="px-6 py-2.5 font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition duration-150">
-                Update Purchase
+                {{ __('app.update_purchase') }}
             </button>
         </div>
     </form>
@@ -107,7 +107,7 @@ document.getElementById('addItem').addEventListener('click', () => {
     const div = document.createElement('div');
     div.className = 'item-row grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-gray-50 md:bg-transparent p-4 md:p-0 rounded-xl md:rounded-none border border-gray-100 md:border-0';
     
-    let optionsHtml = '<option value="">-- Choose Product --</option>';
+    let optionsHtml = '<option value="">{{ __('app.choose_product') }}</option>';
     productsJson.forEach(p => {
         optionsHtml += `<option value="${p.id}">${p.name} (${p.code})</option>`;
     });
@@ -158,6 +158,21 @@ document.getElementById('items-container').addEventListener('click', (e) => {
         const row = btn.closest('.item-row');
         row.remove();
         updateRemoveButtons();
+    }
+});
+
+// Auto-fill cost price when product changes (still editable)
+document.getElementById('items-container').addEventListener('change', (e) => {
+    const select = e.target.closest('select[name$="[product_id]"]');
+    if (!select) return;
+
+    const row = select.closest('.item-row');
+    const costInput = row.querySelector('input[name$="[cost_price]"]');
+    if (!costInput) return;
+
+    const product = productsJson.find(p => String(p.id) === String(select.value));
+    if (product && product.cost_price !== null && product.cost_price !== undefined) {
+        costInput.value = parseFloat(product.cost_price).toFixed(2);
     }
 });
 

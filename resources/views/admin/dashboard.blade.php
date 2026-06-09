@@ -279,6 +279,34 @@
             </div>
         </div>
 
+        {{-- Low Stock Alert --}}
+        <div class="card">
+            <div class="card-title" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <span style="color:#f59e0b;">&#9888;</span> {{ __('app.low_stock_alert') }}
+                </span>
+                @if(($lowStockCount ?? 0) > 0)
+                <span class="pill" style="background:#fef3c7;color:#b45309;font-size:10px;">{{ $lowStockCount }}</span>
+                @endif
+            </div>
+            @forelse($lowStockProducts ?? [] as $p)
+            <a href="{{ route('admin.products.show', [$p, 'from' => 'stock']) }}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;text-decoration:none;">
+                <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;">{{ $p->name }}</div>
+                    <div style="font-size:11px;color:#94a3b8;">{{ $p->code }}</div>
+                </div>
+                <span class="pill" style="font-size:10px;{{ $p->stock <= 0 ? 'background:#fee2e2;color:#b91c1c;' : 'background:#fef3c7;color:#b45309;' }}">
+                    {{ $p->stock <= 0 ? __('app.out_of_stock') : $p->stock }}
+                </span>
+            </a>
+            @empty
+            <div style="text-align:center;color:#94a3b8;font-size:12px;padding:16px 0;">{{ __('app.no_low_stock') }}</div>
+            @endforelse
+            @if(($lowStockCount ?? 0) > 0)
+            <a href="{{ route('admin.products.stock') }}" class="btn-viewall" style="display:inline-block;margin-top:10px;background:#f59e0b;">{{ __('app.view_all') }}</a>
+            @endif
+        </div>
+
         {{-- System Information --}}
         <div class="card">
             <div class="card-title" style="margin-bottom:4px;">{{ __('app.system_information') }}</div>

@@ -1,0 +1,684 @@
+================================================================================
+              CITYTECH BILLING SYSTEM - API v1 CORE DOCUMENTATION
+================================================================================
+
+Document Purpose : Describe the core architecture, design, and endpoints of the
+                   REST API (version 1) that powers the CityTech Billing System.
+Base Prefix      : /api/v1
+Route Names      : api.v1.*
+Authentication   : Laravel Sanctum (Bearer token)
+Response Format  : JSON
+Generated        : June 2026
+
+================================================================================
+                              1. API CORE CONCEPT
+================================================================================
+
+The API v1 is the programmatic backbone of the CityTech Billing System. It
+exposes the same business capabilities offered by the web interface so that
+external clients (mobile apps, the Telegram bot, integrations) can manage:
+
+    - Authentication & user identity
+    - Customers
+    - Products & Categories
+    - Suppliers
+    - Sales & Purchases
+    - Reports (revenue / export)
+    - Telegram bot webhook events
+
+DESIGN PRINCIPLES:
+------------------
+1. Stateless     : Each request carries its own Bearer token. No server session.
+2. Versioned     : All routes live under /api/v1 so future changes (v2) do not
+                   break existing clients.
+3. Resource-based: Standard REST verbs (GET/POST/PUT/DELETE) map to actions.
+4. Consistent    : All responses return JSON, wrapped in a "data" key for
+                   resources and a "message" key for status notices.
+5. Secure        : Protected routes require auth:sanctum. Role checks are
+                   enforced inside controllers (e.g., admin-only user listing).
+
+================================================================================
+                          2. AUTHENTICATION FLOW
+================================================================================
+
+The API uses TOKEN-BASED authentication via Laravel Sanctum.
+
+STEP 1 - LOGIN:
+---------------
+The client posts credentials. On success a plain-text token is returned.
+
+    Controller : AuthApiController@login
+    Validates  : email (required, email), password (required, string)
+    Logic      : Looks up user by email, verifies password hash.
+                 If invalid → ValidationException ("credentials are incorrect").
+                 If valid   → creates token via $user->createToken('api-token').
+
+    RESPONSE (200):
+    {
+        "token": "1|abcdef1234567890...",
+        "user": {
+            "id": 1,
+            "name": "Admin",
+            "email": "admin@example.com",
+            "role": "admin"
+        }
+    }
+
+STEP 2 - AUTHENTICATED REQUESTS:
+--------------------------------
+The client sends the token on every request:
+
+    Authorization: Bearer 1|abcdef1234567890...
+    Accept: application/json
+
+STEP 3 - LOGOUT:
+----------------
+    Controller : AuthApiController@logout
+    Logic      : Deletes the current access token.
+
+    RESPONSE (200):
+    {
+        "message": "Logged out"
+    }
+
+NOTE: The login/logout controller methods exist in AuthApiController. Make sure
+they are registered in routes/api.php, for example:
+
+    Route::post('login',  [AuthApiController::class, 'login'])->name('login');
+    Route::post('logout', [AuthApiController::class, 'logout'])
+        ->middleware('auth:sanctum')->name('logout');
+
+================================================================================
+                       3. STANDARD RESPONSE CONTRACT
+================================================================================
+
+SUCCESS - SINGLE RESOURCE:
+    { "data": { ...resource fields... } }
+
+SUCCESS - COLLECTION:
+    { "data": [ {...}, {...} ] }
+
+SUCCESS - CREATED (HTTP 201):
+    { "data": { ...new resource... } }
+
+SUCCESS - ACTION / DELETE:
+    { "message": "Deleted" }
+
+ERROR - VALIDATION (HTTP 422):
+    {
+        "message": "The given data was invalid.",
+        "errors": { "field": ["error message"] }
+    }
+
+ERROR - FORBIDDEN (HTTP 403):
+    { "message": "Forbidden" }
+
+ERROR - UNAUTHENTICATED (HTTP 401):
+    { "message": "Unauthenticated." }
+
+================================================================================
+                         4. ENDPOINT REFERENCE
+================================================================================
+
+All routes below are prefixed with /api/v1.
+
+────────────────────────────────────────────────────────────────────
+4.1  PUBLIC (No Authentication)
+────────────────────────────────────────────────────────────────────
+
+POST   /api/v1/telegram/webhook        Telegram bot update receiver
+       Name       : api.v1.telegram.webhook
+       Controller : TelegramController@webhook
+       Purpose    : Receives Telegram updates. Handles commands:
+                      /start → links the chat to an unlinked customer
+                      /id    → replies with the chat ID
+       Auth       : NONE (Telegram servers call this directly)
+
+────────────────────────────────────────────────────────────────────
+4.2  AUTHENTICATED  (middleware: auth:sanctum)
+────────────────────────────────────────────────────────────────────
+
+--- USER / IDENTITY ---
+
+GET    /api/v1/user                    Authenticated user's own profile
+       Name       : api.v1.user.me
+       Controller : UserApiController@me
+       Returns    : id, name, email, role, profile_image (URL), timestamps
+
+GET    /api/v1/users                   List all users  [ADMIN ONLY]
+       Name       : api.v1.users.index
+       Controller : UserApiController@index
+       Guard      : returns 403 if role !== 'admin'
+
+GET    /api/v1/users/{user}            Single user  [ADMIN or SELF]
+       Name       : api.v1.users.show
+       Controller : UserApiController@show
+       Guard      : 403 unless admin OR requesting own record
+
+--- CUSTOMERS  (apiResource) ---
+
+GET    /api/v1/customers               List all customers
+GET    /api/v1/customers/{customer}    Show one customer
+POST   /api/v1/customers               Create customer (201)
+PUT    /api/v1/customers/{customer}    Update customer
+DELETE /api/v1/customers/{customer}    Delete customer
+       Controller : CustomerApiController
+       Create fields:
+            name        (required, string, max 255)
+            phone       (nullable, string, max 50)
+            telegram_id (nullable, string, max 100)
+            address     (nullable, string)
+       Note: created_by is auto-set to the authenticated user's id.
+
+--- PRODUCTS  (apiResource) ---
+
+GET    /api/v1/products                List all products
+GET    /api/v1/products/{product}      Show one product
+POST   /api/v1/products                Create product (201)
+PUT    /api/v1/products/{product}      Update product
+DELETE /api/v1/products/{product}      Delete product
+       Controller : ProductApiController
+       Create fields:
+            code        (nullable, string, max 100)
+            name        (required, string, max 255)
+            price       (required, numeric, min 0)
+            cost_price  (nullable, numeric, min 0)
+            stock       (required, integer, min 0)
+            category    (nullable, string, max 100)
+            brand       (nullable, string, max 100)
+            model       (nullable, string, max 100)
+            description (nullable, string)
+
+--- CATEGORIES  (apiResource) ---
+
+GET    /api/v1/categories              List all categories
+GET    /api/v1/categories/{category}   Show one category
+POST   /api/v1/categories              Create category (201)
+PUT    /api/v1/categories/{category}   Update category
+DELETE /api/v1/categories/{category}   Delete category
+       Controller : CategoryApiController
+       Field      : name (required, string, max 255, unique)
+
+--- SUPPLIERS  (apiResource) ---
+
+GET    /api/v1/suppliers               List all suppliers
+GET    /api/v1/suppliers/{supplier}    Show one supplier
+POST   /api/v1/suppliers               Create supplier (201)
+PUT    /api/v1/suppliers/{supplier}    Update supplier
+DELETE /api/v1/suppliers/{supplier}    Delete supplier
+       Controller : SupplierApiController
+       Create fields:
+            name    (required, string, max 255)
+            phone   (nullable, string, max 50)
+            email   (nullable, email, max 255)
+            address (nullable, string)
+
+--- SALES ---
+
+GET    /api/v1/sales                   List all sales (with items)
+GET    /api/v1/sales/{sale}            Show one sale (with items)
+POST   /api/v1/sales                   Create sale (201)
+DELETE /api/v1/sales/{sale}            Delete sale (and its items)
+       Controller : SaleApiController
+       Create fields:
+            customer_name      (required, string, max 255)
+            sale_date          (required, date)
+            items              (required, array, min 1)
+            items.*.product_id (required, exists:products,id)
+            items.*.qty        (required, integer, min 1)
+            items.*.price      (required, numeric, min 0)
+       Logic: total is auto-calculated as SUM(qty * price); created inside a
+              DB transaction so the sale and all its line items succeed
+              together or roll back.
+
+--- PURCHASES ---
+
+GET    /api/v1/purchases               List all purchases (supplier + items)
+GET    /api/v1/purchases/{purchase}    Show one purchase
+POST   /api/v1/purchases               Create purchase (201)
+DELETE /api/v1/purchases/{purchase}    Delete purchase (and its items)
+       Controller : PurchaseApiController
+       Create fields:
+            supplier_id        (required, exists:suppliers,id)
+            purchase_date      (required, date)
+            items              (required, array, min 1)
+            items.*.product_id (required, exists:products,id)
+            items.*.qty        (required, integer, min 1)
+            items.*.cost       (required, numeric, min 0)
+       Logic: total auto-calculated as SUM(qty * cost), wrapped in a DB
+              transaction.
+
+--- REPORTS ---
+
+GET    /api/v1/reports/revenue         Revenue / income report
+       Controller : ReportController@income
+
+GET    /api/v1/reports/{type}/export   Export a report as PDF
+       Controller : ReportController@exportPdf
+       {type}     : daily | monthly | customer | income
+
+================================================================================
+                       5. TRANSACTION & DATA INTEGRITY
+================================================================================
+
+Sales and Purchases use database transactions (DB::transaction) so that the
+parent record (sale/purchase) and its child line items are written atomically.
+If any insert fails, the whole operation rolls back, preventing orphan records
+or incorrect totals.
+
+Totals are NEVER trusted from the client. They are recalculated on the server
+from the submitted line items:
+
+    Sale total      = Σ (item.qty × item.price)
+    Purchase total  = Σ (item.qty × item.cost)
+
+================================================================================
+                          6. AUTHORIZATION MODEL
+================================================================================
+
+LEVEL 0 - PUBLIC:
+    telegram/webhook  (called by Telegram infrastructure)
+
+LEVEL 1 - ANY AUTHENTICATED USER (valid Sanctum token):
+    user (me), customers, products, categories, suppliers,
+    sales, purchases, reports
+
+LEVEL 2 - ADMIN ONLY (checked inside controller):
+    GET /users          (list all users)
+    GET /users/{user}   (allowed for admin, or the user viewing themselves)
+
+The controller returns HTTP 403 with { "message": "Forbidden" } when a
+non-admin attempts an admin-only action.
+
+================================================================================
+                      7. RECOMMENDED BUILD ORDER (API FIRST)
+================================================================================
+
+When building or rebuilding the system API-first, follow this sequence so each
+layer has its dependencies ready:
+
+PHASE 1 - FOUNDATION:
+    1. Authentication (login/logout, Sanctum token issuance)
+    2. User identity endpoint (/user, /users)
+
+PHASE 2 - MASTER DATA:
+    3. Categories      (products depend on these)
+    4. Suppliers       (purchases depend on these)
+    5. Products        (sales/purchases depend on these)
+    6. Customers       (sales/installments depend on these)
+
+PHASE 3 - TRANSACTIONS:
+    7. Purchases       (stock IN)
+    8. Sales           (stock OUT)
+
+PHASE 4 - REPORTING & INTEGRATION:
+    9. Reports (revenue, export)
+   10. Telegram webhook
+
+RATIONALE:
+    - Auth must exist first because every other endpoint is protected.
+    - Master data (categories, suppliers, products, customers) must exist
+      before transactional endpoints can reference valid foreign keys.
+    - Reports and integrations sit on top of everything else.
+
+================================================================================
+                      8. EXAMPLE REQUESTS (cURL STYLE)
+================================================================================
+
+LOGIN:
+    POST /api/v1/login
+    Body: { "email": "admin@example.com", "password": "secret" }
+
+CREATE A CUSTOMER:
+    POST /api/v1/customers
+    Header: Authorization: Bearer <token>
+    Body: {
+        "name": "Sok Dara",
+        "phone": "012345678",
+        "address": "Phnom Penh"
+    }
+
+CREATE A SALE:
+    POST /api/v1/sales
+    Header: Authorization: Bearer <token>
+    Body: {
+        "customer_name": "Sok Dara",
+        "sale_date": "2026-06-08",
+        "items": [
+            { "product_id": 1, "qty": 2, "price": 350.00 },
+            { "product_id": 5, "qty": 1, "price": 120.00 }
+        ]
+    }
+    → Server computes total = (2×350) + (1×120) = 820.00
+
+GET OWN PROFILE:
+    GET /api/v1/user
+    Header: Authorization: Bearer <token>
+
+================================================================================
+                          9. CONTROLLER MAP
+================================================================================
+
+AuthApiController        login(), logout()
+UserApiController        me(), index() [admin], show() [admin/self]
+CustomerApiController    index(), show(), store(), update(), destroy()
+ProductApiController     index(), show(), store(), update(), destroy()
+CategoryApiController    index(), show(), store(), update(), destroy()
+SupplierApiController    index(), show(), store(), update(), destroy()
+SaleApiController        index(), show(), store(), destroy()
+PurchaseApiController    index(), show(), store(), destroy()
+ReportController         income(), exportPdf()
+TelegramController       webhook(), sendMessage()
+
+================================================================================
+                          10. TECH STACK (API LAYER)
+================================================================================
+
+Framework        : Laravel 10+
+Auth             : Laravel Sanctum (personal access tokens)
+Token Storage    : personal_access_tokens table
+Validation       : Laravel Form Request validation rules
+DB Safety        : DB::transaction for multi-row writes
+Serialization    : JSON via response()->json()
+External Calls   : Laravel HTTP client (Telegram sendMessage)
+Versioning       : URI-based (/api/v1)
+
+================================================================================
+                                 END OF DOCUMENT
+================================================================================
+System  : CityTech Computer Shop - Billing & Installment Management System
+API      : Version 1 (/api/v1)
+Auth     : Laravel Sanctum (Bearer token)
+Format   : JSON
+Generated: June 2026
+================================================================================
+
+
+
+################################################################################
+#                                                                              #
+#                    PART 2 — WEB LAYER (MERGED)                               #
+#              Server-Rendered Application (Blade + Sessions)                  #
+#                                                                              #
+################################################################################
+
+================================================================================
+                          11. WEB LAYER CORE CONCEPT
+================================================================================
+
+While Part 1 covered the stateless JSON API (/api/v1), the WEB LAYER is the
+human-facing, server-rendered application. Both layers talk to the SAME models,
+database, and business rules — they are two front doors into one core system.
+
+                    ┌─────────────────────────────────┐
+                    │        BUSINESS CORE            │
+                    │  Models · Services · Database   │
+                    └───────────────┬─────────────────┘
+                        ┌───────────┴───────────┐
+                        │                       │
+              ┌─────────▼────────┐    ┌─────────▼─────────┐
+              │   WEB LAYER      │    │    API v1 LAYER   │
+              │  Blade + Session │    │  JSON + Sanctum   │
+              │  (browser users) │    │  (apps / bots)    │
+              └──────────────────┘    └───────────────────┘
+
+KEY DIFFERENCES:
+----------------
+                    WEB LAYER                  API v1 LAYER
+Auth            Session cookie (Breeze)    Bearer token (Sanctum)
+Response        HTML (Blade views)         JSON
+State           Stateful (session)         Stateless
+Prefix          / and /admin               /api/v1
+Audience        Staff & admins in browser  Mobile apps, Telegram, integrations
+CSRF            Required (@csrf)           Not used (token-based)
+
+================================================================================
+                       12. WEB AUTHENTICATION FLOW
+================================================================================
+
+The web layer uses Laravel Breeze SESSION-BASED authentication.
+
+GUEST (middleware: guest):
+    GET  /login                  Show login form
+    POST /login                  Authenticate, start session
+    GET  /register               Show registration form
+    POST /register               Create account
+    GET  /forgot-password        Request password reset link
+    POST /forgot-password        Email reset link
+    GET  /reset-password/{token} Show reset form
+    POST /reset-password         Save new password
+
+AUTHENTICATED (middleware: auth):
+    POST /logout                 End session
+    GET  /verify-email           Email verification prompt
+    GET  /confirm-password       Confirm password for sensitive actions
+    PUT  /password               Update password
+
+PROFILE:
+    GET    /profile              Edit profile
+    POST   /profile/picture      Upload profile picture
+    DELETE /profile/picture      Remove profile picture
+    PATCH  /profile/info         Update name/email
+
+================================================================================
+                      13. WEB ROUTES — GENERAL (auth)
+================================================================================
+
+ENTRY / UTILITY:
+    GET  /                       Redirect → dashboard (if logged in) or login
+    GET  /lang/{locale}          Switch language (en / km)   name: lang.switch
+    GET  /api/search             Global search (customers + products) [auth]
+
+DASHBOARD:
+    GET  /dashboard                        dashboard
+    GET  /dashboard/monthly-revenue        dashboard.monthly-revenue
+    GET  /dashboard/monthly-collection     dashboard.monthly-collection
+
+CUSTOMERS (resource):
+    GET    /customers                      customers.index
+    GET    /customers/create               customers.create
+    POST   /customers                      customers.store
+    GET    /customers/{customer}           customers.show
+    GET    /customers/{customer}/edit      customers.edit
+    PUT    /customers/{customer}           customers.update
+    DELETE /customers/{customer}           customers.destroy
+
+GUARANTORS:
+    POST   /customers/{customer}/guarantors                 guarantors.store
+    PUT    /customers/{customer}/guarantors/{guarantor}     guarantors.update
+    DELETE /customers/{customer}/guarantors/{guarantor}     guarantors.destroy
+
+CREDIT CHECKS:
+    POST   /customers/{customer}/credit-checks                   credit-checks.store
+    PUT    /customers/{customer}/credit-checks/{creditCheck}     credit-checks.update
+    DELETE /customers/{customer}/credit-checks/{creditCheck}     credit-checks.destroy
+
+INSTALLMENTS (resource +):
+    GET    /installments                   installments.index
+    GET    /installments/create            installments.create
+    POST   /installments                   installments.store
+    GET    /installments/{installment}     installments.show
+    GET    /installments/{installment}/edit         installments.edit
+    PUT    /installments/{installment}              installments.update
+    DELETE /installments/{installment}              installments.destroy
+    GET    /installments/{installment}/contract            installments.contract
+    POST   /installments/{installment}/upload-contract     installments.uploadContract
+    GET    /installments/{installment}/download-contract   installments.downloadContract
+    DELETE /installments/{installment}/delete-contract     installments.deleteContract
+
+PAYMENTS (resource, no edit/update):
+    GET    /payments                       payments.index
+    GET    /payments/create                payments.create
+    POST   /payments                       payments.store
+    GET    /payments/{payment}             payments.show
+    DELETE /payments/{payment}             payments.destroy
+    POST   /payments/{payment}/approve     payments.approve
+    POST   /payments/{payment}/reject      payments.reject
+
+INVOICES (index, show only):
+    GET    /invoices                       invoices.index
+    GET    /invoices/{invoice}             invoices.show
+    GET    /invoices/{invoice}/download    invoices.download
+    GET    /invoices/{invoice}/print       invoices.print
+
+LATE PAYMENTS:
+    GET    /late-payments                          late-payments.index
+    POST   /late-payments/{installment}/remind     late-payments.remind
+    POST   /late-payments/due-reminders            late-payments.due-reminders
+
+NOTIFICATIONS:
+    GET    /notifications                  notifications.index
+    GET    /notifications/unread-count     notifications.unread-count
+    POST   /notifications/{id}/read        notifications.read
+    POST   /notifications/mark-all-read    notifications.mark-all-read
+    DELETE /notifications/{id}             notifications.destroy
+
+TELEGRAM CENTER:
+    GET    /telegram-logs                  telegram-logs.index
+    POST   /telegram-logs/set-webhook      telegram-logs.set-webhook
+    POST   /telegram-logs/send-test        telegram-logs.send-test
+
+================================================================================
+                  14. WEB ROUTES — ADMIN (auth + admin)
+                     Prefix: /admin   Name: admin.
+================================================================================
+
+USERS (resource +):
+    GET/POST/PUT/DELETE  /admin/users...           admin.users.*
+    POST /admin/users/{user}/reset-password        admin.users.reset-password
+
+PRODUCTS (resource +):
+    GET  /admin/products/stock                     admin.products.stock
+    POST /admin/products/{product}/stock           admin.products.stock.update
+    (full resource)                                admin.products.*
+
+CATEGORIES (resource, no show):    admin.categories.*
+PAYMENT METHODS (index/store/update/destroy): admin.payment-methods.*
+
+REPORTS:
+    GET /admin/reports/daily        admin.reports.daily
+    GET /admin/reports/monthly      admin.reports.monthly
+    GET /admin/reports/customer     admin.reports.customer
+    GET /admin/reports/income       admin.reports.income
+    GET /admin/reports/{type}/export  admin.reports.export
+
+SUPPLIERS (resource, no show):     admin.suppliers.*
+
+PURCHASES:
+    GET/POST/PUT/DELETE /admin/purchases...        admin.purchases.*
+
+SALES:
+    GET  /admin/sales/create        admin.sales.create
+    POST /admin/sales               admin.sales.store
+
+STOCK MOVEMENTS:
+    GET  /admin/stock-movements     admin.stock-movements.index
+
+SETTINGS:
+    GET  /admin/settings            admin.settings.index
+    POST /admin/settings            admin.settings.update
+    POST /admin/settings/company    admin.settings.company.update
+
+BACKUPS:
+    GET  /admin/backups             admin.backups.index
+    POST /admin/backups             admin.backups.create
+    GET  /admin/backups/{filename}  admin.backups.download
+    POST /admin/backups/restore     admin.backups.restore
+
+================================================================================
+                    15. WEB DASHBOARD MENU STRUCTURE
+================================================================================
+
+Sidebar (resources/views/layouts/app.blade.php):
+
+GENERAL (all authenticated users):
+    📊  Dashboard
+    👥  Customers
+    💰  Installment Plans
+    📄  Invoices
+    💳  Payments ▾   (All Payments · New Payment · Late Payments)
+    📦  Products ▾   (Product List · Manage Stock* · Stock In* · Stock Out*
+                      · Purchase History* · Stock Movements* · Categories*
+                      · Suppliers*)        (* = admin only)
+
+ADMIN ONLY:
+    👤  User Management
+    📈  Reports ▾    (Daily · Monthly · Customer · Income)
+    ✈️  Telegram Center
+    ⚙️  Settings
+    🗄️  Backup & Restore
+    🚪  Logout
+
+TOPBAR:
+    Sidebar toggle · Theme switcher · Language (KH/EN) · Global search (Ctrl+K)
+    · Notifications bell · User profile dropdown
+
+================================================================================
+                 16. HOW WEB & API SHARE THE SAME CORE
+================================================================================
+
+SHARED ELEMENTS (single source of truth):
+    - Eloquent Models      (Customer, Product, Sale, Purchase, Installment, …)
+    - Database tables      (same 27 tables)
+    - Business rules       (totals, stock, installment math)
+    - ReportController     (used by BOTH web admin and API)
+    - TelegramController   (webhook used by API; logs shown in web Telegram Center)
+
+LAYER-SPECIFIC ELEMENTS:
+    Web                              API v1
+    - Blade views                    - JSON responses
+    - Session auth (Breeze)          - Token auth (Sanctum)
+    - CSRF protection                - Stateless tokens
+    - AdminMiddleware (web)          - In-controller role checks
+    - Resource controllers           - apiResource controllers
+
+OVERLAP EXAMPLES:
+    Customers  : web CustomerController       + API CustomerApiController
+    Products   : web ProductController        + API ProductApiController
+    Reports    : ReportController serves both web views and API JSON/PDF
+    Telegram   : web TelegramLogController UI + API TelegramController webhook
+
+================================================================================
+              17. UNIFIED BUILD ORDER (API FIRST, THEN WEB)
+================================================================================
+
+STAGE A — API CORE (build first, see Part 1 §7):
+    1. Auth (Sanctum login/logout)
+    2. Users
+    3. Categories → Suppliers → Products → Customers
+    4. Purchases → Sales
+    5. Reports → Telegram webhook
+
+STAGE B — WEB LAYER (build on the proven core):
+    6. Breeze session auth + profile
+    7. Dashboard (charts: revenue, collection)
+    8. Customers UI (+ guarantors, credit checks)
+    9. Installments UI (+ contract upload/print)
+   10. Payments UI (+ approve/reject) → Invoices → Late payments
+   11. Admin: Users, Products/Stock, Categories, Suppliers, Purchases, Sales
+   12. Reports UI, Settings, Backups, Telegram Center, Notifications
+
+RATIONALE:
+    Building the API first forces clean, reusable business logic in models and
+    services. The web layer then becomes a thin Blade presentation on top of the
+    same core, avoiding duplicated rules between the two front doors.
+
+================================================================================
+                       18. COMBINED ROUTE COUNT
+================================================================================
+
+    Web (general)   : ~55 routes      (session auth)
+    Web (admin)     : ~45 routes      (session auth + admin)
+    Web (auth/Breeze): ~20 routes
+    API v1          : ~30 routes      (Sanctum token)
+    ───────────────────────────────────────────────
+    TOTAL           : ~150 routes across both layers
+
+================================================================================
+                              END OF MERGED DOCUMENT
+================================================================================
+System  : CityTech Computer Shop - Billing & Installment Management System
+Layers  : Web (Blade + Session)  +  API v1 (JSON + Sanctum)
+Core    : Shared models, database, and business rules
+Generated: June 2026
+================================================================================

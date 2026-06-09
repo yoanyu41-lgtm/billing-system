@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Api\TelegramController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\BackupController;
@@ -32,9 +33,44 @@ Route::get('/', function () {
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'km'])) {
         session(['locale' => $locale]);
+        
+        // Force save session
+        session()->save();
+        
+        // Debug: Log the session
+        \Log::info('Locale switched', [
+            'locale' => $locale,
+            'session_locale' => session('locale'),
+            'app_locale' => app()->getLocale()
+        ]);
     }
     return back();
 })->name('lang.switch');
+
+// Global Search API
+Route::get('/api/search', function (Request $request) {
+    $query = $request->get('q');
+    
+    if (strlen($query) < 2) {
+        return response()->json([]);
+    }
+    
+    $customers = \App\Models\Customer::where('name', 'like', "%{$query}%")
+        ->orWhere('phone', 'like', "%{$query}%")
+        ->orWhere('id_card', 'like', "%{$query}%")
+        ->limit(5)
+        ->get(['id', 'name', 'phone']);
+    
+    $products = \App\Models\Product::where('name', 'like', "%{$query}%")
+        ->orWhere('code', 'like', "%{$query}%")
+        ->limit(5)
+        ->get(['id', 'name', 'code', 'stock']);
+    
+    return response()->json([
+        'customers' => $customers,
+        'products' => $products,
+    ]);
+})->middleware('auth');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -54,6 +90,12 @@ Route::middleware('auth')->group(function () {
 
     // Installments
     Route::resource('installments', InstallmentController::class);
+    Route::get('payment-schedules', [InstallmentController::class, 'scheduleIndex'])->name('installments.schedule-index');
+    Route::get('installments/{installment}/schedule', [InstallmentController::class, 'paymentSchedule'])->name('installments.schedule');
+    Route::get('installments/{installment}/contract', [InstallmentController::class, 'printContract'])->name('installments.contract');
+    Route::post('installments/{installment}/upload-contract', [InstallmentController::class, 'uploadContract'])->name('installments.uploadContract');
+    Route::get('installments/{installment}/download-contract', [InstallmentController::class, 'downloadContract'])->name('installments.downloadContract');
+    Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
 
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update']);
@@ -106,6 +148,7 @@ Route::middleware('auth')->group(function () {
         Route::get('purchases', [App\Http\Controllers\PurchaseController::class, 'index'])->name('purchases.index');
         Route::get('purchases/create', [App\Http\Controllers\PurchaseController::class, 'create'])->name('purchases.create');
         Route::post('purchases', [App\Http\Controllers\PurchaseController::class, 'store'])->name('purchases.store');
+        Route::get('purchases/{purchase}', [App\Http\Controllers\PurchaseController::class, 'show'])->name('purchases.show');
         Route::get('purchases/{purchase}/edit', [App\Http\Controllers\PurchaseController::class, 'edit'])->name('purchases.edit');
         Route::put('purchases/{purchase}', [App\Http\Controllers\PurchaseController::class, 'update'])->name('purchases.update');
         Route::delete('purchases/{purchase}', [App\Http\Controllers\PurchaseController::class, 'destroy'])->name('purchases.destroy');
@@ -118,6 +161,10 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('settings/company', [SettingController::class, 'updateCompanySettings'])->name('settings.company.update');
+
+        // Contract Terms
+        Route::resource('contract-terms', App\Http\Controllers\ContractTermController::class)->except(['show']);
 
         // Backups
         Route::get('backups', [BackupController::class, 'index'])->name('backups.index');

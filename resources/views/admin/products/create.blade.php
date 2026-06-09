@@ -23,6 +23,17 @@
     <form method="POST" action="{{ route('admin.products.store', ['from' => request('from')]) }}" enctype="multipart/form-data" class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         @csrf
 
+        @if($errors->any())
+        <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+            <div class="font-semibold mb-1">{{ __('app.please_fix_errors') }}</div>
+            <ul class="list-disc list-inside text-sm space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <!-- Item Code -->
             <div>
@@ -161,6 +172,18 @@
                     <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.graphics_card') }}</label>
                     <input type="text" name="graphics_card" value="{{ old('graphics_card') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Intel Iris Xe / NVIDIA RTX 3050">
                 </div>
+
+                <!-- Color -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.color') }}</label>
+                    <input type="text" name="color" value="{{ old('color') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Space Gray, Black, Silver">
+                </div>
+
+                <!-- Warranty -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.warranty') }}</label>
+                    <input type="text" name="warranty" value="{{ old('warranty') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="{{ __('app.warranty_placeholder') }}">
+                </div>
             </div>
         </div>
 
@@ -180,6 +203,16 @@
             @error('description')
                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
             @enderror
+        </div>
+
+        <!-- Status -->
+        <div class="mb-8">
+            <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.status') }}</label>
+            <label class="inline-flex items-center gap-3 cursor-pointer">
+                <input type="hidden" name="is_active" value="0">
+                <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }} class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <span class="text-sm text-gray-700">{{ __('app.active') }}</span>
+            </label>
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">

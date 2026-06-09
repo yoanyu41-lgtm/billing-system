@@ -9,11 +9,22 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         Gate::authorize('manage-product');
 
-        $categories = Category::orderBy('name')->paginate(15);
+        $query = Category::query();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%");
+            });
+        }
+
+        $categories = $query->orderBy('name')->paginate(15)->withQueryString();
         return view('admin.categories.index', compact('categories'));
     }
 

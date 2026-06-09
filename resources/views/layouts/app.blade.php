@@ -17,6 +17,93 @@
     <!-- Brand Tokens -->
     @include('partials.brand')
     <style>
+        /* Dark Mode Styles */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        .dark {
+            --bg-primary: #1e293b;
+            --bg-secondary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        .dark body {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        body {
+            background: #ffffff !important;
+        }
+        
+        .dark .sidebar {
+            background: #0f172a;
+            border-right: 1px solid #334155;
+        }
+        
+        .dark .topbar {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .dark .card {
+            background: #1e293b;
+            border-color: #334155;
+            color: var(--text-primary);
+        }
+        
+        .dark input, .dark select, .dark textarea {
+            background: #0f172a;
+            border-color: #334155;
+            color: var(--text-primary);
+        }
+        
+        .dark .sidebar a {
+            color: #94a3b8;
+        }
+        
+        .dark .sidebar a:hover,
+        .dark .sidebar a.active {
+            background: #334155;
+            color: #ffffff;
+        }
+        
+        /* Dark mode for search results dropdown */
+        .dark #search-results {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        
+        .dark #search-results h4 {
+            color: #94a3b8;
+        }
+        
+        .dark #search-results a {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark #search-results a:hover {
+            background: #334155 !important;
+        }
+        
+        .dark #search-results a div {
+            color: inherit;
+        }
+        
+        .dark #search-results a div:last-child {
+            color: #94a3b8 !important;
+        }
+
         /* Font: Khmer OS Siemreap for both English and Khmer */
         * { 
             font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
@@ -736,7 +823,7 @@
     {{-- ── SIDEBAR ── --}}
     <aside id="sidebar">
         <div class="sb-logo">
-            <div class="sb-logo-icon"><i class="fas fa-desktop"></i></div>
+            <div class="sb-logo-icon"><img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
             <div>
                 <h1>COMPUTER SHOP</h1>
                 <p>Installment System</p>
@@ -754,9 +841,25 @@
                 <i class="fas fa-user-friends"></i> {{ __('app.customers') }}
             </a>
 
-            <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.*') ? 'active' : '' }}">
-                <i class="fas fa-file-invoice-dollar"></i> {{ __('app.installment_plans') }}
-            </a>
+            {{-- Installments Dropdown --}}
+            <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>{{ __('app.installment_plans') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
+                        <i class="fas fa-list"></i> {{ __('app.all_plans') }}
+                    </a>
+                    <a href="{{ route('installments.create') }}" class="{{ request()->routeIs('installments.create') ? 'active' : '' }}">
+                        <i class="fas fa-plus-circle"></i> {{ __('app.create_installment') }}
+                    </a>
+                    <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
+                    </a>
+                </div>
+            </div>
 
             <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                 <i class="fas fa-file-alt"></i> {{ __('app.invoices') }}
@@ -853,6 +956,10 @@
                 <i class="fab fa-telegram-plane"></i> {{ __('app.telegram_center') }}
             </a>
 
+            <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
+                <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
+            </a>
+
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <i class="fas fa-cog"></i> {{ __('app.settings') }}
             </a>
@@ -889,11 +996,73 @@
             </div>
             <div class="topbar-spacer"></div>
 
+            {{-- Theme Switcher --}}
+            <div style="position:relative;" id="theme-switcher">
+                <button onclick="toggleThemeMenu()" style="
+                    display:flex; align-items:center; justify-content:center;
+                    width:36px; height:36px; border-radius:8px;
+                    border:1px solid #e2e8f0; background:#f8fafc;
+                    cursor:pointer; transition:all 0.2s;
+                    color:#334155;
+                " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">
+                    <span id="theme-icon" style="font-size:16px;">☀️</span>
+                </button>
+
+                <div id="theme-menu" style="
+                    display:none; position:absolute; top:calc(100% + 8px); right:0;
+                    background:white; border:1px solid #e2e8f0; border-radius:10px;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:140px;
+                    z-index:1000; overflow:hidden;
+                ">
+                    <button onclick="setTheme('light')" class="theme-option" data-theme="light" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">☀️</span>
+                        <span>ពន្លឺ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                    <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
+                    <button onclick="setTheme('dark')" class="theme-option" data-theme="dark" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">🌙</span>
+                        <span>ខ្មៅ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                    <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
+                    <button onclick="setTheme('auto')" class="theme-option" data-theme="auto" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">💻</span>
+                        <span>ស្វ័យប្រវត្តិ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             {{-- Language Switcher --}}
             <div style="position:relative;" id="lang-switcher">
                 <button onclick="toggleLangMenu()" style="
                     display:flex; align-items:center; gap:6px;
-                    padding:6px 12px; border-radius:10px;
+                    padding:6px 10px; border-radius:8px;
                     border:1px solid #e2e8f0; background:#f8fafc;
                     cursor:pointer; font-size:13px; font-weight:600;
                     color:#334155; transition:all 0.2s;
@@ -912,13 +1081,13 @@
 
                 <div id="lang-menu" style="
                     display:none; position:absolute; top:calc(100% + 8px); right:0;
-                    background:white; border:1px solid #e2e8f0; border-radius:12px;
+                    background:white; border:1px solid #e2e8f0; border-radius:10px;
                     box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:150px;
                     z-index:1000; overflow:hidden;
                 ">
                     <a href="{{ route('lang.switch', 'en') }}" style="
                         display:flex; align-items:center; gap:10px;
-                        padding:10px 16px; font-size:13px; font-weight:600;
+                        padding:10px 14px; font-size:13px; font-weight:600;
                         color:{{ app()->getLocale() === 'en' ? '#2563eb' : '#334155' }};
                         background:{{ app()->getLocale() === 'en' ? '#eff6ff' : 'transparent' }};
                         text-decoration:none; transition:background 0.15s;
@@ -934,7 +1103,7 @@
                     <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
                     <a href="{{ route('lang.switch', 'km') }}" style="
                         display:flex; align-items:center; gap:10px;
-                        padding:10px 16px; font-size:13px; font-weight:600;
+                        padding:10px 14px; font-size:13px; font-weight:600;
                         color:{{ app()->getLocale() === 'km' ? '#2563eb' : '#334155' }};
                         background:{{ app()->getLocale() === 'km' ? '#eff6ff' : 'transparent' }};
                         text-decoration:none; transition:background 0.15s;
@@ -952,7 +1121,7 @@
 
             <div class="topbar-search">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="{{ __('app.search_here') }}">
+                <input type="text" id="global-search" placeholder="{{ __('app.search_here') }}" onkeyup="handleGlobalSearch(event)">
             </div>
             <div class="topbar-bell" onclick="toggleNotificationDropdown(event)">
                 <i class="fas fa-bell"></i>
@@ -1058,11 +1227,210 @@ function toggleLangMenu() {
     const menu = document.getElementById('lang-menu');
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
+
+// Theme Menu Toggle
+function toggleThemeMenu() {
+    const menu = document.getElementById('theme-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Theme Management
+function setTheme(theme) {
+    localStorage.setItem('theme', theme);
+    applyTheme(theme);
+    updateThemeUI(theme);
+    document.getElementById('theme-menu').style.display = 'none';
+}
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    
+    // Force light mode only - always remove dark class
+    // បង្ខំប្រើតែពណ៌សរ - យក dark class ចេញជានិច្ច
+    root.classList.remove('dark');
+    document.getElementById('theme-icon').textContent = '☀️';
+}
+
+function updateThemeUI(selectedTheme) {
+    document.querySelectorAll('.theme-option').forEach(option => {
+        const optionTheme = option.getAttribute('data-theme');
+        const check = option.querySelector('.theme-check');
+        
+        if (optionTheme === selectedTheme) {
+            option.classList.add('active');
+            option.style.background = '#eff6ff';
+            option.style.color = '#2563eb';
+            check.style.display = 'block';
+        } else {
+            option.classList.remove('active');
+            option.style.background = 'transparent';
+            option.style.color = '#334155';
+            check.style.display = 'none';
+        }
+    });
+}
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Force light mode only - បង្ខំប្រើតែពណ៌សរ
+    localStorage.setItem('theme', 'light');
+    const savedTheme = 'light';
+    applyTheme(savedTheme);
+    updateThemeUI(savedTheme);
+    
+    // Listen for system theme changes when in auto mode
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'auto') {
+            applyTheme('auto');
+        }
+    });
+    
+    // Global search keyboard shortcut (Ctrl+K)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('global-search').focus();
+        }
+        // ESC to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.getElementById('global-search');
+            if (searchInput === document.activeElement) {
+                searchInput.value = '';
+                searchInput.blur();
+                hideSearchResults();
+            }
+        }
+    });
+});
+
+// Global Search Function
+let searchTimeout;
+function handleGlobalSearch(event) {
+    clearTimeout(searchTimeout);
+    const query = event.target.value.trim();
+    
+    if (query.length < 2) {
+        hideSearchResults();
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        performSearch(query);
+    }, 300); // Debounce 300ms
+}
+
+function performSearch(query) {
+    const loadingText = '{{ __("app.loading") }}';
+    const noResultsText = '{{ __("app.no_data") }}';
+    
+    // Show loading state
+    showSearchResults(`<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${loadingText}</p>`);
+    
+    // Make AJAX request to search endpoint
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySearchResults(data);
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            showSearchResults(`<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${noResultsText}</p>`);
+        });
+}
+
+function displaySearchResults(data) {
+    const translations = {
+        noResults: '{{ __("app.no_data") }}',
+        customers: '{{ __("app.customers") }}',
+        products: '{{ __("app.products") }}'
+    };
+    
+    let html = '<div style="padding:12px;max-height:400px;overflow-y:auto;">';
+    
+    if (!data || (!data.customers && !data.products)) {
+        html += `<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${translations.noResults}</p>`;
+    } else {
+        // Customers
+        if (data.customers && data.customers.length > 0) {
+            html += `<div style="margin-bottom:16px;"><h4 style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;">${translations.customers}</h4>`;
+            data.customers.forEach(customer => {
+                html += `<a href="/customers/${customer.id}" style="display:block;padding:8px 12px;border-radius:8px;text-decoration:none;color:#334155;margin-bottom:4px;background:#f8fafc;border:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="font-weight:600;font-size:13px;">${customer.name}</div>
+                    <div style="font-size:11px;color:#64748b;">${customer.phone || ''}</div>
+                </a>`;
+            });
+            html += '</div>';
+        }
+        
+        // Products
+        if (data.products && data.products.length > 0) {
+            html += `<div style="margin-bottom:16px;"><h4 style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;">${translations.products}</h4>`;
+            data.products.forEach(product => {
+                html += `<a href="/admin/products/${product.id}" style="display:block;padding:8px 12px;border-radius:8px;text-decoration:none;color:#334155;margin-bottom:4px;background:#f8fafc;border:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="font-weight:600;font-size:13px;">${product.name}</div>
+                    <div style="font-size:11px;color:#64748b;">Stock: ${product.stock || 0}</div>
+                </a>`;
+            });
+            html += '</div>';
+        }
+    }
+    
+    html += '</div>';
+    showSearchResults(html);
+}
+
+function showSearchResults(content) {
+    let resultsDiv = document.getElementById('search-results');
+    
+    if (!resultsDiv) {
+        resultsDiv = document.createElement('div');
+        resultsDiv.id = 'search-results';
+        resultsDiv.style.cssText = `
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 1000;
+            min-width: 300px;
+        `;
+        document.querySelector('.topbar-search').style.position = 'relative';
+        document.querySelector('.topbar-search').appendChild(resultsDiv);
+    }
+    
+    resultsDiv.innerHTML = content;
+    resultsDiv.style.display = 'block';
+}
+
+function hideSearchResults() {
+    const resultsDiv = document.getElementById('search-results');
+    if (resultsDiv) {
+        resultsDiv.style.display = 'none';
+    }
+}
+
 document.addEventListener('click', function(e) {
-    const switcher = document.getElementById('lang-switcher');
-    if (switcher && !switcher.contains(e.target)) {
-        const menu = document.getElementById('lang-menu');
-        if (menu) menu.style.display = 'none';
+    const langSwitcher = document.getElementById('lang-switcher');
+    const themeSwitcher = document.getElementById('theme-switcher');
+    const searchBox = document.querySelector('.topbar-search');
+    
+    if (langSwitcher && !langSwitcher.contains(e.target)) {
+        const langMenu = document.getElementById('lang-menu');
+        if (langMenu) langMenu.style.display = 'none';
+    }
+    
+    if (themeSwitcher && !themeSwitcher.contains(e.target)) {
+        const themeMenu = document.getElementById('theme-menu');
+        if (themeMenu) themeMenu.style.display = 'none';
+    }
+    
+    // Close search results when clicking outside
+    if (searchBox && !searchBox.contains(e.target)) {
+        hideSearchResults();
     }
 });
 

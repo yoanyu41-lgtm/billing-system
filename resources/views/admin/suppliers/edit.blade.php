@@ -5,8 +5,8 @@
     <!-- Header Section -->
     <div class="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">Edit Supplier</h1>
-            <p class="text-sm text-gray-500 mt-1">Modify details for supplier "{{ $supplier->name }}".</p>
+            <h1 class="text-3xl font-bold text-gray-800">{{ __('app.edit_supplier') }}</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ __('app.edit_supplier_subtitle') }} "{{ $supplier->name }}".</p>
         </div>
         <a href="{{ route('admin.suppliers.index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -23,7 +23,7 @@
             <!-- Name -->
             <div class="md:col-span-2">
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.name') }} <span class="text-red-500">*</span></label>
-                <input type="text" name="name" value="{{ old('name', $supplier->name) }}" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('name') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Supplier Company or Agent Name">
+                <input type="text" name="name" value="{{ old('name', $supplier->name) }}" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('name') ? 'border-red-500' : 'border-gray-300' }}" placeholder="{{ __('app.supplier_name_placeholder') }}">
                 @error('name')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -32,7 +32,7 @@
             <!-- Phone -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.phone') }}</label>
-                <input type="text" name="phone" value="{{ old('phone', $supplier->phone) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('phone') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Phone Number">
+                <input type="text" name="phone" value="{{ old('phone', $supplier->phone) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('phone') ? 'border-red-500' : 'border-gray-300' }}" placeholder="{{ __('app.phone_number') }}">
                 @error('phone')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -41,7 +41,7 @@
             <!-- Email -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.email') }}</label>
-                <input type="email" name="email" value="{{ old('email', $supplier->email) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('email') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Email Address">
+                <input type="email" name="email" value="{{ old('email', $supplier->email) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('email') ? 'border-red-500' : 'border-gray-300' }}" placeholder="{{ __('app.email_address') }}">
                 @error('email')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -50,7 +50,7 @@
             <!-- Address -->
             <div class="md:col-span-2">
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.address') }}</label>
-                <textarea name="address" rows="3" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('address') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Business Address">{{ old('address', $supplier->address) }}</textarea>
+                <textarea name="address" rows="3" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('address') ? 'border-red-500' : 'border-gray-300' }}" placeholder="{{ __('app.business_address') }}">{{ old('address', $supplier->address) }}</textarea>
                 @error('address')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror

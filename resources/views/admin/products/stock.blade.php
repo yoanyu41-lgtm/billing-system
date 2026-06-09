@@ -45,18 +45,56 @@
         </div>
     @endif
 
+    <!-- Search Bar -->
+    <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <form method="GET" action="{{ route('admin.products.stock') }}" class="flex flex-col md:flex-row gap-3">
+            <div class="flex-1">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition duration-150"
+                        placeholder="{{ __('app.search_product') }}"
+                    >
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    {{ __('app.search') }}
+                </button>
+                @if(request('search'))
+                    <a href="{{ route('admin.products.stock') }}" class="inline-flex items-center px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        {{ __('app.clear') }}
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+
     <!-- Stock Table Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Image</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price / Cost</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Stock</th>
-                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.image') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.product') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.category') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.price_cost') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.current_stock') }}</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.action') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -78,7 +116,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $product->category ?? '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">${{ number_format($product->price, 2) }}</div>
-                            <div class="text-xs text-gray-500">Cost: ${{ $product->cost_price ? number_format($product->cost_price, 2) : '—' }}</div>
+                            <div class="text-xs text-gray-500">{{ __('app.cost') }}: ${{ $product->cost_price ? number_format($product->cost_price, 2) : '—' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($product->stock <= 0)
@@ -111,7 +149,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No products found in inventory.</td>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">{{ __('app.no_products') }}</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -129,7 +167,7 @@
 <div id="adjustStockModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
         <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-gray-800">Adjust Stock (Manual)</h3>
+            <h3 class="text-lg font-bold text-gray-800">{{ __('app.adjust_stock_manual') }}</h3>
             <button type="button" id="closeAdjustStock" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -139,32 +177,32 @@
             @csrf
             
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Product Name</label>
+                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.product_name') }}</label>
                 <input type="text" id="adjustProductName" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-50 text-gray-600 focus:outline-none" readonly>
             </div>
             
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Adjustment Type <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.adjustment_type') }} <span class="text-red-500">*</span></label>
                     <select name="type" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                        <option value="in">Add to Stock (In)</option>
-                        <option value="out">Remove from Stock (Out)</option>
+                        <option value="in">{{ __('app.add_to_stock_in') }}</option>
+                        <option value="out">{{ __('app.remove_from_stock_out') }}</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Quantity <span class="text-red-500">*</span></label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.quantity') }} <span class="text-red-500">*</span></label>
                     <input type="number" name="quantity" value="1" min="1" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                 </div>
             </div>
             
             <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-medium mb-2">Note / Reason</label>
-                <input type="text" name="note" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Damaged item, Counted incorrectly...">
+                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.note_reason') }}</label>
+                <input type="text" name="note" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="{{ __('app.note_reason_placeholder') }}">
             </div>
             
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" id="cancelAdjustStock" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150">Cancel</button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition duration-150">Update Stock</button>
+                <button type="button" id="cancelAdjustStock" class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150">{{ __('app.cancel') }}</button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition duration-150">{{ __('app.update_stock') }}</button>
             </div>
         </form>
     </div>

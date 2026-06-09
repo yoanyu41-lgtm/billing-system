@@ -19,6 +19,13 @@ class Installment extends Model
         'created_by',
         'next_due_date',
         'last_reminder_sent_at',
+        'signed_contract',
+        'contract_signed_at',
+        'contract_signed_by',
+    ];
+
+    protected $casts = [
+        'contract_signed_at' => 'datetime',
     ];
 
     public function customer()

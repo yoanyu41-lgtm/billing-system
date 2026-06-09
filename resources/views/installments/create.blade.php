@@ -6,7 +6,7 @@
     <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">{{ __('app.create_installment') }}</h1>
-            <p class="text-sm text-gray-500 mt-1">Configure a new installment payment plan for a customer purchasing a product.</p>
+            <p class="text-sm text-gray-500 mt-1">{{ __('app.configure_new_installment_plan') }}</p>
         </div>
         <a href="{{ route('installments.index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2.5 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -25,7 +25,7 @@
                     <div>
                         <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.customer') }} <span class="text-red-500">*</span></label>
                         <select name="customer_id" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('customer_id') ? 'border-red-500' : 'border-gray-300' }}">
-                            <option value="">-- Choose Customer --</option>
+                            <option value="">-- {{ __('app.select') }} {{ __('app.customer') }} --</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
                                     {{ $customer->name }} {{ $customer->phone ? '(' . $customer->phone . ')' : '' }}
@@ -41,7 +41,7 @@
                     <div>
                         <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.product') }} <span class="text-red-500">*</span></label>
                         <select name="product_id" id="productId" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('product_id') ? 'border-red-500' : 'border-gray-300' }}">
-                            <option value="" data-price="0">-- Choose Product --</option>
+                            <option value="" data-price="0">-- {{ __('app.select') }} {{ __('app.product') }} --</option>
                             @foreach($products as $product)
                                 <option value="{{ $product->id }}" data-price="{{ $product->price }}" {{ old('product_id') == $product->id ? 'selected' : '' }}>
                                     {{ $product->name }} (${{ number_format($product->price, 2) }})
@@ -100,9 +100,6 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
-                    <a href="{{ route('installments.index') }}" class="px-6 py-2.5 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">
-                        {{ __('app.cancel') }}
-                    </a>
                     <button type="submit" class="px-6 py-2.5 font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition duration-150">
                         {{ __('app.save') }}
                     </button>
@@ -112,36 +109,36 @@
 
         <!-- Right: Premium Real-Time Calculator Preview Panel -->
         <div class="lg:col-span-1">
-            <div class="bg-indigo-900 text-white rounded-xl p-6 shadow-md border border-indigo-950 sticky top-24">
-                <h3 class="text-lg font-bold mb-4 flex items-center">
+            <div class="bg-white text-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 sticky top-24">
+                <h3 class="text-lg font-bold mb-4 flex items-center text-indigo-700">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M15 11h.01M12 14h.01M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"></path></svg>
-                    Payment Calculator
+                    {{ __('app.payment_calculator') }}
                 </h3>
                 
                 <div class="space-y-4">
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Principal Balance</span>
-                        <span class="font-semibold" id="previewPrincipal">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">{{ __('app.principal_balance') }}</span>
+                        <span class="font-semibold text-gray-900" id="previewPrincipal">$0.00</span>
                     </div>
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Monthly Interest</span>
-                        <span class="font-semibold" id="previewInterest">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">{{ __('app.monthly_interest') }}</span>
+                        <span class="font-semibold text-gray-900" id="previewInterest">$0.00</span>
                     </div>
-                    <div class="flex justify-between border-b border-indigo-800 pb-2">
-                        <span class="text-indigo-200 text-sm">Total Remaining</span>
-                        <span class="font-semibold" id="previewRemaining">$0.00</span>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">{{ __('app.total_remaining') }}</span>
+                        <span class="font-semibold text-gray-900" id="previewRemaining">$0.00</span>
                     </div>
-                    <div class="pt-4 text-center">
-                        <span class="block text-indigo-200 text-xs uppercase tracking-wider font-semibold mb-1">Estimated Monthly Payment</span>
-                        <span class="text-3xl font-extrabold text-amber-300" id="previewMonthly">$0.00</span>
+                    <div class="pt-4 text-center bg-indigo-50 rounded-lg py-4 border border-indigo-100">
+                        <span class="block text-indigo-400 text-xs uppercase tracking-wider font-semibold mb-1">{{ __('app.estimated_monthly_payment') }}</span>
+                        <span class="text-3xl font-extrabold text-indigo-600" id="previewMonthly">$0.00</span>
                     </div>
                 </div>
 
-                <div class="mt-6 p-4 rounded-lg bg-indigo-950/40 text-xs text-indigo-200 leading-relaxed border border-indigo-950/60">
-                    <strong class="text-white">Formula:</strong><br>
-                    Principal = Price - Down Payment<br>
-                    Interest/Month = (Principal * Rate / 100) / 12<br>
-                    Payment/Month = (Principal / Months) + Interest/Month
+                <div class="mt-6 p-4 rounded-lg bg-gray-50 text-xs text-gray-500 leading-relaxed border border-gray-100">
+                    <strong class="text-gray-700">{{ __('app.formula') }}:</strong><br>
+                    {{ __('app.formula_principal') }}<br>
+                    {{ __('app.formula_interest') }}<br>
+                    {{ __('app.formula_payment') }}
                 </div>
             </div>
         </div>
