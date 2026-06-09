@@ -12,9 +12,25 @@ use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $purchases = Purchase::with(['supplier','items'])->latest()->paginate(15);
+        $query = Purchase::with(['supplier','items.product']);
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                // Search by Purchase ID
+                $q->where('id', 'like', "%{$search}%")
+                  // Search by Supplier name
+                  ->orWhereHas('supplier', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $purchases = $query->latest()->paginate(15)->withQueryString();
         return view('admin.purchases.index', compact('purchases'));
     }
 
@@ -24,6 +40,12 @@ class PurchaseController extends Controller
         $products = Product::all();
         $selectedProductId = $request->query('product_id');
         return view('admin.purchases.create', compact('suppliers','products','selectedProductId'));
+    }
+
+    public function show(Purchase $purchase)
+    {
+        $purchase->load(['supplier', 'items.product']);
+        return view('admin.purchases.show', compact('purchase'));
     }
 
     public function store(Request $request)

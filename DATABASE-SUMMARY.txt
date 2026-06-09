@@ -1,0 +1,912 @@
+================================================================================
+                    CITYTECH COMPUTER SHOP - BILLING SYSTEM
+                    DATABASE SCHEMA & PROJECT CORE CONCEPT
+================================================================================
+
+PROJECT TYPE: Computer Shop Installment Management System
+TECHNOLOGY STACK: Laravel (PHP), MySQL, Tailwind CSS, Blade Templates
+TARGET MARKET: Computer retail shops in Cambodia (Khmer language support)
+VERSION: 1.0
+LAST UPDATED: June 2026
+
+================================================================================
+                            CORE PROJECT CONCEPT
+================================================================================
+
+PURPOSE:
+--------
+A comprehensive billing and installment management system designed for computer
+shops to manage:
+- Product sales (direct sales & installment plans)
+- Customer installment payment tracking
+- Inventory management (products, stock, purchases)
+- Customer credit assessment
+- Payment collection and reminders
+- Telegram bot integration for notifications
+- Multi-language support (English & Khmer)
+
+KEY FEATURES:
+-------------
+1. Installment Payment Plans
+   - Flexible payment terms with customizable duration
+   - Interest rate calculation
+   - Down payment support
+   - Monthly payment auto-calculation
+   - Payment reminders via Telegram
+
+2. Customer Management
+   - Customer profiles with contact information
+   - Credit check records
+   - Guarantor information (for installment plans)
+   - Payment history tracking
+
+3. Inventory Management
+   - Product catalog with categories
+   - Stock level tracking
+   - Purchase order management
+   - Supplier management
+   - Stock movement logs
+
+4. Sales Management
+   - Direct sales (cash/instant)
+   - Installment sales
+   - Invoice generation
+   - Payment method tracking
+
+5. Notification System
+   - Payment reminders
+   - Overdue alerts
+   - Telegram bot integration
+   - In-app notifications
+
+6. Reporting & Analytics
+   - Sales reports
+   - Payment status dashboard
+   - Overdue payments tracking
+   - Inventory reports
+
+================================================================================
+                          DATABASE TABLES SUMMARY
+================================================================================
+
+TOTAL TABLES: 25 core entities
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         USER MANAGEMENT MODULE                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. USERS
+   Purpose: System users (admin, staff, managers)
+   Key Fields:
+   - id (PK)
+   - name
+   - email (unique)
+   - password
+   - role (admin/staff/manager)
+   - telegram_id
+   - profile_image
+   - email_verified_at
+   - remember_token
+   - created_at, updated_at
+
+2. PASSWORD_RESET_TOKENS
+   Purpose: Handle password reset functionality
+   Key Fields:
+   - email (PK)
+   - token
+   - created_at
+
+3. PERSONAL_ACCESS_TOKENS
+   Purpose: API authentication tokens (Laravel Sanctum)
+   Key Fields:
+   - id (PK)
+   - tokenable_type
+   - tokenable_id
+   - name
+   - token (unique, hashed)
+   - abilities (text)
+   - last_used_at
+   - expires_at
+   - created_at, updated_at
+
+4. SESSIONS
+   Purpose: User session management
+   Key Fields:
+   - id (PK)
+   - user_id (nullable FK)
+   - ip_address
+   - user_agent (text)
+   - payload (long text)
+   - last_activity (indexed)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CUSTOMER MANAGEMENT MODULE                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+5. CUSTOMERS
+   Purpose: Store customer information
+   Key Fields:
+   - id (PK)
+   - name
+   - phone
+   - telegram_id
+   - address (text)
+   - gender
+   - dob (date of birth)
+   - id_card (national ID)
+   - occupation
+   - monthly_income (decimal 12,2)
+   - photo
+   - id_card_photo
+   - created_by (FK → users.id)
+   - created_at, updated_at
+
+6. CUSTOMER_CREDIT_CHECKS
+   Purpose: Track customer creditworthiness assessments
+   Key Fields:
+   - id (PK)
+   - customer_id (FK → customers.id, cascade delete)
+   - check_date
+   - credit_score (integer, nullable)
+   - employment_verified (boolean, default false)
+   - income_verified (boolean, default false)
+   - debt_ratio (decimal 5,2, nullable)
+   - payment_history_rating (enum: excellent/good/fair/poor, nullable)
+   - risk_level (enum: low/medium/high, nullable)
+   - notes (text, nullable)
+   - checked_by (FK → users.id, nullable)
+   - created_at, updated_at
+
+7. GUARANTORS
+   Purpose: Store guarantor information for installment plans
+   Key Fields:
+   - id (PK)
+   - customer_id (FK → customers.id, cascade delete)
+   - name
+   - phone
+   - gender
+   - dob (date of birth)
+   - id_card
+   - relationship (to customer)
+   - address (text)
+   - occupation
+   - monthly_income (decimal 12,2)
+   - photo
+   - id_card_photo
+   - notes (text)
+   - created_at, updated_at
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        PRODUCT & INVENTORY MODULE                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+8. CATEGORIES
+   Purpose: Product categorization
+   Key Fields:
+   - id (PK)
+   - name (unique)
+   - brand (nullable)
+   - created_at, updated_at
+
+9. PRODUCTS
+   Purpose: Product catalog
+   Key Fields:
+   - id (PK)
+   - category_id (FK → categories.id, nullable, cascade delete)
+   - code (unique, nullable)
+   - name
+   - price (decimal 10,2)
+   - stock (integer, default 0)
+   - description (text, nullable)
+   - image (nullable)
+   - min_stock_level (integer, default 0)
+   - reorder_quantity (integer, default 0)
+   - cost_price (decimal 10,2, nullable)
+   - profit_margin (decimal 5,2, nullable)
+   
+   Computer-specific fields:
+   - cpu
+   - ram
+   - storage
+   - gpu
+   - display
+   - battery
+   - warranty
+   - color
+   - condition (enum: new/used/refurbished, default 'new')
+   
+   - created_at, updated_at
+
+10. SUPPLIERS
+    Purpose: Supplier/vendor management
+    Key Fields:
+    - id (PK)
+    - name
+    - phone
+    - email
+    - address (text)
+    - created_at, updated_at
+
+11. PURCHASES
+    Purpose: Purchase orders from suppliers
+    Key Fields:
+    - id (PK)
+    - supplier_id (FK → suppliers.id, nullable, set null)
+    - purchase_date
+    - total (decimal 12,2, default 0)
+    - status (enum: pending/received/cancelled, default 'pending')
+    - notes (text, nullable)
+    - created_at, updated_at
+
+12. PURCHASE_ITEMS
+    Purpose: Line items in purchase orders
+    Key Fields:
+    - id (PK)
+    - purchase_id (FK → purchases.id, cascade delete)
+    - product_id (FK → products.id, cascade delete)
+    - quantity (integer)
+    - unit_price (decimal 10,2)
+    - subtotal (decimal 12,2)
+    - created_at, updated_at
+
+13. STOCK_MOVEMENTS
+    Purpose: Track all stock changes (IN/OUT/ADJUSTMENT)
+    Key Fields:
+    - id (PK)
+    - product_id (FK → products.id, cascade delete)
+    - type (enum: in/out/adjustment)
+    - quantity (integer)
+    - reference_type (nullable: purchase/sale/adjustment)
+    - reference_id (nullable)
+    - notes (text, nullable)
+    - created_by (FK → users.id, nullable, set null)
+    - created_at, updated_at
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SALES & INVOICING MODULE                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+14. SALES
+    Purpose: Direct sales transactions (non-installment)
+    Key Fields:
+    - id (PK)
+    - customer_name (nullable)
+    - sale_date
+    - total (decimal 12,2, default 0)
+    - created_at, updated_at
+
+15. SALE_ITEMS
+    Purpose: Line items in sales transactions
+    Key Fields:
+    - id (PK)
+    - sale_id (FK → sales.id, cascade delete)
+    - product_id (FK → products.id, cascade delete)
+    - quantity (integer)
+    - unit_price (decimal 10,2)
+    - subtotal (decimal 12,2)
+    - created_at, updated_at
+
+16. INVOICES
+    Purpose: Generate invoices for sales/installments
+    Key Fields:
+    - id (PK)
+    - customer_id (FK → customers.id, nullable)
+    - invoice_number (unique)
+    - total_amount (decimal 10,2)
+    - status (enum: pending/paid/cancelled, default 'pending')
+    - issued_at (timestamp)
+    - due_at (timestamp, nullable)
+    - created_at, updated_at
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      INSTALLMENT & PAYMENT MODULE                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+17. INSTALLMENTS
+    Purpose: Installment payment plans
+    Key Fields:
+    - id (PK)
+    - customer_id (FK → customers.id)
+    - product_id (FK → products.id)
+    - total_price (decimal 10,2)
+    - down_payment (decimal 10,2)
+    - interest_rate (decimal 5,2, default 0)
+    - duration_months (integer)
+    - monthly_payment (decimal 10,2)
+    - remaining_balance (decimal 10,2)
+    - next_due_date (date, nullable)
+    - status (enum: active/cancelled, default 'active')
+    
+    Contract fields:
+    - contract_number (nullable)
+    - contract_date (nullable)
+    - witness_name (nullable)
+    - witness_phone (nullable)
+    
+    - created_by (FK → users.id)
+    - created_at, updated_at
+
+    CALCULATION FORMULA:
+    --------------------
+    Principal = total_price - down_payment
+    Monthly Interest = (Principal × interest_rate / 100) / 12
+    Monthly Payment = (Principal / duration_months) + Monthly Interest
+    
+    EXAMPLE:
+    Total Price: $1,000
+    Down Payment: $300
+    Interest Rate: 12% per year
+    Duration: 10 months
+    
+    Principal = $700
+    Monthly Interest = ($700 × 12 / 100) / 12 = $7/month
+    Monthly Payment = ($700 / 10) + $7 = $77/month
+
+18. PAYMENTS
+    Purpose: Record individual payments for installments
+    Key Fields:
+    - id (PK)
+    - installment_id (FK → installments.id)
+    - payment_method_id (FK → payment_methods.id, nullable, set null)
+    - amount (decimal 10,2)
+    - payment_date (date)
+    - status (enum: pending/approved/rejected, default 'pending')
+    - qr_image (nullable - for QR code payment proof)
+    - approved_by (FK → users.id, nullable)
+    - created_at, updated_at
+
+19. PAYMENT_METHODS
+    Purpose: Define available payment methods
+    Key Fields:
+    - id (PK)
+    - name (e.g., "Cash", "ABA Bank", "Wing", "QR Code")
+    - description (text, nullable)
+    - is_active (boolean, default true)
+    - created_at, updated_at
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      NOTIFICATION & MESSAGING MODULE                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+20. NOTIFICATIONS
+    Purpose: In-app notification system
+    Key Fields:
+    - id (UUID, PK)
+    - type (notification class name)
+    - notifiable_type (morphs)
+    - notifiable_id (morphs)
+    - data (text - JSON)
+    - read_at (timestamp, nullable)
+    - created_at, updated_at
+    
+    Index: (notifiable_type, notifiable_id)
+
+21. TELEGRAM_LOGS
+    Purpose: Log Telegram bot interactions
+    Key Fields:
+    - id (PK)
+    - telegram_user_id
+    - username (nullable)
+    - first_name (nullable)
+    - last_name (nullable)
+    - message (text, nullable)
+    - response (text, nullable)
+    - command (nullable)
+    - status (enum: success/error, default 'success')
+    - created_at, updated_at
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SYSTEM CONFIGURATION MODULE                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+22. SETTINGS
+    Purpose: System-wide configuration (key-value store)
+    Key Fields:
+    - id (PK)
+    - key (unique) - e.g., "shop_name", "currency", "default_interest_rate"
+    - value (text, nullable)
+    - created_at, updated_at
+    
+    Common Settings:
+    - shop_name: Store name
+    - shop_address: Physical address
+    - shop_phone: Contact number
+    - shop_email: Email address
+    - currency: Default currency (USD, KHR)
+    - default_interest_rate: Default interest %
+    - telegram_token: Telegram bot API token
+    - company_name: Company name (English)
+    - company_name_km: Company name (Khmer)
+    - company_phone: Company phone
+    - company_email: Company email
+    - company_address: Company address (English)
+    - company_address_km: Company address (Khmer)
+    - company_business_license: Business license number
+    - company_logo: Logo file path
+
+23. CACHE
+    Purpose: Laravel cache storage
+    Key Fields:
+    - key (varchar 255, PK)
+    - value (medium text)
+    - expiration (integer)
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ENTITY RELATIONSHIPS                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+USER RELATIONSHIPS:
+-------------------
+users → customers (created_by)
+users → installments (created_by)
+users → payments (approved_by)
+users → customer_credit_checks (checked_by)
+users → stock_movements (created_by)
+users → telegram_logs (via telegram_user_id mapping)
+
+CUSTOMER RELATIONSHIPS:
+-----------------------
+customers → installments (one-to-many)
+customers → guarantors (one-to-many)
+customers → customer_credit_checks (one-to-many)
+customers → invoices (one-to-many)
+
+PRODUCT RELATIONSHIPS:
+----------------------
+products → categories (many-to-one)
+products → installments (one-to-many)
+products → purchase_items (one-to-many)
+products → sale_items (one-to-many)
+products → stock_movements (one-to-many)
+
+INSTALLMENT RELATIONSHIPS:
+--------------------------
+installments → customers (many-to-one)
+installments → products (many-to-one)
+installments → payments (one-to-many)
+installments → users (created_by)
+
+INVENTORY RELATIONSHIPS:
+------------------------
+suppliers → purchases (one-to-many)
+purchases → purchase_items (one-to-many)
+sales → sale_items (one-to-many)
+products → stock_movements (one-to-many)
+
+PAYMENT RELATIONSHIPS:
+----------------------
+installments → payments (one-to-many)
+payment_methods → payments (one-to-many)
+payments → users (approved_by)
+
+================================================================================
+                          BUSINESS LOGIC WORKFLOWS
+================================================================================
+
+WORKFLOW 1: CREATE INSTALLMENT PLAN
+------------------------------------
+1. Select/Create Customer
+2. Run Credit Check (optional but recommended)
+3. Add Guarantor Information (required for high-risk customers)
+4. Select Product
+5. Enter Payment Terms:
+   - Total Price
+   - Down Payment
+   - Interest Rate (%)
+   - Duration (months)
+6. System Auto-Calculates:
+   - Monthly Payment
+   - Total Interest
+   - Payment Schedule
+7. Generate Contract Document
+8. Create Installment Record
+9. Send Telegram Notification to Customer
+
+WORKFLOW 2: PROCESS PAYMENT
+----------------------------
+1. Customer Makes Payment
+2. Staff Records Payment:
+   - Select Installment
+   - Enter Amount
+   - Select Payment Method
+   - Upload Payment Proof (if QR/bank transfer)
+   - Set Payment Date
+3. Payment Status: Pending
+4. Admin/Manager Approves Payment
+5. System Updates:
+   - Remaining Balance
+   - Next Due Date
+   - Payment History
+6. Generate Receipt
+7. Send Confirmation via Telegram
+8. Update Stock (if last payment - product delivered)
+
+WORKFLOW 3: OVERDUE PAYMENT HANDLING
+-------------------------------------
+1. System Checks Daily for Due Payments
+2. If Payment Missed:
+   - Mark Installment Status: Overdue
+   - Create Notification
+   - Send Telegram Reminder
+   - Log in telegram_logs
+3. Staff Follow-up:
+   - Contact Customer
+   - Negotiate Payment
+   - Record Notes
+4. If Payment Received:
+   - Process as Late Payment
+   - Calculate Late Fees (if applicable)
+   - Update Status back to Active
+
+WORKFLOW 4: INVENTORY MANAGEMENT
+---------------------------------
+1. Receive Purchase Order:
+   - Create Purchase Record
+   - Add Purchase Items
+   - Status: Pending
+2. When Stock Arrives:
+   - Mark Purchase: Received
+   - Auto-Create Stock Movement (IN)
+   - Update Product Stock Levels
+3. On Sale:
+   - Create Sale Record
+   - Add Sale Items
+   - Auto-Create Stock Movement (OUT)
+   - Update Product Stock Levels
+   - Check Min Stock Level
+   - Alert if Reorder Needed
+
+WORKFLOW 5: CUSTOMER CREDIT ASSESSMENT
+---------------------------------------
+1. Customer Applies for Installment
+2. Staff Runs Credit Check:
+   - Verify Employment
+   - Verify Income
+   - Calculate Debt Ratio
+   - Review Payment History (if repeat customer)
+3. Assign Risk Level:
+   - Low Risk: High credit score, verified income, low debt
+   - Medium Risk: Average score, some verification
+   - High Risk: Low score, unverified, high debt
+4. Decision:
+   - Low Risk: Approve with standard terms
+   - Medium Risk: Require guarantor
+   - High Risk: Higher down payment or decline
+
+================================================================================
+                              STATUS DEFINITIONS
+================================================================================
+
+INSTALLMENT STATUS:
+-------------------
+• active: Currently ongoing, payments on track
+• cancelled: Terminated before completion
+• completed: All payments received (auto-set when balance = 0)
+• overdue: Missed payment deadline
+
+PAYMENT STATUS:
+---------------
+• pending: Payment recorded, awaiting admin approval
+• approved: Payment confirmed and applied
+• rejected: Payment declined (e.g., incorrect amount, fake proof)
+
+PURCHASE STATUS:
+----------------
+• pending: Order placed, not yet received
+• received: Stock delivered and added to inventory
+• cancelled: Order cancelled
+
+SALE STATUS:
+------------
+(Handled via completion - no explicit status field)
+
+INVOICE STATUS:
+---------------
+• pending: Invoice issued, payment due
+• paid: Payment received
+• cancelled: Invoice voided
+
+================================================================================
+                           PAYMENT CALCULATION EXAMPLE
+================================================================================
+
+SCENARIO: Desktop PC Installment
+---------------------------------
+Product: Desktop PC Core i7
+Total Price: $1,200
+Down Payment: $400
+Interest Rate: 10% per year
+Duration: 12 months
+
+CALCULATIONS:
+-------------
+1. Principal Amount:
+   = Total Price - Down Payment
+   = $1,200 - $400
+   = $800
+
+2. Monthly Interest Amount:
+   = (Principal × Interest Rate / 100) / 12
+   = ($800 × 10 / 100) / 12
+   = $80 / 12
+   = $6.67 per month
+
+3. Monthly Payment:
+   = (Principal / Duration) + Monthly Interest
+   = ($800 / 12) + $6.67
+   = $66.67 + $6.67
+   = $73.34 per month
+
+4. Total Interest Paid:
+   = Monthly Interest × Duration
+   = $6.67 × 12
+   = $80.04
+
+5. Total Amount Paid:
+   = Down Payment + (Monthly Payment × Duration)
+   = $400 + ($73.34 × 12)
+   = $400 + $880.08
+   = $1,280.08
+
+PAYMENT SCHEDULE:
+-----------------
+Month 1:  Pay $73.34  |  Balance: $726.66
+Month 2:  Pay $73.34  |  Balance: $653.32
+Month 3:  Pay $73.34  |  Balance: $579.98
+Month 4:  Pay $73.34  |  Balance: $506.64
+Month 5:  Pay $73.34  |  Balance: $433.30
+Month 6:  Pay $73.34  |  Balance: $359.96
+Month 7:  Pay $73.34  |  Balance: $286.62
+Month 8:  Pay $73.34  |  Balance: $213.28
+Month 9:  Pay $73.34  |  Balance: $139.94
+Month 10: Pay $73.34  |  Balance: $66.60
+Month 11: Pay $73.34  |  Balance: -$6.74 (paid off early)
+Month 12: N/A         |  Balance: $0.00 ✓
+
+================================================================================
+                           NOTIFICATION SYSTEM
+================================================================================
+
+TELEGRAM BOT FEATURES:
+----------------------
+1. Payment Reminders:
+   - 3 days before due date
+   - On due date
+   - 1 day after (overdue alert)
+
+2. Payment Confirmation:
+   - Immediate notification when payment approved
+
+3. Account Status:
+   - Check balance
+   - View payment history
+   - See next due date
+
+4. Commands:
+   /start - Register customer
+   /balance - Check remaining balance
+   /history - View payment history
+   /help - Show available commands
+
+IN-APP NOTIFICATIONS:
+---------------------
+1. Staff Notifications:
+   - New payment submission (needs approval)
+   - Low stock alerts
+   - Overdue payments list
+
+2. Customer Notifications:
+   - Payment due reminders
+   - Payment approved confirmations
+   - Account status updates
+
+================================================================================
+                            SECURITY FEATURES
+================================================================================
+
+1. ROLE-BASED ACCESS CONTROL (RBAC):
+   - Admin: Full access
+   - Manager: Sales, reports, approve payments
+   - Staff: Record sales, payments (needs approval)
+
+2. AUTHENTICATION:
+   - Laravel Sanctum for API tokens
+   - Email verification
+   - Password reset functionality
+   - Session management
+
+3. DATA VALIDATION:
+   - Input sanitization
+   - Foreign key constraints
+   - Unique constraints on critical fields
+   - Cascade delete protection
+
+4. AUDIT TRAIL:
+   - created_by fields track user actions
+   - created_at/updated_at timestamps
+   - Payment approval tracking
+   - Stock movement logs
+
+================================================================================
+                           REPORTING CAPABILITIES
+================================================================================
+
+1. FINANCIAL REPORTS:
+   - Total sales (daily, monthly, yearly)
+   - Outstanding installments
+   - Overdue payments list
+   - Payment collection rate
+   - Interest income
+
+2. INVENTORY REPORTS:
+   - Current stock levels
+   - Low stock alerts
+   - Stock movement history
+   - Purchase history
+   - Product profitability
+
+3. CUSTOMER REPORTS:
+   - Customer payment history
+   - Credit check results
+   - Active installments per customer
+   - Customer debt summary
+
+4. PERFORMANCE METRICS:
+   - Sales by product
+   - Sales by staff member
+   - Payment approval time
+   - Stock turnover rate
+
+================================================================================
+                           LOCALIZATION SUPPORT
+================================================================================
+
+LANGUAGES:
+----------
+• English (Primary administrative language)
+• Khmer (Customer-facing content)
+
+FONTS:
+------
+• English: Times New Roman / Khmer OS Siemreap
+• Khmer: Khmer OS Siemreap / SN-Kh-Menghorn
+
+BRAND COLORS:
+-------------
+• Green (#059669): Paid, Success, Confirmed
+• Red (#DC2626): Overdue, Unpaid, Error
+• Yellow (#D97706): Pending, Warning, Due Soon
+• Blue (#2563EB): Information, Actions
+• Gray (#64748B): Inactive, Disabled
+
+================================================================================
+                              INTEGRATION POINTS
+================================================================================
+
+1. TELEGRAM BOT API:
+   - Customer notifications
+   - Payment reminders
+   - Account status queries
+   - Customer registration
+
+2. PAYMENT GATEWAYS (Future):
+   - ABA Bank integration
+   - Wing Money
+   - QR code payment systems
+
+3. REPORTING/EXPORT:
+   - PDF invoice generation
+   - Excel export for reports
+   - Contract document generation
+
+4. BACKUP SYSTEM:
+   - Automated database backups
+   - Command: BackupDatabase.php
+   - Scheduled via Laravel Task Scheduler
+
+================================================================================
+                            TECHNICAL SPECIFICATIONS
+================================================================================
+
+FRAMEWORK: Laravel (PHP)
+DATABASE: MySQL
+FRONTEND: Blade Templates, Tailwind CSS
+AUTHENTICATION: Laravel Breeze / Sanctum
+API: RESTful API endpoints (for Telegram bot)
+QUEUE SYSTEM: Laravel Queue (for notifications)
+TASK SCHEDULING: Laravel Scheduler (cron jobs)
+
+KEY LARAVEL FEATURES USED:
+---------------------------
+• Eloquent ORM (relationships, query builder)
+• Migrations (database schema management)
+• Seeders (initial data population)
+• Middleware (authentication, authorization)
+• Form Requests (validation)
+• Events & Listeners (notification triggers)
+• Jobs & Queues (background processing)
+• Task Scheduling (automated reminders)
+
+================================================================================
+                              FILE STRUCTURE
+================================================================================
+
+MODELS (app/Models/):
+---------------------
+• User.php
+• Customer.php
+• CustomerCreditCheck.php
+• Guarantor.php
+• Category.php
+• Product.php
+• Supplier.php
+• Purchase.php
+• PurchaseItem.php
+• Sale.php
+• SaleItem.php
+• StockMovement.php
+• Installment.php
+• Payment.php
+• PaymentMethod.php
+• Invoice.php
+• Notification.php
+• TelegramLog.php
+• Setting.php
+
+CONTROLLERS (app/Http/Controllers/):
+------------------------------------
+• AuthController.php
+• DashboardController.php
+• CustomerController.php
+• CustomerCreditCheckController.php
+• GuarantorController.php
+• ProductController.php
+• CategoryController.php
+• SupplierController.php
+• PurchaseController.php
+• SaleController.php
+• StockMovementController.php
+• InstallmentController.php
+• PaymentController.php
+• PaymentMethodController.php
+• InvoiceController.php
+• NotificationController.php
+• TelegramAuthController.php
+• TelegramLogController.php
+• SettingController.php
+• ReportController.php
+• BackupController.php
+• UserController.php
+• ProfileController.php
+
+API CONTROLLERS (app/Http/Controllers/Api/):
+--------------------------------------------
+• AuthApiController.php
+• CustomerApiController.php
+• ProductApiController.php
+• CategoryApiController.php
+• SupplierApiController.php
+• PurchaseApiController.php
+• SaleApiController.php
+• TelegramController.php (webhook handler)
+• UserApiController.php
+
+SERVICES (app/Services/):
+-------------------------
+• TelegramService.php (Telegram bot integration)
+
+COMMANDS (app/Console/Commands/):
+---------------------------------
+• BackupDatabase.php (automated backups)
+• SendDuePaymentReminders.php (payment reminders)
+
+================================================================================
+                                 END OF DOCUMENT
+================================================================================
+Generated: June 2026
+System: CityTech Computer Shop - Billing & Installment Management System
+Version: 1.0
+Database Tables: 25 core entities
+Primary Language: Khmer (ភាសាខ្មែរ)
+Secondary Language: English
+================================================================================

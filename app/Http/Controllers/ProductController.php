@@ -137,7 +137,9 @@ class ProductController extends Controller
         Gate::authorize('manage-product');
         $categories = Category::orderBy('name')->pluck('name');
         $suppliers = Supplier::orderBy('name')->get();
-        return view('admin.products.create', compact('categories', 'suppliers'));
+        // Get unique brands from categories table
+        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
+        return view('admin.products.create', compact('categories', 'suppliers', 'brands'));
     }
 
     public function store(Request $request)
@@ -150,17 +152,19 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
-            'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'brand' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
             'storage' => 'nullable|string|max:255',
             'graphics_card' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
             'supplier_id' => 'nullable|exists:suppliers,id',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'description']);
+        $data['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -187,14 +191,19 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         Gate::authorize('view-product');
-        return view('admin.products.show', compact('product'));
+        $suppliers = $product->suppliers();
+        $purchaseHistory = $product->purchaseHistory();
+        return view('admin.products.show', compact('product', 'suppliers', 'purchaseHistory'));
     }
 
     public function edit(Product $product)
     {
         Gate::authorize('manage-product');
         $categories = Category::orderBy('name')->pluck('name');
-        return view('admin.products.edit', compact('product', 'categories'));
+        // Get unique brands from categories table
+        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
+        $suppliers = Supplier::orderBy('name')->get();
+        return view('admin.products.edit', compact('product', 'categories', 'brands', 'suppliers'));
     }
 
     public function update(Request $request, Product $product)
@@ -209,16 +218,19 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => ['nullable', Rule::in(Category::orderBy('name')->pluck('name')->toArray())],
-            'brand' => ['nullable', Rule::in(config('products.brands'))],
+            'brand' => 'nullable|string|max:255',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
             'storage' => 'nullable|string|max:255',
             'graphics_card' => 'nullable|string|max:255',
+            'color' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
         ]);
 
-        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'description']);
+        $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'description']);
+        $data['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
             if ($product->image) {
@@ -252,6 +264,10 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         Gate::authorize('manage-product');
+
+        if ($product->installments()->exists()) {
+            return redirect()->route('admin.products.stock')->with('error', __('app.cannot_delete_product_has_installments'));
+        }
 
         $product->delete();
         return redirect()->route('admin.products.stock')->with('success', 'Product deleted successfully.');

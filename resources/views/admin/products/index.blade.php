@@ -7,7 +7,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">{{ __('app.product_list') }}</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage your products, pricing, and view current stock levels.</p>
+            <p class="text-sm text-gray-500 mt-1">{{ __('app.product_list_subtitle') }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
             @if(auth()->user()->role === 'admin')
@@ -62,7 +62,7 @@
             <!-- Sort -->
             <div class="flex space-x-2">
                 <div class="w-3/5">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Sort By</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.sort_by') }}</label>
                     <select name="sort" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
                         <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>{{ __('app.name') }}</option>
                         <option value="price" {{ request('sort') == 'price' ? 'selected' : '' }}>{{ __('app.price') }}</option>
@@ -70,10 +70,10 @@
                     </select>
                 </div>
                 <div class="w-2/5">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Direction</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.direction') }}</label>
                     <select name="direction" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                        <option value="asc" {{ request('direction') == 'asc' ? 'selected' : '' }}>Asc</option>
-                        <option value="desc" {{ request('direction') == 'desc' ? 'selected' : '' }}>Desc</option>
+                        <option value="asc" {{ request('direction') == 'asc' ? 'selected' : '' }}>{{ __('app.ascending') }}</option>
+                        <option value="desc" {{ request('direction') == 'desc' ? 'selected' : '' }}>{{ __('app.descending') }}</option>
                     </select>
                 </div>
             </div>
@@ -124,20 +124,9 @@
                     <td class="px-6 py-4">
                         <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
                         <div class="text-sm text-gray-500">{{ $product->code }}</div>
-                        @if($product->cpu || $product->ram || $product->storage || $product->graphics_card)
+                        @if($product->cpu)
                             <div class="text-xs mt-1.5 flex flex-wrap gap-1.5 items-center">
-                                @if($product->cpu)
-                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
-                                @endif
-                                @if($product->ram)
-                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">RAM: {{ $product->ram }}</span>
-                                @endif
-                                @if($product->storage)
-                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">Storage: {{ $product->storage }}</span>
-                                @endif
-                                @if($product->graphics_card)
-                                    <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">GPU: {{ $product->graphics_card }}</span>
-                                @endif
+                                <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
                             </div>
                         @endif
                     </td>
@@ -157,11 +146,6 @@
                              <a href="{{ route('admin.products.show', [$product, 'from' => 'index']) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                              </a>
-                              @can('manage-product')
-                              <a href="{{ route('admin.products.edit', [$product, 'from' => 'index']) }}" class="p-2 text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition duration-150" title="{{ __('app.edit') }}">
-                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                              </a>
-                              @endcan
                         </div>
                     </td>
                 </tr>

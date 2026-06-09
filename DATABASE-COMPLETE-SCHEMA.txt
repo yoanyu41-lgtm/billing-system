@@ -1,0 +1,835 @@
+================================================================================
+                    COMPLETE DATABASE SCHEMA - ALL TABLES & FIELDS
+                         CITYTECH BILLING SYSTEM
+================================================================================
+
+Total Tables: 27
+Database Engine: MySQL / MariaDB
+Framework: Laravel 10+
+Character Set: utf8mb4_unicode_ci
+
+================================================================================
+
+TABLE 1: USERS
+================================================================================
+Purpose: System users (admin, staff, managers)
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+name                    VARCHAR(255)         NOT NULL
+email                   VARCHAR(255)         NOT NULL UNIQUE
+password                VARCHAR(255)         NOT NULL (hashed)
+role                    VARCHAR(255)         NOT NULL DEFAULT 'user'
+profile_image           VARCHAR(255)         NULLABLE
+email_verified_at       TIMESTAMP            NULLABLE
+remember_token          VARCHAR(100)         NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (email)
+
+================================================================================
+
+TABLE 2: PASSWORD_RESET_TOKENS
+================================================================================
+Purpose: Password reset functionality
+Primary Key: email
+
+FIELDS:
+-------
+email                   VARCHAR(255)         PRIMARY KEY
+token                   VARCHAR(255)         NOT NULL
+created_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (email)
+
+================================================================================
+
+TABLE 3: SESSIONS
+================================================================================
+Purpose: User session management
+Primary Key: id
+
+FIELDS:
+-------
+id                      VARCHAR(255)         PRIMARY KEY
+user_id                 BIGINT UNSIGNED      NULLABLE, INDEXED
+ip_address              VARCHAR(45)          NULLABLE
+user_agent              TEXT                 NULLABLE
+payload                 LONGTEXT             NOT NULL
+last_activity           INTEGER              NOT NULL, INDEXED
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+INDEX (user_id)
+INDEX (last_activity)
+
+FOREIGN KEYS:
+-------------
+user_id → users.id
+
+================================================================================
+
+TABLE 4: PERSONAL_ACCESS_TOKENS
+================================================================================
+Purpose: API authentication (Laravel Sanctum)
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+tokenable_type          VARCHAR(255)         NOT NULL
+tokenable_id            BIGINT UNSIGNED      NOT NULL
+name                    TEXT                 NOT NULL
+token                   VARCHAR(64)          NOT NULL UNIQUE
+abilities               TEXT                 NULLABLE
+last_used_at            TIMESTAMP            NULLABLE
+expires_at              TIMESTAMP            NULLABLE, INDEXED
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (token)
+INDEX (expires_at)
+INDEX (tokenable_type, tokenable_id)
+
+================================================================================
+
+TABLE 5: CUSTOMERS
+================================================================================
+Purpose: Customer information
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+name                    VARCHAR(255)         NOT NULL
+phone                   VARCHAR(255)         NULLABLE
+telegram_id             VARCHAR(255)         NULLABLE
+address                 TEXT                 NULLABLE
+gender                  VARCHAR(255)         NULLABLE
+dob                     DATE                 NULLABLE (date of birth)
+id_card                 VARCHAR(255)         NULLABLE (national ID)
+photo                   VARCHAR(255)         NULLABLE
+id_card_photo           VARCHAR(255)         NULLABLE
+family_photo            VARCHAR(255)         NULLABLE
+income_proof            VARCHAR(255)         NULLABLE
+guarantor_doc           VARCHAR(255)         NULLABLE
+created_by              BIGINT UNSIGNED      NOT NULL
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+deleted_at              TIMESTAMP            NULLABLE (soft deletes)
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+created_by → users.id
+
+================================================================================
+
+TABLE 6: CUSTOMER_CREDIT_CHECKS
+================================================================================
+Purpose: Customer creditworthiness assessments
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+customer_id             BIGINT UNSIGNED      NOT NULL
+check_date              DATE                 NOT NULL
+credit_score            INTEGER              NULLABLE
+employment_verified     BOOLEAN              DEFAULT FALSE
+income_verified         BOOLEAN              DEFAULT FALSE
+debt_ratio              DECIMAL(5,2)         NULLABLE
+payment_history_rating  ENUM                 NULLABLE
+                        ('excellent','good','fair','poor')
+risk_level              ENUM                 NULLABLE
+                        ('low','medium','high')
+notes                   TEXT                 NULLABLE
+checked_by              BIGINT UNSIGNED      NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+customer_id → customers.id (ON DELETE CASCADE)
+checked_by → users.id
+
+================================================================================
+
+TABLE 7: GUARANTORS
+================================================================================
+Purpose: Guarantor information for installment plans
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+customer_id             BIGINT UNSIGNED      NOT NULL
+name                    VARCHAR(255)         NOT NULL
+phone                   VARCHAR(255)         NULLABLE
+gender                  VARCHAR(255)         NULLABLE
+dob                     DATE                 NULLABLE (date of birth)
+id_card                 VARCHAR(255)         NULLABLE (national ID)
+relationship            VARCHAR(255)         NULLABLE (to customer)
+address                 TEXT                 NULLABLE
+occupation              VARCHAR(255)         NULLABLE
+monthly_income          DECIMAL(12,2)        NULLABLE
+photo                   VARCHAR(255)         NULLABLE
+id_card_photo           VARCHAR(255)         NULLABLE
+notes                   TEXT                 NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+customer_id → customers.id (ON DELETE CASCADE)
+
+================================================================================
+
+TABLE 8: CATEGORIES
+================================================================================
+Purpose: Product categorization
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+name                    VARCHAR(255)         NOT NULL UNIQUE
+brand                   VARCHAR(255)         NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (name)
+
+================================================================================
+
+TABLE 9: PRODUCTS
+================================================================================
+Purpose: Product catalog
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+code                    VARCHAR(255)         NULLABLE UNIQUE
+name                    VARCHAR(255)         NOT NULL
+category                VARCHAR(255)         NULLABLE
+brand                   VARCHAR(255)         NULLABLE
+model                   VARCHAR(255)         NULLABLE
+price                   DECIMAL(10,2)        NOT NULL
+cost_price              DECIMAL(10,2)        NULLABLE
+stock                   INTEGER              NOT NULL DEFAULT 0
+image                   VARCHAR(255)         NULLABLE
+description             TEXT                 NULLABLE
+
+-- Computer Specifications
+cpu                     VARCHAR(255)         NULLABLE
+ram                     VARCHAR(255)         NULLABLE
+storage                 VARCHAR(255)         NULLABLE
+graphics_card           VARCHAR(255)         NULLABLE
+
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (code)
+
+================================================================================
+
+TABLE 10: SUPPLIERS
+================================================================================
+Purpose: Supplier/vendor management
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+name                    VARCHAR(255)         NOT NULL
+phone                   VARCHAR(255)         NULLABLE
+email                   VARCHAR(255)         NULLABLE
+address                 TEXT                 NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+================================================================================
+
+TABLE 11: PURCHASES
+================================================================================
+Purpose: Purchase orders from suppliers
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+supplier_id             BIGINT UNSIGNED      NULLABLE
+purchase_date           DATE                 NULLABLE
+total                   DECIMAL(12,2)        NOT NULL DEFAULT 0
+status                  ENUM                 NOT NULL DEFAULT 'pending'
+                        ('pending','received','cancelled')
+notes                   TEXT                 NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+supplier_id → suppliers.id (ON DELETE SET NULL)
+
+================================================================================
+
+TABLE 12: PURCHASE_ITEMS
+================================================================================
+Purpose: Line items in purchase orders
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+purchase_id             BIGINT UNSIGNED      NOT NULL
+product_id              BIGINT UNSIGNED      NOT NULL
+quantity                INTEGER              NOT NULL
+cost_price              DECIMAL(10,2)        NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+purchase_id → purchases.id (ON DELETE CASCADE)
+product_id → products.id (ON DELETE CASCADE)
+
+================================================================================
+
+TABLE 13: STOCK_MOVEMENTS
+================================================================================
+Purpose: Track all stock changes
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+product_id              BIGINT UNSIGNED      NOT NULL
+type                    ENUM                 NOT NULL
+                        ('in','out','adjustment')
+quantity                INTEGER              NOT NULL
+reference_type          VARCHAR(255)         NULLABLE
+                        (purchase/sale/adjustment)
+reference_id            BIGINT UNSIGNED      NULLABLE
+notes                   TEXT                 NULLABLE
+created_by              BIGINT UNSIGNED      NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+product_id → products.id (ON DELETE CASCADE)
+created_by → users.id (ON DELETE SET NULL)
+
+================================================================================
+
+TABLE 14: SALES
+================================================================================
+Purpose: Direct sales transactions (non-installment)
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+customer_name           VARCHAR(255)         NULLABLE
+sale_date               DATE                 NULLABLE
+total                   DECIMAL(12,2)        NOT NULL DEFAULT 0
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+================================================================================
+
+TABLE 15: SALE_ITEMS
+================================================================================
+Purpose: Line items in sales transactions
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+sale_id                 BIGINT UNSIGNED      NOT NULL
+product_id              BIGINT UNSIGNED      NOT NULL
+quantity                INTEGER              NOT NULL
+price                   DECIMAL(10,2)        NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+sale_id → sales.id (ON DELETE CASCADE)
+product_id → products.id (ON DELETE CASCADE)
+
+================================================================================
+
+TABLE 16: INSTALLMENTS
+================================================================================
+Purpose: Installment payment plans
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+customer_id             BIGINT UNSIGNED      NOT NULL
+product_id              BIGINT UNSIGNED      NOT NULL
+total_price             DECIMAL(10,2)        NOT NULL
+down_payment            DECIMAL(10,2)        NOT NULL
+interest_rate           DECIMAL(5,2)         NOT NULL DEFAULT 0
+duration_months         INTEGER              NOT NULL
+monthly_payment         DECIMAL(10,2)        NOT NULL
+remaining_balance       DECIMAL(10,2)        NOT NULL
+next_due_date           DATE                 NULLABLE
+last_reminder_sent_at   DATETIME             NULLABLE
+status                  ENUM                 NOT NULL DEFAULT 'active'
+                        ('active','cancelled')
+signed_contract         VARCHAR(255)         NULLABLE
+contract_signed_at      TIMESTAMP            NULLABLE
+contract_signed_by      VARCHAR(255)         NULLABLE
+created_by              BIGINT UNSIGNED      NOT NULL
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+customer_id → customers.id
+product_id → products.id
+created_by → users.id
+
+================================================================================
+
+TABLE 17: PAYMENTS
+================================================================================
+Purpose: Individual payment records for installments
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+installment_id          BIGINT UNSIGNED      NOT NULL
+amount                  DECIMAL(10,2)        NOT NULL
+payment_date            DATE                 NOT NULL
+payment_method_id       BIGINT UNSIGNED      NULLABLE
+status                  ENUM                 NOT NULL DEFAULT 'pending'
+                        ('pending','approved','rejected')
+qr_image                VARCHAR(255)         NULLABLE
+approved_by             BIGINT UNSIGNED      NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+installment_id → installments.id
+payment_method_id → payment_methods.id (ON DELETE SET NULL)
+approved_by → users.id
+
+================================================================================
+
+TABLE 18: PAYMENT_METHODS
+================================================================================
+Purpose: Available payment methods
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+name                    VARCHAR(255)         NOT NULL
+details                 TEXT                 NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+EXAMPLES:
+---------
+- Cash
+- ABA Bank
+- Wing Money
+- QR Code
+- Bank Transfer
+
+================================================================================
+
+TABLE 19: INVOICES
+================================================================================
+Purpose: Invoice generation
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+payment_id              BIGINT UNSIGNED      NOT NULL
+invoice_number          VARCHAR(255)         NOT NULL UNIQUE
+pdf_path                VARCHAR(255)         NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (invoice_number)
+
+FOREIGN KEYS:
+-------------
+payment_id → payments.id
+
+================================================================================
+
+TABLE 20: NOTIFICATIONS
+================================================================================
+Purpose: In-app notification system
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+user_id                 BIGINT UNSIGNED      NULLABLE
+type                    VARCHAR(255)         NOT NULL
+                        (payment/customer/installment/overdue)
+title                   VARCHAR(255)         NOT NULL
+message                 TEXT                 NOT NULL
+icon                    VARCHAR(255)         NOT NULL DEFAULT 'bell'
+icon_color              VARCHAR(255)         NOT NULL DEFAULT 'blue'
+                        (blue/green/orange/red)
+link                    VARCHAR(255)         NULLABLE
+is_read                 BOOLEAN              NOT NULL DEFAULT FALSE
+read_at                 TIMESTAMP            NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+user_id → users.id (ON DELETE CASCADE)
+
+================================================================================
+
+TABLE 21: TELEGRAM_LOGS
+================================================================================
+Purpose: Telegram bot interaction logs
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+customer_id             BIGINT UNSIGNED      NOT NULL
+message                 TEXT                 NOT NULL
+sent_at                 TIMESTAMP            NOT NULL
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+
+FOREIGN KEYS:
+-------------
+customer_id → customers.id
+
+================================================================================
+
+TABLE 22: SETTINGS
+================================================================================
+Purpose: System-wide configuration (key-value store)
+Primary Key: id
+
+FIELDS:
+-------
+id                      BIGINT UNSIGNED      AUTO_INCREMENT PRIMARY KEY
+key                     VARCHAR(255)         NOT NULL UNIQUE
+value                   TEXT                 NULLABLE
+created_at              TIMESTAMP            NULLABLE
+updated_at              TIMESTAMP            NULLABLE
+
+INDEXES:
+--------
+PRIMARY KEY (id)
+UNIQUE KEY (key)
+
+COMMON SETTINGS:
+----------------
+shop_name                    : Store name
+shop_address                 : Physical address
+shop_phone                   : Contact number
+shop_email                   : Email address
+currency                     : Default currency (USD, KHR)
+default_interest_rate        : Default interest %
+telegram_token               : Telegram bot API token
+company_name                 : Company name (English)
+company_name_km              : Company name (Khmer)
+company_phone                : Company phone
+company_email                : Company email
+company_address              : Company address (English)
+company_address_km           : Company address (Khmer)
+company_business_license     : Business license number
+company_logo                 : Logo file path
+
+================================================================================
+
+TABLE 23: CACHE
+================================================================================
+Purpose: Laravel cache storage
+Primary Key: key
+
+FIELDS:
+-------
+key                     VARCHAR(255)         PRIMARY KEY
+value                   MEDIUMTEXT           NOT NULL
+expiration              INTEGER              NOT NULL, INDEXED
+
+INDEXES:
+--------
+PRIMARY KEY (key)
+INDEX (expiration)
+
+================================================================================
+
+TABLE 24: CACHE_LOCKS
+================================================================================
+Purpose: Laravel cache lock mechanism
+Primary Key: key
+
+FIELDS:
+-------
+key                     VARCHAR(255)         PRIMARY KEY
+owner                   VARCHAR(255)         NOT NULL
+expiration              INTEGER              NOT NULL, INDEXED
+
+INDEXES:
+--------
+PRIMARY KEY (key)
+INDEX (expiration)
+
+================================================================================
+                           DATA TYPE REFERENCE
+================================================================================
+
+BIGINT UNSIGNED         : Integer, 0 to 18,446,744,073,709,551,615
+INTEGER                 : Integer, -2,147,483,648 to 2,147,483,647
+VARCHAR(n)              : Variable-length string, max n characters
+TEXT                    : Text, up to 65,535 characters
+MEDIUMTEXT              : Text, up to 16,777,215 characters
+LONGTEXT                : Text, up to 4,294,967,295 characters
+DECIMAL(m,n)            : Decimal number, m total digits, n after decimal
+DATE                    : Date format YYYY-MM-DD
+DATETIME                : Date and time YYYY-MM-DD HH:MM:SS
+TIMESTAMP               : Unix timestamp
+BOOLEAN                 : TRUE/FALSE (stored as TINYINT 0/1)
+ENUM('a','b')           : Enumerated list of allowed values
+
+================================================================================
+                         FOREIGN KEY RELATIONSHIPS
+================================================================================
+
+users → customers (created_by)
+users → installments (created_by)
+users → payments (approved_by)
+users → customer_credit_checks (checked_by)
+users → stock_movements (created_by)
+users → sessions (user_id)
+users → notifications (user_id)
+
+customers → customer_credit_checks (customer_id)
+customers → guarantors (customer_id)
+customers → installments (customer_id)
+customers → telegram_logs (customer_id)
+
+products → installments (product_id)
+products → purchase_items (product_id)
+products → sale_items (product_id)
+products → stock_movements (product_id)
+
+suppliers → purchases (supplier_id)
+
+purchases → purchase_items (purchase_id)
+
+sales → sale_items (sale_id)
+
+installments → payments (installment_id)
+
+payments → invoices (payment_id)
+payments → payment_methods (payment_method_id)
+
+================================================================================
+                              ENUM VALUES
+================================================================================
+
+customer_credit_checks.payment_history_rating:
+    - excellent
+    - good
+    - fair
+    - poor
+
+customer_credit_checks.risk_level:
+    - low
+    - medium
+    - high
+
+purchases.status:
+    - pending
+    - received
+    - cancelled
+
+stock_movements.type:
+    - in
+    - out
+    - adjustment
+
+installments.status:
+    - active
+    - cancelled
+
+payments.status:
+    - pending
+    - approved
+    - rejected
+
+notifications.icon_color:
+    - blue
+    - green
+    - orange
+    - red
+
+================================================================================
+                           SOFT DELETES
+================================================================================
+
+Tables with soft deletes (deleted_at column):
+- customers
+
+================================================================================
+                            TIMESTAMPS
+================================================================================
+
+All tables (except password_reset_tokens, cache, cache_locks, sessions) have:
+- created_at TIMESTAMP
+- updated_at TIMESTAMP
+
+These are automatically managed by Laravel.
+
+================================================================================
+                          UNIQUE CONSTRAINTS
+================================================================================
+
+users.email
+products.code
+categories.name
+invoices.invoice_number
+settings.key
+personal_access_tokens.token
+
+================================================================================
+                           CASCADE BEHAVIORS
+================================================================================
+
+ON DELETE CASCADE:
+------------------
+customer_credit_checks.customer_id → customers.id
+guarantors.customer_id → customers.id
+purchase_items.purchase_id → purchases.id
+purchase_items.product_id → products.id
+sale_items.sale_id → sales.id
+sale_items.product_id → products.id
+stock_movements.product_id → products.id
+notifications.user_id → users.id
+
+ON DELETE SET NULL:
+-------------------
+purchases.supplier_id → suppliers.id
+payments.payment_method_id → payment_methods.id
+stock_movements.created_by → users.id
+
+================================================================================
+                              INDEX SUMMARY
+================================================================================
+
+PRIMARY KEYS: All tables have id as primary key (except special tables)
+UNIQUE KEYS: email, code, invoice_number, key, token, name (categories)
+FOREIGN KEYS: 27 foreign key relationships
+INDEXED COLUMNS: last_activity, expires_at, user_id, expiration
+
+================================================================================
+                              TOTAL COUNT
+================================================================================
+
+Total Tables: 27
+Total Fields: ~250+ fields across all tables
+Total Foreign Keys: 27 relationships
+Total Unique Constraints: 6
+Total Enum Types: 7
+Total Soft Delete Tables: 1
+
+================================================================================
+                              END OF SCHEMA
+================================================================================
+Generated: June 2026
+System: CityTech Computer Shop - Billing & Installment Management System
+Database: MySQL / MariaDB
+Framework: Laravel 10+
+Character Set: utf8mb4_unicode_ci
+Collation: utf8mb4_unicode_ci
+================================================================================

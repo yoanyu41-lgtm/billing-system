@@ -111,9 +111,7 @@
                 @php
                 $docs = [
                     ['name' => 'id_card_photo', 'label' => __('app.id_card_photo'), 'icon' => '🪪'],
-                    ['name' => 'family_photo',  'label' => __('app.family_photo'),  'icon' => '👨‍👩‍👧'],
                     ['name' => 'income_proof',  'label' => __('app.income_proof'),  'icon' => '💰'],
-                    ['name' => 'guarantor_doc', 'label' => __('app.guarantor_doc'), 'icon' => '📋'],
                 ];
                 @endphp
                 @foreach($docs as $doc)

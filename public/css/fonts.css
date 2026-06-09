@@ -1,0 +1,215 @@
+/**
+ * Font Configuration for CityTech Billing System
+ * - English: Times New Roman
+ * - Khmer: SN-Kh-Menghorn
+ */
+
+/* ================================================================
+   FONT IMPORTS & DEFINITIONS
+   ================================================================ */
+
+/* Import Times New Roman (fallback from Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* Khmer Font - Khmer OS Siemreap (Primary for both English and Khmer) */
+/* Try Khmer OS Siemreap first, then fallbacks */
+@font-face {
+    font-family: 'Khmer-System';
+    src: local('Khmer OS Siemreap'),
+         local('KhmerOSSiemreap'),
+         local('Khmer OS'),
+         local('KhmerOS'),
+         local('Khmer UI'),
+         local('Leelawadee UI');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+1780-17FF, U+19E0-19FF, U+200B-200D, U+25CC;
+}
+
+
+/* ================================================================
+   GLOBAL FONT SETTINGS
+   ================================================================ */
+
+/* Base font for entire application - Khmer OS Siemreap for all text */
+* {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+body {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Override any inline or framework fonts */
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button,
+input, textarea, select,
+table, th, td,
+label, li {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+
+/* ================================================================
+   LANGUAGE-SPECIFIC FONTS
+   ================================================================ */
+
+/* English text - Khmer OS Siemreap (same as Khmer) */
+*:lang(en),
+[lang="en"],
+.lang-en {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+}
+
+/* Khmer text - Khmer OS Siemreap */
+*:lang(km),
+[lang="km"],
+.lang-km {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    line-height: 1.8; /* Better line height for Khmer */
+}
+
+
+/* ================================================================
+   FONT WEIGHT ADJUSTMENTS
+   ================================================================ */
+
+.font-normal {
+    font-weight: 400 !important;
+}
+
+.font-medium {
+    font-weight: 500 !important;
+}
+
+.font-semibold {
+    font-weight: 600 !important;
+}
+
+.font-bold {
+    font-weight: 700 !important;
+}
+
+.font-extrabold {
+    font-weight: 800 !important;
+}
+
+
+/* ================================================================
+   KHMER TEXT ENHANCEMENTS
+   ================================================================ */
+
+/* Better rendering for Khmer characters */
+.khmer-text,
+*:lang(km) {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+}
+
+/* Khmer headings */
+h1.khmer-text, h1:lang(km) {
+    font-size: 2em;
+    line-height: 1.6;
+}
+
+h2.khmer-text, h2:lang(km) {
+    font-size: 1.75em;
+    line-height: 1.6;
+}
+
+h3.khmer-text, h3:lang(km) {
+    font-size: 1.5em;
+    line-height: 1.7;
+}
+
+
+/* ================================================================
+   MIXED CONTENT SUPPORT
+   ================================================================ */
+
+/* For elements containing both English and Khmer */
+.mixed-content {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+/* Khmer within English context */
+.en-context .km {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+}
+
+/* English within Khmer context */
+.km-context .en {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+}
+
+
+/* ================================================================
+   SPECIAL CASES
+   ================================================================ */
+
+/* Icons should use their own fonts */
+.fas, .far, .fab, .fa,
+[class^="fa-"], [class*=" fa-"],
+i.fas, i.far, i.fab, i.fa {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands' !important;
+}
+
+/* Code blocks should use monospace */
+code, pre, .monospace {
+    font-family: 'Courier New', Courier, monospace !important;
+}
+
+
+/* ================================================================
+   UTILITY CLASSES
+   ================================================================ */
+
+/* Force English font - Khmer OS Siemreap */
+.force-en {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+}
+
+/* Force Khmer font - Khmer OS Siemreap */
+.force-km {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+/* Sans-serif fonts */
+.sans-serif {
+    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+
+/* ================================================================
+   PRINT STYLES
+   ================================================================ */
+
+@media print {
+    * {
+        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+    }
+}
+
+
+/* ================================================================
+   USAGE EXAMPLES
+   ================================================================ */
+
+/*
+   Basic Usage:
+   <p>This is English text</p>
+   <p lang="km">នេះជាអត្ថបទខ្មែរ</p>
+   
+   Force specific font:
+   <span class="force-en">Always English Font</span>
+   <span class="force-km">ពុម្ពអក្សរខ្មែរជានិច្ច</span>
+   
+   Mixed content:
+   <div class="mixed-content">
+       English text និងអត្ថបទខ្មែរ mixed together
+   </div>
+*/

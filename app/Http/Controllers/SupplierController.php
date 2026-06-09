@@ -7,9 +7,22 @@ use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $suppliers = Supplier::paginate(15);
+        $query = Supplier::query();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+        
+        $suppliers = $query->paginate(15)->withQueryString();
         return view('admin.suppliers.index', compact('suppliers'));
     }
 
@@ -30,5 +43,31 @@ class SupplierController extends Controller
         Supplier::create($request->only(['name','phone','email','address']));
 
         return redirect()->route('admin.suppliers.index')->with('success','Supplier created.');
+    }
+
+    public function edit(Supplier $supplier)
+    {
+        return view('admin.suppliers.edit', compact('supplier'));
+    }
+
+    public function update(Request $request, Supplier $supplier)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
+            'address' => 'nullable|string',
+        ]);
+
+        $supplier->update($request->only(['name','phone','email','address']));
+
+        return redirect()->route('admin.suppliers.index')->with('success','Supplier updated successfully.');
+    }
+
+    public function destroy(Supplier $supplier)
+    {
+        $supplier->delete();
+
+        return redirect()->route('admin.suppliers.index')->with('success','Supplier deleted successfully.');
     }
 }

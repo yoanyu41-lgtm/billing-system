@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -15,12 +16,56 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->only(['shop_name', 'shop_address', 'shop_phone', 'currency', 'default_interest_rate', 'telegram_token']);
+        $data = $request->only(['shop_name', 'shop_address', 'shop_phone', 'shop_email', 'currency', 'default_interest_rate', 'telegram_token']);
 
         foreach ($data as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 
         return redirect()->back()->with('success', 'Settings updated.');
+    }
+
+    public function updateCompanySettings(Request $request)
+    {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'company_name_km' => 'required|string|max:255',
+            'address' => 'required|string|max:500',
+            'address_km' => 'required|string|max:500',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
+            'business_license' => 'nullable|string|max:255',
+            'logo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+        ]);
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            $oldLogo = Setting::where('key', 'company_logo')->first();
+            if ($oldLogo && $oldLogo->value && Storage::disk('public')->exists($oldLogo->value)) {
+                Storage::disk('public')->delete($oldLogo->value);
+            }
+
+            // Store new logo
+            $logoPath = $request->file('logo')->store('company', 'public');
+            Setting::updateOrCreate(['key' => 'company_logo'], ['value' => $logoPath]);
+        }
+
+        // Update company settings
+        $settingsData = [
+            'company_name' => $validated['company_name'],
+            'company_name_km' => $validated['company_name_km'],
+            'company_address' => $validated['address'],
+            'company_address_km' => $validated['address_km'],
+            'company_phone' => $validated['phone'],
+            'company_email' => $validated['email'],
+            'company_business_license' => $validated['business_license'] ?? '',
+        ];
+
+        foreach ($settingsData as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
+
+        return redirect()->back()->with('success', __('app.company_settings_updated'));
     }
 }

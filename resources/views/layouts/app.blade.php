@@ -4,12 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CityTech — Installment System</title>
+    
+    <!-- Font Configuration -->
+    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Brand Tokens -->
     @include('partials.brand')
     <style>
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        /* Dark Mode Styles */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+        
+        .dark {
+            --bg-primary: #1e293b;
+            --bg-secondary: #0f172a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        .dark body {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        body {
+            background: #ffffff !important;
+        }
+        
+        .dark .sidebar {
+            background: #0f172a;
+            border-right: 1px solid #334155;
+        }
+        
+        .dark .topbar {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .dark .card {
+            background: #1e293b;
+            border-color: #334155;
+            color: var(--text-primary);
+        }
+        
+        .dark input, .dark select, .dark textarea {
+            background: #0f172a;
+            border-color: #334155;
+            color: var(--text-primary);
+        }
+        
+        .dark .sidebar a {
+            color: #94a3b8;
+        }
+        
+        .dark .sidebar a:hover,
+        .dark .sidebar a.active {
+            background: #334155;
+            color: #ffffff;
+        }
+        
+        /* Dark mode for search results dropdown */
+        .dark #search-results {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        
+        .dark #search-results h4 {
+            color: #94a3b8;
+        }
+        
+        .dark #search-results a {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark #search-results a:hover {
+            background: #334155 !important;
+        }
+        
+        .dark #search-results a div {
+            color: inherit;
+        }
+        
+        .dark #search-results a div:last-child {
+            color: #94a3b8 !important;
+        }
+
+        /* Font: Khmer OS Siemreap for both English and Khmer */
+        * { 
+            font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
         body { margin: 0; padding: 0; background: var(--bg); overflow-x: hidden; }
         html { margin: 0; padding: 0; }
 
@@ -70,7 +171,6 @@
         .sb-nav a:hover {
             background: var(--sidebar-hover);
             color: var(--sidebar-text-hi);
-            transform: translateX(4px);
         }
         .sb-nav a.active {
             background: var(--accent);
@@ -166,7 +266,6 @@
         .sb-logout a:hover { 
             background: rgba(239,68,68,0.1); 
             color: #fca5a5;
-            transform: translateX(4px);
         }
         .sb-logout a i { width: 20px; text-align: center; font-size: 16px; }
 
@@ -295,6 +394,7 @@
         .notification-item.unread:hover {
             background: #dbeafe;
         }
+        /* ── Notification Icon Colors (Brand System) ── */
         .notification-icon {
             width: 40px;
             height: 40px;
@@ -305,10 +405,11 @@
             flex-shrink: 0;
             font-size: 16px;
         }
-        .notification-icon.blue { background: #dbeafe; color: #3b82f6; }
-        .notification-icon.green { background: #dcfce7; color: #22c55e; }
-        .notification-icon.orange { background: #fed7aa; color: #f97316; }
-        .notification-icon.red { background: #fee2e2; color: #ef4444; }
+        .notification-icon.blue { background: #eff6ff; color: #2563eb; }    /* Blue - Information */
+        .notification-icon.green { background: #ecfdf5; color: #059669; }   /* Green - Success/Paid */
+        .notification-icon.orange { background: #fffbeb; color: #d97706; }  /* Yellow - Pending */
+        .notification-icon.red { background: #fef2f2; color: #dc2626; }     /* Red - Overdue */
+        .notification-icon.gray { background: #f8fafc; color: #64748b; }    /* Gray - Inactive */
         .notification-content {
             flex: 1;
         }
@@ -539,20 +640,26 @@
             pointer-events: none;
         }
 
-        .sc-blue .sc-icon { background: rgba(30, 58, 95, 0.1); color: #1e3a5f; }
-        .sc-blue .sc-wave polyline { stroke: #1e3a5f !important; stroke-opacity: 0.15; }
+        /* ── Brand Color System for Stat Cards ── */
+        /* Blue - Information/General */
+        .sc-blue .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .sc-blue .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
 
+        /* Green - Success/Paid */
         .sc-green .sc-icon { background: rgba(5, 150, 105, 0.1); color: #059669; }
         .sc-green .sc-wave polyline { stroke: #059669 !important; stroke-opacity: 0.15; }
 
+        /* Yellow/Orange - Pending/Warning */
         .sc-amber .sc-icon { background: rgba(217, 119, 6, 0.1); color: #d97706; }
         .sc-amber .sc-wave polyline { stroke: #d97706 !important; stroke-opacity: 0.15; }
 
-        .sc-purple .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
-        .sc-purple .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
-
+        /* Red - Overdue/Error */
         .sc-red .sc-icon { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
         .sc-red .sc-wave polyline { stroke: #dc2626 !important; stroke-opacity: 0.15; }
+
+        /* Gray - Inactive/Disabled */
+        .sc-gray .sc-icon { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+        .sc-gray .sc-wave polyline { stroke: #64748b !important; stroke-opacity: 0.15; }
 
         /* ── Cards ── */
         .card {
@@ -585,18 +692,23 @@
         .tbl tbody td { font-size: 12px; color: #334155; padding: 9px 10px; }
         .tbl tbody td.mono { font-family: monospace; font-size: 11px; }
 
+        /* ── Status Pills (Brand Color System) ── */
         .pill {
             display: inline-block; padding: 3px 10px; border-radius: 999px;
             font-size: 10px; font-weight: 700; border: 1.5px solid;
         }
-        .pill-ongoing { color: #d97706; border-color: #fde68a; background: #fffbeb; }
-        .pill-paid    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
-        .pill-overdue { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-        .pill-qr      { color: #6d28d9; border-color: #ddd6fe; background: #f5f3ff; }
-        .pill-aba     { color: #0369a1; border-color: #bae6fd; background: #f0f9ff; }
-        .pill-cc      { color: #b45309; border-color: #fde68a; background: #fffbeb; }
-        .pill-wing    { color: #065f46; border-color: #a7f3d0; background: #ecfdf5; }
-        .pill-other   { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }
+        /* Payment Status */
+        .pill-ongoing { color: #d97706; border-color: #fde68a; background: #fffbeb; }  /* Yellow - Pending */
+        .pill-paid    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }  /* Green - Success/Paid */
+        .pill-overdue { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* Red - Overdue */
+        .pill-pending { color: #d97706; border-color: #fde68a; background: #fffbeb; }  /* Yellow - Pending */
+        
+        /* Payment Methods */
+        .pill-qr      { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-aba     { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-cc      { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }  /* Blue - Info */
+        .pill-wing    { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }  /* Green - Success */
+        .pill-other   { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }  /* Gray - Inactive */
 
         /* ── Quick Shortcuts ── */
         .shortcut-btn {
@@ -608,15 +720,17 @@
         }
         .shortcut-btn:last-child { margin-bottom: 0; }
         .shortcut-btn:hover { border-color: var(--border-strong); background: var(--surface-muted); }
+        /* ── Shortcut Button Icons (Brand Colors) ── */
         .shortcut-icon {
             width: 34px; height: 34px; border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
             font-size: 15px; flex-shrink: 0;
         }
-        .si-blue   { background: #eef2f8; color: var(--brand); }
-        .si-green  { background: #ecfdf5; color: var(--accent); }
-        .si-purple { background: #eff6ff; color: var(--secondary); }
-        .si-amber  { background: #fffbeb; color: var(--warning); }
+        .si-blue   { background: #eff6ff; color: #2563eb; }     /* Blue - Information */
+        .si-green  { background: #ecfdf5; color: #059669; }     /* Green - Success */
+        .si-amber  { background: #fffbeb; color: #d97706; }     /* Yellow - Pending */
+        .si-red    { background: #fef2f2; color: #dc2626; }     /* Red - Overdue */
+        .si-gray   { background: #f8fafc; color: #64748b; }     /* Gray - Inactive */
 
         /* ── Donut ── */
         .donut-wrap { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
@@ -632,10 +746,12 @@
         .sysrow .sk { font-size: 12px; color: #64748b; }
         .sysrow .sv { font-size: 12px; font-weight: 600; color: #0f172a; }
 
-        /* ── Alert ── */
+        /* ── Alert Messages (Brand Color System) ── */
         .alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; margin-bottom: 18px; }
-        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-        .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+        .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #059669; }  /* Green - Success */
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #d97706; }  /* Yellow - Warning */
+        .alert-error   { background: #fef2f2; border: 1px solid: #fecaca; color: #dc2626; }  /* Red - Error */
+        .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; }  /* Blue - Info */
 
         /* View All btn */
         .btn-viewall {
@@ -707,7 +823,7 @@
     {{-- ── SIDEBAR ── --}}
     <aside id="sidebar">
         <div class="sb-logo">
-            <div class="sb-logo-icon"><i class="fas fa-desktop"></i></div>
+            <div class="sb-logo-icon"><img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
             <div>
                 <h1>COMPUTER SHOP</h1>
                 <p>Installment System</p>
@@ -725,9 +841,25 @@
                 <i class="fas fa-user-friends"></i> {{ __('app.customers') }}
             </a>
 
-            <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.*') ? 'active' : '' }}">
-                <i class="fas fa-file-invoice-dollar"></i> {{ __('app.installment_plans') }}
-            </a>
+            {{-- Installments Dropdown --}}
+            <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>{{ __('app.installment_plans') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
+                        <i class="fas fa-list"></i> {{ __('app.all_plans') }}
+                    </a>
+                    <a href="{{ route('installments.create') }}" class="{{ request()->routeIs('installments.create') ? 'active' : '' }}">
+                        <i class="fas fa-plus-circle"></i> {{ __('app.create_installment') }}
+                    </a>
+                    <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
+                    </a>
+                </div>
+            </div>
 
             <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                 <i class="fas fa-file-alt"></i> {{ __('app.invoices') }}
@@ -754,22 +886,25 @@
             </div>
 
             {{-- Product Management (visible to admin & staff) --}}
-            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-box-open"></i>
                     <span>{{ __('app.products') }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.index') || request()->routeIs('admin.products.show') ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.product_list') }}
                     </a>
                     @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.products.stock') }}" class="{{ request()->routeIs('admin.products.stock') ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
                     <a href="{{ route('admin.purchases.create') }}" class="{{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
                         <i class="fas fa-truck-loading"></i> {{ __('app.stock_in') }}
+                    </a>
+                    <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
+                        <i class="fas fa-sign-out-alt"></i> {{ __('app.stock_out') }}
                     </a>
                     <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}
@@ -821,6 +956,10 @@
                 <i class="fab fa-telegram-plane"></i> {{ __('app.telegram_center') }}
             </a>
 
+            <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
+                <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
+            </a>
+
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <i class="fas fa-cog"></i> {{ __('app.settings') }}
             </a>
@@ -857,11 +996,73 @@
             </div>
             <div class="topbar-spacer"></div>
 
+            {{-- Theme Switcher --}}
+            <div style="position:relative;" id="theme-switcher">
+                <button onclick="toggleThemeMenu()" style="
+                    display:flex; align-items:center; justify-content:center;
+                    width:36px; height:36px; border-radius:8px;
+                    border:1px solid #e2e8f0; background:#f8fafc;
+                    cursor:pointer; transition:all 0.2s;
+                    color:#334155;
+                " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">
+                    <span id="theme-icon" style="font-size:16px;">☀️</span>
+                </button>
+
+                <div id="theme-menu" style="
+                    display:none; position:absolute; top:calc(100% + 8px); right:0;
+                    background:white; border:1px solid #e2e8f0; border-radius:10px;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:140px;
+                    z-index:1000; overflow:hidden;
+                ">
+                    <button onclick="setTheme('light')" class="theme-option" data-theme="light" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">☀️</span>
+                        <span>ពន្លឺ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                    <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
+                    <button onclick="setTheme('dark')" class="theme-option" data-theme="dark" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">🌙</span>
+                        <span>ខ្មៅ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                    <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
+                    <button onclick="setTheme('auto')" class="theme-option" data-theme="auto" style="
+                        display:flex; align-items:center; gap:10px; width:100%;
+                        padding:10px 14px; font-size:13px; font-weight:600;
+                        color:#334155; background:transparent;
+                        border:none; cursor:pointer; transition:background 0.15s;
+                        text-align:left;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.classList.contains('active') ? this.style.background='#eff6ff' : this.style.background='transparent'">
+                        <span style="font-size:16px;">💻</span>
+                        <span>ស្វ័យប្រវត្តិ</span>
+                        <svg class="theme-check" style="width:14px;height:14px;margin-left:auto;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             {{-- Language Switcher --}}
             <div style="position:relative;" id="lang-switcher">
                 <button onclick="toggleLangMenu()" style="
                     display:flex; align-items:center; gap:6px;
-                    padding:6px 12px; border-radius:10px;
+                    padding:6px 10px; border-radius:8px;
                     border:1px solid #e2e8f0; background:#f8fafc;
                     cursor:pointer; font-size:13px; font-weight:600;
                     color:#334155; transition:all 0.2s;
@@ -880,13 +1081,13 @@
 
                 <div id="lang-menu" style="
                     display:none; position:absolute; top:calc(100% + 8px); right:0;
-                    background:white; border:1px solid #e2e8f0; border-radius:12px;
+                    background:white; border:1px solid #e2e8f0; border-radius:10px;
                     box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:150px;
                     z-index:1000; overflow:hidden;
                 ">
                     <a href="{{ route('lang.switch', 'en') }}" style="
                         display:flex; align-items:center; gap:10px;
-                        padding:10px 16px; font-size:13px; font-weight:600;
+                        padding:10px 14px; font-size:13px; font-weight:600;
                         color:{{ app()->getLocale() === 'en' ? '#2563eb' : '#334155' }};
                         background:{{ app()->getLocale() === 'en' ? '#eff6ff' : 'transparent' }};
                         text-decoration:none; transition:background 0.15s;
@@ -902,7 +1103,7 @@
                     <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
                     <a href="{{ route('lang.switch', 'km') }}" style="
                         display:flex; align-items:center; gap:10px;
-                        padding:10px 16px; font-size:13px; font-weight:600;
+                        padding:10px 14px; font-size:13px; font-weight:600;
                         color:{{ app()->getLocale() === 'km' ? '#2563eb' : '#334155' }};
                         background:{{ app()->getLocale() === 'km' ? '#eff6ff' : 'transparent' }};
                         text-decoration:none; transition:background 0.15s;
@@ -920,7 +1121,7 @@
 
             <div class="topbar-search">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="{{ __('app.search_here') }}">
+                <input type="text" id="global-search" placeholder="{{ __('app.search_here') }}" onkeyup="handleGlobalSearch(event)">
             </div>
             <div class="topbar-bell" onclick="toggleNotificationDropdown(event)">
                 <i class="fas fa-bell"></i>
@@ -1012,17 +1213,6 @@
         {{-- Content --}}
         <main class="content">
 
-            @if(session('success'))
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>{{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>{{ session('error') }}
-                </div>
-            @endif
-
             @yield('content')
 
         </main>
@@ -1037,11 +1227,210 @@ function toggleLangMenu() {
     const menu = document.getElementById('lang-menu');
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
+
+// Theme Menu Toggle
+function toggleThemeMenu() {
+    const menu = document.getElementById('theme-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Theme Management
+function setTheme(theme) {
+    localStorage.setItem('theme', theme);
+    applyTheme(theme);
+    updateThemeUI(theme);
+    document.getElementById('theme-menu').style.display = 'none';
+}
+
+function applyTheme(theme) {
+    const root = document.documentElement;
+    
+    // Force light mode only - always remove dark class
+    // បង្ខំប្រើតែពណ៌សរ - យក dark class ចេញជានិច្ច
+    root.classList.remove('dark');
+    document.getElementById('theme-icon').textContent = '☀️';
+}
+
+function updateThemeUI(selectedTheme) {
+    document.querySelectorAll('.theme-option').forEach(option => {
+        const optionTheme = option.getAttribute('data-theme');
+        const check = option.querySelector('.theme-check');
+        
+        if (optionTheme === selectedTheme) {
+            option.classList.add('active');
+            option.style.background = '#eff6ff';
+            option.style.color = '#2563eb';
+            check.style.display = 'block';
+        } else {
+            option.classList.remove('active');
+            option.style.background = 'transparent';
+            option.style.color = '#334155';
+            check.style.display = 'none';
+        }
+    });
+}
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Force light mode only - បង្ខំប្រើតែពណ៌សរ
+    localStorage.setItem('theme', 'light');
+    const savedTheme = 'light';
+    applyTheme(savedTheme);
+    updateThemeUI(savedTheme);
+    
+    // Listen for system theme changes when in auto mode
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'auto') {
+            applyTheme('auto');
+        }
+    });
+    
+    // Global search keyboard shortcut (Ctrl+K)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('global-search').focus();
+        }
+        // ESC to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.getElementById('global-search');
+            if (searchInput === document.activeElement) {
+                searchInput.value = '';
+                searchInput.blur();
+                hideSearchResults();
+            }
+        }
+    });
+});
+
+// Global Search Function
+let searchTimeout;
+function handleGlobalSearch(event) {
+    clearTimeout(searchTimeout);
+    const query = event.target.value.trim();
+    
+    if (query.length < 2) {
+        hideSearchResults();
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        performSearch(query);
+    }, 300); // Debounce 300ms
+}
+
+function performSearch(query) {
+    const loadingText = '{{ __("app.loading") }}';
+    const noResultsText = '{{ __("app.no_data") }}';
+    
+    // Show loading state
+    showSearchResults(`<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${loadingText}</p>`);
+    
+    // Make AJAX request to search endpoint
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySearchResults(data);
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            showSearchResults(`<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${noResultsText}</p>`);
+        });
+}
+
+function displaySearchResults(data) {
+    const translations = {
+        noResults: '{{ __("app.no_data") }}',
+        customers: '{{ __("app.customers") }}',
+        products: '{{ __("app.products") }}'
+    };
+    
+    let html = '<div style="padding:12px;max-height:400px;overflow-y:auto;">';
+    
+    if (!data || (!data.customers && !data.products)) {
+        html += `<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${translations.noResults}</p>`;
+    } else {
+        // Customers
+        if (data.customers && data.customers.length > 0) {
+            html += `<div style="margin-bottom:16px;"><h4 style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;">${translations.customers}</h4>`;
+            data.customers.forEach(customer => {
+                html += `<a href="/customers/${customer.id}" style="display:block;padding:8px 12px;border-radius:8px;text-decoration:none;color:#334155;margin-bottom:4px;background:#f8fafc;border:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="font-weight:600;font-size:13px;">${customer.name}</div>
+                    <div style="font-size:11px;color:#64748b;">${customer.phone || ''}</div>
+                </a>`;
+            });
+            html += '</div>';
+        }
+        
+        // Products
+        if (data.products && data.products.length > 0) {
+            html += `<div style="margin-bottom:16px;"><h4 style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;">${translations.products}</h4>`;
+            data.products.forEach(product => {
+                html += `<a href="/admin/products/${product.id}" style="display:block;padding:8px 12px;border-radius:8px;text-decoration:none;color:#334155;margin-bottom:4px;background:#f8fafc;border:1px solid #e2e8f0;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                    <div style="font-weight:600;font-size:13px;">${product.name}</div>
+                    <div style="font-size:11px;color:#64748b;">Stock: ${product.stock || 0}</div>
+                </a>`;
+            });
+            html += '</div>';
+        }
+    }
+    
+    html += '</div>';
+    showSearchResults(html);
+}
+
+function showSearchResults(content) {
+    let resultsDiv = document.getElementById('search-results');
+    
+    if (!resultsDiv) {
+        resultsDiv = document.createElement('div');
+        resultsDiv.id = 'search-results';
+        resultsDiv.style.cssText = `
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 1000;
+            min-width: 300px;
+        `;
+        document.querySelector('.topbar-search').style.position = 'relative';
+        document.querySelector('.topbar-search').appendChild(resultsDiv);
+    }
+    
+    resultsDiv.innerHTML = content;
+    resultsDiv.style.display = 'block';
+}
+
+function hideSearchResults() {
+    const resultsDiv = document.getElementById('search-results');
+    if (resultsDiv) {
+        resultsDiv.style.display = 'none';
+    }
+}
+
 document.addEventListener('click', function(e) {
-    const switcher = document.getElementById('lang-switcher');
-    if (switcher && !switcher.contains(e.target)) {
-        const menu = document.getElementById('lang-menu');
-        if (menu) menu.style.display = 'none';
+    const langSwitcher = document.getElementById('lang-switcher');
+    const themeSwitcher = document.getElementById('theme-switcher');
+    const searchBox = document.querySelector('.topbar-search');
+    
+    if (langSwitcher && !langSwitcher.contains(e.target)) {
+        const langMenu = document.getElementById('lang-menu');
+        if (langMenu) langMenu.style.display = 'none';
+    }
+    
+    if (themeSwitcher && !themeSwitcher.contains(e.target)) {
+        const themeMenu = document.getElementById('theme-menu');
+        if (themeMenu) themeMenu.style.display = 'none';
+    }
+    
+    // Close search results when clicking outside
+    if (searchBox && !searchBox.contains(e.target)) {
+        hideSearchResults();
     }
 });
 
@@ -1291,6 +1680,35 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isCollapsed) {
         document.getElementById('sidebar').classList.add('collapsed');
         document.querySelector('.main-wrapper').classList.add('expanded');
+    }
+    
+    // Restore sidebar scroll position
+    const sidebar = document.querySelector('.sb-nav');
+    const savedScrollPos = sessionStorage.getItem('sidebarScrollPos');
+    if (savedScrollPos && sidebar) {
+        sidebar.scrollTop = parseInt(savedScrollPos);
+    }
+});
+
+// Save sidebar scroll position before navigating
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.querySelector('.sb-nav');
+    if (sidebar) {
+        // Save scroll position when clicking sidebar links
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPos', sidebar.scrollTop);
+            });
+        });
+        
+        // Also save on dropdown toggle
+        const dropdownToggles = document.querySelectorAll('.sb-dropdown-toggle');
+        dropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPos', sidebar.scrollTop);
+            });
+        });
     }
 });
 </script>

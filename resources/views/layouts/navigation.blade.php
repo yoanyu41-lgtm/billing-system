@@ -19,7 +19,18 @@
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="hidden sm:flex sm:items-center sm:ms-6 gap-3">
+                <!-- Language Switcher -->
+                <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <a href="/lang/km" class="px-3 py-1.5 rounded-md text-sm font-medium transition {{ app()->getLocale() == 'km' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200' }}">
+                        🇰🇭 ខ្មែរ
+                    </a>
+                    <a href="/lang/en" class="px-3 py-1.5 rounded-md text-sm font-medium transition {{ app()->getLocale() == 'en' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-200' }}">
+                        🇬🇧 EN
+                    </a>
+                </div>
+
+                <!-- User Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
