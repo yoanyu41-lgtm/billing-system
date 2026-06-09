@@ -138,10 +138,11 @@
         }
         .sb-logo-icon {
             width: 50px; height: 50px; border-radius: 12px;
-            background: var(--accent);
+            background: #ffffff;
             display: flex; align-items: center; justify-content: center;
             color: #fff; font-size: 24px; flex-shrink: 0;
-            box-shadow: var(--shadow-accent);
+            padding: 8px; box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
         .sb-logo h1 { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.2; letter-spacing: 0.3px; }
         .sb-logo p  { font-size: 12px; color: var(--accent-soft); margin-top: 2px; }
@@ -823,7 +824,7 @@
     {{-- ── SIDEBAR ── --}}
     <aside id="sidebar">
         <div class="sb-logo">
-            <div class="sb-logo-icon"><img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
+            <div class="sb-logo-icon"><img src="{{ $companyLogo }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
             <div>
                 <h1>COMPUTER SHOP</h1>
                 <p>Installment System</p>
@@ -852,14 +853,36 @@
                     <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_plans') }}
                     </a>
-                    <a href="{{ route('installments.create') }}" class="{{ request()->routeIs('installments.create') ? 'active' : '' }}">
-                        <i class="fas fa-plus-circle"></i> {{ __('app.create_installment') }}
-                    </a>
                     <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
                     </a>
+                    <a href="{{ route('installments.pay-off-index') }}" class="{{ request()->routeIs('installments.pay-off-index') ? 'active' : '' }}">
+                        <i class="fas fa-hand-holding-usd"></i> {{ __('app.pay_off') }}
+                    </a>
+                    <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') ? 'active' : '' }}">
+                        <i class="fas fa-file-signature"></i> {{ __('app.contracts') }}
+                    </a>
                 </div>
             </div>
+
+            {{-- Direct Sale (ទិញដាច់) --}}
+            @if(auth()->user()->role === 'admin')
+            <div class="sb-dropdown {{ request()->routeIs('admin.sales.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-cash-register"></i>
+                    <span>{{ __('app.direct_sale') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
+                        <i class="fas fa-plus-circle"></i> {{ __('app.new_direct_sale') }}
+                    </a>
+                    <a href="{{ route('admin.sales.index') }}" class="{{ request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show') ? 'active' : '' }}">
+                        <i class="fas fa-list"></i> {{ __('app.sales_list') }}
+                    </a>
+                </div>
+            </div>
+            @endif
 
             <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
                 <i class="fas fa-file-alt"></i> {{ __('app.invoices') }}
@@ -886,8 +909,8 @@
             </div>
 
             {{-- Product Management (visible to admin & staff) --}}
-            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.sales.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-box-open"></i>
                     <span>{{ __('app.products') }}</span>
                     <i class="fas fa-chevron-down"></i>
@@ -902,9 +925,6 @@
                     </a>
                     <a href="{{ route('admin.purchases.create') }}" class="{{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
                         <i class="fas fa-truck-loading"></i> {{ __('app.stock_in') }}
-                    </a>
-                    <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
-                        <i class="fas fa-sign-out-alt"></i> {{ __('app.stock_out') }}
                     </a>
                     <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}

@@ -1,17 +1,25 @@
 <x-guest-layout>
     <div class="auth-card">
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+            <div class="lang-switcher-pills">
+                <a href="{{ route('lang.switch', 'km') }}" class="{{ app()->getLocale() === 'km' ? 'active' : '' }}">ខ្មែរ</a>
+                <a href="{{ route('lang.switch', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
+            </div>
+        </div>
+
         <!-- Logo Section -->
         <div class="auth-logo-header">
             <div class="auth-logo-icon">
-                <img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
+                <img src="{{ $companyLogo }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
             </div>
             <span class="auth-logo-text">City<span style="color: #2563eb;">Tech</span></span>
         </div>
 
         <!-- Title Section -->
         <div style="margin-bottom: 30px; text-align: center;">
-            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;">Create Account</h2>
-            <p style="color: #64748b; font-size: 15px; margin: 0;">Please fill in the details below to register.</p>
+            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;">{{ __('app.create_account') }}</h2>
+            <p style="color: #64748b; font-size: 15px; margin: 0;">{{ __('app.register_subtitle') }}</p>
         </div>
 
         <!-- Validation Errors -->
@@ -30,16 +38,16 @@
 
             <!-- Full Name -->
             <div class="form-group">
-                <label class="form-label">Full Name</label>
+                <label class="form-label">{{ __('app.full_name') }}</label>
                 <div class="form-input-wrapper">
                     <i class="far fa-user form-input-icon"></i>
-                    <input type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Enter your full name" class="form-input">
+                    <input type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="{{ __('app.full_name_placeholder') }}" class="form-input">
                 </div>
             </div>
 
             <!-- Email Address -->
             <div class="form-group">
-                <label class="form-label">Email Address</label>
+                <label class="form-label">{{ __('app.email_address') }}</label>
                 <div class="form-input-wrapper">
                     <i class="far fa-envelope form-input-icon"></i>
                     <input type="email" name="email" value="{{ old('email') }}" required placeholder="yourname@citytech.com" class="form-input">
@@ -48,25 +56,25 @@
 
             <!-- Password -->
             <div class="form-group">
-                <label class="form-label">Password</label>
+                <label class="form-label">{{ __('app.password') }}</label>
                 <div class="form-input-wrapper">
                     <i class="far fa-lock form-input-icon"></i>
-                    <input id="password" type="password" name="password" required placeholder="Create a strong password" class="form-input">
+                    <input id="password" type="password" name="password" required placeholder="{{ __('app.password_placeholder') }}" class="form-input">
                 </div>
             </div>
 
             <!-- Confirm Password -->
             <div class="form-group" style="margin-bottom: 30px;">
-                <label class="form-label">Confirm Password</label>
+                <label class="form-label">{{ __('app.confirm_password') }}</label>
                 <div class="form-input-wrapper">
                     <i class="fas fa-check-double form-input-icon"></i>
-                    <input id="password_confirmation" type="password" name="password_confirmation" required placeholder="Repeat your password" class="form-input">
+                    <input id="password_confirmation" type="password" name="password_confirmation" required placeholder="{{ __('app.confirm_password_placeholder') }}" class="form-input">
                 </div>
             </div>
 
             <!-- Register Button -->
             <button type="submit" class="btn-submit">
-                Create Account
+                {{ __('app.create_account') }}
             </button>
 
             <!-- Divider -->
@@ -77,8 +85,8 @@
 
             <!-- Link to Login -->
             <p style="text-align:center; font-size:14px; color:#64748b; font-weight:500; margin: 0;">
-                Already a member? 
-                <a href="{{ route('login') }}" style="color:#2563eb; text-decoration:none; font-weight:700; border-bottom:1.5px solid #dbeafe; padding-bottom: 2px;">Sign In Instead</a>
+                {{ __('app.already_member') }}
+                <a href="{{ route('login') }}" style="color:#2563eb; text-decoration:none; font-weight:700; border-bottom:1.5px solid #dbeafe; padding-bottom: 2px;">{{ __('app.sign_in_instead') }}</a>
             </p>
         </form>
     </div>

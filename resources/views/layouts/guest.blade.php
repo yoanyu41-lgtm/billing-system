@@ -8,6 +8,9 @@
     <!-- Modern Font -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Khmer OS Siemreap (Khmer + English) -->
+    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
     
     <style>
         :root {
@@ -38,13 +41,39 @@
         .auth-card {
             background: #ffffff;
             border-radius: 24px;
-            padding: 44px 36px;
+            padding: 36px 36px 44px;
             width: 100%;
             max-width: 460px;
             box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.03);
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-sizing: border-box;
             transition: all 0.3s ease;
+        }
+
+        /* Language switcher — top right of card, doesn't affect logo centering */
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .lang-switcher-pills {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .lang-switcher-pills a {
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            color: #64748b;
+        }
+        .lang-switcher-pills a.active {
+            background: #2563eb;
+            color: #fff;
         }
 
         /* Common Form Elements */
@@ -132,14 +161,22 @@
         .auth-logo-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #0f172a, #2563eb);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
             color: white;
             font-size: 18px;
+        }
+
+        .auth-logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .auth-logo-text {

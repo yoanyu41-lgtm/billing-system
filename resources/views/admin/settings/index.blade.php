@@ -158,7 +158,7 @@
                     
                     <div>
                         <label class="mb-1.5 block text-sm text-slate-700">
-                            Email <span class="text-rose-500">*</span>
+                            {{ __('app.email') }} <span class="text-rose-500">*</span>
                         </label>
                         <input 
                             type="email" 

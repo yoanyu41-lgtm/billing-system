@@ -2,333 +2,288 @@
 
 @section('content')
 <div class="content">
-    {{-- ចំណងជើង --}}
-    <div class="mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-            <i class="fas fa-cash-register text-blue-600"></i>
-            {{ __('app.record_sale') }} ({{ __('app.stock_out') }})
-        </h1>
-        <p class="text-base text-gray-600">{{ __('app.record_product_sales') }}</p>
+    {{-- Header --}}
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-cash-register text-blue-600"></i>
+                {{ __('app.new_direct_sale') }}
+            </h1>
+            <p class="text-sm text-gray-600 mt-1">{{ __('app.direct_sale_subtitle') }}</p>
+        </div>
+        <a href="{{ route('admin.sales.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+            <i class="fas fa-list"></i> {{ __('app.sales_list') }}
+        </a>
     </div>
 
-    {{-- Sale Form --}}
-    <div class="card">
-        <form method="POST" action="{{ route('admin.sales.store') }}" id="saleForm">
-            @csrf
+    @if(session('error'))
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+            <ul class="list-disc list-inside">
+                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+            </ul>
+        </div>
+    @endif
 
-            {{-- ព័ត៌មានអតិថិជន --}}
-            <div class="mb-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <i class="fas fa-user text-blue-600"></i>
-                    {{ __('app.customer_information') }}
-                </h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-base font-medium text-gray-700 mb-2">
-                            {{ __('app.customer_name') }} <span class="text-sm text-gray-400">({{ __('app.optional') }})</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="customer_name" 
-                            class="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="{{ __('app.enter_customer_name') }}"
-                        >
+    <form method="POST" action="{{ route('admin.sales.store') }}" id="saleForm">
+        @csrf
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {{-- Left: form --}}
+            <div class="lg:col-span-2 space-y-6">
+                {{-- Customer info --}}
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-user text-blue-600"></i> {{ __('app.customer_information') }}
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.customer') }}</label>
+                            <select name="customer_id" id="customerSelect"
+                                    class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">{{ __('app.select_customer_optional') }}</option>
+                                @foreach($customers as $c)
+                                    <option value="{{ $c->id }}" data-name="{{ $c->name }}" data-phone="{{ $c->phone }}"
+                                        {{ old('customer_id') == $c->id ? 'selected' : '' }}>
+                                        {{ $c->name }}{{ $c->phone ? ' — '.$c->phone : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                {{ __('app.customer_name') }} <span class="text-xs text-gray-400">({{ __('app.optional') }})</span>
+                            </label>
+                            <input type="text" name="customer_name" id="customerName" value="{{ old('customer_name') }}"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="{{ __('app.enter_customer_name') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.customer_phone') }}</label>
+                            <input type="text" name="customer_phone" id="customerPhone" value="{{ old('customer_phone') }}"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="012 345 678">
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-base font-medium text-gray-700 mb-2">
-                            {{ __('app.sale_date') }}
+                    {{-- Save as customer --}}
+                    <div id="saveCustomerWrap" class="mt-4 flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                        <input type="checkbox" name="save_as_customer" id="saveAsCustomer" value="1"
+                               {{ old('save_as_customer') ? 'checked' : '' }}
+                               class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer">
+                        <label for="saveAsCustomer" class="cursor-pointer">
+                            <span class="block text-sm font-medium text-gray-800">{{ __('app.save_as_customer') }}</span>
+                            <span class="block text-xs text-gray-500">{{ __('app.save_as_customer_hint') }}</span>
                         </label>
-                        <input 
-                            type="date" 
-                            name="sale_date" 
-                            value="{{ date('Y-m-d') }}"
-                            class="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
                     </div>
+                </div>
+
+                {{-- Items --}}
+                <div class="card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-shopping-cart text-blue-600"></i> {{ __('app.sale_items') }}
+                        </h3>
+                        <button type="button" id="addItem"
+                                class="inline-flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-plus"></i> {{ __('app.add_product') }}
+                        </button>
+                    </div>
+
+                    <div id="items" class="space-y-3"></div>
                 </div>
             </div>
 
-            {{-- ផ្នែកផលិតផល --}}
-            <div class="mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                        <i class="fas fa-shopping-cart text-blue-600"></i>
-                        {{ __('app.products') }}
+            {{-- Right: summary --}}
+            <div class="space-y-6">
+                <div class="card sticky top-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fas fa-receipt text-blue-600"></i> {{ __('app.receipt') }}
                     </h3>
-                    <button 
-                        type="button" 
-                        id="addItem" 
-                        class="btn-brand-blue flex items-center gap-2 text-base"
-                    >
-                        <i class="fas fa-plus"></i>
-                        {{ __('app.add_product') }}
-                    </button>
-                </div>
 
-                {{-- ទំនិញដំបូង --}}
-                <div id="items" class="space-y-3">
-                    <div class="item bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            {{-- ជ្រើសរើសផលិតផល --}}
-                            <div class="md:col-span-5">
-                                <label class="block text-sm font-medium text-gray-600 mb-1">{{ __('app.product') }}</label>
-                                <select 
-                                    name="items[0][product_id]" 
-                                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                >
-                                    <option value="">{{ __('app.select_product') }}</option>
-                                    @foreach($products as $p)
-                                        <option value="{{ $p->id }}">
-                                            {{ $p->name }} ({{ __('app.stock') }}: {{ $p->stock }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.sale_date') }}</label>
+                            <input type="date" name="sale_date" value="{{ old('sale_date', date('Y-m-d')) }}"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.payment_method') }}</label>
+                            <input type="text" name="payment_method" value="{{ old('payment_method', __('app.cash')) }}"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="{{ __('app.cash') }}">
+                        </div>
+                    </div>
 
-                            {{-- បរិមាណ --}}
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-600 mb-1">{{ __('app.quantity') }}</label>
-                                <input 
-                                    type="number" 
-                                    name="items[0][quantity]" 
-                                    value="1" 
-                                    min="1" 
-                                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                    onchange="calculateTotal()"
-                                >
-                            </div>
-
-                            {{-- តម្លៃឯកតា --}}
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-600 mb-1">{{ __('app.unit_price') }} ($)</label>
-                                <input 
-                                    type="number" 
-                                    step="0.01" 
-                                    name="items[0][price]" 
-                                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 item-price"
-                                    placeholder="0.00"
-                                    onchange="calculateTotal()"
-                                >
-                            </div>
-
-                            {{-- សរុបរង --}}
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-600 mb-1">{{ __('app.subtotal') }} ($)</label>
-                                <input 
-                                    type="text" 
-                                    class="w-full px-3 py-2.5 text-base bg-gray-100 border border-gray-200 rounded-lg font-semibold text-gray-700 item-subtotal"
-                                    value="0.00"
-                                    readonly
-                                >
-                            </div>
-
-                            {{-- ប៊ូតុងលុប --}}
-                            <div class="md:col-span-1 flex items-end">
-                                <button 
-                                    type="button" 
-                                    class="w-full px-3 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition remove-item hidden"
-                                    onclick="removeItem(this)"
-                                >
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                    <div class="space-y-2 border-t pt-4 text-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">{{ __('app.subtotal') }}</span>
+                            <span class="font-semibold text-gray-900" id="subtotalLabel">$0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">{{ __('app.discount') }}</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-gray-400">$</span>
+                                <input type="number" step="0.01" min="0" name="discount" id="discountInput"
+                                       value="{{ old('discount', 0) }}"
+                                       class="w-24 px-2 py-1.5 text-sm text-right border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       onchange="calculateTotal()" oninput="calculateTotal()">
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {{-- ផ្នែកសរុប --}}
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200 mb-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-base text-gray-600 mb-1">{{ __('app.total_amount') }}</p>
-                        <p class="text-4xl font-bold text-blue-600" id="grandTotal">$0.00</p>
+                    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">{{ __('app.grand_total') }}</span>
+                            <span class="text-3xl font-extrabold text-blue-600" id="grandTotal">$0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-1 text-xs text-gray-500">
+                            <span>{{ __('app.items_count') }}</span>
+                            <span id="totalItems">0</span>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-500">{{ __('app.total_items') }}</p>
-                        <p class="text-2xl font-semibold text-gray-700" id="totalItems">0</p>
+
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.note') ?? 'Note' }}</label>
+                        <textarea name="note" rows="2"
+                                  class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('note') }}</textarea>
                     </div>
+
+                    <button type="submit"
+                            class="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-check-circle"></i> {{ __('app.complete_sale') }}
+                    </button>
                 </div>
-            </div>
-
-            {{-- ប៊ូតុងអនុវត្ត --}}
-            <div class="flex items-center justify-between gap-3 pt-4 border-t">
-                <a 
-                    href="{{ route('admin.products.stock') }}" 
-                    class="px-6 py-3 text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
-                >
-                    <i class="fas fa-times"></i>
-                    {{ __('app.cancel') }}
-                </a>
-                
-                <button 
-                    type="submit" 
-                    class="btn-brand-blue flex items-center gap-2 text-base"
-                >
-                    <i class="fas fa-save"></i>
-                    {{ __('app.record_sale') }}
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<style>
-.btn-brand-blue {
-    background: #2563eb;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-brand-blue:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-}
-</style>
-
-<script>
-let idx = 1;
-
-// Translation strings
-const translations = {
-    product: "{{ __('app.product') }}",
-    selectProduct: "{{ __('app.select_product') }}",
-    stock: "{{ __('app.stock') }}",
-    quantity: "{{ __('app.quantity') }}",
-    unitPrice: "{{ __('app.unit_price') }}",
-    subtotal: "{{ __('app.subtotal') }}"
-};
-
-// Product data
-const productsData = @json($products);
-
-// បន្ថែមទំនិញ
-document.getElementById('addItem').addEventListener('click', () => {
-    const div = document.createElement('div');
-    div.className = 'item bg-gray-50 p-4 rounded-lg border border-gray-200';
-    
-    let optionsHtml = `<option value="">${translations.selectProduct}</option>`;
-    productsData.forEach(p => {
-        optionsHtml += `<option value="${p.id}">${p.name} (${translations.stock}: ${p.stock})</option>`;
-    });
-    
-    div.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div class="md:col-span-5">
-                <label class="block text-sm font-medium text-gray-600 mb-1">${translations.product}</label>
-                <select 
-                    name="items[${idx}][product_id]" 
-                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                >
-                    ${optionsHtml}
-                </select>
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-600 mb-1">${translations.quantity}</label>
-                <input 
-                    type="number" 
-                    name="items[${idx}][quantity]" 
-                    value="1" 
-                    min="1" 
-                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                    onchange="calculateTotal()"
-                >
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-600 mb-1">${translations.unitPrice} ($)</label>
-                <input 
-                    type="number" 
-                    step="0.01" 
-                    name="items[${idx}][price]" 
-                    class="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 item-price"
-                    placeholder="0.00"
-                    onchange="calculateTotal()"
-                >
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-600 mb-1">${translations.subtotal} ($)</label>
-                <input 
-                    type="text" 
-                    class="w-full px-3 py-2.5 text-base bg-gray-100 border border-gray-200 rounded-lg font-semibold text-gray-700 item-subtotal"
-                    value="0.00"
-                    readonly
-                >
-            </div>
-            <div class="md:col-span-1 flex items-end">
-                <button 
-                    type="button" 
-                    class="w-full px-3 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition remove-item"
-                    onclick="removeItem(this)"
-                >
-                    <i class="fas fa-trash"></i>
-                </button>
             </div>
         </div>
-    `;
-    document.getElementById('items').appendChild(div);
-    idx++;
-    updateRemoveButtons();
-    calculateTotal();
-});
+    </form>
+</div>
 
-// លុបទំនិញ
-function removeItem(button) {
-    button.closest('.item').remove();
-    updateRemoveButtons();
-    calculateTotal();
-}
+<script>
+    const productsData = @json($products);
+    const T = {
+        product: @json(__('app.product')),
+        selectProduct: @json(__('app.select_product')),
+        stock: @json(__('app.stock')),
+        quantity: @json(__('app.quantity')),
+        unitPrice: @json(__('app.unit_price')),
+        subtotal: @json(__('app.subtotal')),
+    };
 
-// ធ្វើបច្ចុប្បន្នភាពប៊ូតុងលុប
-function updateRemoveButtons() {
-    const items = document.querySelectorAll('.item');
-    items.forEach((item, index) => {
-        const removeBtn = item.querySelector('.remove-item');
-        if (items.length > 1) {
-            removeBtn.classList.remove('hidden');
+    let idx = 0;
+
+    function itemRow(index) {
+        let options = `<option value="">${T.selectProduct}</option>`;
+        productsData.forEach(p => {
+            options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}">${p.name} (${T.stock}: ${p.stock})</option>`;
+        });
+        const div = document.createElement('div');
+        div.className = 'item bg-gray-50 p-3 rounded-lg border border-gray-200';
+        div.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div class="md:col-span-5">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">${T.product}</label>
+                    <select name="items[${index}][product_id]" required onchange="onProductChange(this)"
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 item-product">
+                        ${options}
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">${T.quantity}</label>
+                    <input type="number" name="items[${index}][quantity]" value="1" min="1" required
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 item-qty"
+                           oninput="calculateTotal()">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">${T.unitPrice} ($)</label>
+                    <input type="number" step="0.01" min="0" name="items[${index}][price]" required
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 item-price"
+                           placeholder="0.00" oninput="calculateTotal()">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">${T.subtotal} ($)</label>
+                    <input type="text" readonly value="0.00"
+                           class="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg font-semibold text-gray-700 item-subtotal">
+                </div>
+                <div class="md:col-span-1 flex items-end">
+                    <button type="button" onclick="removeItem(this)"
+                            class="w-full px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition remove-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+        return div;
+    }
+
+    function addItem() {
+        document.getElementById('items').appendChild(itemRow(idx));
+        idx++;
+        updateRemoveButtons();
+        calculateTotal();
+    }
+
+    function onProductChange(select) {
+        const opt = select.options[select.selectedIndex];
+        const price = opt.getAttribute('data-price');
+        const row = select.closest('.item');
+        const priceInput = row.querySelector('.item-price');
+        if (price && !priceInput.value) priceInput.value = parseFloat(price).toFixed(2);
+        calculateTotal();
+    }
+
+    function removeItem(btn) {
+        btn.closest('.item').remove();
+        updateRemoveButtons();
+        calculateTotal();
+    }
+
+    function updateRemoveButtons() {
+        const items = document.querySelectorAll('.item');
+        items.forEach(item => {
+            const btn = item.querySelector('.remove-item');
+            if (items.length > 1) btn.classList.remove('hidden');
+            else btn.classList.add('hidden');
+        });
+    }
+
+    function calculateTotal() {
+        let subtotal = 0;
+        document.querySelectorAll('.item').forEach(item => {
+            const qty = parseFloat(item.querySelector('.item-qty')?.value || 0);
+            const price = parseFloat(item.querySelector('.item-price')?.value || 0);
+            const line = qty * price;
+            item.querySelector('.item-subtotal').value = line.toFixed(2);
+            subtotal += line;
+        });
+        const discount = parseFloat(document.getElementById('discountInput')?.value || 0);
+        const total = Math.max(subtotal - discount, 0);
+        document.getElementById('subtotalLabel').textContent = '$' + subtotal.toFixed(2);
+        document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
+        document.getElementById('totalItems').textContent = document.querySelectorAll('.item').length;
+    }
+
+    // Sync customer select -> name/phone
+    document.getElementById('customerSelect').addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const saveWrap = document.getElementById('saveCustomerWrap');
+        if (this.value) {
+            document.getElementById('customerName').value = opt.getAttribute('data-name') || '';
+            document.getElementById('customerPhone').value = opt.getAttribute('data-phone') || '';
+            // Existing customer chosen — no need to save again
+            document.getElementById('saveAsCustomer').checked = false;
+            saveWrap.style.display = 'none';
         } else {
-            removeBtn.classList.add('hidden');
+            saveWrap.style.display = 'flex';
         }
     });
-}
 
-// គណនាសរុប
-function calculateTotal() {
-    let total = 0;
-    const items = document.querySelectorAll('.item');
-    
-    items.forEach(item => {
-        const quantity = parseFloat(item.querySelector('input[name*="[quantity]"]')?.value || 0);
-        const price = parseFloat(item.querySelector('input[name*="[price]"]')?.value || 0);
-        const subtotal = quantity * price;
-        
-        // ធ្វើបច្ចុប្បន្នភាពសរុបរង
-        const subtotalInput = item.querySelector('.item-subtotal');
-        if (subtotalInput) {
-            subtotalInput.value = subtotal.toFixed(2);
-        }
-        
-        total += subtotal;
-    });
-    
-    // ធ្វើបច្ចុប្បន្នភាពសរុបទាំងអស់
-    document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
-    document.getElementById('totalItems').textContent = items.length;
-}
+    document.getElementById('addItem').addEventListener('click', addItem);
 
-// ចាប់ផ្តើម
-updateRemoveButtons();
-calculateTotal();
+    // first row
+    addItem();
 </script>
 @endsection

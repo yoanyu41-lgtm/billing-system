@@ -28,6 +28,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Default the interface to English on login.
+        $request->session()->put('locale', 'en');
+        app()->setLocale('en');
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

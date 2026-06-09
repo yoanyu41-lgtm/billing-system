@@ -1,17 +1,25 @@
 <x-guest-layout>
     <div class="auth-card">
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+            <div class="lang-switcher-pills">
+                <a href="{{ route('lang.switch', 'km') }}" class="{{ app()->getLocale() === 'km' ? 'active' : '' }}">ខ្មែរ</a>
+                <a href="{{ route('lang.switch', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
+            </div>
+        </div>
+
         <!-- Logo Section -->
         <div class="auth-logo-header">
             <div class="auth-logo-icon">
-                <img src="{{ asset('logo-ct.svg') }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
+                <img src="{{ $companyLogo }}" alt="CT" style="width:28px;height:28px;object-fit:contain;">
             </div>
             <span class="auth-logo-text">City<span style="color: #2563eb;">Tech</span></span>
         </div>
 
         <!-- Title Section -->
         <div style="margin-bottom: 30px; text-align: center;">
-            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;">Welcome Back</h2>
-            <p style="color: #64748b; font-size: 15px; margin: 0;">Please enter your details to access your account.</p>
+            <h2 style="font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px;">{{ __('app.login_welcome') }}</h2>
+            <p style="color: #64748b; font-size: 15px; margin: 0;">{{ __('app.login_details_prompt') }}</p>
         </div>
 
         <!-- Validation Errors -->
@@ -30,7 +38,7 @@
             
             <!-- Email -->
             <div class="form-group">
-                <label class="form-label">Email Address</label>
+                <label class="form-label">{{ __('app.email_address') }}</label>
                 <div class="form-input-wrapper">
                     <i class="far fa-envelope form-input-icon"></i>
                     <input type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="yourname@citytech.com" class="form-input">
@@ -40,9 +48,9 @@
             <!-- Password -->
             <div class="form-group" style="margin-bottom: 20px;">
                 <div style="display:flex; justify-content:between; align-items:center; margin-bottom:8px; width:100%;">
-                    <label class="form-label" style="margin-bottom:0; flex-grow:1;">Password</label>
+                    <label class="form-label" style="margin-bottom:0; flex-grow:1;">{{ __('app.password') }}</label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" style="color:#2563eb; text-decoration:none; font-size:13px; font-weight:700;">Forgot?</a>
+                        <a href="{{ route('password.request') }}" style="color:#2563eb; text-decoration:none; font-size:13px; font-weight:700;">{{ __('app.forgot_short') }}</a>
                     @endif
                 </div>
                 <div class="form-input-wrapper">
@@ -57,13 +65,13 @@
             <!-- Remember Me -->
             <div style="margin-bottom: 25px; display: flex; align-items: center;">
                 <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:#64748b; font-size:14px; font-weight: 500; user-select: none;">
-                    <input type="checkbox" name="remember" style="width:16px; height:16px; accent-color:#2563eb; cursor:pointer; margin:0;"> Stay logged in
+                    <input type="checkbox" name="remember" style="width:16px; height:16px; accent-color:#2563eb; cursor:pointer; margin:0;"> {{ __('app.stay_logged_in') }}
                 </label>
             </div>
 
             <!-- Submit Button -->
             <button type="submit" class="btn-submit">
-                Sign In
+                {{ __('app.sign_in') }}
             </button>
 
             <!-- Divider -->
@@ -74,8 +82,8 @@
 
             <!-- Link to Register -->
             <p style="text-align:center; font-size:14px; color:#64748b; font-weight:500; margin: 0;">
-                Don't have an account? 
-                <a href="{{ route('register') }}" style="color:#2563eb; text-decoration:none; font-weight:700; border-bottom:1.5px solid #dbeafe; padding-bottom: 2px;">Create Account</a>
+                {{ __('app.no_account_question') }}
+                <a href="{{ route('register') }}" style="color:#2563eb; text-decoration:none; font-weight:700; border-bottom:1.5px solid #dbeafe; padding-bottom: 2px;">{{ __('app.create_account') }}</a>
             </p>
         </form>
     </div>

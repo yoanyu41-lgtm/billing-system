@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Installment;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -71,6 +75,76 @@ class InstallmentController extends Controller
     {
         Gate::authorize('manage-installment', $installment);
         return view('installments.show', compact('installment'));
+    }
+
+    public function payOffIndex()
+    {
+        $user = auth()->user();
+        $query = Installment::with('customer', 'product')->where('status', 'active');
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        $installments = $query->latest()->paginate(10);
+
+        // Pre-compute payoff (outstanding principal) for each plan.
+        $installments->getCollection()->transform(function ($installment) {
+            $installment->payoff_amount = $installment->outstandingPrincipal();
+            return $installment;
+        });
+
+        $paymentMethods = PaymentMethod::orderBy('name')->get();
+
+        return view('installments.pay-off-index', compact('installments', 'paymentMethods'));
+    }
+
+    public function payOff(Request $request, Installment $installment)
+    {
+        Gate::authorize('manage-installment', $installment);
+
+        if ($installment->status !== 'active') {
+            return redirect()->route('installments.show', $installment)
+                ->with('error', __('app.installment_not_active'));
+        }
+
+        $request->validate([
+            'payment_method_id' => 'required|exists:payment_methods,id',
+            'payment_date'      => 'required|date',
+        ]);
+
+        $payoffAmount = $installment->outstandingPrincipal();
+
+        if ($payoffAmount <= 0) {
+            return redirect()->route('installments.show', $installment)
+                ->with('error', __('app.nothing_to_pay_off'));
+        }
+
+        // Record the settlement as an approved payment.
+        $payment = Payment::create([
+            'installment_id'    => $installment->id,
+            'payment_method_id' => $request->payment_method_id,
+            'amount'            => $payoffAmount,
+            'payment_date'      => $request->payment_date,
+            'status'            => 'approved',
+            'is_settlement'     => true,
+            'approved_by'       => auth()->id(),
+        ]);
+
+        // Close the plan.
+        $installment->update([
+            'remaining_balance' => 0,
+            'status'            => 'completed',
+        ]);
+
+        // Generate an invoice for the settlement.
+        Invoice::create([
+            'payment_id'     => $payment->id,
+            'invoice_number' => 'INV-' . $payment->id,
+        ]);
+
+        return redirect()->route('installments.show', $installment)
+            ->with('success', __('app.pay_off_success', ['amount' => number_format($payoffAmount, 2)]));
     }
 
     public function edit(Installment $installment)
@@ -147,6 +221,20 @@ class InstallmentController extends Controller
         $installments = $query->latest()->paginate(10);
 
         return view('installments.schedule-index', compact('installments'));
+    }
+
+    public function contractIndex()
+    {
+        $user = auth()->user();
+        $query = Installment::with('customer', 'product');
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        $installments = $query->latest()->paginate(10);
+
+        return view('installments.contract-index', compact('installments'));
     }
 
     public function paymentSchedule(Installment $installment)

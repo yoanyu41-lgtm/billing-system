@@ -23,6 +23,7 @@ class Product extends Model
         'graphics_card',
         'color',
         'warranty',
+        'condition',
         'is_active',
         'image',
         'description',

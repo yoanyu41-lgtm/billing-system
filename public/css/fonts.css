@@ -11,6 +11,9 @@
 /* Import Times New Roman (fallback from Google Fonts) */
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
+/* Khmer OS Siemreap as a real webfont (works on every device, Khmer + English) */
+@import url('https://fonts.googleapis.com/css2?family=Siemreap&display=swap');
+
 /* Khmer Font - Khmer OS Siemreap (Primary for both English and Khmer) */
 /* Try Khmer OS Siemreap first, then fallbacks */
 @font-face {
@@ -213,3 +216,32 @@ code, pre, .monospace {
        English text និងអត្ថបទខ្មែរ mixed together
    </div>
 */
+
+
+/* ================================================================
+   WEBFONT OVERRIDE - Siemreap (Google Fonts) as primary
+   Loads on every device even without the font installed locally.
+   Applies to both English and Khmer.
+   ================================================================ */
+*,
+body,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button,
+input, textarea, select,
+table, th, td,
+label, li,
+*:lang(en), [lang="en"], .lang-en,
+*:lang(km), [lang="km"], .lang-km {
+    font-family: 'Siemreap', 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+}
+
+/* Keep icons and code on their own fonts */
+.fas, .far, .fab, .fa,
+[class^="fa-"], [class*=" fa-"],
+i.fas, i.far, i.fab, i.fa {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands' !important;
+}
+
+code, pre, .monospace {
+    font-family: 'Courier New', Courier, monospace !important;
+}
