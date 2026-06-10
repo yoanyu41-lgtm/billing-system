@@ -232,6 +232,17 @@
             .no-print {
                 display: none;
             }
+
+            /* Start Terms & Conditions on a new page */
+            .page-break-before {
+                page-break-before: always;
+                break-before: page;
+            }
+            /* Avoid breaking a term block across pages */
+            .terms p, .terms ol {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
             
             @page {
                 size: A4;
@@ -454,7 +465,7 @@
         </div>
         
         <!-- Terms & Conditions -->
-        <div class="section">
+        <div class="section page-break-before">
             <div class="section-title" lang="km">
                 📜 {{ $L('លក្ខខណ្ឌទូទៅ', 'TERMS & CONDITIONS') }}
             </div>
@@ -514,45 +525,20 @@
             
             <div class="signatures">
                 <div class="signature-box">
-                    <p><strong lang="km">{{ $L('អ្នកលក់', 'SELLER') }}</strong></p>
                     <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</p>
+                    <p lang="km"><strong>{{ $L('ហត្ថលេខាអ្នកលក់', 'Seller Signature') }}</strong></p>
                     <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________________</p>
-                    <p lang="km">{{ $L('តួនាទី', 'Position') }}: Manager</p>
                     <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
                 </div>
                 
                 <div class="signature-box">
-                    <p><strong lang="km">{{ $L('អ្នកទិញ', 'BUYER') }}</strong></p>
                     <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</p>
+                    <p lang="km"><strong>{{ $L('ហត្ថលេខាអ្នកទិញ', 'Buyer Signature') }}</strong></p>
                     <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: {{ $customer->name }}</p>
-                    <p lang="km">{{ $L('លេខទូរស័ព្ទ', 'Phone') }}: {{ $customer->phone }}</p>
                     <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
                 </div>
             </div>
             
-            @if($guarantor)
-            <div class="signatures" style="margin-top: 30px;">
-                <div class="signature-box">
-                    <p><strong lang="km">{{ $L('អ្នកធានា', 'GUARANTOR') }}</strong></p>
-                    <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</p>
-                    <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: {{ $guarantor->name }}</p>
-                    <p lang="km">{{ $L('លេខទូរស័ព្ទ', 'Phone') }}: {{ $guarantor->phone }}</p>
-                    <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: __________________</p>
-                </div>
-                
-                <div class="signature-box">
-                    <p><strong lang="km">{{ $L('សាក្សី', 'WITNESS') }}</strong></p>
-                    <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</p>
-                    <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________________</p>
-                    <p lang="km">{{ $L('លេខទូរស័ព្ទ', 'Phone') }}: __________________</p>
-                    <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: __________________</p>
-                </div>
-            </div>
-            @endif
         </div>
         
         <!-- Footer -->

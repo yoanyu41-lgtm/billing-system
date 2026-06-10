@@ -20,6 +20,12 @@ class CustomerController extends Controller
             $query->where('created_by', $user->id);
         }
 
+        // Filter by customer type: 'installment' (default) or 'direct'
+        $type = $request->get('type', 'installment');
+        if (in_array($type, ['installment', 'direct'])) {
+            $query->where('type', $type);
+        }
+
         if ($request->search) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -30,18 +36,23 @@ class CustomerController extends Controller
         }
 
         $customers = $query->latest()->paginate(10)->withQueryString();
-        return view('customers.index', compact('customers'));
+        return view('customers.index', compact('customers', 'type'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('customers.create');
+        $type = $request->get('type', 'installment');
+        $products = $type === 'direct'
+            ? \App\Models\Product::where('is_active', true)->where('stock', '>', 0)->orderBy('name')->get()
+            : collect();
+        return view('customers.create', compact('type', 'products'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name'          => 'required|string|max:255',
+            'type'          => 'nullable|in:installment,direct',
             'phone'         => 'nullable|string|max:20',
             'gender'        => 'nullable|in:male,female,other',
             'dob'           => 'nullable|date',
@@ -52,9 +63,14 @@ class CustomerController extends Controller
             'id_card_photo' => 'nullable|image|max:2048',
             'income_proof'  => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             'guarantor_doc' => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
+            // Optional direct-sale fields
+            'product_id'    => 'nullable|exists:products,id',
+            'price'         => 'nullable|numeric|min:0',
+            'quantity'      => 'nullable|integer|min:1',
         ]);
 
         $data = $request->only(['name', 'phone', 'gender', 'dob', 'id_card', 'address', 'telegram_id']);
+        $data['type'] = in_array($request->type, ['installment', 'direct']) ? $request->type : 'installment';
         $data['created_by'] = auth()->id();
 
         foreach (['photo', 'id_card_photo', 'income_proof', 'guarantor_doc'] as $file) {
@@ -72,12 +88,62 @@ class CustomerController extends Controller
             route('customers.show', $customer), null
         );
 
-        return redirect()->route('customers.index')->with('success', 'Customer created successfully.');
+        // If a product was chosen for a direct-sale customer, record the sale immediately.
+        if ($data['type'] === 'direct' && $request->filled('product_id')) {
+            $product  = \App\Models\Product::find($request->product_id);
+            $quantity = (int) ($request->quantity ?: 1);
+            $price    = $request->filled('price') ? (float) $request->price : (float) $product->price;
+
+            if ($product && $product->stock >= $quantity) {
+                \Illuminate\Support\Facades\DB::transaction(function () use ($customer, $product, $quantity, $price) {
+                    $total = $price * $quantity;
+
+                    $sale = \App\Models\Sale::create([
+                        'invoice_no'     => \App\Models\Sale::generateInvoiceNo(),
+                        'customer_id'    => $customer->id,
+                        'customer_name'  => $customer->name,
+                        'customer_phone' => $customer->phone,
+                        'sale_date'      => now(),
+                        'subtotal'       => $total,
+                        'discount'       => 0,
+                        'total'          => $total,
+                        'payment_method' => 'cash',
+                        'created_by'     => auth()->id(),
+                    ]);
+
+                    \App\Models\SaleItem::create([
+                        'sale_id'    => $sale->id,
+                        'product_id' => $product->id,
+                        'quantity'   => $quantity,
+                        'price'      => $price,
+                    ]);
+
+                    \App\Models\StockMovement::create([
+                        'product_id' => $product->id,
+                        'type'       => 'out',
+                        'quantity'   => $quantity,
+                        'related_id' => $sale->id,
+                        'note'       => 'Direct Sale ' . $sale->invoice_no,
+                    ]);
+
+                    $product->decrement('stock', $quantity);
+                });
+            }
+        }
+
+        return redirect()->route('customers.index', ['type' => $data['type']])->with('success', 'Customer created successfully.');
     }
 
     public function show(Customer $customer)
     {
         Gate::authorize('manage-customer', $customer);
+
+        // Direct-sale customer: show their purchase history instead of installment data.
+        if ($customer->type === 'direct') {
+            $sales = $customer->sales()->with('items.product')->latest()->get();
+            $totalSpent = $sales->sum('total');
+            return view('customers.show', compact('customer', 'sales', 'totalSpent'));
+        }
 
         $installments = $customer->installments()->with('product')->get();
         $payments = Payment::whereHas('installment', function ($q) use ($customer) {
@@ -103,7 +169,10 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         Gate::authorize('manage-customer', $customer);
-        return view('customers.edit', compact('customer'));
+        $sales = $customer->type === 'direct'
+            ? $customer->sales()->with('items.product')->latest()->get()
+            : collect();
+        return view('customers.edit', compact('customer', 'sales'));
     }
 
     public function update(Request $request, Customer $customer)
@@ -141,7 +210,8 @@ class CustomerController extends Controller
     public function destroy(Customer $customer)
     {
         Gate::authorize('delete-customer');
+        $type = $customer->type;
         $customer->delete();
-        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+        return redirect()->route('customers.index', ['type' => $type])->with('success', 'Customer deleted successfully.');
     }
 }

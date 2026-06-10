@@ -13,6 +13,8 @@ class Payment extends Model
         'payment_method_id',
         'status',
         'is_settlement',
+        'title',
+        'interest_rate',
         'qr_image',
         'approved_by',
     ];

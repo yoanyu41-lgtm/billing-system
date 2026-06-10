@@ -111,14 +111,20 @@ class InstallmentController extends Controller
         $request->validate([
             'payment_method_id' => 'required|exists:payment_methods,id',
             'payment_date'      => 'required|date',
+            'title'             => 'nullable|string|max:255',
+            'interest_rate'     => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $payoffAmount = $installment->outstandingPrincipal();
+        $principal = $installment->outstandingPrincipal();
 
-        if ($payoffAmount <= 0) {
+        if ($principal <= 0) {
             return redirect()->route('installments.show', $installment)
                 ->with('error', __('app.nothing_to_pay_off'));
         }
+
+        // Optional extra interest applied on the outstanding principal at settlement.
+        $interestRate = (float) ($request->interest_rate ?? 0);
+        $payoffAmount = round($principal + ($principal * $interestRate / 100), 2);
 
         // Record the settlement as an approved payment.
         $payment = Payment::create([
@@ -128,6 +134,8 @@ class InstallmentController extends Controller
             'payment_date'      => $request->payment_date,
             'status'            => 'approved',
             'is_settlement'     => true,
+            'title'             => $request->title,
+            'interest_rate'     => $interestRate,
             'approved_by'       => auth()->id(),
         ]);
 

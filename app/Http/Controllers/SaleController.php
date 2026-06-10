@@ -17,7 +17,7 @@ class SaleController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Sale::with(['customer', 'creator'])->withCount('items');
+        $query = Sale::with(['customer', 'creator', 'items.product'])->withCount('items');
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -41,7 +41,7 @@ class SaleController extends Controller
             ->where('stock', '>', 0)
             ->orderBy('name')
             ->get();
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::where('type', 'direct')->orderBy('name')->get();
 
         return view('admin.sales.create', compact('products', 'customers'));
     }
@@ -91,6 +91,7 @@ class SaleController extends Controller
                 $newCustomer = Customer::create([
                     'name'       => $validated['customer_name'],
                     'phone'      => $validated['customer_phone'] ?? null,
+                    'type'       => 'direct',
                     'created_by' => auth()->id(),
                 ]);
                 $validated['customer_id'] = $newCustomer->id;

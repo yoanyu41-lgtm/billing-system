@@ -43,7 +43,7 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.sale_date') }}</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ __('app.items_count') }}</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.product') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.payment_method') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
@@ -58,7 +58,14 @@
                                 @if($sale->customer_phone)<div class="text-xs text-gray-400">{{ $sale->customer_phone }}</div>@endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ optional($sale->sale_date)->format('d M Y') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">{{ $sale->items_count }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                @foreach($sale->items as $item)
+                                    <div class="flex items-center gap-2 {{ !$loop->last ? 'mb-1' : '' }}">
+                                        <span>{{ $item->product->name ?? '—' }}</span>
+                                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">x{{ $item->quantity }}</span>
+                                    </div>
+                                @endforeach
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${{ number_format($sale->total, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
