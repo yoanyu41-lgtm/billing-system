@@ -517,6 +517,8 @@ return [
 
     // ── Dashboard ──
     'from_last_month'       => 'ពីខែមុន',
+    'this_month'            => 'ខែនេះ',
+    'combined_income'       => 'ចំណូលសរុបរួម',
     'this_year'             => 'ឆ្នាំនេះ',
     'last_year'             => 'ឆ្នាំមុន',
     'add_new_product'       => 'ផលិតផលថ្មី',
@@ -554,6 +556,7 @@ return [
     'select_product'        => 'ជ្រើសរើសផលិតផល',
     'total_amount'          => 'សរុបទាំងអស់',
     'total_items'           => 'ចំនួនទំនិញ',
+    'total_invoices'        => 'ចំនួនវិក្កយបត្រសរុប',
 
     // ── Direct Sale (ទិញដាច់) ──
     'direct_sale'           => 'ទិញដាច់',

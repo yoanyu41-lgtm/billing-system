@@ -8,6 +8,28 @@
         <p class="text-sm text-gray-500 mt-1">{{ __('app.manage_your_business_easily') }}</p>
     </div>
 
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.total_invoices') }}</p>
+                <p class="text-2xl font-bold text-gray-800">{{ number_format($totalInvoices) }}</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.total_amount') }}</p>
+                <p class="text-2xl font-bold text-emerald-600">${{ number_format($totalAmount, 2) }}</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Search and Filter Section -->
     <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <form method="GET" action="{{ route('invoices.index') }}" class="flex flex-col md:flex-row gap-4">
@@ -99,6 +121,7 @@
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.invoice_number') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.customer_name') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.amount') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.status') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.date') }}</th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
@@ -114,6 +137,13 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                             ${{ number_format($invoice->payment?->amount ?? 0, 2) }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @php $pstatus = $invoice->payment?->status ?? 'approved'; @endphp
+                            @php $statusColors = ['approved' => 'bg-emerald-100 text-emerald-700', 'pending' => 'bg-amber-100 text-amber-700', 'rejected' => 'bg-red-100 text-red-600']; @endphp
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$pstatus] ?? 'bg-gray-100 text-gray-600' }}">
+                                {{ __('app.'.$pstatus) }}
+                            </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             {{ $invoice->created_at?->format('Y-m-d') ?? '—' }}
@@ -134,7 +164,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-6 text-center text-gray-500">
+                        <td colspan="6" class="px-6 py-6 text-center text-gray-500">
                             {{ __('app.no_invoices') }}
                         </td>
                     </tr>

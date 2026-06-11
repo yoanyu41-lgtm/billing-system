@@ -30,6 +30,10 @@
                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
             </a>
+            <a href="{{ route('admin.sales.download', $sale) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
+                <i class="fas fa-download"></i> PDF
+            </a>
             <button onclick="window.print()"
                     class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
                 <i class="fas fa-print"></i> {{ __('app.print_receipt') }}
@@ -178,7 +182,7 @@
         </table>
 
         {{-- Footer: issued by / signature --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-2">
+        <div class="footer-grid grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 mt-2">
             {{-- Issued by --}}
             <div>
                 <div class="flex items-center gap-2 mb-2">
@@ -192,9 +196,8 @@
             </div>
 
             {{-- Signature --}}
-            <div class="text-center flex flex-col justify-start">
-                <div style="height: 48px;"></div>
-                <div class="border-t border-dashed border-gray-400 mx-4"></div>
+            <div class="text-center">
+                <div class="border-t border-dashed border-gray-400 mx-4" style="margin-top: 48px;"></div>
                 <div class="text-sm font-semibold text-gray-700 mt-2" lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</div>
                 <div class="text-xs text-gray-500 mt-1" lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________</div>
             </div>
@@ -241,29 +244,26 @@
 
     .content { margin: 0 !important; padding: 0 !important; }
 
-    /* Receipt fills the page, kept compact so it fits ONE page */
+    /* Receipt fills the page, comfortable spacing */
     #receipt {
         position: absolute !important;
         left: 0 !important;
-        top: 0 !important;
+        top: 24px !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 12px !important;
+        padding: 22px !important;
         box-shadow: none !important;
-        font-size: 11px !important;
+        font-size: 13px !important;
     }
 
-    /* Tighten spacing so everything fits on one page */
-    #receipt .px-8 { padding-left: 12px !important; padding-right: 12px !important; }
-    #receipt .py-6 { padding-top: 8px !important; padding-bottom: 8px !important; }
-    #receipt .py-5 { padding-top: 6px !important; padding-bottom: 6px !important; }
-    #receipt .pt-6 { padding-top: 8px !important; }
-    #receipt .pt-5 { padding-top: 6px !important; }
-    #receipt .mt-2, #receipt .mt-4 { margin-top: 4px !important; }
-    #receipt .mb-8 { margin-bottom: 18px !important; }
-    #receipt td, #receipt th { padding-top: 4px !important; padding-bottom: 4px !important; }
-    #receipt .gap-6 { gap: 10px !important; }
+    /* Keep readable spacing (not too cramped) */
+    #receipt td, #receipt th { padding-top: 7px !important; padding-bottom: 7px !important; }
+
+    /* Force multi-column layouts to stay side-by-side when printing */
+    #receipt .grid { display: grid !important; }
+    #receipt .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    #receipt .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
 
     /* Keep brand colors (header band, badges, table header) */
     #receipt, #receipt * {

@@ -41,6 +41,30 @@
         </svg>
     </div>
 
+    <div class="stat-card sc-green">
+        <div>
+            <div class="sc-icon"><i class="fas fa-cash-register"></i></div>
+            <div class="sc-label">{{ __('app.direct_sales') }}</div>
+            <div class="sc-value">${{ number_format($directSalesTotal ?? 0, 0) }}</div>
+            <div class="sc-trend">{{ __('app.this_month') }}: ${{ number_format($directSalesMonth ?? 0, 0) }}</div>
+        </div>
+        <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+            <polyline points="0,26 40,16 80,22 120,10 160,18 200,6" fill="none" stroke="#fff" stroke-width="2"/>
+        </svg>
+    </div>
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-coins"></i></div>
+            <div class="sc-label">{{ __('app.combined_income') }}</div>
+            <div class="sc-value">${{ number_format($combinedIncome ?? 0, 0) }}</div>
+            <div class="sc-trend">{{ __('app.installment') }} + {{ __('app.direct_sale') }}</div>
+        </div>
+        <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+            <polyline points="0,28 40,18 80,24 120,12 160,20 200,8" fill="none" stroke="#fff" stroke-width="2"/>
+        </svg>
+    </div>
+
     <div class="stat-card sc-blue">
         <div>
             <div class="sc-icon"><i class="fas fa-file-invoice"></i></div>

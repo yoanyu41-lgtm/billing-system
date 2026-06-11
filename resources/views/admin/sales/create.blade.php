@@ -40,20 +40,7 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <i class="fas fa-user text-blue-600"></i> {{ __('app.customer_information') }}
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.customer') }}</label>
-                            <select name="customer_id" id="customerSelect"
-                                    class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">{{ __('app.select_customer_optional') }}</option>
-                                @foreach($customers as $c)
-                                    <option value="{{ $c->id }}" data-name="{{ $c->name }}" data-phone="{{ $c->phone }}"
-                                        {{ old('customer_id') == $c->id ? 'selected' : '' }}>
-                                        {{ $c->name }}{{ $c->phone ? ' — '.$c->phone : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 {{ __('app.customer_name') }} <span class="text-xs text-gray-400">({{ __('app.optional') }})</span>
@@ -68,17 +55,6 @@
                                    class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                    placeholder="012 345 678">
                         </div>
-                    </div>
-
-                    {{-- Save as customer --}}
-                    <div id="saveCustomerWrap" class="mt-4 flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-lg p-3">
-                        <input type="checkbox" name="save_as_customer" id="saveAsCustomer" value="1"
-                               {{ old('save_as_customer') ? 'checked' : '' }}
-                               class="mt-0.5 w-4 h-4 accent-blue-600 cursor-pointer">
-                        <label for="saveAsCustomer" class="cursor-pointer">
-                            <span class="block text-sm font-medium text-gray-800">{{ __('app.save_as_customer') }}</span>
-                            <span class="block text-xs text-gray-500">{{ __('app.save_as_customer_hint') }}</span>
-                        </label>
                     </div>
                 </div>
 
@@ -231,7 +207,8 @@
         const price = opt.getAttribute('data-price');
         const row = select.closest('.item');
         const priceInput = row.querySelector('.item-price');
-        if (price && !priceInput.value) priceInput.value = parseFloat(price).toFixed(2);
+        // Always pull the product's price when a product is selected
+        if (price) priceInput.value = parseFloat(price).toFixed(2);
         calculateTotal();
     }
 
@@ -265,21 +242,6 @@
         document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
         document.getElementById('totalItems').textContent = document.querySelectorAll('.item').length;
     }
-
-    // Sync customer select -> name/phone
-    document.getElementById('customerSelect').addEventListener('change', function () {
-        const opt = this.options[this.selectedIndex];
-        const saveWrap = document.getElementById('saveCustomerWrap');
-        if (this.value) {
-            document.getElementById('customerName').value = opt.getAttribute('data-name') || '';
-            document.getElementById('customerPhone').value = opt.getAttribute('data-phone') || '';
-            // Existing customer chosen — no need to save again
-            document.getElementById('saveAsCustomer').checked = false;
-            saveWrap.style.display = 'none';
-        } else {
-            saveWrap.style.display = 'flex';
-        }
-    });
 
     document.getElementById('addItem').addEventListener('click', addItem);
 

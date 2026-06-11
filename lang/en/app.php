@@ -524,6 +524,8 @@ return [
     'total_payments'        => 'Total Payments',
     'completed_installments'=> 'Completed Installments',
     'from_last_month'       => 'from last month',
+    'this_month'            => 'This Month',
+    'combined_income'       => 'Combined Income',
     'this_year'             => 'This Year',
     'last_year'             => 'Last Year',
     'monthly_payment_collection' => 'Monthly Payment Collection',
@@ -544,6 +546,7 @@ return [
     'select_product'        => 'Select product',
     'total_amount'          => 'Total Amount',
     'total_items'           => 'Total Items',
+    'total_invoices'        => 'Total Invoices',
 
     // ── Direct Sale (ទិញដាច់) ──
     'direct_sale'           => 'Direct Sale',

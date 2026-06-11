@@ -69,7 +69,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${{ number_format($sale->total, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                                    {{ __('app.'.$sale->payment_method) }}
+                                    {{ \Illuminate\Support\Facades\Lang::has('app.'.$sale->payment_method) ? __('app.'.$sale->payment_method) : $sale->payment_method }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

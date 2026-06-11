@@ -73,13 +73,14 @@ class SaleController extends Controller
             $validated['customer_phone'] = $validated['customer_phone'] ?: $customer->phone;
         }
 
-        // Optionally save a walk-in buyer as a customer record (name + phone only).
+        // Automatically save the buyer as a direct-sale customer.
+        // If no name is given, use a generic "Walk-in customer" record.
         $savedNewCustomer = false;
-        if (empty($validated['customer_id'])
-            && $request->boolean('save_as_customer')
-            && !empty($validated['customer_name'])) {
+        if (empty($validated['customer_id'])) {
 
-            // Avoid duplicates: reuse an existing customer with the same phone if provided.
+            $buyerName = $validated['customer_name'] ?: __('app.walk_in_customer');
+
+            // Reuse an existing customer with the same phone (when phone is provided).
             $existing = null;
             if (!empty($validated['customer_phone'])) {
                 $existing = Customer::where('phone', $validated['customer_phone'])->first();
@@ -89,12 +90,13 @@ class SaleController extends Controller
                 $validated['customer_id'] = $existing->id;
             } else {
                 $newCustomer = Customer::create([
-                    'name'       => $validated['customer_name'],
+                    'name'       => $buyerName,
                     'phone'      => $validated['customer_phone'] ?? null,
                     'type'       => 'direct',
                     'created_by' => auth()->id(),
                 ]);
-                $validated['customer_id'] = $newCustomer->id;
+                $validated['customer_id']   = $newCustomer->id;
+                $validated['customer_name'] = $buyerName;
                 $savedNewCustomer = true;
             }
         }
@@ -171,6 +173,18 @@ class SaleController extends Controller
         $sale->load(['items.product', 'customer', 'creator']);
 
         return view('admin.sales.show', compact('sale'));
+    }
+
+    /**
+     * Download the sale receipt as a PDF.
+     */
+    public function download(Sale $sale)
+    {
+        $sale->load(['items.product', 'customer', 'creator']);
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.sales.pdf', compact('sale', 'settings'));
+        return $pdf->download('receipt-' . ($sale->invoice_no ?? $sale->id) . '.pdf');
     }
 
     /**
