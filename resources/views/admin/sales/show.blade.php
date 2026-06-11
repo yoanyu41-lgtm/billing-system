@@ -192,8 +192,8 @@
             </div>
 
             {{-- Signature --}}
-            <div class="text-center flex flex-col justify-end">
-                <div style="height: 56px;"></div>
+            <div class="text-center flex flex-col justify-start">
+                <div style="height: 48px;"></div>
                 <div class="border-t border-dashed border-gray-400 mx-4"></div>
                 <div class="text-sm font-semibold text-gray-700 mt-2" lang="km">{{ $L('ហត្ថលេខា', 'Signature') }}</div>
                 <div class="text-xs text-gray-500 mt-1" lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________</div>
@@ -212,10 +212,17 @@
 </div>
 
 <style>
+/* Force background colors to print in Chrome even if "Background graphics" is off */
+#receipt, #receipt * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+}
+
 @media print {
     @page {
         size: A4 portrait;
-        margin: 10mm;
+        margin: 6mm;
     }
 
     /* Hide everything except the receipt */
@@ -234,7 +241,7 @@
 
     .content { margin: 0 !important; padding: 0 !important; }
 
-    /* Keep the SAME look as on screen: bordered box, colors, spacing */
+    /* Receipt fills the page, kept compact so it fits ONE page */
     #receipt {
         position: absolute !important;
         left: 0 !important;
@@ -242,10 +249,23 @@
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
+        padding: 12px !important;
         box-shadow: none !important;
+        font-size: 11px !important;
     }
 
-    /* Keep brand colors (header band, badges, table header) when printing */
+    /* Tighten spacing so everything fits on one page */
+    #receipt .px-8 { padding-left: 12px !important; padding-right: 12px !important; }
+    #receipt .py-6 { padding-top: 8px !important; padding-bottom: 8px !important; }
+    #receipt .py-5 { padding-top: 6px !important; padding-bottom: 6px !important; }
+    #receipt .pt-6 { padding-top: 8px !important; }
+    #receipt .pt-5 { padding-top: 6px !important; }
+    #receipt .mt-2, #receipt .mt-4 { margin-top: 4px !important; }
+    #receipt .mb-8 { margin-bottom: 18px !important; }
+    #receipt td, #receipt th { padding-top: 4px !important; padding-bottom: 4px !important; }
+    #receipt .gap-6 { gap: 10px !important; }
+
+    /* Keep brand colors (header band, badges, table header) */
     #receipt, #receipt * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
