@@ -30,10 +30,10 @@
                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
             </a>
-            <a href="{{ route('admin.sales.download', $sale) }}"
-               class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
-                <i class="fas fa-download"></i> PDF
-            </a>
+            <button onclick="savePDF()"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
             <button onclick="window.print()"
                     class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
                 <i class="fas fa-print"></i> {{ __('app.print_receipt') }}
@@ -168,10 +168,25 @@
                 @endforeach
             </tbody>
             <tfoot>
+                <tr class="bg-blue-50">
+                    <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L('តម្លៃរង (Subtotal)', 'Subtotal') }}</td>
+                    <td class="px-3 py-2 text-right font-semibold text-gray-900">${{ number_format($sale->subtotal, 2) }}</td>
+                </tr>
                 @if($sale->discount > 0)
                 <tr class="bg-blue-50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L('បញ្ចុះតម្លៃ', 'Discount') }}</td>
                     <td class="px-3 py-2 text-right font-semibold text-red-500">- ${{ number_format($sale->discount, 2) }}</td>
+                </tr>
+                @endif
+                @if($sale->tax_amount > 0)
+                @php
+                    $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                    $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+                    $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 10);
+                @endphp
+                <tr class="bg-blue-50">
+                    <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L("ពន្ធ {$taxLabel} ({$defaultTaxRate}%)", "{$taxLabel} Tax ({$defaultTaxRate}%)") }}</td>
+                    <td class="px-3 py-2 text-right font-semibold text-gray-900">${{ number_format($sale->tax_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="bg-blue-100">
@@ -220,6 +235,20 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+}
+
+/* Better line-height for Khmer text */
+#receipt [lang="km"],
+#receipt td,
+#receipt th,
+#receipt div,
+#receipt span,
+#receipt p {
+    line-height: 1.8 !important;
+}
+
+#receipt table {
+    line-height: 1.6 !important;
 }
 
 @media print {
@@ -276,4 +305,54 @@
     #receipt tr { page-break-inside: avoid !important; }
 }
 </style>
+
+{{-- jsPDF library --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+async function savePDF() {
+    const element = document.getElementById('receipt');
+    const filename = 'receipt-{{ $sale->invoice_no ?? $sale->id }}.pdf';
+    
+    // Show loading indicator
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្កើត PDF...';
+    btn.disabled = true;
+    
+    try {
+        // Capture receipt as image with high quality
+        const canvas = await html2canvas(element, {
+            scale: 3,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            letterRendering: true,
+            imageTimeout: 0
+        });
+        
+        // Create PDF with jsPDF
+        const { jsPDF } = window.jspdf;
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        
+        // Calculate dimensions to fit A4
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+        pdf.save(filename);
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('មានបញ្ហាក្នុងការបង្កើត PDF។ សូមព្យាយាមម្តងទៀត។');
+    } finally {
+        // Restore button
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+}
+</script>
 @endsection

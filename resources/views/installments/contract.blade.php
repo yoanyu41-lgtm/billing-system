@@ -429,9 +429,22 @@
                         💵 {{ $L('ព័ត៌មានហិរញ្ញវត្ថុ', 'FINANCIAL DETAILS') }}
                     </div>
                     <div class="payment-details">
+                        @if($installment->tax_amount > 0)
+                        <div class="info-row">
+                            <div class="info-label" lang="km">{{ $L('តម្លៃមុនពន្ធ', 'Subtotal Before Tax') }}:</div>
+                            <div class="info-value">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</div>
+                        </div>
+                        @php
+                            $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                        @endphp
+                        <div class="info-row">
+                            <div class="info-label" lang="km">{{ $L("ពន្ធ {$taxLabel}", "{$taxLabel} Tax") }} ({{ $installment->tax_rate }}%):</div>
+                            <div class="info-value">${{ number_format($installment->tax_amount, 2) }}</div>
+                        </div>
+                        @endif
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('តម្លៃផលិតផល', 'Product Price') }}:</div>
-                            <div class="info-value">${{ number_format($installment->total_price, 2) }}</div>
+                            <div class="info-value" style="font-weight: bold;">${{ number_format($installment->total_price, 2) }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('ប្រាក់កក់', 'Down Payment') }}:</div>

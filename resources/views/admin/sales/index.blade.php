@@ -44,6 +44,8 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.sale_date') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.product') }}</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.subtotal') }}</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.tax') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.payment_method') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
@@ -65,6 +67,14 @@
                                         <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">x{{ $item->quantity }}</span>
                                     </div>
                                 @endforeach
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">${{ number_format($sale->subtotal, 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                                @if($sale->tax_amount > 0)
+                                    ${{ number_format($sale->tax_amount, 2) }}
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${{ number_format($sale->total, 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

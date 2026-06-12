@@ -145,6 +145,48 @@
             </div>
         </div>
 
+        <!-- Tax Settings Section -->
+        @php
+            $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
+            $defaultTaxRate = \App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? '10';
+        @endphp
+        
+        @if($taxEnabled == '1')
+        <div class="mb-8 border-t border-gray-100 pt-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>💰</span>
+                <span lang="km">{{ __('app.tax') }} / Tax Settings</span>
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Is Taxable -->
+                <div class="md:col-span-3">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_taxable" value="1" {{ old('is_taxable', '1') == '1' ? 'checked' : '' }} class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500">
+                        <span class="ml-3 text-sm font-medium text-gray-700" lang="km">{{ __('app.taxable') }} (មានពន្ធ)</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1 ml-8" lang="km">ធីកប្រសិនបើផលិតផលនេះមានពន្ធ</p>
+                </div>
+
+                <!-- Tax Rate -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2" lang="km">{{ __('app.tax_rate') }} (%)</label>
+                    <input type="number" name="tax_rate" step="0.01" min="0" max="100" value="{{ old('tax_rate', $defaultTaxRate) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 border-gray-300" placeholder="10.00">
+                    <p class="text-xs text-gray-500 mt-1">ឧ. 10 សម្រាប់ 10%</p>
+                </div>
+
+                <!-- Tax Type -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2" lang="km">{{ __('app.tax_type') }}</label>
+                    <input type="text" name="tax_type" value="{{ old('tax_type', 'មិនរួមពន្ធ') }}" 
+                           class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 border-gray-300"
+                           placeholder="ឧ. មិនរួមពន្ធ, រួមពន្ធហើយ, គ្មានពន្ធ">
+                    <p class="text-xs text-gray-500 mt-1" lang="km">មិនរួមពន្ធ = តម្លៃ + ពន្ធ | រួមពន្ធហើយ = តម្លៃរួមពន្ធ</p>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Computer Specifications Section -->
         <div class="mb-8 border-t border-gray-100 pt-6">
             <h3 class="text-lg font-bold text-gray-800 mb-4">{{ __('app.computer_specs') }}</h3>

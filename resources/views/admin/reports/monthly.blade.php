@@ -73,19 +73,33 @@
                 <tr>
                     <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
                     <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.subtotal') }}</th>
+                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.tax') }}</th>
                     <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
+                @php $totalTax = 0; @endphp
                 @forelse($sales as $sale)
                 <tr>
                     <td class="px-5 py-3 font-semibold text-blue-600">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td>
                     <td class="px-5 py-3 text-gray-900">{{ $sale->customer_name ?: __('app.walk_in_customer') }}</td>
+                    <td class="px-5 py-3 text-right text-gray-700">${{ number_format($sale->subtotal, 2) }}</td>
+                    <td class="px-5 py-3 text-right text-gray-600">${{ number_format($sale->tax_amount ?? 0, 2) }}</td>
                     <td class="px-5 py-3 text-right font-semibold">${{ number_format($sale->total, 2) }}</td>
                 </tr>
+                @php $totalTax += ($sale->tax_amount ?? 0); @endphp
                 @empty
-                <tr><td colspan="3" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_sales_yet') }}</td></tr>
+                <tr><td colspan="5" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_sales_yet') }}</td></tr>
                 @endforelse
+                @if($sales->count() > 0)
+                <tr class="bg-blue-50 font-bold">
+                    <td colspan="2" class="px-5 py-3 text-right">{{ __('app.total') }}:</td>
+                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('subtotal'), 2) }}</td>
+                    <td class="px-5 py-3 text-right">${{ number_format($totalTax, 2) }}</td>
+                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('total'), 2) }}</td>
+                </tr>
+                @endif
             </tbody>
         </table>
     </div>

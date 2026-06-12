@@ -888,7 +888,7 @@
             </div>
 
             {{-- Direct Sale (ទិញដាច់) --}}
-            @if(auth()->user()->role === 'admin')
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.sales.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>

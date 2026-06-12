@@ -34,9 +34,19 @@ class AdminMiddleware
                 'admin.suppliers.index',
                 'admin.purchases.index',
                 'admin.stock-movements.index',
+                'admin.sales.index',
+                'admin.sales.show',
+                'admin.sales.download',
             ];
 
-            if ($request->isMethod('get') && $request->routeIs($staffAllowedRoutes)) {
+            // Staff can create and manage sales (full access to sales)
+            $staffFullAccessRoutes = [
+                'admin.sales.create',
+                'admin.sales.store',
+                'admin.sales.destroy',
+            ];
+
+            if ($request->routeIs($staffAllowedRoutes) || $request->routeIs($staffFullAccessRoutes)) {
                 return $next($request);
             }
         }

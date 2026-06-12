@@ -101,6 +101,18 @@
                 
                 <div class="space-y-4">
                     <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm">{{ __('app.subtotal') }}</span>
+                        <span class="font-semibold text-gray-900" id="previewSubtotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-100 pb-2" id="taxRow" style="display: none;">
+                        <span class="text-gray-500 text-sm">{{ __('app.tax') }} (<span id="taxRateLabel">0</span>%)</span>
+                        <span class="font-semibold text-gray-900" id="previewTax">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
+                        <span class="text-gray-500 text-sm font-semibold">{{ __('app.total_price') }}</span>
+                        <span class="font-bold text-gray-900" id="previewTotal">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-100 pb-2">
                         <span class="text-gray-500 text-sm">Principal Balance</span>
                         <span class="font-semibold text-gray-900" id="previewPrincipal">$0.00</span>
                     </div>
@@ -135,10 +147,28 @@
     const durationInput = document.getElementById('durationMonths');
 
     // Live Preview elements
+    const previewSubtotal = document.getElementById('previewSubtotal');
+    const previewTax = document.getElementById('previewTax');
+    const previewTotal = document.getElementById('previewTotal');
+    const taxRow = document.getElementById('taxRow');
+    const taxRateLabel = document.getElementById('taxRateLabel');
     const previewPrincipal = document.getElementById('previewPrincipal');
     const previewInterest = document.getElementById('previewInterest');
     const previewRemaining = document.getElementById('previewRemaining');
     const previewMonthly = document.getElementById('previewMonthly');
+
+    // Get product tax info from current installment
+    const productId = {{ $installment->product_id }};
+    const productData = @json([
+        'id' => $installment->product->id,
+        'is_taxable' => $installment->product->is_taxable ?? false,
+        'tax_rate' => $installment->product->tax_rate ?? 0,
+        'tax_type' => $installment->product->tax_type ?? 'exclusive'
+    ]);
+
+    // Tax settings
+    const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
+    const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
 
     // Event listeners
     [totalPriceInput, downPaymentInput, interestRateInput, durationInput].forEach(input => {
@@ -146,16 +176,42 @@
     });
 
     function calculateInstallment() {
-        const totalPrice = parseFloat(totalPriceInput.value) || 0;
+        const subtotalInput = parseFloat(totalPriceInput.value) || 0;
         const downPayment = parseFloat(downPaymentInput.value) || 0;
         const interestRate = parseFloat(interestRateInput.value) || 0;
         const duration = parseInt(durationInput.value) || 1;
+
+        let taxAmount = 0;
+        let taxRate = 0;
+        let totalPrice = subtotalInput;
+
+        // Calculate tax if enabled and product is taxable
+        if (taxEnabled && productData.is_taxable) {
+            taxRate = productData.tax_rate > 0 ? productData.tax_rate : defaultTaxRate;
+            
+            if (productData.tax_type === 'inclusive') {
+                // Tax included in price
+                taxAmount = subtotalInput - (subtotalInput / (1 + taxRate / 100));
+            } else {
+                // Tax exclusive (add on top)
+                taxAmount = subtotalInput * (taxRate / 100);
+                totalPrice = subtotalInput + taxAmount;
+            }
+            
+            taxRow.style.display = 'flex';
+            taxRateLabel.innerText = taxRate.toFixed(0);
+        } else {
+            taxRow.style.display = 'none';
+        }
 
         const principal = totalPrice - downPayment;
         const monthlyInterest = duration > 0 ? ((principal * interestRate / 100) / 12) : 0;
         const monthlyPayment = duration > 0 ? ((principal / duration) + monthlyInterest) : 0;
         const remaining = principal + (monthlyInterest * duration);
 
+        previewSubtotal.innerText = '$' + (subtotalInput > 0 ? subtotalInput.toFixed(2) : '0.00');
+        previewTax.innerText = '$' + (taxAmount > 0 ? taxAmount.toFixed(2) : '0.00');
+        previewTotal.innerText = '$' + (totalPrice > 0 ? totalPrice.toFixed(2) : '0.00');
         previewPrincipal.innerText = '$' + (principal > 0 ? principal.toFixed(2) : '0.00');
         previewInterest.innerText = '$' + (monthlyInterest > 0 ? monthlyInterest.toFixed(2) : '0.00');
         previewRemaining.innerText = '$' + (remaining > 0 ? remaining.toFixed(2) : '0.00');

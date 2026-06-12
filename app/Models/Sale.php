@@ -13,7 +13,9 @@ class Sale extends Model
         'customer_phone',
         'sale_date',
         'subtotal',
+        'subtotal_before_tax',
         'discount',
+        'tax_amount',
         'total',
         'payment_method',
         'note',
@@ -23,7 +25,9 @@ class Sale extends Model
     protected $casts = [
         'sale_date' => 'date',
         'subtotal'  => 'decimal:2',
+        'subtotal_before_tax' => 'decimal:2',
         'discount'  => 'decimal:2',
+        'tax_amount' => 'decimal:2',
         'total'     => 'decimal:2',
     ];
 

@@ -29,7 +29,7 @@ class InstallmentController extends Controller
 
     public function create()
     {
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'installment')->orderBy('name')->get();
         $products = Product::all();
         return view('installments.create', compact('customers', 'products'));
     }
@@ -45,7 +45,32 @@ class InstallmentController extends Controller
             'duration_months' => 'required|integer|min:1',
         ]);
 
-        $totalPrice = $request->total_price;
+        // Get tax settings
+        $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+        $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+        
+        $product = Product::find($request->product_id);
+        
+        // Calculate tax on total price if applicable
+        $subtotalBeforeTax = $request->total_price;
+        $taxAmount = 0;
+        $taxRate = 0;
+        
+        if ($taxEnabled && $product->is_taxable) {
+            // Use product-specific tax rate if set, otherwise use default
+            $taxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+            
+            // Calculate tax based on tax type
+            if ($product->tax_type === 'inclusive') {
+                // Tax is already included in price, extract it
+                $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
+            } else {
+                // Tax is exclusive (default), add it on top
+                $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
+            }
+        }
+        
+        $totalPrice = $subtotalBeforeTax + $taxAmount;
         $downPayment = $request->down_payment;
         $interestRate = $request->interest_rate ?? 0;
         $duration = $request->duration_months;
@@ -59,6 +84,9 @@ class InstallmentController extends Controller
             'customer_id' => $request->customer_id,
             'product_id' => $request->product_id,
             'total_price' => $totalPrice,
+            'subtotal_before_tax' => $subtotalBeforeTax,
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
             'down_payment' => $downPayment,
             'interest_rate' => $interestRate,
             'duration_months' => $duration,
@@ -175,7 +203,32 @@ class InstallmentController extends Controller
             'status' => 'required|in:active,cancelled',
         ]);
 
-        $totalPrice = $request->total_price;
+        // Get tax settings
+        $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+        $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+        
+        $product = $installment->product;
+        
+        // Calculate tax on total price if applicable
+        $subtotalBeforeTax = $request->total_price;
+        $taxAmount = 0;
+        $taxRate = 0;
+        
+        if ($taxEnabled && $product->is_taxable) {
+            // Use product-specific tax rate if set, otherwise use default
+            $taxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+            
+            // Calculate tax based on tax type
+            if ($product->tax_type === 'inclusive') {
+                // Tax is already included in price, extract it
+                $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
+            } else {
+                // Tax is exclusive (default), add it on top
+                $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
+            }
+        }
+        
+        $totalPrice = $subtotalBeforeTax + $taxAmount;
         $downPayment = $request->down_payment;
         $interestRate = $request->interest_rate ?? 0;
         $duration = $request->duration_months;
@@ -187,6 +240,9 @@ class InstallmentController extends Controller
 
         $installment->update([
             'total_price' => $totalPrice,
+            'subtotal_before_tax' => $subtotalBeforeTax,
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
             'down_payment' => $downPayment,
             'interest_rate' => $interestRate,
             'duration_months' => $duration,

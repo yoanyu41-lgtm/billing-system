@@ -93,6 +93,14 @@
 
         <h3 style="margin-top: 20px;">{{ __('app.payment_detail') }}</h3>
         <p><strong>{{ __('app.product') }}:</strong> {{ $invoice->payment->installment->product->name ?? 'N/A' }}</p>
+        @if(($invoice->payment->installment->tax_amount ?? 0) > 0)
+        @php
+            $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+        @endphp
+        <p><strong>{{ __('app.subtotal') }}:</strong> ${{ number_format($invoice->payment->installment->subtotal_before_tax ?? $invoice->payment->installment->total_price, 2) }}</p>
+        <p><strong>{{ __('app.tax') }} {{ $taxLabel }} ({{ $invoice->payment->installment->tax_rate }}%):</strong> ${{ number_format($invoice->payment->installment->tax_amount, 2) }}</p>
+        <p><strong>{{ __('app.total_price') }}:</strong> ${{ number_format($invoice->payment->installment->total_price, 2) }}</p>
+        @endif
         <p><strong>{{ __('app.amount') }}:</strong> ${{ number_format($invoice->payment->amount, 2) }}</p>
         <p><strong>{{ __('app.payment_date') }}:</strong> {{ $invoice->payment->payment_date }}</p>
         <p><strong>{{ __('app.remaining_balance') }}:</strong> ${{ number_format($invoice->payment->installment->remaining_balance, 2) }}</p>

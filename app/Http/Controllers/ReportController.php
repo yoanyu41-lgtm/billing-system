@@ -94,6 +94,13 @@ class ReportController extends Controller
         }
 
         $pdf = Pdf::loadView($view, $data);
+        
+        // Configure for Khmer font support
+        $dompdf = $pdf->getDomPDF();
+        $fontDir = storage_path('fonts');
+        $dompdf->getOptions()->set('fontDir', $fontDir);
+        $dompdf->getOptions()->set('fontCache', $fontDir);
+        
         return $pdf->download($type . '-report.pdf');
     }
 }

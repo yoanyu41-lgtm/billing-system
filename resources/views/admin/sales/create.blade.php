@@ -100,6 +100,10 @@
                             <span class="text-gray-600">{{ __('app.subtotal') }}</span>
                             <span class="font-semibold text-gray-900" id="subtotalLabel">$0.00</span>
                         </div>
+                        <div class="flex items-center justify-between" id="taxRow" style="display: none;">
+                            <span class="text-gray-600">{{ __('app.tax') }} <span id="taxRateDisplay"></span></span>
+                            <span class="font-semibold text-gray-900" id="taxLabel">$0.00</span>
+                        </div>
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600">{{ __('app.discount') }}</span>
                             <div class="flex items-center gap-1">
@@ -140,14 +144,29 @@
 </div>
 
 <script>
-    const productsData = @json($products);
+    const productsData = {!! json_encode($products->map(function($p) {
+        return [
+            'id' => $p->id,
+            'name' => $p->name,
+            'price' => $p->price,
+            'stock' => $p->stock,
+            'is_taxable' => $p->is_taxable ?? false,
+            'tax_rate' => $p->tax_rate ?? 0,
+            'tax_type' => $p->tax_type ?? 'exclusive'
+        ];
+    })) !!};
+    
+    const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
+    const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
+    const taxLabel = '{{ \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT' }}';
+    
     const T = {
-        product: @json(__('app.product')),
-        selectProduct: @json(__('app.select_product')),
-        stock: @json(__('app.stock')),
-        quantity: @json(__('app.quantity')),
-        unitPrice: @json(__('app.unit_price')),
-        subtotal: @json(__('app.subtotal')),
+        product: {!! json_encode(__('app.product')) !!},
+        selectProduct: {!! json_encode(__('app.select_product')) !!},
+        stock: {!! json_encode(__('app.stock')) !!},
+        quantity: {!! json_encode(__('app.quantity')) !!},
+        unitPrice: {!! json_encode(__('app.unit_price')) !!},
+        subtotal: {!! json_encode(__('app.subtotal')) !!},
     };
 
     let idx = 0;
@@ -155,7 +174,7 @@
     function itemRow(index) {
         let options = `<option value="">${T.selectProduct}</option>`;
         productsData.forEach(p => {
-            options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}">${p.name} (${T.stock}: ${p.stock})</option>`;
+            options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}" data-taxable="${p.is_taxable}" data-tax-rate="${p.tax_rate}" data-tax-type="${p.tax_type}">${p.name} (${T.stock}: ${p.stock})</option>`;
         });
         const div = document.createElement('div');
         div.className = 'item bg-gray-50 p-3 rounded-lg border border-gray-200';
@@ -229,15 +248,63 @@
 
     function calculateTotal() {
         let subtotal = 0;
+        let totalTax = 0;
+        let hasTaxableItem = false;
+        
         document.querySelectorAll('.item').forEach(item => {
             const qty = parseFloat(item.querySelector('.item-qty')?.value || 0);
             const price = parseFloat(item.querySelector('.item-price')?.value || 0);
+            const productSelect = item.querySelector('.item-product');
+            const opt = productSelect.options[productSelect.selectedIndex];
+            
             const line = qty * price;
             item.querySelector('.item-subtotal').value = line.toFixed(2);
             subtotal += line;
+            
+            // Calculate tax for this item
+            if (taxEnabled && opt) {
+                const isTaxable = opt.getAttribute('data-taxable') === '1' || opt.getAttribute('data-taxable') === 'true';
+                const taxRate = parseFloat(opt.getAttribute('data-tax-rate') || 0);
+                const taxType = opt.getAttribute('data-tax-type') || 'exclusive';
+                
+                if (isTaxable) {
+                    hasTaxableItem = true;
+                    const itemTaxRate = taxRate > 0 ? taxRate : defaultTaxRate;
+                    
+                    if (taxType === 'inclusive') {
+                        // Tax included
+                        const itemTax = line - (line / (1 + itemTaxRate / 100));
+                        totalTax += itemTax;
+                    } else {
+                        // Tax exclusive
+                        const itemTax = line * (itemTaxRate / 100);
+                        totalTax += itemTax;
+                    }
+                }
+            }
         });
+        
         const discount = parseFloat(document.getElementById('discountInput')?.value || 0);
-        const total = Math.max(subtotal - discount, 0);
+        
+        // Apply discount proportionally to tax
+        if (discount > 0 && subtotal > 0) {
+            const discountRatio = Math.max(subtotal - discount, 0) / subtotal;
+            totalTax = totalTax * discountRatio;
+        }
+        
+        const subtotalAfterDiscount = Math.max(subtotal - discount, 0);
+        const total = subtotalAfterDiscount + totalTax;
+        
+        // Display tax row if applicable
+        const taxRow = document.getElementById('taxRow');
+        if (hasTaxableItem && totalTax > 0) {
+            taxRow.style.display = 'flex';
+            document.getElementById('taxRateDisplay').textContent = `(${taxLabel})`;
+            document.getElementById('taxLabel').textContent = '$' + totalTax.toFixed(2);
+        } else {
+            taxRow.style.display = 'none';
+        }
+        
         document.getElementById('subtotalLabel').textContent = '$' + subtotal.toFixed(2);
         document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
         document.getElementById('totalItems').textContent = document.querySelectorAll('.item').length;
