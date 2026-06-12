@@ -39,6 +39,14 @@
         aria-selected="false">
         🏢 {{ __('app.company_settings') }}
     </button>
+    <button 
+        onclick="switchTab('tax')"
+        id="tab-tax"
+        class="tab-button flex-1 rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+        role="tab"
+        aria-selected="false">
+        💰 ពន្ធ / Tax
+    </button>
 </div>
 
 <!-- General Settings Tab -->
@@ -255,6 +263,98 @@
             <div class="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
                 <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                     {{ __('app.save_changes') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tax Settings Tab -->
+<div id="content-tax" class="tab-content hidden">
+    <div class="rounded-xl bg-white shadow border border-slate-100">
+        <form method="POST" action="{{ route('admin.settings.update') }}" class="p-6">
+            @csrf
+            
+            <div class="mb-6">
+                <h3 class="mb-4 text-lg font-semibold text-slate-900 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">💰</span>
+                    <span lang="km">ការកំណត់ពន្ធ / Tax Configuration</span>
+                </h3>
+                
+                <!-- Enable Tax -->
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="tax_enabled" value="1" 
+                            {{ ($settings['tax_enabled'] ?? '0') == '1' ? 'checked' : '' }}
+                            class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-slate-900" lang="km">
+                            បើកប្រើប្រាស់ពន្ធ / Enable Tax System
+                        </span>
+                    </label>
+                    <p class="mt-2 ml-8 text-xs text-slate-600" lang="km">
+                        បើកដើម្បីគណនាពន្ធលើផលិតផល និងការលក់
+                    </p>
+                </div>
+                
+                <!-- Tax Rate -->
+                <div class="grid gap-4 md:grid-cols-2 mb-4">
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-700" lang="km">
+                            អត្រាពន្ធលំនាំដើម (%) / Default Tax Rate
+                            <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="number" name="default_tax_rate" 
+                            value="{{ old('default_tax_rate', $settings['default_tax_rate'] ?? '10') }}" 
+                            step="0.01" min="0" max="100" required
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <p class="mt-1 text-xs text-slate-500">ឧ. 10 សម្រាប់ 10%</p>
+                    </div>
+                    
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-700" lang="km">
+                            ស្លាកពន្ធ / Tax Label
+                        </label>
+                        <select name="tax_label" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <option value="VAT" {{ ($settings['tax_label'] ?? 'VAT') == 'VAT' ? 'selected' : '' }}>VAT (អាករលើតម្លៃបន្ថែម)</option>
+                            <option value="GST" {{ ($settings['tax_label'] ?? '') == 'GST' ? 'selected' : '' }}>GST</option>
+                            <option value="Tax" {{ ($settings['tax_label'] ?? '') == 'Tax' ? 'selected' : '' }}>Tax (ពន្ធ)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Tax Number -->
+                <div class="mb-4">
+                    <label class="mb-2 block text-sm font-medium text-slate-700" lang="km">
+                        លេខពន្ធក្រុមហ៊ុន / Tax Registration Number
+                    </label>
+                    <input type="text" name="tax_number" 
+                        value="{{ old('tax_number', $settings['tax_number'] ?? '') }}" 
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        placeholder="K001-xxxxxxxxx">
+                    <p class="mt-1 text-xs text-slate-500" lang="km">លេខចុះបញ្ជីពន្ធពីនាយកដ្ឋានពន្ធដារ (ប្រសិនបើមាន)</p>
+                </div>
+                
+                <!-- Tax Information Box -->
+                <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <div class="flex gap-3">
+                        <div class="text-amber-600 text-xl">ℹ️</div>
+                        <div class="text-sm text-slate-700">
+                            <p class="font-medium mb-2" lang="km">ចំណាំសំខាន់៖</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs" lang="km">
+                                <li>អត្រាពន្ធលំនាំដើមនេះនឹងត្រូវបានប្រើសម្រាប់ផលិតផលដែលមានពន្ធ</li>
+                                <li>អ្នកអាចកំណត់អត្រាពន្ធផ្សេងគ្នាសម្រាប់ផលិតផលនីមួយៗ</li>
+                                <li>ពន្ធនឹងត្រូវបានគណនាដោយស្វ័យប្រវត្តិនៅពេលលក់</li>
+                                <li>ពន្ធ VAT នៅកម្ពុជាជាទូទៅគឺ 10%</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
+                <button type="submit" class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition">
+                    <span lang="km">រក្សាទុក / Save Changes</span>
                 </button>
             </div>
         </form>

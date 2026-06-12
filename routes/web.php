@@ -159,6 +159,7 @@ Route::middleware('auth')->group(function () {
         Route::get('sales/create', [App\Http\Controllers\SaleController::class, 'create'])->name('sales.create');
         Route::post('sales', [App\Http\Controllers\SaleController::class, 'store'])->name('sales.store');
         Route::get('sales/{sale}', [App\Http\Controllers\SaleController::class, 'show'])->name('sales.show');
+        Route::get('sales/{sale}/download', [App\Http\Controllers\SaleController::class, 'download'])->name('sales.download');
         Route::delete('sales/{sale}', [App\Http\Controllers\SaleController::class, 'destroy'])->name('sales.destroy');
 
         // Stock movements

@@ -5,11 +5,13 @@
 
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.customer_management') }}</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ __('app.manage_your_business_easily') ?? 'Manage all customers and their installment records' }}</p>
+            <h1 class="text-2xl font-bold text-gray-800">
+                {{ ($type ?? 'installment') === 'direct' ? __('app.direct_customers') : __('app.installment_customers') }}
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">{{ ($type ?? 'installment') === 'direct' ? __('app.direct_customers_subtitle') : __('app.installment_customers_subtitle') }}</p>
         </div>
-        <a href="{{ route('customers.create') }}"
-           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+        <a href="{{ route('customers.create', ['type' => $type ?? 'installment']) }}"
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm {{ ($type ?? 'installment') === 'direct' ? 'hidden' : '' }}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -20,6 +22,7 @@
     {{-- Search --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <form method="GET" class="flex flex-col sm:flex-row gap-3">
+            <input type="hidden" name="type" value="{{ $type ?? 'installment' }}">
             <div class="relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -32,7 +35,7 @@
                 {{ __('app.search') }}
             </button>
             @if(request('search'))
-            <a href="{{ route('customers.index') }}" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center">
+            <a href="{{ route('customers.index', ['type' => $type ?? 'installment']) }}" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center">
                 {{ __('app.clear') }}
             </a>
             @endif
@@ -64,9 +67,11 @@
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.id') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.customers') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.phone') }}</th>
+                        @if(($type ?? 'installment') !== 'direct')
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.id_card') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.gender') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.installments_count') }}</th>
+                        @endif
                         <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
@@ -93,6 +98,7 @@
                             </div>
                         </td>
                         <td class="px-5 py-2.5 text-gray-600">{{ $customer->phone ?? '—' }}</td>
+                        @if(($type ?? 'installment') !== 'direct')
                         <td class="px-5 py-2.5">
                             @if($customer->id_card)
                                 <span class="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{{ $customer->id_card }}</span>
@@ -125,6 +131,7 @@
                                 <span class="text-gray-300 text-xs">{{ __('app.none') }}</span>
                             @endif
                         </td>
+                        @endif
                         <td class="px-5 py-2.5">
                             <div class="flex items-center justify-center gap-2">
                                 <a href="{{ route('customers.show', $customer) }}"
@@ -159,7 +166,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-16 text-center">
+                        <td colspan="{{ ($type ?? 'installment') !== 'direct' ? 7 : 4 }}" class="px-5 py-16 text-center">
                             <div class="flex flex-col items-center gap-3">
                                 <svg class="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>

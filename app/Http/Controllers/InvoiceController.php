@@ -38,7 +38,31 @@ class InvoiceController extends Controller
         }
 
         $invoices = $query->latest()->paginate(10)->withQueryString();
-        return view('invoices.index', compact('invoices'));
+
+        // Summary stats (respecting current filters via a clone of the base query)
+        $statsQuery = Invoice::query();
+        if ($user->role === 'user') {
+            $statsQuery->whereHas('payment.installment', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $statsQuery->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('payment.installment.customer', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+        if ($request->filled('date')) {
+            $statsQuery->whereDate('created_at', $request->date);
+        }
+        $totalInvoices = $statsQuery->count();
+        $totalAmount = $statsQuery->with('payment')->get()->sum(fn ($inv) => $inv->payment?->amount ?? 0);
+
+        return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount'));
     }
 
     public function show(Invoice $invoice)

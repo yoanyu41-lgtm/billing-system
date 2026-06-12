@@ -838,9 +838,31 @@
                 <i class="fas fa-th-large"></i> {{ __('app.dashboard') }}
             </a>
 
-            <a href="{{ route('customers.index') }}" class="{{ request()->routeIs('customers.*') ? 'active' : '' }}">
-                <i class="fas fa-user-friends"></i> {{ __('app.customers') }}
-            </a>
+            {{-- Customers Dropdown --}}
+            @php
+                // Determine the active customer type for sidebar highlighting.
+                $routeCustomer = request()->route('customer');
+                if ($routeCustomer instanceof \App\Models\Customer) {
+                    $custType = $routeCustomer->type;
+                } else {
+                    $custType = request('type', 'installment');
+                }
+            @endphp
+            <div class="sb-dropdown {{ request()->routeIs('customers.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('customers.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-user-friends"></i>
+                    <span>{{ __('app.customer_management') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('customers.index', ['type' => 'installment']) }}" class="{{ request()->routeIs('customers.*') && $custType !== 'direct' ? 'active' : '' }}">
+                        <i class="fas fa-file-invoice-dollar"></i> {{ __('app.installment_customers') }}
+                    </a>
+                    <a href="{{ route('customers.index', ['type' => 'direct']) }}" class="{{ request()->routeIs('customers.*') && $custType === 'direct' ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i> {{ __('app.direct_customers') }}
+                    </a>
+                </div>
+            </div>
 
             {{-- Installments Dropdown --}}
             <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
@@ -866,7 +888,7 @@
             </div>
 
             {{-- Direct Sale (ទិញដាច់) --}}
-            @if(auth()->user()->role === 'admin')
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.sales.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>

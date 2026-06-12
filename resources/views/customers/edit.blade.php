@@ -1,30 +1,31 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
+@php $isDirect = $customer->type === 'direct'; @endphp
+<div class="{{ $isDirect ? 'max-w-2xl' : 'max-w-4xl' }} mx-auto space-y-5">
 
     <div class="flex items-center gap-3">
-        <a href="{{ route('customers.show', $customer) }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <a href="{{ route('customers.index', ['type' => $customer->type]) }}" class="text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.edit_customer') }}</h1>
+            <h1 class="text-xl font-bold text-gray-800">{{ __('app.edit_customer') }}</h1>
             <p class="text-sm text-gray-500 mt-0.5">{{ $customer->name }}</p>
         </div>
     </div>
 
-    <form method="POST" action="{{ route('customers.update', $customer) }}" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="{{ route('customers.update', $customer) }}" enctype="multipart/form-data" class="space-y-5">
         @csrf @method('PUT')
 
         {{-- ១. ព័ត៌មានផ្ទាល់ខ្លួន --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5 flex items-center gap-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">១</span>
                 {{ __('app.personal_information') }}
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.full_name') }} <span class="text-red-500">*</span></label>
@@ -39,6 +40,7 @@
                            class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
+                @if(!$isDirect)
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.gender') }}</label>
                     <select name="gender" class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -66,6 +68,7 @@
                     <input type="text" name="telegram_id" value="{{ old('telegram_id', $customer->telegram_id) }}"
                            class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
+                @endif
 
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.address') }}</label>
@@ -75,6 +78,7 @@
             </div>
         </div>
 
+        @if(!$isDirect)
         {{-- ២. រូបថតអតិថិជន --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5 flex items-center gap-2">
@@ -168,6 +172,7 @@
                 @endforeach
             </div>
         </div>
+        @endif
 
         {{-- Buttons --}}
         <div class="flex items-center justify-end gap-3">
@@ -182,6 +187,50 @@
         </div>
 
     </form>
+
+    @if($isDirect && $sales->count())
+    {{-- ── Purchase history (read-only) ── --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700">{{ __('app.sales_list') }}</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.sale_date') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.product') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($sales as $sale)
+                    <tr class="hover:bg-gray-50 align-top">
+                        <td class="px-5 py-3 font-semibold text-blue-600 whitespace-nowrap">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td>
+                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap">{{ optional($sale->sale_date)->format('d M Y') }}</td>
+                        <td class="px-5 py-3 text-gray-700">
+                            @foreach($sale->items as $item)
+                                <div class="flex items-center gap-2 {{ !$loop->last ? 'mb-1' : '' }}">
+                                    <span>{{ $item->product->name ?? '—' }}</span>
+                                    <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">x{{ $item->quantity }}</span>
+                                </div>
+                            @endforeach
+                        </td>
+                        <td class="px-5 py-3 text-right font-bold text-gray-800 whitespace-nowrap">${{ number_format($sale->total, 2) }}</td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap">
+                            <a href="{{ route('admin.sales.show', $sale) }}" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                <i class="fas fa-eye"></i> {{ __('app.view_receipt') }}
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>

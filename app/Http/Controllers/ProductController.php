@@ -167,6 +167,9 @@ class ProductController extends Controller
 
         $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_taxable'] = $request->boolean('is_taxable');
+        $data['tax_rate'] = $request->input('tax_rate', 0);
+        $data['tax_type'] = $request->input('tax_type', 'មិនរួមពន្ធ');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -235,6 +238,9 @@ class ProductController extends Controller
 
         $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['is_taxable'] = $request->boolean('is_taxable');
+        $data['tax_rate'] = $request->input('tax_rate', 0);
+        $data['tax_type'] = $request->input('tax_type', 'មិនរួមពន្ធ');
 
         if ($request->hasFile('image')) {
             if ($product->image) {

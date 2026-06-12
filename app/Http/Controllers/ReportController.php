@@ -11,14 +11,19 @@ class ReportController extends Controller
 {
     public function daily(Request $request)
     {
-        $date = $request->date ?? today();
+        $date = $request->date ?? today()->toDateString();
         $payments = Payment::with('installment.customer')
             ->whereDate('payment_date', $date)
             ->where('status', 'approved')
             ->get();
         $total = $payments->sum('amount');
 
-        return view('admin.reports.daily', compact('payments', 'total', 'date'));
+        // Direct sales for the same day
+        $sales = \App\Models\Sale::with('items')->whereDate('sale_date', $date)->get();
+        $salesTotal = $sales->sum('total');
+        $grandTotal = $total + $salesTotal;
+
+        return view('admin.reports.daily', compact('payments', 'total', 'date', 'sales', 'salesTotal', 'grandTotal'));
     }
 
     public function monthly(Request $request)
@@ -32,7 +37,15 @@ class ReportController extends Controller
             ->get();
         $total = $payments->sum('amount');
 
-        return view('admin.reports.monthly', compact('payments', 'total', 'month', 'year'));
+        // Direct sales for the same month
+        $sales = \App\Models\Sale::with('items')
+            ->whereYear('sale_date', $year)
+            ->whereMonth('sale_date', $month)
+            ->get();
+        $salesTotal = $sales->sum('total');
+        $grandTotal = $total + $salesTotal;
+
+        return view('admin.reports.monthly', compact('payments', 'total', 'month', 'year', 'sales', 'salesTotal', 'grandTotal'));
     }
 
     public function customer(Request $request)
@@ -81,6 +94,13 @@ class ReportController extends Controller
         }
 
         $pdf = Pdf::loadView($view, $data);
+        
+        // Configure for Khmer font support
+        $dompdf = $pdf->getDomPDF();
+        $fontDir = storage_path('fonts');
+        $dompdf->getOptions()->set('fontDir', $fontDir);
+        $dompdf->getOptions()->set('fontCache', $fontDir);
+        
         return $pdf->download($type . '-report.pdf');
     }
 }

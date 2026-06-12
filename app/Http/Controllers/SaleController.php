@@ -17,7 +17,7 @@ class SaleController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Sale::with(['customer', 'creator'])->withCount('items');
+        $query = Sale::with(['customer', 'creator', 'items.product'])->withCount('items');
 
         if ($search = $request->get('q')) {
             $query->where(function ($q) use ($search) {
@@ -41,7 +41,7 @@ class SaleController extends Controller
             ->where('stock', '>', 0)
             ->orderBy('name')
             ->get();
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::where('type', 'direct')->orderBy('name')->get();
 
         return view('admin.sales.create', compact('products', 'customers'));
     }
@@ -73,13 +73,14 @@ class SaleController extends Controller
             $validated['customer_phone'] = $validated['customer_phone'] ?: $customer->phone;
         }
 
-        // Optionally save a walk-in buyer as a customer record (name + phone only).
+        // Automatically save the buyer as a direct-sale customer.
+        // If no name is given, use a generic "Walk-in customer" record.
         $savedNewCustomer = false;
-        if (empty($validated['customer_id'])
-            && $request->boolean('save_as_customer')
-            && !empty($validated['customer_name'])) {
+        if (empty($validated['customer_id'])) {
 
-            // Avoid duplicates: reuse an existing customer with the same phone if provided.
+            $buyerName = $validated['customer_name'] ?: __('app.walk_in_customer');
+
+            // Reuse an existing customer with the same phone (when phone is provided).
             $existing = null;
             if (!empty($validated['customer_phone'])) {
                 $existing = Customer::where('phone', $validated['customer_phone'])->first();
@@ -89,11 +90,13 @@ class SaleController extends Controller
                 $validated['customer_id'] = $existing->id;
             } else {
                 $newCustomer = Customer::create([
-                    'name'       => $validated['customer_name'],
+                    'name'       => $buyerName,
                     'phone'      => $validated['customer_phone'] ?? null,
+                    'type'       => 'direct',
                     'created_by' => auth()->id(),
                 ]);
-                $validated['customer_id'] = $newCustomer->id;
+                $validated['customer_id']   = $newCustomer->id;
+                $validated['customer_name'] = $buyerName;
                 $savedNewCustomer = true;
             }
         }
@@ -110,44 +113,94 @@ class SaleController extends Controller
                     }
                 }
 
-                $subtotal = 0;
+                // Get tax settings
+                $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+                $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+
+                $subtotalBeforeTax = 0;
+                $totalTaxAmount = 0;
+
+                // Calculate subtotal and tax for each item
+                $itemsWithTax = [];
                 foreach ($validated['items'] as $it) {
-                    $subtotal += $it['price'] * $it['quantity'];
+                    $product = Product::find($it['product_id']);
+                    $itemSubtotal = $it['price'] * $it['quantity'];
+                    
+                    // Determine if this item is taxable and what rate to use
+                    $itemTaxRate = 0;
+                    $itemTaxAmount = 0;
+                    
+                    if ($taxEnabled && $product->is_taxable) {
+                        // Use product-specific tax rate if set, otherwise use default
+                        $itemTaxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+                        
+                        // Calculate tax based on tax type
+                        if ($product->tax_type === 'inclusive') {
+                            // Tax is already included in price, extract it
+                            $itemTaxAmount = $itemSubtotal - ($itemSubtotal / (1 + $itemTaxRate / 100));
+                        } else {
+                            // Tax is exclusive (default), add it on top
+                            $itemTaxAmount = $itemSubtotal * ($itemTaxRate / 100);
+                        }
+                    }
+                    
+                    $subtotalBeforeTax += $itemSubtotal;
+                    $totalTaxAmount += $itemTaxAmount;
+                    
+                    $itemsWithTax[] = [
+                        'data' => $it,
+                        'tax_rate' => $itemTaxRate,
+                        'tax_amount' => $itemTaxAmount,
+                    ];
                 }
+
+                // Calculate final totals
                 $discount = (float) ($validated['discount'] ?? 0);
-                $total    = max($subtotal - $discount, 0);
+                $subtotalAfterDiscount = max($subtotalBeforeTax - $discount, 0);
+                
+                // Apply discount proportionally to tax if discount exists
+                if ($discount > 0 && $subtotalBeforeTax > 0) {
+                    $discountRatio = $subtotalAfterDiscount / $subtotalBeforeTax;
+                    $totalTaxAmount = $totalTaxAmount * $discountRatio;
+                }
+                
+                $total = $subtotalAfterDiscount + $totalTaxAmount;
 
                 $sale = Sale::create([
-                    'invoice_no'     => Sale::generateInvoiceNo(),
-                    'customer_id'    => $validated['customer_id'] ?? null,
-                    'customer_name'  => $validated['customer_name'] ?? null,
-                    'customer_phone' => $validated['customer_phone'] ?? null,
-                    'sale_date'      => $validated['sale_date'] ?? now(),
-                    'subtotal'       => $subtotal,
-                    'discount'       => $discount,
-                    'total'          => $total,
-                    'payment_method' => $validated['payment_method'] ?? 'cash',
-                    'note'           => $validated['note'] ?? null,
-                    'created_by'     => auth()->id(),
+                    'invoice_no'         => Sale::generateInvoiceNo(),
+                    'customer_id'        => $validated['customer_id'] ?? null,
+                    'customer_name'      => $validated['customer_name'] ?? null,
+                    'customer_phone'     => $validated['customer_phone'] ?? null,
+                    'sale_date'          => $validated['sale_date'] ?? now(),
+                    'subtotal'           => $subtotalBeforeTax,
+                    'subtotal_before_tax' => $subtotalBeforeTax,
+                    'discount'           => $discount,
+                    'tax_amount'         => $totalTaxAmount,
+                    'total'              => $total,
+                    'payment_method'     => $validated['payment_method'] ?? 'cash',
+                    'note'               => $validated['note'] ?? null,
+                    'created_by'         => auth()->id(),
                 ]);
 
-                foreach ($validated['items'] as $it) {
+                foreach ($itemsWithTax as $item) {
                     SaleItem::create([
                         'sale_id'    => $sale->id,
-                        'product_id' => $it['product_id'],
-                        'quantity'   => $it['quantity'],
-                        'price'      => $it['price'],
+                        'product_id' => $item['data']['product_id'],
+                        'quantity'   => $item['data']['quantity'],
+                        'price'      => $item['data']['price'],
+                        'tax_rate'   => $item['tax_rate'],
+                        'tax_amount' => $item['tax_amount'],
                     ]);
 
                     StockMovement::create([
-                        'product_id' => $it['product_id'],
+                        'product_id' => $item['data']['product_id'],
                         'type'       => 'out',
-                        'quantity'   => $it['quantity'],
+                        'quantity'   => $item['data']['quantity'],
                         'related_id' => $sale->id,
                         'note'       => 'Direct Sale ' . $sale->invoice_no,
                     ]);
 
-                    Product::where('id', $it['product_id'])->decrement('stock', $it['quantity']);
+                    Product::where('id', $item['data']['product_id'])->decrement('stock', $item['data']['quantity']);
                 }
 
                 return $sale;
@@ -170,6 +223,23 @@ class SaleController extends Controller
         $sale->load(['items.product', 'customer', 'creator']);
 
         return view('admin.sales.show', compact('sale'));
+    }
+
+    /**
+     * Download the sale receipt as a PDF.
+     */
+    public function download(Sale $sale)
+    {
+        $sale->load(['items.product', 'customer', 'creator']);
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.sales.pdf', compact('sale', 'settings'));
+        
+        // Configure for Unicode support
+        $pdf->getDomPDF()->set_option('isPhpEnabled', true);
+        $pdf->getDomPDF()->set_option('isHtml5ParserEnabled', true);
+        
+        return $pdf->download('receipt-' . ($sale->invoice_no ?? $sale->id) . '.pdf');
     }
 
     /**

@@ -1,12 +1,111 @@
 @extends('layouts.app')
 
 @section('content')
+@php $isDirect = $customer->type === 'direct'; @endphp
+
+@if($isDirect)
+{{-- ══════════ DIRECT-SALE CUSTOMER VIEW ══════════ --}}
+<div class="max-w-3xl mx-auto space-y-5">
+    {{-- Header --}}
+    <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index', ['type' => 'direct']) }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">{{ $customer->name }}</h1>
+                <p class="text-sm text-gray-500 mt-0.5">{{ __('app.direct_customers') }} · #{{ $customer->id }}</p>
+            </div>
+        </div>
+        <a href="{{ route('customers.edit', $customer) }}"
+           class="inline-flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            {{ __('app.edit') }}
+        </a>
+    </div>
+
+    {{-- Profile + Stats --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+            <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mx-auto shadow">
+                <span class="text-white text-2xl font-bold">{{ strtoupper(mb_substr($customer->name, 0, 1)) }}</span>
+            </div>
+            <h2 class="text-base font-bold text-gray-800 mt-3">{{ $customer->name }}</h2>
+            @if($customer->phone)
+                <p class="text-sm text-gray-500 mt-1">📞 {{ $customer->phone }}</p>
+            @endif
+            @if($customer->address)
+                <p class="text-xs text-gray-400 mt-1">📍 {{ $customer->address }}</p>
+            @endif
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.items_count') }}</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{ $sales->count() }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.total_amount') }}</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1">${{ number_format($totalSpent, 2) }}</p>
+        </div>
+    </div>
+
+    {{-- Purchase history --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700">{{ __('app.sales_list') }}</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.sale_date') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.product') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($sales as $sale)
+                    <tr class="hover:bg-gray-50 align-top">
+                        <td class="px-5 py-3 font-semibold text-blue-600">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td>
+                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap">{{ optional($sale->sale_date)->format('d M Y') }}</td>
+                        <td class="px-5 py-3 text-gray-700">
+                            @foreach($sale->items as $item)
+                                <div class="flex items-center justify-between gap-3 {{ !$loop->last ? 'mb-1' : '' }}">
+                                    <span>{{ $item->product->name ?? '—' }}</span>
+                                    <span class="text-xs text-gray-400 whitespace-nowrap">x{{ $item->quantity }} · ${{ number_format($item->price, 2) }}</span>
+                                </div>
+                            @endforeach
+                        </td>
+                        <td class="px-5 py-3 text-right font-bold text-gray-800 whitespace-nowrap">${{ number_format($sale->total, 2) }}</td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap">
+                            <a href="{{ route('admin.sales.show', $sale) }}" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                <i class="fas fa-eye"></i> {{ __('app.view_receipt') }}
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-5 py-10 text-center text-sm text-gray-400">{{ __('app.no_sales_yet') }}</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+@else
+{{-- ══════════ INSTALLMENT CUSTOMER VIEW ══════════ --}}
 <div class="space-y-6">
 
     {{-- ── Header ── --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-3">
-            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <a href="{{ route('customers.index', ['type' => $customer->type]) }}" class="text-gray-400 hover:text-gray-600 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -33,6 +132,7 @@
                 </svg>
                 {{ __('app.edit') }}
             </a>
+            @unless($isDirect)
             <a href="{{ route('installments.create', ['customer_id' => $customer->id]) }}"
                class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,10 +140,12 @@
                 </svg>
                 {{ __('app.new_installment') }}
             </a>
+            @endunless
         </div>
     </div>
 
     {{-- ── Stats Row ── --}}
+    @unless($isDirect)
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.total_installments') }}</p>
@@ -62,6 +164,7 @@
             <p class="text-2xl font-bold text-red-500 mt-1">{{ $totalLate }}</p>
         </div>
     </div>
+    @endunless
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -130,6 +233,7 @@
             </div>
 
             {{-- Documents --}}
+            @unless($isDirect)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">{{ __('app.documents') }}</h3>
                 <div class="grid grid-cols-2 gap-3">
@@ -166,10 +270,11 @@
                     @endforeach
                 </div>
             </div>
+            @endunless
         </div>
 
         {{-- ── Right: Tabs ── --}}
-
+        @unless($isDirect)
         <div class="lg:col-span-2">
 
             {{-- Tab Nav --}}
@@ -631,8 +736,10 @@
             </div>
 
         </div>{{-- end right --}}
+        @endunless
     </div>{{-- end grid --}}
 </div>
+@endif
 
 <script>
 function switchTab(id) {

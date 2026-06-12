@@ -23,6 +23,15 @@ class DashboardController extends Controller
             $totalIncome      = Payment::where('status', 'approved')->sum('amount');
             $remainingBalance = Installment::sum('remaining_balance');
 
+            // ── Direct Sales income ──────────────────────────────
+            $directSalesTotal    = \App\Models\Sale::sum('total');
+            $directSalesToday    = \App\Models\Sale::whereDate('sale_date', today())->sum('total');
+            $directSalesMonth    = \App\Models\Sale::whereYear('sale_date', now()->year)
+                                        ->whereMonth('sale_date', now()->month)->sum('total');
+            $directSalesCount    = \App\Models\Sale::count();
+            // Combined revenue = installment payments + direct sales
+            $combinedIncome      = $totalIncome + $directSalesTotal;
+
             $activeInstallments = Installment::where('status', 'ongoing')->count();
             $overdueAmount      = Installment::where('status', 'overdue')->sum('remaining_balance');
 
@@ -108,6 +117,11 @@ class DashboardController extends Controller
                 'installmentStatus',
                 'recentCustomers',
                 'recentPayments',
+                'directSalesTotal',
+                'directSalesToday',
+                'directSalesMonth',
+                'directSalesCount',
+                'combinedIncome',
             ));
 
         } else {

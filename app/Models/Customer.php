@@ -11,6 +11,7 @@ class Customer extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'phone',
         'gender',
         'dob',
@@ -36,6 +37,11 @@ class Customer extends Model
     public function installments()
     {
         return $this->hasMany(Installment::class);
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 
     public function guarantors()

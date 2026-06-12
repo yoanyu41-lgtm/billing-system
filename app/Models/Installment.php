@@ -12,6 +12,9 @@ class Installment extends Model
         'total_price',
         'down_payment',
         'interest_rate',
+        'tax_rate',
+        'tax_amount',
+        'subtotal_before_tax',
         'duration_months',
         'monthly_payment',
         'remaining_balance',
@@ -26,6 +29,9 @@ class Installment extends Model
 
     protected $casts = [
         'contract_signed_at' => 'datetime',
+        'tax_rate' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'subtotal_before_tax' => 'decimal:2',
     ];
 
     public function customer()

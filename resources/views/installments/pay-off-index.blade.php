@@ -79,8 +79,7 @@
             </div>
 
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-5">
-                <p class="text-sm text-amber-800">{{ __('app.pay_off_note') }}</p>
-                <div class="mt-2 flex items-baseline justify-between">
+                <div class="flex items-baseline justify-between">
                     <span class="text-sm text-gray-600">{{ __('app.outstanding_principal') }}</span>
                     <span class="text-2xl font-extrabold text-amber-700">${{ number_format($installment->payoff_amount, 2) }}</span>
                 </div>
@@ -89,6 +88,18 @@
             <form method="POST" action="{{ route('installments.pay-off', $installment) }}">
                 @csrf
                 <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('app.settlement_title') }}</label>
+                        <input type="text" name="title" placeholder="{{ __('app.settlement_title_placeholder') }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('app.settlement_interest_rate') }}</label>
+                        <input type="number" step="0.01" min="0" max="100" name="interest_rate" value="0"
+                               data-principal="{{ $installment->payoff_amount }}"
+                               oninput="updatePayoffTotal({{ $installment->id }})"
+                               class="payoff-rate-{{ $installment->id }} w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('app.payment_method') }}</label>
                         <select name="payment_method_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -101,6 +112,11 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('app.payment_date') }}</label>
                         <input type="date" name="payment_date" value="{{ now()->toDateString() }}" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
+
+                    <div class="flex items-baseline justify-between border-t pt-3">
+                        <span class="text-sm font-medium text-gray-700">{{ __('app.total_payoff_amount') }}</span>
+                        <span class="text-xl font-extrabold text-amber-700 payoff-total-{{ $installment->id }}">${{ number_format($installment->payoff_amount, 2) }}</span>
+                    </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 mt-6">
                     <button type="button" onclick="document.getElementById('payoff-modal-{{ $installment->id }}').classList.add('hidden')" class="px-5 py-2.5 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">{{ __('app.cancel') }}</button>
@@ -111,4 +127,15 @@
     </div>
     @endif
 @endforeach
+
+<script>
+    function updatePayoffTotal(id) {
+        const input = document.querySelector('.payoff-rate-' + id);
+        const principal = parseFloat(input.getAttribute('data-principal')) || 0;
+        const rate = parseFloat(input.value) || 0;
+        const total = principal + (principal * rate / 100);
+        const label = document.querySelector('.payoff-total-' + id);
+        if (label) label.textContent = '$' + total.toFixed(2);
+    }
+</script>
 @endsection

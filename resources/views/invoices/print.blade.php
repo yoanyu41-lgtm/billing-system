@@ -283,14 +283,24 @@
             <h3>📊 {{ __('app.total') }}</h3>
             <div class="summary-row">
                 <span class="summary-label">{{ __('app.subtotal') }}:</span>
-                <span class="summary-value">${{ number_format($invoice->payment->installment->total_price, 2) }}</span>
+                <span class="summary-value">${{ number_format($invoice->payment->installment->subtotal_before_tax ?? $invoice->payment->installment->total_price, 2) }}</span>
             </div>
+            @if(($invoice->payment->installment->tax_amount ?? 0) > 0)
+            @php
+                $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+            @endphp
             <div class="summary-row">
-                <span class="summary-label">{{ __('app.discount') }}:</span>
-                <span class="summary-value">N/A</span>
+                <span class="summary-label">{{ __('app.tax') }} {{ $taxLabel }} ({{ $invoice->payment->installment->tax_rate }}%):</span>
+                <span class="summary-value">${{ number_format($invoice->payment->installment->tax_amount, 2) }}</span>
             </div>
+            @else
             <div class="summary-row">
                 <span class="summary-label">{{ __('app.tax') }}:</span>
+                <span class="summary-value">N/A</span>
+            </div>
+            @endif
+            <div class="summary-row">
+                <span class="summary-label">{{ __('app.discount') }}:</span>
                 <span class="summary-value">N/A</span>
             </div>
             <div class="summary-row total">

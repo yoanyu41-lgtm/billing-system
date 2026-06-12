@@ -1,44 +1,47 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
+@php $isDirect = ($type ?? 'installment') === 'direct'; @endphp
+<div class="{{ $isDirect ? 'max-w-2xl' : 'max-w-4xl' }} mx-auto space-y-5">
 
     <div class="flex items-center gap-3">
-        <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <a href="{{ route('customers.index', ['type' => $type ?? 'installment']) }}" class="text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.add_customer') }}</h1>
-            <p class="text-sm text-gray-500 mt-0.5">{{ __('app.customer_management') }}</p>
+            <h1 class="text-xl font-bold text-gray-800">{{ __('app.add_customer') }}</h1>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $isDirect ? __('app.direct_customers') : __('app.customer_management') }}</p>
         </div>
     </div>
 
-    <form method="POST" action="{{ route('customers.store') }}" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="{{ route('customers.store') }}" enctype="multipart/form-data" class="space-y-5">
         @csrf
+        <input type="hidden" name="type" value="{{ $type ?? 'installment' }}">
 
         {{-- ១. ព័ត៌មានផ្ទាល់ខ្លួន --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5 flex items-center gap-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
                 <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">១</span>
                 {{ __('app.personal_information') }}
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.full_name') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="name" value="{{ old('name') }}" required
-                           class="w-full px-3.5 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('name') border-red-400 @else border-gray-200 @enderror">
+                           class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('name') border-red-400 @else border-gray-200 @enderror">
                     @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.phone') }}</label>
                     <input type="text" name="phone" value="{{ old('phone') }}"
-                           class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
+                @if(($type ?? 'installment') !== 'direct')
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.gender') }}</label>
                     <select name="gender" class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -67,6 +70,7 @@
                     <input type="text" name="telegram_id" value="{{ old('telegram_id') }}"
                            class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
+                @endif
 
                 <div class="sm:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.address') }}</label>
@@ -76,6 +80,40 @@
             </div>
         </div>
 
+        @if(($type ?? 'installment') === 'direct')
+        {{-- ផលិតផល --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">២</span>
+                {{ __('app.product') }}
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.product') }}</label>
+                    <select name="product_id" id="productSelect"
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onchange="fillProductPrice(this)">
+                        <option value="">{{ __('app.select_product') }}</option>
+                        @foreach($products as $p)
+                            <option value="{{ $p->id }}" data-price="{{ $p->price }}">{{ $p->name }} ({{ __('app.stock') }}: {{ $p->stock }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.quantity') }}</label>
+                    <input type="number" name="quantity" value="1" min="1"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="sm:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.unit_price') }} ($)</label>
+                    <input type="number" step="0.01" min="0" name="price" id="priceInput" placeholder="0.00"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(($type ?? 'installment') !== 'direct')
         {{-- ២. រូបថតអតិថិជន --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-5 flex items-center gap-2">
@@ -140,6 +178,7 @@
                 @endforeach
             </div>
         </div>
+        @endif
 
         {{-- Buttons --}}
         <div class="flex items-center justify-end gap-3">
@@ -157,6 +196,15 @@
 </div>
 
 <script>
+function fillProductPrice(select) {
+    const opt = select.options[select.selectedIndex];
+    const price = opt.getAttribute('data-price');
+    const priceInput = document.getElementById('priceInput');
+    if (price && priceInput && !priceInput.value) {
+        priceInput.value = parseFloat(price).toFixed(2);
+    }
+}
+
 function previewImage(input, previewId) {
     const preview = document.getElementById(previewId);
     if (input.files && input.files[0]) {

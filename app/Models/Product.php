@@ -25,12 +25,17 @@ class Product extends Model
         'warranty',
         'condition',
         'is_active',
+        'is_taxable',
+        'tax_rate',
+        'tax_type',
         'image',
         'description',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_taxable' => 'boolean',
+        'tax_rate' => 'decimal:2',
     ];
 
     public function installments()

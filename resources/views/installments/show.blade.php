@@ -199,6 +199,19 @@
                 <div class="overflow-x-auto rounded-xl border border-gray-100 mb-6">
                     <table class="min-w-full divide-y divide-gray-100 text-sm">
                         <tbody class="divide-y divide-gray-100">
+                            @if($installment->tax_amount > 0)
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.subtotal') }}</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</td>
+                            </tr>
+                            @php
+                                $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                            @endphp
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.tax') }} {{ $taxLabel }} ({{ $installment->tax_rate }}%)</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->tax_amount, 2) }}</td>
+                            </tr>
+                            @endif
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.total_price') }}</td>
                                 <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->total_price, 2) }}</td>
