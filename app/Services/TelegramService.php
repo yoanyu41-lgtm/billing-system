@@ -12,6 +12,12 @@ class TelegramService
 {
     public function sendToCustomer(?int $customerId, string $message): array
     {
+        // Check if message is a reminder and we have a Bank QR Code configured
+        $bankQr = Setting::where('key', 'company_bank_qr')->value('value');
+        if ($bankQr && (str_starts_with(trim($message), '⏰') || str_contains(strtolower($message), 'reminder') || str_contains(strtolower($message), 'due'))) {
+            return $this->sendPhotoToCustomer($customerId, $bankQr, $message);
+        }
+
         $customer = Customer::find($customerId);
 
         if (! $customer) {
@@ -85,6 +91,116 @@ class TelegramService
             ]);
 
             return ['ok' => false, 'reason' => 'Telegram request failed.'];
+        }
+    }
+
+    public function sendPhotoToCustomer(?int $customerId, string $photoPath, string $caption): array
+    {
+        $customer = Customer::find($customerId);
+
+        if (! $customer) {
+            return ['ok' => false, 'reason' => 'Customer not found.'];
+        }
+
+        if (blank($customer->telegram_id)) {
+            TelegramLog::create([
+                'customer_id' => $customer->id,
+                'message' => '[NOT SENT PHOTO] ' . $caption . ' | Reason: Telegram ID is missing.',
+                'sent_at' => now(),
+            ]);
+
+            return ['ok' => false, 'reason' => 'Customer Telegram ID is missing.'];
+        }
+
+        $token = $this->getToken();
+
+        if (blank($token)) {
+            TelegramLog::create([
+                'customer_id' => $customer->id,
+                'message' => '[NOT SENT PHOTO] ' . $caption . ' | Reason: Telegram token is not configured.',
+                'sent_at' => now(),
+            ]);
+
+            return ['ok' => false, 'reason' => 'Telegram token is not configured.'];
+        }
+
+        try {
+            $fullPath = storage_path('app/public/' . $photoPath);
+            if (!file_exists($fullPath)) {
+                // Fallback to text message if photo file is missing in storage
+                $this->sendToCustomerTextOnly($customer, $caption, $token);
+            }
+
+            $response = Http::attach(
+                'photo', file_get_contents($fullPath), basename($photoPath)
+            )->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                'chat_id' => $customer->telegram_id,
+                'caption' => $caption,
+            ]);
+
+            if ($response->successful() && data_get($response->json(), 'ok') === true) {
+                TelegramLog::create([
+                    'customer_id' => $customer->id,
+                    'message' => '[PHOTO SENT] ' . $caption,
+                    'sent_at' => now(),
+                ]);
+
+                return ['ok' => true, 'reason' => 'Telegram message with photo sent successfully.'];
+            }
+
+            Log::warning('Telegram API returned an error for photo.', [
+                'customer_id' => $customer->id,
+                'response' => $response->body(),
+            ]);
+
+            $apiError = data_get($response->json(), 'description', 'Telegram API rejected the request.');
+
+            TelegramLog::create([
+                'customer_id' => $customer->id,
+                'message' => '[FAILED PHOTO] ' . $caption . ' | Reason: ' . $apiError,
+                'sent_at' => now(),
+            ]);
+
+            return ['ok' => false, 'reason' => $apiError];
+        } catch (\Throwable $e) {
+            Log::error('Telegram send photo failed.', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            TelegramLog::create([
+                'customer_id' => $customer->id,
+                'message' => '[FAILED PHOTO] ' . $caption . ' | Reason: ' . $e->getMessage(),
+                'sent_at' => now(),
+            ]);
+
+            return ['ok' => false, 'reason' => 'Telegram request failed.'];
+        }
+    }
+
+    private function sendToCustomerTextOnly(Customer $customer, string $message, string $token): array
+    {
+        try {
+            $response = Http::asForm()
+                ->timeout(15)
+                ->post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $customer->telegram_id,
+                    'text' => $message,
+                ]);
+
+            if ($response->successful() && data_get($response->json(), 'ok') === true) {
+                TelegramLog::create([
+                    'customer_id' => $customer->id,
+                    'message' => $message,
+                    'sent_at' => now(),
+                ]);
+
+                return ['ok' => true, 'reason' => 'Telegram message sent successfully.'];
+            }
+
+            return ['ok' => false, 'reason' => 'Text fallback failed.'];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'reason' => $e->getMessage()];
         }
     }
 

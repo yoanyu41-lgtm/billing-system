@@ -24,14 +24,16 @@ class InstallmentController extends Controller
         }
 
         $installments = $query->paginate(10);
-        return view('installments.index', compact('installments'));
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        return view('installments.index', compact('installments', 'exchangeRate'));
     }
 
     public function create()
     {
         $customers = Customer::where('type', 'installment')->orderBy('name')->get();
-        $products = Product::all();
-        return view('installments.create', compact('customers', 'products'));
+        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        return view('installments.create', compact('customers', 'products', 'exchangeRate'));
     }
 
     public function store(Request $request)
@@ -102,7 +104,11 @@ class InstallmentController extends Controller
     public function show(Installment $installment)
     {
         Gate::authorize('manage-installment', $installment);
-        return view('installments.show', compact('installment'));
+        $installment->load('customer', 'product');
+        $schedule = $installment->getPaymentSchedule();
+        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        return view('installments.show', compact('installment', 'schedule', 'paymentMethods', 'exchangeRate'));
     }
 
     public function payOffIndex()
@@ -187,8 +193,12 @@ class InstallmentController extends Controller
     {
         Gate::authorize('manage-installment', $installment);
         $customers = Customer::all();
-        $products = Product::all();
-        return view('installments.edit', compact('installment', 'customers', 'products'));
+        $products = Product::where('is_active', true)
+            ->orWhere('id', $installment->product_id)
+            ->orderBy('name')
+            ->get();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        return view('installments.edit', compact('installment', 'customers', 'products', 'exchangeRate'));
     }
 
     public function update(Request $request, Installment $installment)
@@ -306,66 +316,12 @@ class InstallmentController extends Controller
         Gate::authorize('manage-installment', $installment);
 
         $installment->load('customer', 'product');
+        $schedule = $installment->getPaymentSchedule();
+        $paymentMethods = PaymentMethod::orderBy('name')->get();
 
-        $principalBase = max($installment->total_price - $installment->down_payment, 0);
-        $duration = max($installment->duration_months, 1);
-        $monthlyPrincipal = round($principalBase / $duration, 2);
-        $monthlyInterest = round(($principalBase * $installment->interest_rate / 100) / 12, 2);
-
-        // Total approved amount paid so far, allocated to schedule rows in order.
         $totalPaid = $installment->payments()
             ->where('status', 'approved')
             ->sum('amount');
-
-        $startDate = \Carbon\Carbon::parse($installment->created_at);
-        $remainingPaid = (float) $totalPaid;
-
-        $outstandingPrincipal = $principalBase;   // remaining principal balance
-        $accumulatedPrincipal = 0;                // principal repaid so far
-
-        $schedule = [];
-        for ($i = 1; $i <= $duration; $i++) {
-            $dueDate = $startDate->copy()->addMonths($i);
-
-            // Last row absorbs any rounding remainder so totals match exactly.
-            if ($i === $duration) {
-                $principalPortion = round($principalBase - $accumulatedPrincipal, 2);
-            } else {
-                $principalPortion = $monthlyPrincipal;
-            }
-            $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
-
-            $amountDue = round($principalPortion + $monthlyInterest, 2);
-
-            // Outstanding balances AFTER this payment.
-            $outstandingPrincipal = round(max($outstandingPrincipal - $principalPortion, 0), 2);
-            $outstandingDebt = round($outstandingPrincipal + $monthlyInterest, 2);
-
-            // Allocate paid balance to this installment row.
-            $allocated = min($remainingPaid, $amountDue);
-            $remainingPaid = round($remainingPaid - $allocated, 2);
-
-            if ($allocated >= $amountDue) {
-                $status = 'paid';
-            } elseif ($dueDate->isPast()) {
-                $status = 'overdue';
-            } else {
-                $status = 'pending';
-            }
-
-            $schedule[] = [
-                'month'                 => $i,
-                'due_date'              => $dueDate,
-                'day'                   => $dueDate->format('D'),
-                'principal'             => $principalPortion,
-                'interest'              => $monthlyInterest,
-                'amount'                => $amountDue,
-                'outstanding_principal' => $outstandingPrincipal,
-                'outstanding_debt'      => $outstandingDebt,
-                'paid'                  => $allocated,
-                'status'                => $status,
-            ];
-        }
 
         $totalScheduled = round(array_sum(array_column($schedule, 'amount')), 2);
 
@@ -379,7 +335,7 @@ class InstallmentController extends Controller
             'overdue_count'     => count(array_filter($schedule, fn ($row) => $row['status'] === 'overdue')),
         ];
 
-        return view('installments.schedule', compact('installment', 'schedule', 'summary'));
+        return view('installments.schedule', compact('installment', 'schedule', 'summary', 'paymentMethods'));
     }
 
     public function printContract(Installment $installment)
@@ -474,5 +430,66 @@ class InstallmentController extends Controller
         
         return redirect()->route('installments.show', $installment)
             ->with('success', 'Contract deleted successfully.');
+    }
+
+    public function sendTelegramQr(Installment $installment, $month)
+    {
+        Gate::authorize('manage-installment', $installment);
+
+        $customer = $installment->customer;
+        if (!$customer || empty($customer->telegram_id)) {
+            return redirect()->back()->with('error', __('app.telegram_id_missing'));
+        }
+
+        $bankQr = \App\Models\Setting::where('key', 'company_bank_qr')->value('value');
+        if (empty($bankQr)) {
+            return redirect()->back()->with('error', __('app.shop_qr_missing'));
+        }
+
+        // Get schedule to retrieve due date and amount
+        $schedule = $installment->getPaymentSchedule();
+        $targetMonth = null;
+        foreach ($schedule as $row) {
+            if ($row['month'] == $month) {
+                $targetMonth = $row;
+                break;
+            }
+        }
+
+        if (!$targetMonth) {
+            return redirect()->back()->with('error', 'Invalid installment month.');
+        }
+
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        $amount = $targetMonth['amount'];
+        $amountRiel = round($amount * $exchangeRate);
+        $dueDate = \Carbon\Carbon::parse($targetMonth['due_date'])->format('d-m-Y');
+
+        $isKm = app()->getLocale() === 'km';
+        if ($isKm) {
+            $message = "⏰ *សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់ / Payment Request Notification*\n\n"
+                . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
+                . "នេះជាកាលវិភាគបង់ប្រាក់សម្រាប់គម្រោងបង់រំលស់ទំនិញ៖ *{$installment->product->name}*\n"
+                . "• " . __('app.installment_month') . "៖ *{$month}*\n"
+                . "• ថ្ងៃកំណត់បង់៖ *{$dueDate}*\n"
+                . "• ទឹកប្រាក់ត្រូវបង់៖ *$" . number_format($amount, 2) . "* (ឬ ~ *" . number_format($amountRiel) . "* ៛)\n\n"
+                . "សូមលោកអ្នកស្កេន QR Code ខាងក្រោមដើម្បីទូទាត់ប្រាក់ និងផ្ញើរូបភាពបង្កាន់ដៃ (Payment Slip) ត្រឡប់មកវិញដើម្បីបញ្ជាក់ការបង់ប្រាក់។ សូមអរគុណ! 🙏";
+        } else {
+            $message = "⏰ *Payment Request Notification / សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់*\n\n"
+                . "Dear Customer *{$customer->name}*:\n"
+                . "This is the payment request for your installment plan: *{$installment->product->name}*\n"
+                . "• " . __('app.installment_month') . ": *{$month}*\n"
+                . "• Due Date: *{$dueDate}*\n"
+                . "• Amount Due: *$" . number_format($amount, 2) . "* (or ~ *" . number_format($amountRiel) . "* KHR)\n\n"
+                . "Please scan the QR Code below to make payment and reply with your transfer receipt/slip image. Thank you! 🙏";
+        }
+
+        $telegramResult = $this->telegramService->sendPhotoToCustomer($installment->customer_id, $bankQr, $message);
+
+        if ($telegramResult['ok']) {
+            return redirect()->back()->with('success', __('app.payment_request_sent'));
+        } else {
+            return redirect()->back()->with('error', 'Telegram error: ' . $telegramResult['reason']);
+        }
     }
 }

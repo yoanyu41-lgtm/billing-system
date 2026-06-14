@@ -68,22 +68,26 @@
                                     </div>
                                 @endforeach
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">${{ number_format($sale->subtotal, 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">
+                                {{ format_currency($sale->subtotal, $exchangeRate) }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
                                 @if($sale->tax_amount > 0)
-                                    ${{ number_format($sale->tax_amount, 2) }}
+                                    {{ format_currency($sale->tax_amount, $exchangeRate) }}
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900">${{ number_format($sale->total, 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <span class="font-bold text-gray-900">{{ format_currency($sale->total, $exchangeRate) }}</span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
                                     {{ \Illuminate\Support\Facades\Lang::has('app.'.$sale->payment_method) ? __('app.'.$sale->payment_method) : $sale->payment_method }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('admin.sales.show', $sale) }}" class="text-blue-600 hover:text-blue-800 mr-3">
+                                <a href="{{ route('admin.sales.show', [$sale, 'from' => request('from')]) }}" class="text-blue-600 hover:text-blue-800 mr-3">
                                     <i class="fas fa-eye"></i> {{ __('app.view_receipt') }}
                                 </a>
                                 <form action="{{ route('admin.sales.destroy', $sale) }}" method="POST" class="inline"

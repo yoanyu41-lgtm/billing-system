@@ -33,7 +33,7 @@
         <div>
             <div class="sc-icon"><i class="fas fa-wallet"></i></div>
             <div class="sc-label">{{ __('app.total_revenue') }}</div>
-            <div class="sc-value">${{ number_format($totalIncome, 0) }}</div>
+            <div class="sc-value text-2xl font-bold">{{ format_currency($totalIncome, $exchangeRate) }}</div>
             <div class="sc-trend">↑ 15% {{ __('app.from_last_month') }}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
@@ -45,8 +45,8 @@
         <div>
             <div class="sc-icon"><i class="fas fa-cash-register"></i></div>
             <div class="sc-label">{{ __('app.direct_sales') }}</div>
-            <div class="sc-value">${{ number_format($directSalesTotal ?? 0, 0) }}</div>
-            <div class="sc-trend">{{ __('app.this_month') }}: ${{ number_format($directSalesMonth ?? 0, 0) }}</div>
+            <div class="sc-value text-2xl font-bold">{{ format_currency($directSalesTotal ?? 0, $exchangeRate) }}</div>
+            <div class="sc-trend">{{ __('app.this_month') }}: {{ format_currency($directSalesMonth ?? 0, $exchangeRate) }}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,26 40,16 80,22 120,10 160,18 200,6" fill="none" stroke="#fff" stroke-width="2"/>
@@ -57,7 +57,7 @@
         <div>
             <div class="sc-icon"><i class="fas fa-coins"></i></div>
             <div class="sc-label">{{ __('app.combined_income') }}</div>
-            <div class="sc-value">${{ number_format($combinedIncome ?? 0, 0) }}</div>
+            <div class="sc-value text-2xl font-bold">{{ format_currency($combinedIncome ?? 0, $exchangeRate) }}</div>
             <div class="sc-trend">{{ __('app.installment') }} + {{ __('app.direct_sale') }}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
@@ -81,7 +81,7 @@
         <div>
             <div class="sc-icon"><i class="fas fa-exclamation-circle"></i></div>
             <div class="sc-label">{{ __('app.overdue_amount') }}</div>
-            <div class="sc-value">${{ number_format($overdueAmount ?? 0, 0) }}</div>
+            <div class="sc-value text-2xl font-bold">{{ format_currency($overdueAmount ?? 0, $exchangeRate) }}</div>
             <div class="sc-trend">↓ 5% {{ __('app.from_last_month') }}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
@@ -213,7 +213,9 @@
                         <td style="font-weight:600;">{{ $customer->name }}</td>
                         <td class="mono">{{ $customer->phone }}</td>
                         <td>{{ $customer->latestInstallment?->product?->name ?? '—' }}</td>
-                        <td style="font-weight:600;">${{ number_format($customer->latestInstallment?->total_price ?? 0, 2) }}</td>
+                        <td>
+                            <span class="font-semibold text-gray-900">${{ number_format($customer->latestInstallment?->total_price ?? 0, 2) }}</span>
+                        </td>
                         <td>
                             @php $st = $customer->latestInstallment?->status ?? 'ongoing'; @endphp
                             <span class="pill pill-{{ $st }}">{{ ucfirst($st) }}</span>
@@ -251,7 +253,9 @@
                         <td style="color:#94a3b8;">{{ $i+1 }}</td>
                         <td class="mono" style="color:#6366f1;">{{ $payment->invoice_no ?? 'INV-'.str_pad($payment->id,5,'0',STR_PAD_LEFT) }}</td>
                         <td style="font-weight:600;">{{ $payment->installment?->customer?->name }}</td>
-                        <td style="font-weight:700;">${{ number_format($payment->amount, 2) }}</td>
+                        <td>
+                            <span class="font-semibold text-gray-900">${{ number_format($payment->amount, 2) }}</span>
+                        </td>
                         <td>{{ $payment->created_at->format('d M Y') }}</td>
                         <td>
                             @php

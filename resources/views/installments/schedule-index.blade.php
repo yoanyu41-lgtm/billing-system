@@ -32,9 +32,9 @@
                             <div class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $installment->product?->name ?? 'N/A' }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${{ number_format($installment->monthly_payment, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->monthly_payment) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">${{ number_format($installment->remaining_balance, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">{{ format_currency($installment->remaining_balance) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg transition duration-150">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>

@@ -8,6 +8,7 @@
     $companyAddress = \App\Models\Setting::where('key','company_address')->value('value');
     $companyAddressKm = \App\Models\Setting::where('key','company_address_km')->value('value') ?? $companyAddress;
     $companyEmail   = \App\Models\Setting::where('key','company_email')->value('value');
+    $companyLogo    = \App\Models\Setting::where('key','company_logo')->value('value');
     $itemCount      = $sale->items->count();
 
     // Single-language output based on current locale
@@ -21,12 +22,12 @@
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 no-print">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <i class="fas fa-receipt text-blue-600"></i> {{ __('app.receipt') }}
+                <i class="fas fa-receipt text-blue-600"></i> {{ __('app.invoice_detail') }}
             </h1>
             <p class="text-sm text-gray-500 mt-1">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('admin.sales.index', ['from' => request('from')]) }}"
+            <a href="{{ request('back') === 'all' ? route('invoices.index') : route('invoices.index', ['type' => request('back', 'direct')]) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
             </a>
@@ -362,6 +363,7 @@ async function savePDF() {
         const pdf = new jsPDF('p', 'mm', 'a4');
         pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
         pdf.save(filename);
+        
         
     } catch (error) {
         console.error('Error generating PDF:', error);

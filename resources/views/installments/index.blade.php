@@ -57,10 +57,10 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            ${{ number_format($installment->monthly_payment, 2) }}
+                            {{ format_currency($installment->monthly_payment, $exchangeRate) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            ${{ number_format($installment->remaining_balance, 2) }}
+                            {{ format_currency($installment->remaining_balance, $exchangeRate) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($installment->status === 'active' || $installment->status === 'ongoing')

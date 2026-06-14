@@ -47,6 +47,14 @@ Route::get('/lang/{locale}', function ($locale) {
     return back();
 })->name('lang.switch');
 
+Route::get('/currency/{currency}', function ($currency) {
+    if (in_array($currency, ['USD', 'KHR'])) {
+        session(['display_currency' => $currency]);
+        session()->save();
+    }
+    return back();
+})->name('currency.switch');
+
 // Global Search API
 Route::get('/api/search', function (Request $request) {
     $query = $request->get('q');
@@ -99,6 +107,7 @@ Route::middleware('auth')->group(function () {
     Route::post('installments/{installment}/upload-contract', [InstallmentController::class, 'uploadContract'])->name('installments.uploadContract');
     Route::get('installments/{installment}/download-contract', [InstallmentController::class, 'downloadContract'])->name('installments.downloadContract');
     Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
+    Route::post('installments/{installment}/send-telegram-qr/{month}', [InstallmentController::class, 'sendTelegramQr'])->name('installments.send-telegram-qr');
 
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update']);

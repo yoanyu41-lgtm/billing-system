@@ -213,23 +213,39 @@
                 </div>
             </div>
             
-            <!-- Business License Section -->
+            <!-- Business License & Exchange Rate Section -->
             <div class="mb-6">
-                <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                    {{ __('app.business_license') }}
-                </h3>
-                
-                <div>
-                    <label class="mb-1.5 block text-sm text-slate-700">
-                        {{ __('app.business_license_number') }}
-                    </label>
-                    <input 
-                        type="text" 
-                        name="business_license" 
-                        value="{{ old('business_license', $settings['company_business_license'] ?? '') }}" 
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="BL-2024-xxxxx">
-                    <p class="mt-1 text-xs text-slate-600">{{ __('app.optional_field') }}</p>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                            {{ __('app.business_license') }}
+                        </h3>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            {{ __('app.business_license_number') }}
+                        </label>
+                        <input 
+                            type="text" 
+                            name="business_license" 
+                            value="{{ old('business_license', $settings['company_business_license'] ?? '') }}" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="BL-2024-xxxxx">
+                        <p class="mt-1 text-xs text-slate-600">{{ __('app.optional_field') }}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                            អត្រាប្តូរប្រាក់រៀល / KHR Exchange Rate
+                        </h3>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            អត្រាប្តូរប្រាក់រៀល / KHR Exchange Rate ($1 = ៛) <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            name="exchange_rate" 
+                            value="{{ old('exchange_rate', $settings['exchange_rate'] ?? '4100') }}" 
+                            required
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
                 </div>
             </div>
             
@@ -253,6 +269,32 @@
                     <input 
                         type="file" 
                         name="logo" 
+                        accept="image/jpeg,image/jpg,image/png"
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
+                    <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
+                </div>
+            </div>
+
+            <!-- Bank QR Code Section -->
+            <div class="mb-6 border-t border-slate-100 pt-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                    រូបភាព QR Code ធនាគាររបស់ហាង / Shop Bank QR Code
+                </h3>
+                
+                @if(!empty($settings['company_bank_qr']))
+                <div class="mb-3">
+                    <img src="{{ asset('storage/' . $settings['company_bank_qr']) }}" alt="Bank QR Code" class="h-44 rounded-lg border border-slate-300 object-contain bg-white p-2">
+                    <p class="mt-1.5 text-xs text-slate-600">QR Code បច្ចុប្បន្ន / Current QR Code</p>
+                </div>
+                @endif
+                
+                <div>
+                    <label class="mb-1.5 block text-sm text-slate-700">
+                        បញ្ចូលរូបភាព QR Code ថ្មី / Upload New QR Code Image
+                    </label>
+                    <input 
+                        type="file" 
+                        name="bank_qr" 
                         accept="image/jpeg,image/jpg,image/png"
                         class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
                     <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
@@ -314,12 +356,9 @@
                         <label class="mb-2 block text-sm font-medium text-slate-700" lang="km">
                             ស្លាកពន្ធ / Tax Label
                         </label>
-                        <select name="tax_label" 
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                            <option value="VAT" {{ ($settings['tax_label'] ?? 'VAT') == 'VAT' ? 'selected' : '' }}>VAT (អាករលើតម្លៃបន្ថែម)</option>
-                            <option value="GST" {{ ($settings['tax_label'] ?? '') == 'GST' ? 'selected' : '' }}>GST</option>
-                            <option value="Tax" {{ ($settings['tax_label'] ?? '') == 'Tax' ? 'selected' : '' }}>Tax (ពន្ធ)</option>
-                        </select>
+                        <input type="text" readonly value="VAT (អាករលើតម្លៃបន្ថែម)"
+                            class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed focus:outline-none">
+                        <input type="hidden" name="tax_label" value="VAT">
                     </div>
                 </div>
                 

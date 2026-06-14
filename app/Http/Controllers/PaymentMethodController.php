@@ -50,19 +50,29 @@ class PaymentMethodController extends Controller
     private function ensureDefaults(): void
     {
         $defaults = [
-            ['name' => 'QR', 'details' => 'QR code payment option for fast scanning.'],
-            ['name' => 'Credit Card', 'details' => 'Standard card payment via Visa or Mastercard.'],
-            ['name' => 'Other Third Party', 'details' => 'External payment gateway or partner service.'],
-            ['name' => 'Direct Credit Card', 'details' => 'Direct card charge flow without extra gateway steps.'],
-            ['name' => 'Test Basic Security', 'details' => 'Basic security check flow for payment testing.'],
-            ['name' => 'AI Predict', 'details' => 'AI-assisted payment screening and prediction option.'],
+            ['name' => 'Cash', 'details' => 'សាច់ប្រាក់ - Cash payment.'],
+            ['name' => 'QR Code', 'details' => 'QR Code - Scan to pay.'],
+            ['name' => 'Credit Card', 'details' => 'កាតឥណទាន - Credit/Debit Card payment.'],
         ];
+
+        // Rename legacy name 'QR' to 'QR Code' if it exists in DB
+        PaymentMethod::where('name', 'QR')->update(['name' => 'QR Code']);
 
         foreach ($defaults as $method) {
             PaymentMethod::firstOrCreate(
                 ['name' => $method['name']],
                 ['details' => $method['details']]
             );
+        }
+
+        // Clean up unused other payment methods
+        $defaultNames = ['Cash', 'QR Code', 'Credit Card'];
+        $unused = PaymentMethod::whereNotIn('name', $defaultNames)->get();
+        foreach ($unused as $method) {
+            $hasPayments = \App\Models\Payment::where('payment_method_id', $method->id)->exists();
+            if (!$hasPayments) {
+                $method->delete();
+            }
         }
     }
 }

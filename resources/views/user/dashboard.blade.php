@@ -204,7 +204,9 @@
                                     {{ $payment->installment->customer->name ?? 'N/A' }}
                                 </a>
                             </td>
-                            <td class="py-3 font-semibold text-gray-800">${{ number_format($payment->amount, 2) }}</td>
+                            <td class="py-3">
+                                <span class="font-semibold text-gray-800">${{ number_format($payment->amount, 2) }}</span>
+                            </td>
                             <td class="py-3 text-gray-500">{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A' }}</td>
                             <td class="py-3">
                                 @if($payment->status === 'approved')

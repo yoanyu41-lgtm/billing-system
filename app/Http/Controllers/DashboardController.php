@@ -99,6 +99,7 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get();
 
+            $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
             return view('admin.dashboard', compact(
                 'totalCustomers',
                 'totalProducts',
@@ -122,6 +123,7 @@ class DashboardController extends Controller
                 'directSalesMonth',
                 'directSalesCount',
                 'combinedIncome',
+                'exchangeRate',
             ));
 
         } else {
@@ -161,6 +163,7 @@ class DashboardController extends Controller
                 'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
             ];
 
+            $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
             return view('user.dashboard', compact(
                 'customers',
                 'paymentsToday',
@@ -168,7 +171,8 @@ class DashboardController extends Controller
                 'lateCustomers',
                 'recentPayments',
                 'monthlyCollection',
-                'installmentStatus'
+                'installmentStatus',
+                'exchangeRate'
             ));
         }
     }

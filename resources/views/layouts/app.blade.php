@@ -815,6 +815,28 @@
                 height: 36px;
             }
         }
+
+        /* Smooth Dropdown Animation */
+        .animate-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            z-index: 1000;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .animate-dropdown.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -889,8 +911,12 @@
 
             {{-- Direct Sale (ទិញដាច់) --}}
             @if(in_array(auth()->user()->role, ['admin', 'staff']))
-            <div class="sb-dropdown {{ request()->routeIs('admin.sales.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            @php
+                $isDirectSaleOpen = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
+                $isDirectSaleIndexActive = (request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show')) && request('from') !== 'invoice';
+            @endphp
+            <div class="sb-dropdown {{ $isDirectSaleOpen ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ $isDirectSaleOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>
                     <span>{{ __('app.direct_sale') }}</span>
                     <i class="fas fa-chevron-down"></i>
@@ -899,16 +925,48 @@
                     <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
                         <i class="fas fa-plus-circle"></i> {{ __('app.new_direct_sale') }}
                     </a>
-                    <a href="{{ route('admin.sales.index') }}" class="{{ request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.sales_list') }}
                     </a>
                 </div>
             </div>
             @endif
 
-            <a href="{{ route('invoices.index') }}" class="{{ request()->routeIs('invoices.*') ? 'active' : '' }}">
-                <i class="fas fa-file-alt"></i> {{ __('app.invoices') }}
-            </a>
+            @php
+                $isInvoiceOpen = request()->routeIs('invoices.*') || (request()->routeIs('admin.sales.*') && request('from') === 'invoice');
+                
+                $showInvoice = request()->route('invoice');
+                if (is_numeric($showInvoice)) {
+                    $showInvoice = \App\Models\Invoice::find($showInvoice);
+                }
+                $isPayoffShow = $showInvoice && $showInvoice->payment?->is_settlement;
+                
+                $isAllInvoicesActive = request()->routeIs('invoices.index') && !request()->has('type');
+                $isInstallmentInvoice = (request()->routeIs('invoices.index') && request('type') === 'installment') || (request()->routeIs('invoices.show') && request('type') !== 'payoff' && request('type') !== 'direct' && !$isPayoffShow);
+                $isPayoffInvoice = (request()->routeIs('invoices.index') && request('type') === 'payoff') || (request()->routeIs('invoices.show') && (request('type') === 'payoff' || $isPayoffShow));
+                $isDirectSaleInvoice = (request()->routeIs('invoices.index') && request('type') === 'direct') || (request()->routeIs('invoices.show') && request('type') === 'direct');
+            @endphp
+            <div class="sb-dropdown {{ $isInvoiceOpen ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ $isInvoiceOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-file-alt"></i>
+                    <span>{{ __('app.invoices') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('invoices.index') }}" class="{{ $isAllInvoicesActive ? 'active' : '' }}">
+                        <i class="fas fa-list"></i> {{ __('app.all_invoices') }}
+                    </a>
+                    <a href="{{ route('invoices.index', ['type' => 'installment']) }}" class="{{ $isInstallmentInvoice ? 'active' : '' }}">
+                        <i class="fas fa-calendar-alt"></i> {{ __('app.installment_invoices') }}
+                    </a>
+                    <a href="{{ route('invoices.index', ['type' => 'payoff']) }}" class="{{ $isPayoffInvoice ? 'active' : '' }}">
+                        <i class="fas fa-file-signature"></i> {{ __('app.payoff_invoices') }}
+                    </a>
+                    <a href="{{ route('invoices.index', ['type' => 'direct']) }}" class="{{ $isDirectSaleInvoice ? 'active' : '' }}">
+                        <i class="fas fa-cash-register"></i> {{ __('app.direct_sale_invoices') }}
+                    </a>
+                </div>
+            </div>
 
             {{-- Payment Dropdown --}}
             <div class="sb-dropdown {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : '' }}">
@@ -1033,10 +1091,104 @@
                 <i class="fas fa-bars"></i>
             </div>
             <div class="topbar-title">
-                <h2>Dashboard</h2>
+                <h2>
+                    @if(request()->routeIs('dashboard'))
+                        {{ __('app.dashboard') }}
+                    @elseif(request()->routeIs('customers.*'))
+                        {{ __('app.customers') }}
+                    @elseif(request()->routeIs('installments.contract-index') || request()->routeIs('contracts'))
+                        {{ __('app.contracts') }}
+                    @elseif(request()->routeIs('installments.pay-off-index') || request()->routeIs('pay-offs'))
+                        {{ __('app.pay_off') }}
+                    @elseif(request()->routeIs('installments.schedule-index') || request()->routeIs('payment-schedules'))
+                        {{ __('app.payment_schedule') }}
+                    @elseif(request()->routeIs('installments.*'))
+                        {{ __('app.installment_plans') }}
+                    @elseif(request()->routeIs('invoices.index'))
+                        @if(request('type') === 'installment')
+                            {{ __('app.installment_invoices') }}
+                        @elseif(request('type') === 'payoff')
+                            {{ __('app.payoff_invoices') }}
+                        @elseif(request('type') === 'direct')
+                            {{ __('app.direct_sale_invoices') }}
+                        @else
+                            {{ __('app.invoices') }}
+                        @endif
+                    @elseif(request()->routeIs('invoices.show'))
+                        @php
+                            $showInvoice = request()->route('invoice');
+                            if (is_numeric($showInvoice)) {
+                                $showInvoice = \App\Models\Invoice::find($showInvoice);
+                            }
+                            $isPayoffShow = $showInvoice && $showInvoice->payment?->is_settlement;
+                        @endphp
+                        @if(request('type') === 'direct')
+                            {{ __('app.direct_sale_invoices') }}
+                        @elseif($isPayoffShow)
+                            {{ __('app.payoff_invoices') }}
+                        @else
+                            {{ __('app.installment_invoices') }}
+                        @endif
+                    @elseif(request()->routeIs('invoices.*'))
+                        {{ __('app.invoices') }}
+                    @elseif(request()->routeIs('payments.*'))
+                        {{ __('app.payments') }}
+                    @elseif(request()->routeIs('admin.sales.*') || request()->routeIs('sales.*'))
+                        {{ __('app.direct_sale') }}
+                    @elseif(request()->routeIs('admin.purchases.*') || request()->routeIs('purchases.*'))
+                        {{ __('app.stock_in') }}
+                    @elseif(request()->routeIs('admin.stock-movements.*') || request()->routeIs('stock-movements.*'))
+                        {{ __('app.stock_movements') }}
+                    @elseif(request()->routeIs('admin.products.*') || request()->routeIs('products.*'))
+                        {{ __('app.products') }}
+                    @elseif(request()->routeIs('admin.categories.*') || request()->routeIs('categories.*'))
+                        {{ __('app.categories') }}
+                    @elseif(request()->routeIs('admin.suppliers.*') || request()->routeIs('suppliers.*'))
+                        {{ __('app.suppliers') }}
+                    @elseif(request()->routeIs('admin.users.*') || request()->routeIs('users.*'))
+                        {{ __('app.user_management') }}
+                    @elseif(request()->routeIs('admin.reports.*') || request()->routeIs('reports.*') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.daily'))
+                        {{ __('app.reports') }}
+                    @elseif(request()->routeIs('admin.settings.*') || request()->routeIs('settings.*') || request()->routeIs('admin.payment-methods.*'))
+                        {{ __('app.settings') }}
+                    @elseif(request()->routeIs('late-payments.*') || request()->routeIs('late-payments.index'))
+                        {{ __('app.late_payments') }}
+                    @elseif(request()->routeIs('notifications.*') || request()->routeIs('notifications.index'))
+                        {{ __('app.notifications') }}
+                    @else
+                        {{ __('app.dashboard') }}
+                    @endif
+                </h2>
                 <p>{{ __('app.welcome_back') }}, {{ auth()->user()->name }}! 👋</p>
             </div>
             <div class="topbar-spacer"></div>
+
+            {{-- Currency Switcher & Exchange Rate --}}
+            <div class="flex items-center gap-3 mr-2" style="font-family: inherit;">
+                <!-- Currency Toggle Buttons -->
+                <div class="flex items-center bg-gray-100 rounded-lg p-1 text-xs border border-gray-200">
+                    <span class="text-gray-500 font-semibold px-2 hidden md:inline">{{ __('app.currency') }}:</span>
+                    <a href="{{ route('currency.switch', 'USD') }}" class="px-2.5 py-1 rounded-md font-bold transition {{ session('display_currency', 'USD') === 'USD' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-blue-600' }}" style="text-decoration: none;">
+                        USD $
+                    </a>
+                    <span class="text-gray-400 px-0.5"><i class="fas fa-arrows-alt-h"></i></span>
+                    <a href="{{ route('currency.switch', 'KHR') }}" class="px-2.5 py-1 rounded-md font-bold transition {{ session('display_currency', 'USD') === 'KHR' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-600 hover:text-emerald-600' }}" style="text-decoration: none;">
+                        KHR ៛
+                    </a>
+                </div>
+
+                <!-- Exchange Rate Display -->
+                @php
+                    $rateValue = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+                @endphp
+                <div class="hidden lg:flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700">
+                    <span class="font-medium text-gray-500">{{ __('app.exchange_rate') }}:</span>
+                    <span class="font-bold text-gray-800">1 USD = {{ number_format($rateValue) }} KHR</span>
+                    <a href="{{ route('admin.settings.index') }}" class="text-gray-400 hover:text-blue-600 transition" title="Change Exchange Rate">
+                        <i class="fas fa-sync-alt"></i>
+                    </a>
+                </div>
+            </div>
 
             {{-- Theme Switcher --}}
             <div style="position:relative;" id="theme-switcher">
@@ -1050,12 +1202,7 @@
                     <span id="theme-icon" style="font-size:16px;">☀️</span>
                 </button>
 
-                <div id="theme-menu" style="
-                    display:none; position:absolute; top:calc(100% + 8px); right:0;
-                    background:white; border:1px solid #e2e8f0; border-radius:10px;
-                    box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:140px;
-                    z-index:1000; overflow:hidden;
-                ">
+                <div id="theme-menu" class="animate-dropdown" style="min-width: 140px;">
                     <button onclick="setTheme('light')" class="theme-option" data-theme="light" style="
                         display:flex; align-items:center; gap:10px; width:100%;
                         padding:10px 14px; font-size:13px; font-weight:600;
@@ -1121,12 +1268,7 @@
                     </svg>
                 </button>
 
-                <div id="lang-menu" style="
-                    display:none; position:absolute; top:calc(100% + 8px); right:0;
-                    background:white; border:1px solid #e2e8f0; border-radius:10px;
-                    box-shadow:0 8px 24px rgba(0,0,0,0.12); min-width:150px;
-                    z-index:1000; overflow:hidden;
-                ">
+                <div id="lang-menu" class="animate-dropdown" style="min-width: 150px;">
                     <a href="{{ route('lang.switch', 'en') }}" style="
                         display:flex; align-items:center; gap:10px;
                         padding:10px 14px; font-size:13px; font-weight:600;
@@ -1264,16 +1406,24 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+
+
 // Language Menu Toggle
 function toggleLangMenu() {
     const menu = document.getElementById('lang-menu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    menu.classList.toggle('open');
+    document.getElementById('theme-menu').classList.remove('open');
+    document.querySelector('.topbar-user').classList.remove('open');
+    document.querySelector('.topbar-bell').classList.remove('open');
 }
 
 // Theme Menu Toggle
 function toggleThemeMenu() {
     const menu = document.getElementById('theme-menu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    menu.classList.toggle('open');
+    document.getElementById('lang-menu').classList.remove('open');
+    document.querySelector('.topbar-user').classList.remove('open');
+    document.querySelector('.topbar-bell').classList.remove('open');
 }
 
 // Theme Management
@@ -1281,7 +1431,7 @@ function setTheme(theme) {
     localStorage.setItem('theme', theme);
     applyTheme(theme);
     updateThemeUI(theme);
-    document.getElementById('theme-menu').style.display = 'none';
+    document.getElementById('theme-menu').classList.remove('open');
 }
 
 function applyTheme(theme) {
@@ -1462,12 +1612,12 @@ document.addEventListener('click', function(e) {
     
     if (langSwitcher && !langSwitcher.contains(e.target)) {
         const langMenu = document.getElementById('lang-menu');
-        if (langMenu) langMenu.style.display = 'none';
+        if (langMenu) langMenu.classList.remove('open');
     }
     
     if (themeSwitcher && !themeSwitcher.contains(e.target)) {
         const themeMenu = document.getElementById('theme-menu');
-        if (themeMenu) themeMenu.style.display = 'none';
+        if (themeMenu) themeMenu.classList.remove('open');
     }
     
     // Close search results when clicking outside
@@ -1501,10 +1651,10 @@ function toggleUserDropdown(event) {
     const userDropdown = event.currentTarget;
     const notificationBell = document.querySelector('.topbar-bell');
     
-    // Close notification dropdown
-    if (notificationBell) {
-        notificationBell.classList.remove('open');
-    }
+    // Close other dropdowns
+    if (notificationBell) notificationBell.classList.remove('open');
+    document.getElementById('lang-menu').classList.remove('open');
+    document.getElementById('theme-menu').classList.remove('open');
     
     userDropdown.classList.toggle('open');
 }
@@ -1515,10 +1665,10 @@ function toggleNotificationDropdown(event) {
     const notificationBell = event.currentTarget;
     const userDropdown = document.querySelector('.topbar-user');
     
-    // Close user dropdown
-    if (userDropdown) {
-        userDropdown.classList.remove('open');
-    }
+    // Close other dropdowns
+    if (userDropdown) userDropdown.classList.remove('open');
+    document.getElementById('lang-menu').classList.remove('open');
+    document.getElementById('theme-menu').classList.remove('open');
     
     notificationBell.classList.toggle('open');
     
