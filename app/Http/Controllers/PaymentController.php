@@ -31,7 +31,8 @@ class PaymentController extends Controller
         }
 
         $payments = $query->paginate(10);
-        return view('payments.index', compact('payments'));
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        return view('payments.index', compact('payments', 'exchangeRate'));
     }
 
     public function create()
@@ -45,8 +46,9 @@ class PaymentController extends Controller
 
         $installments = $installments->where('status', 'active')->get();
         $paymentMethods = $this->getPaymentMethods();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('payments.create', compact('installments', 'paymentMethods'));
+        return view('payments.create', compact('installments', 'paymentMethods', 'exchangeRate'));
     }
 
     public function store(Request $request)
@@ -65,16 +67,44 @@ class PaymentController extends Controller
             $qrPath = $request->file('qr_image')->store('qr_images', 'public');
         }
 
-        Payment::create([
+        $approveNow = $request->has('approve_now') && Gate::allows('approve-payment');
+
+        $payment = Payment::create([
             'installment_id' => $request->installment_id,
             'payment_method_id' => $request->payment_method_id,
             'amount' => $request->amount,
             'payment_date' => $request->payment_date,
             'qr_image' => $qrPath,
-            'status' => 'pending',
+            'status' => $approveNow ? 'approved' : 'pending',
+            'approved_by' => $approveNow ? auth()->id() : null,
         ]);
 
-        return redirect()->route('payments.index')->with('success', 'Payment submitted successfully.');
+        if ($approveNow) {
+            $installment = $payment->installment;
+            $installment->remaining_balance -= $payment->amount;
+            $installment->save();
+
+            Invoice::create([
+                'payment_id' => $payment->id,
+                'invoice_number' => 'INV-' . $payment->id,
+            ]);
+
+            $message = "✅ Payment approved\n"
+                . "Customer: {$installment->customer->name}\n"
+                . "Amount: $" . number_format($payment->amount, 2) . "\n"
+                . "Method: " . ($payment->paymentMethod->name ?? 'System') . "\n"
+                . "Remaining: $" . number_format($installment->remaining_balance, 2);
+
+            $this->telegramService->sendToCustomer($installment->customer_id, $message);
+        }
+
+        $successMsg = $approveNow ? 'Payment recorded and approved successfully.' : 'Payment submitted successfully.';
+
+        if ($request->filled('redirect_to')) {
+            return redirect($request->redirect_to)->with('success', $successMsg);
+        }
+
+        return redirect()->route('payments.index')->with('success', $successMsg);
     }
 
     public function approve(Payment $payment)
@@ -120,26 +150,37 @@ class PaymentController extends Controller
     public function show(Payment $payment)
     {
         $payment->load('installment.customer', 'paymentMethod', 'user');
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('payments.show', compact('payment'));
+        return view('payments.show', compact('payment', 'exchangeRate'));
     }
 
     private function getPaymentMethods()
     {
         $defaults = [
-            ['name' => 'QR', 'details' => 'QR code payment option for fast scanning.'],
-            ['name' => 'Credit Card', 'details' => 'Standard card payment via Visa or Mastercard.'],
-            ['name' => 'Other Third Party', 'details' => 'External payment gateway or partner service.'],
-            ['name' => 'Direct Credit Card', 'details' => 'Direct card charge flow without extra gateway steps.'],
-            ['name' => 'Test Basic Security', 'details' => 'Basic security check flow for payment testing.'],
-            ['name' => 'AI Predict', 'details' => 'AI-assisted payment screening and prediction option.'],
+            ['name' => 'Cash', 'details' => 'សាច់ប្រាក់ - Cash payment.'],
+            ['name' => 'QR Code', 'details' => 'QR Code - Scan to pay.'],
+            ['name' => 'Credit Card', 'details' => 'កាតឥណទាន - Credit/Debit Card payment.'],
         ];
+
+        // Rename legacy name 'QR' to 'QR Code' if it exists in DB
+        PaymentMethod::where('name', 'QR')->update(['name' => 'QR Code']);
 
         foreach ($defaults as $method) {
             PaymentMethod::firstOrCreate(
                 ['name' => $method['name']],
                 ['details' => $method['details']]
             );
+        }
+
+        // Clean up unused other payment methods
+        $defaultNames = ['Cash', 'QR Code', 'Credit Card'];
+        $unused = PaymentMethod::whereNotIn('name', $defaultNames)->get();
+        foreach ($unused as $method) {
+            $hasPayments = Payment::where('payment_method_id', $method->id)->exists();
+            if (!$hasPayments) {
+                $method->delete();
+            }
         }
 
         return PaymentMethod::orderBy('name')->get();

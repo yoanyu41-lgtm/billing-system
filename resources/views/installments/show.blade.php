@@ -202,23 +202,35 @@
                             @if($installment->tax_amount > 0)
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.subtotal') }}</td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</span>
+                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round(($installment->subtotal_before_tax ?? $installment->total_price) * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                             @php
                                 $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
                             @endphp
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.tax') }} {{ $taxLabel }} ({{ $installment->tax_rate }}%)</td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->tax_amount, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->tax_amount, 2) }}</span>
+                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->tax_amount * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                             @endif
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.total_price') }}</td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->total_price, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->total_price, 2) }}</span>
+                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->total_price * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.down_payment') }}</td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->down_payment, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->down_payment, 2) }}</span>
+                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->down_payment * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.interest_rate') }}</td>
@@ -230,11 +242,17 @@
                             </tr>
                             <tr class="bg-indigo-50/60 hover:bg-indigo-50">
                                 <td class="px-5 py-3.5 text-indigo-700 font-semibold">{{ __('app.monthly_payment') }}</td>
-                                <td class="px-5 py-3.5 text-right font-extrabold text-indigo-700 text-base">${{ number_format($installment->monthly_payment, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-extrabold text-indigo-700 text-base block">${{ number_format($installment->monthly_payment, 2) }}</span>
+                                    <span class="text-xs text-indigo-500 block font-semibold">{{ number_format(round($installment->monthly_payment * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                             <tr class="bg-amber-50/60 hover:bg-amber-50">
                                 <td class="px-5 py-3.5 text-amber-800 font-semibold">{{ __('app.remaining_balance') }}</td>
-                                <td class="px-5 py-3.5 text-right font-extrabold text-amber-800 text-base">${{ number_format($installment->remaining_balance, 2) }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-extrabold text-amber-800 text-base block">${{ number_format($installment->remaining_balance, 2) }}</span>
+                                    <span class="text-xs text-amber-600 block font-semibold">{{ number_format(round($installment->remaining_balance * $exchangeRate)) }} ៛</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -270,5 +288,243 @@
             </div>
         </div>
     </div>
+
+    <!-- Payment Schedule section -->
+    <div class="mt-8 bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-indigo-600"></i>
+                <span>{{ __('app.payment_schedule') }}</span>
+            </h3>
+            <a href="{{ route('installments.schedule', $installment) }}" class="px-4 py-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-semibold rounded-lg text-xs transition" style="text-decoration: none;">
+                <i class="fas fa-print mr-1"></i>
+                {{ app()->getLocale() === 'km' ? 'មើលកាលវិភាគបោះពុម្ព' : 'View Printable Schedule' }}
+            </a>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="min-w-full border-collapse text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">ល.រ<br><span class="font-normal text-[10px]">No.</span></th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង់ប្រាក់' : 'Payment Date' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់' : 'Total Payment' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ការប្រាក់' : 'Interests' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ប្រាក់ដើម' : 'Principals' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'សមតុល្យប្រាក់ដើម' : 'Outstanding Principals' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'សមតុល្យបំណុល' : 'Outstanding Debts' }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ __('app.status') }}</th>
+                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ __('app.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($schedule as $row)
+                    <tr class="hover:bg-gray-50/70 transition">
+                        <td class="px-4 py-3 text-center text-gray-700 font-semibold">{{ $row['month'] }}</td>
+                        <td class="px-4 py-3 text-center text-gray-700 whitespace-nowrap">
+                            {{ $row['due_date']->format('d/m/Y') }} 
+                            <span class="text-gray-400 text-xs">({{ $row['day'] }})</span>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold text-gray-900">{{ format_currency($row['amount'], $exchangeRate) }}</td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['interest'], $exchangeRate) }}</td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['principal'], $exchangeRate) }}</td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['outstanding_principal'], $exchangeRate) }}</td>
+                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
+                        <td class="px-4 py-3 text-center">
+                            @if($row['status'] === 'paid')
+                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-green-50 text-green-700 border border-green-200">{{ __('app.paid') }}</span>
+                            @elseif($row['status'] === 'overdue')
+                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-red-50 text-red-700 border border-red-200">{{ __('app.overdue') }}</span>
+                            @else
+                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-gray-50 text-gray-600 border border-gray-200">{{ __('app.pending') }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            @if($row['status'] !== 'paid')
+                            <div class="flex items-center justify-center gap-1.5">
+                                {{-- Send QR via Telegram --}}
+                                @if(empty($installment->customer?->telegram_id))
+                                    <span class="px-2.5 py-1 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg inline-flex items-center gap-1 cursor-not-allowed" title="{{ __('app.telegram_id_missing') }}">
+                                        <i class="fab fa-telegram-plane"></i>
+                                        <span>{{ __('app.send_qr_telegram') }}</span>
+                                    </span>
+                                @else
+                                    <form method="POST" action="{{ route('installments.send-telegram-qr', [$installment, $row['month']]) }}" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.send_qr_telegram') }}">
+                                            <i class="fab fa-telegram-plane"></i>
+                                            <span>{{ __('app.send_qr_telegram') }}</span>
+                                        </button>
+                                    </form>
+                                @endif
+
+                                {{-- Record Payment --}}
+                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2.5 py-1 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <span>{{ __('app.record_payment') }}</span>
+                                </button>
+                            </div>
+                            @else
+                                <span class="text-xs text-gray-400 font-medium">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<!-- Record Payment Modal -->
+<div id="recordPaymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeRecordPaymentModal()"></div>
+
+        <!-- Modal Center spacer -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <!-- Modal content card -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <form method="POST" action="{{ route('payments.store') }}" enctype="multipart/form-data" class="m-0">
+                @csrf
+                <input type="hidden" name="installment_id" value="{{ $installment->id }}">
+                <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
+                
+                <div class="bg-white px-6 pt-6 pb-4 sm:p-6 sm:pb-4 space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-file-invoice-dollar text-indigo-600"></i>
+                            <span>{{ __('app.record_payment') }}</span>
+                        </h3>
+                        <button type="button" onclick="closeRecordPaymentModal()" class="text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer text-xl">
+                            &times;
+                        </button>
+                    </div>
+
+                    <!-- Details Display -->
+                    <div class="bg-indigo-50/50 rounded-xl p-4 text-sm text-indigo-950 border border-indigo-100 flex justify-between">
+                        <div>
+                            <span class="font-medium block text-xs text-indigo-500 uppercase tracking-wider">{{ __('app.customer') }}</span>
+                            <span class="font-semibold">{{ $installment->customer?->name }}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-medium block text-xs text-indigo-500 uppercase tracking-wider" id="modalMonthLabel">Month</span>
+                            <span class="font-semibold" id="modalMonthVal">1</span>
+                        </div>
+                    </div>
+
+                    <!-- Amount and Date -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">{{ __('app.amount') }} (USD)</label>
+                            <input 
+                                type="number" 
+                                name="amount" 
+                                id="modalAmountInput" 
+                                step="0.01" 
+                                min="0.01" 
+                                required 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">{{ __('app.payment_date') }}</label>
+                            <input 
+                                type="date" 
+                                name="payment_date" 
+                                value="{{ now()->toDateString() }}" 
+                                required 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Payment Method selector -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">{{ __('app.payment_method') }}</label>
+                        <select name="payment_method_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            @foreach($paymentMethods as $method)
+                                @php
+                                    $methodKey = strtolower(str_replace(' ', '_', $method->name));
+                                    $translatedName = __('app.' . $methodKey);
+                                    if ($translatedName === 'app.' . $methodKey) {
+                                        $translatedName = $method->name;
+                                    }
+                                @endphp
+                                <option value="{{ $method->id }}" {{ $methodKey === 'qr_code' ? 'selected' : '' }}>
+                                    {{ $translatedName }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Customer Slip Attachment -->
+                    <div class="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 p-4">
+                        <label class="block text-sm font-bold text-blue-900 mb-1.5">
+                            <i class="fas fa-image mr-1"></i>
+                            {{ __('app.upload_customer_slip') }}
+                        </label>
+                        <input type="file" name="qr_image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        <p class="mt-1 text-[11px] text-gray-500">
+                            {{ app()->getLocale() === 'km' ? 'សូមបញ្ចូលរូបភាពបង្កាន់ដៃទូទាត់ QR / Slip របស់អតិថិជន។' : 'Please upload the customer\'s QR payment receipt/slip image.' }}
+                        </p>
+                    </div>
+
+                    <!-- Approve Immediately (for authorized users) -->
+                    @can('approve-payment')
+                    <div class="flex items-center gap-2 pt-1">
+                        <input 
+                            type="checkbox" 
+                            name="approve_now" 
+                            id="modalApproveCheckbox" 
+                            value="1" 
+                            checked 
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        >
+                        <label for="modalApproveCheckbox" class="text-sm font-semibold text-gray-700 cursor-pointer flex items-center gap-1 select-none">
+                            <i class="fas fa-check-double text-emerald-600"></i>
+                            <span>{{ __('app.approve_now') }}</span>
+                        </label>
+                    </div>
+                    @endcan
+                </div>
+
+                <!-- Footer buttons -->
+                <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2 border-t border-gray-100">
+                    <button 
+                        type="submit" 
+                        class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm shadow-sm border-0 cursor-pointer"
+                    >
+                        {{ __('app.confirm_and_approve') }}
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeRecordPaymentModal()" 
+                        class="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm"
+                    >
+                        {{ __('app.cancel') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRecordPaymentModal(month, amount, dueDate) {
+        document.getElementById('modalMonthVal').innerText = month;
+        document.getElementById('modalMonthLabel').innerText = "{{ __('app.installment_month') }} " + month;
+        document.getElementById('modalAmountInput').value = amount;
+        
+        const modal = document.getElementById('recordPaymentModal');
+        modal.classList.remove('hidden');
+    }
+
+    function closeRecordPaymentModal() {
+        const modal = document.getElementById('recordPaymentModal');
+        modal.classList.add('hidden');
+    }
+</script>
 @endsection

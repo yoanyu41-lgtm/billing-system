@@ -38,8 +38,8 @@
                             <div class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $installment->product?->name ?? 'N/A' }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${{ number_format($installment->remaining_balance, 2) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">${{ number_format($installment->payoff_amount, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->remaining_balance) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">{{ format_currency($installment->payoff_amount) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             @if($installment->payoff_amount > 0)
                             <button type="button" onclick="document.getElementById('payoff-modal-{{ $installment->id }}').classList.remove('hidden')" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg transition duration-150">
@@ -81,7 +81,7 @@
             <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-5">
                 <div class="flex items-baseline justify-between">
                     <span class="text-sm text-gray-600">{{ __('app.outstanding_principal') }}</span>
-                    <span class="text-2xl font-extrabold text-amber-700">${{ number_format($installment->payoff_amount, 2) }}</span>
+                    <span class="text-2xl font-extrabold text-amber-700">{{ format_currency($installment->payoff_amount) }}</span>
                 </div>
             </div>
 
@@ -115,7 +115,7 @@
 
                     <div class="flex items-baseline justify-between border-t pt-3">
                         <span class="text-sm font-medium text-gray-700">{{ __('app.total_payoff_amount') }}</span>
-                        <span class="text-xl font-extrabold text-amber-700 payoff-total-{{ $installment->id }}">${{ number_format($installment->payoff_amount, 2) }}</span>
+                        <span class="text-xl font-extrabold text-amber-700 payoff-total-{{ $installment->id }}">{{ format_currency($installment->payoff_amount) }}</span>
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 mt-6">
@@ -128,6 +128,10 @@
     @endif
 @endforeach
 
+@php
+    $currency = session('display_currency', 'USD');
+    $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+@endphp
 <script>
     function updatePayoffTotal(id) {
         const input = document.querySelector('.payoff-rate-' + id);
@@ -135,7 +139,18 @@
         const rate = parseFloat(input.value) || 0;
         const total = principal + (principal * rate / 100);
         const label = document.querySelector('.payoff-total-' + id);
-        if (label) label.textContent = '$' + total.toFixed(2);
+        
+        const currency = "{{ $currency }}";
+        const exchangeRate = {{ $exchangeRate }};
+        
+        if (label) {
+            if (currency === 'KHR') {
+                const khrVal = Math.round(total * exchangeRate);
+                label.textContent = khrVal.toLocaleString('en-US') + ' ៛';
+            } else {
+                label.textContent = '$' + total.toFixed(2);
+            }
+        }
     }
 </script>
 @endsection

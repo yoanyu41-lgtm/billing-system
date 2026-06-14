@@ -28,8 +28,9 @@ class SaleController extends Controller
         }
 
         $sales = $query->latest()->paginate(15)->withQueryString();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('admin.sales.index', compact('sales'));
+        return view('admin.sales.index', compact('sales', 'exchangeRate'));
     }
 
     /**
@@ -221,8 +222,9 @@ class SaleController extends Controller
     public function show(Sale $sale)
     {
         $sale->load(['items.product', 'customer', 'creator']);
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('admin.sales.show', compact('sale'));
+        return view('admin.sales.show', compact('sale', 'exchangeRate'));
     }
 
     /**

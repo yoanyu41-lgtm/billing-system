@@ -432,23 +432,23 @@
                         @if($installment->tax_amount > 0)
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('តម្លៃមុនពន្ធ', 'Subtotal Before Tax') }}:</div>
-                            <div class="info-value">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</div>
+                            <div class="info-value">{{ format_currency($installment->subtotal_before_tax ?? $installment->total_price) }}</div>
                         </div>
                         @php
                             $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
                         @endphp
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L("ពន្ធ {$taxLabel}", "{$taxLabel} Tax") }} ({{ $installment->tax_rate }}%):</div>
-                            <div class="info-value">${{ number_format($installment->tax_amount, 2) }}</div>
+                            <div class="info-value">{{ format_currency($installment->tax_amount) }}</div>
                         </div>
                         @endif
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('តម្លៃផលិតផល', 'Product Price') }}:</div>
-                            <div class="info-value" style="font-weight: bold;">${{ number_format($installment->total_price, 2) }}</div>
+                            <div class="info-value" style="font-weight: bold;">{{ format_currency($installment->total_price) }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('ប្រាក់កក់', 'Down Payment') }}:</div>
-                            <div class="info-value">${{ number_format($installment->down_payment, 2) }}</div>
+                            <div class="info-value">{{ format_currency($installment->down_payment) }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('អត្រាការប្រាក់', 'Interest Rate') }}:</div>
@@ -461,11 +461,11 @@
                         <div class="total-row">
                             <div class="info-row">
                                 <div class="info-label" lang="km">{{ $L('ប្រាក់ដើម', 'Principal') }}:</div>
-                                <div class="info-value">${{ number_format($installment->total_price - $installment->down_payment, 2) }}</div>
+                                <div class="info-value">{{ format_currency($installment->total_price - $installment->down_payment) }}</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label" lang="km">{{ $L('ការបង់ប្រាក់ប្រចាំខែ', 'Monthly Payment') }}:</div>
-                                <div class="info-value" style="color: #2563EB;">${{ number_format($installment->monthly_payment, 2) }}</div>
+                                <div class="info-value" style="color: #2563EB;">{{ format_currency($installment->monthly_payment) }}</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label" lang="km">{{ $L('ថ្ងៃផុតកំណត់', 'Due Date') }}:</div>

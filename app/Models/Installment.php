@@ -80,4 +80,72 @@ class Installment extends Model
 
         return round(max($principalBase - $principalPaid, 0), 2);
     }
+
+    /**
+     * Get the payment schedule for this installment.
+     */
+    public function getPaymentSchedule(): array
+    {
+        $principalBase = max($this->total_price - $this->down_payment, 0);
+        $duration = max($this->duration_months, 1);
+        $monthlyPrincipal = round($principalBase / $duration, 2);
+        $monthlyInterest = round(($principalBase * $this->interest_rate / 100) / 12, 2);
+
+        // Total approved amount paid so far, allocated to schedule rows in order.
+        $totalPaid = $this->payments()
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        $startDate = \Carbon\Carbon::parse($this->created_at);
+        $remainingPaid = (float) $totalPaid;
+
+        $outstandingPrincipal = $principalBase;   // remaining principal balance
+        $accumulatedPrincipal = 0;                // principal repaid so far
+
+        $schedule = [];
+        for ($i = 1; $i <= $duration; $i++) {
+            $dueDate = $startDate->copy()->addMonths($i);
+
+            // Last row absorbs any rounding remainder so totals match exactly.
+            if ($i === $duration) {
+                $principalPortion = round($principalBase - $accumulatedPrincipal, 2);
+            } else {
+                $principalPortion = $monthlyPrincipal;
+            }
+            $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
+
+            $amountDue = round($principalPortion + $monthlyInterest, 2);
+
+            // Outstanding balances AFTER this payment.
+            $outstandingPrincipal = round(max($outstandingPrincipal - $principalPortion, 0), 2);
+            $outstandingDebt = round($outstandingPrincipal + $monthlyInterest, 2);
+
+            // Allocate paid balance to this installment row.
+            $allocated = min($remainingPaid, $amountDue);
+            $remainingPaid = round($remainingPaid - $allocated, 2);
+
+            if ($allocated >= $amountDue) {
+                $status = 'paid';
+            } elseif ($dueDate->isPast()) {
+                $status = 'overdue';
+            } else {
+                $status = 'pending';
+            }
+
+            $schedule[] = [
+                'month'                 => $i,
+                'due_date'              => $dueDate,
+                'day'                   => $dueDate->format('D'),
+                'principal'             => $principalPortion,
+                'interest'              => $monthlyInterest,
+                'amount'                => $amountDue,
+                'outstanding_principal' => $outstandingPrincipal,
+                'outstanding_debt'      => $outstandingDebt,
+                'paid'                  => $allocated,
+                'status'                => $status,
+            ];
+        }
+
+        return $schedule;
+    }
 }

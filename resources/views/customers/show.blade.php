@@ -48,7 +48,7 @@
         </div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-center">
             <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.total_amount') }}</p>
-            <p class="text-2xl font-bold text-emerald-600 mt-1">${{ number_format($totalSpent, 2) }}</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1">{{ format_currency($totalSpent) }}</p>
         </div>
     </div>
 
@@ -77,11 +77,11 @@
                             @foreach($sale->items as $item)
                                 <div class="flex items-center justify-between gap-3 {{ !$loop->last ? 'mb-1' : '' }}">
                                     <span>{{ $item->product->name ?? '—' }}</span>
-                                    <span class="text-xs text-gray-400 whitespace-nowrap">x{{ $item->quantity }} · ${{ number_format($item->price, 2) }}</span>
+                                    <span class="text-xs text-gray-400 whitespace-nowrap">x{{ $item->quantity }} · {{ format_currency($item->price) }}</span>
                                 </div>
                             @endforeach
                         </td>
-                        <td class="px-5 py-3 text-right font-bold text-gray-800 whitespace-nowrap">${{ number_format($sale->total, 2) }}</td>
+                        <td class="px-5 py-3 text-right font-bold text-gray-800 whitespace-nowrap">{{ format_currency($sale->total) }}</td>
                         <td class="px-5 py-3 text-right whitespace-nowrap">
                             <a href="{{ route('admin.sales.show', $sale) }}" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
                                 <i class="fas fa-eye"></i> {{ __('app.view_receipt') }}
@@ -153,11 +153,11 @@
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.total_paid') }}</p>
-            <p class="text-2xl font-bold text-emerald-600 mt-1">${{ number_format($totalPaid, 0) }}</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1">{{ format_currency($totalPaid) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.balance_due') }}</p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">${{ number_format($totalBalance, 0) }}</p>
+            <p class="text-2xl font-bold text-blue-600 mt-1">{{ format_currency($totalBalance) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.overdue') }}</p>
@@ -318,7 +318,7 @@
                                 </span>
                             </div>
                             <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
-                                <span>💵 ${{ number_format($inst->monthly_payment, 2) }}/{{ __('app.months') }}</span>
+                                <span>💵 {{ format_currency($inst->monthly_payment) }}/{{ __('app.months') }}</span>
                                 <span>📅 {{ $inst->duration_months }} {{ __('app.months') }}</span>
                                 @if($inst->next_due_date)
                                     <span class="{{ \Carbon\Carbon::parse($inst->next_due_date)->isPast() ? 'text-red-500 font-semibold' : '' }}">
@@ -328,7 +328,7 @@
                             </div>
                         </div>
                         <div class="text-right flex-shrink-0">
-                            <div class="text-sm font-bold text-gray-800">${{ number_format($inst->remaining_balance, 2) }}</div>
+                            <div class="text-sm font-bold text-gray-800">{{ format_currency($inst->remaining_balance) }}</div>
                             <div class="text-xs text-gray-400">{{ __('app.remaining_balance') }}</div>
                         </div>
                     </div>
@@ -337,7 +337,7 @@
                     <div class="mt-3">
                         <div class="flex justify-between text-xs text-gray-400 mb-1">
                             <span>{{ $pct }}% {{ __('app.paid') }}</span>
-                            <span>{{ __('app.total') }}: ${{ number_format($inst->total_price, 2) }}</span>
+                            <span>{{ __('app.total') }}: {{ format_currency($inst->total_price) }}</span>
                         </div>
                         <div class="w-full bg-gray-100 rounded-full h-2">
                             <div class="h-2 rounded-full {{ $pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400') }}"
@@ -360,15 +360,15 @@
                     <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
                         <div class="p-4 text-center">
                             <div class="text-xs text-gray-400 font-medium">{{ __('app.approved') }}</div>
-                            <div class="text-lg font-bold text-emerald-600 mt-0.5">${{ number_format($payments->where('status','approved')->sum('amount'), 2) }}</div>
+                            <div class="text-lg font-bold text-emerald-600 mt-0.5">{{ format_currency($payments->where('status','approved')->sum('amount')) }}</div>
                         </div>
                         <div class="p-4 text-center">
                             <div class="text-xs text-gray-400 font-medium">{{ __('app.pending') }}</div>
-                            <div class="text-lg font-bold text-amber-500 mt-0.5">${{ number_format($totalPending, 2) }}</div>
+                            <div class="text-lg font-bold text-amber-500 mt-0.5">{{ format_currency($totalPending) }}</div>
                         </div>
                         <div class="p-4 text-center">
                             <div class="text-xs text-gray-400 font-medium">{{ __('app.rejected') }}</div>
-                            <div class="text-lg font-bold text-red-500 mt-0.5">${{ number_format($payments->where('status','rejected')->sum('amount'), 2) }}</div>
+                            <div class="text-lg font-bold text-red-500 mt-0.5">{{ format_currency($payments->where('status','rejected')->sum('amount')) }}</div>
                         </div>
                     </div>
 
@@ -393,7 +393,7 @@
                                         {{ $pay->installment->product->name ?? '—' }}
                                     </td>
                                     <td class="px-5 py-3.5 text-right font-bold text-gray-800">
-                                        ${{ number_format($pay->amount, 2) }}
+                                        {{ format_currency($pay->amount) }}
                                     </td>
                                     <td class="px-5 py-3.5 text-center">
                                         @if($pay->paymentMethod)
@@ -534,7 +534,7 @@
                                 @if($g->phone)<span>📞 {{ $g->phone }}</span>@endif
                                 @if($g->id_card)<span>🪪 <span class="font-mono">{{ $g->id_card }}</span></span>@endif
                                 @if($g->occupation)<span>💼 {{ $g->occupation }}</span>@endif
-                                @if($g->monthly_income)<span>💰 ${{ number_format($g->monthly_income, 0) }}/month</span>@endif
+                                @if($g->monthly_income)<span>💰 {{ format_currency($g->monthly_income) }}/month</span>@endif
                             </div>
                             @if($g->address)
                                 <div class="text-xs text-gray-400 mt-0.5">📍 {{ $g->address }}</div>
@@ -615,10 +615,10 @@
                                     <span>💼 {{ ucfirst(str_replace('-', ' ', $latestCredit->employment_status)) }}</span>
                                 @endif
                                 @if($latestCredit->monthly_income)
-                                    <span>💰 ${{ number_format($latestCredit->monthly_income, 0) }}/{{ __('app.months') }}</span>
+                                    <span>💰 {{ format_currency($latestCredit->monthly_income) }}/{{ __('app.months') }}</span>
                                 @endif
                                 @if($latestCredit->existing_debt)
-                                    <span>💳 ${{ number_format($latestCredit->existing_debt, 0) }} {{ __('app.existing_debt') }}</span>
+                                    <span>💳 {{ format_currency($latestCredit->existing_debt) }} {{ __('app.existing_debt') }}</span>
                                 @endif
                                 <span>👤 {{ __('app.checked_by') }}: {{ $latestCredit->checker->name ?? '—' }}</span>
                                 <span class="col-span-2">📅 {{ $latestCredit->created_at->format('d M Y H:i') }}</span>
@@ -725,7 +725,7 @@
                                 </div>
                                 <div class="text-xs text-gray-400 mt-0.5">
                                     {{ $cc->created_at->format('d M Y') }} · {{ __('app.checked_by') }}: {{ $cc->checker->name ?? '—' }}
-                                    @if($cc->monthly_income) · ${{ number_format($cc->monthly_income,0) }}/{{ __('app.months') }} @endif
+                                    @if($cc->monthly_income) · {{ format_currency($cc->monthly_income) }}/{{ __('app.months') }} @endif
                                 </div>
                             </div>
                         </div>

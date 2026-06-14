@@ -98,20 +98,29 @@
                     <div class="space-y-2 border-t pt-4 text-sm">
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600">{{ __('app.subtotal') }}</span>
-                            <span class="font-semibold text-gray-900" id="subtotalLabel">$0.00</span>
+                            <div class="text-right">
+                                <span class="font-semibold text-gray-900 block" id="subtotalLabel">$0.00</span>
+                                <span class="text-xs text-gray-400 block font-semibold" id="subtotalLabelRiel">0 ៛</span>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between" id="taxRow" style="display: none;">
                             <span class="text-gray-600">{{ __('app.tax') }} <span id="taxRateDisplay"></span></span>
-                            <span class="font-semibold text-gray-900" id="taxLabel">$0.00</span>
+                            <div class="text-right">
+                                <span class="font-semibold text-gray-900 block" id="taxLabel">$0.00</span>
+                                <span class="text-xs text-gray-400 block font-semibold" id="taxLabelRiel">0 ៛</span>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600">{{ __('app.discount') }}</span>
-                            <div class="flex items-center gap-1">
-                                <span class="text-gray-400">$</span>
-                                <input type="number" step="0.01" min="0" name="discount" id="discountInput"
-                                       value="{{ old('discount', 0) }}"
-                                       class="w-24 px-2 py-1.5 text-sm text-right border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                       onchange="calculateTotal()" oninput="calculateTotal()">
+                            <div class="text-right">
+                                <div class="flex items-center gap-1 justify-end">
+                                    <span class="text-gray-400">$</span>
+                                    <input type="number" step="0.01" min="0" name="discount" id="discountInput"
+                                           value="{{ old('discount', 0) }}"
+                                           class="w-24 px-2 py-1.5 text-sm text-right border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           onchange="calculateTotal()" oninput="calculateTotal()">
+                                </div>
+                                <span class="text-xs text-gray-400 block font-semibold mt-0.5" id="discountLabelRiel">0 ៛</span>
                             </div>
                         </div>
                     </div>
@@ -119,7 +128,10 @@
                     <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div class="flex items-center justify-between">
                             <span class="text-sm text-gray-600">{{ __('app.grand_total') }}</span>
-                            <span class="text-3xl font-extrabold text-blue-600" id="grandTotal">$0.00</span>
+                            <div class="text-right">
+                                <span class="text-3xl font-extrabold text-blue-600 block" id="grandTotal">$0.00</span>
+                                <span class="text-sm font-bold text-blue-500 block mt-0.5" id="grandTotalRiel">0 ៛</span>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between mt-1 text-xs text-gray-500">
                             <span>{{ __('app.items_count') }}</span>
@@ -159,6 +171,7 @@
     const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
     const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
     const taxLabel = '{{ \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT' }}';
+    const exchangeRate = {{ (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100) }};
     
     const T = {
         product: {!! json_encode(__('app.product')) !!},
@@ -301,12 +314,22 @@
             taxRow.style.display = 'flex';
             document.getElementById('taxRateDisplay').textContent = `(${taxLabel})`;
             document.getElementById('taxLabel').textContent = '$' + totalTax.toFixed(2);
+            const rielTax = Math.round(totalTax * exchangeRate);
+            document.getElementById('taxLabelRiel').textContent = rielTax.toLocaleString('en-US') + ' ៛';
         } else {
             taxRow.style.display = 'none';
         }
         
         document.getElementById('subtotalLabel').textContent = '$' + subtotal.toFixed(2);
+        const rielSubtotal = Math.round(subtotal * exchangeRate);
+        document.getElementById('subtotalLabelRiel').textContent = rielSubtotal.toLocaleString('en-US') + ' ៛';
+
+        const rielDiscount = Math.round(discount * exchangeRate);
+        document.getElementById('discountLabelRiel').textContent = rielDiscount.toLocaleString('en-US') + ' ៛';
+
         document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
+        const rielTotal = Math.round(total * exchangeRate);
+        document.getElementById('grandTotalRiel').textContent = rielTotal.toLocaleString('en-US') + ' ៛';
         document.getElementById('totalItems').textContent = document.querySelectorAll('.item').length;
     }
 

@@ -4,7 +4,17 @@
 <div class="container mx-auto px-4 py-8 max-w-6xl">
     <!-- Header Section -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800">{{ __('app.invoices') }}</h1>
+        <h1 class="text-3xl font-bold text-gray-800">
+            @if(request('type') === 'installment')
+                {{ __('app.installment_invoices') }}
+            @elseif(request('type') === 'payoff')
+                {{ __('app.payoff_invoices') }}
+            @elseif(request('type') === 'direct')
+                {{ __('app.direct_sale_invoices') }}
+            @else
+                {{ __('app.invoices') }}
+            @endif
+        </h1>
         <p class="text-sm text-gray-500 mt-1">{{ __('app.manage_your_business_easily') }}</p>
     </div>
 
@@ -25,7 +35,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.total_amount') }}</p>
-                <p class="text-2xl font-bold text-emerald-600">${{ number_format($totalAmount, 2) }}</p>
+                <p class="text-2xl font-bold text-emerald-600 block">{{ format_currency($totalAmount, $exchangeRate) }}</p>
             </div>
         </div>
     </div>
@@ -33,6 +43,9 @@
     <!-- Search and Filter Section -->
     <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <form method="GET" action="{{ route('invoices.index') }}" class="flex flex-col md:flex-row gap-4">
+            @if(request('type'))
+                <input type="hidden" name="type" value="{{ request('type') }}">
+            @endif
             <!-- Search Input -->
             <div class="flex-1">
                 <div class="relative">
@@ -75,7 +88,7 @@
             <!-- Clear Button -->
             @if(request('search') || request('date'))
             <a 
-                href="{{ route('invoices.index') }}" 
+                href="{{ route('invoices.index', ['type' => request('type')]) }}" 
                 class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-150 flex items-center justify-center gap-2 text-sm"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,6 +132,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.invoice_number') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.type') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.customer_name') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.amount') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.status') }}</th>
@@ -129,42 +143,88 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse($invoices as $invoice)
                     <tr class="hover:bg-gray-50 transition duration-150">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
-                            {{ $invoice->invoice_number }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                            {{ $invoice->payment?->installment?->customer?->name ?? 'N/A' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                            ${{ number_format($invoice->payment?->amount ?? 0, 2) }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @php $pstatus = $invoice->payment?->status ?? 'approved'; @endphp
-                            @php $statusColors = ['approved' => 'bg-emerald-100 text-emerald-700', 'pending' => 'bg-amber-100 text-amber-700', 'rejected' => 'bg-red-100 text-red-600']; @endphp
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$pstatus] ?? 'bg-gray-100 text-gray-600' }}">
-                                {{ __('app.'.$pstatus) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ $invoice->created_at?->format('Y-m-d') ?? '—' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex justify-end items-center gap-1.5">
-                                <a href="{{ route('invoices.show', $invoice) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                </a>
-                                <a href="{{ route('invoices.download', $invoice) }}" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150" title="{{ __('app.download') }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                </a>
-                                <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="p-2 text-purple-600 bg-purple-50 hover:bg-purple-100 hover:text-purple-900 rounded-lg transition duration-150" title="{{ __('app.print') }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                </a>
-                            </div>
-                        </td>
+                        @if($invoice instanceof \App\Models\Sale)
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
+                                {{ $invoice->invoice_no }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                    {{ __('app.direct') }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                {{ $invoice->customer_name ?: ($invoice->customer?->name ?? __('app.walk_in_customer')) }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="font-bold text-gray-900">{{ format_currency($invoice->total ?? 0, $exchangeRate) }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                    {{ __('app.paid') }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ optional($invoice->sale_date)->format('Y-m-d') ?? $invoice->created_at?->format('Y-m-d') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end items-center gap-1.5">
+                                    <a href="{{ route('invoices.show', ['invoice' => $invoice->id, 'type' => 'direct', 'back' => request('type', 'all')]) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                    <a href="{{ route('admin.sales.download', $invoice) }}" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150" title="{{ __('app.download') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        @else
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
+                                {{ $invoice->invoice_number }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if($invoice->payment?->is_settlement)
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                                        {{ __('app.payoff') }}
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                                        {{ __('app.installment') }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                {{ $invoice->payment?->installment?->customer?->name ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="font-bold text-gray-900">{{ format_currency($invoice->payment?->amount ?? 0, $exchangeRate) }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php $pstatus = $invoice->payment?->status ?? 'approved'; @endphp
+                                @php $statusColors = ['approved' => 'bg-emerald-100 text-emerald-700', 'pending' => 'bg-amber-100 text-amber-700', 'rejected' => 'bg-red-100 text-red-600']; @endphp
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$pstatus] ?? 'bg-gray-100 text-gray-600' }}">
+                                    {{ __('app.'.$pstatus) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ $invoice->created_at?->format('Y-m-d') ?? '—' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end items-center gap-1.5">
+                                    <a href="{{ route('invoices.show', [$invoice, 'type' => request('type')]) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                    <a href="{{ route('invoices.download', $invoice) }}" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150" title="{{ __('app.download') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    </a>
+                                    <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="p-2 text-purple-600 bg-purple-50 hover:bg-purple-100 hover:text-purple-900 rounded-lg transition duration-150" title="{{ __('app.print') }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-gray-500">
+                        <td colspan="7" class="px-6 py-6 text-center text-gray-500">
                             {{ __('app.no_invoices') }}
                         </td>
                     </tr>

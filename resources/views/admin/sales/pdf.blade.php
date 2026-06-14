@@ -52,7 +52,7 @@
                 @if($companyEmail)<div class="muted">អ៊ីមែល: {{ $companyEmail }}</div>@endif
             </td>
             <td style="width: 45%;">
-                <div class="title">វិក័យប័ត្របង់ប្រាក់ពេញ</div>
+                <div class="title">វិក្កយបត្រទិញដាច់</div>
                 <table class="meta" style="width: 100%;">
                     <tr><td class="lbl">លេខវិក័យប័ត្រ</td><td>{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td></tr>
                     <tr><td class="lbl">កាលបរិច្ឆេទ</td><td>{{ optional($sale->sale_date)->format('d-m-Y') }}</td></tr>
@@ -73,9 +73,15 @@
             </td>
             <td style="width: 50%; vertical-align: top;">
                 <div class="section-title">ព័ត៌មានការទូទាត់</div>
+                @php
+                    $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+                    $formatRiel = function($usdAmount) use ($exchangeRate) {
+                        return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
+                    };
+                @endphp
                 <table class="info" style="width: 100%;">
-                    <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }}</td></tr>
-                    <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($sale->total, 2) }}</td></tr>
+                    <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
                 </table>
                 <div class="status">បង់ប្រាក់ពេញ</div>
             </td>
@@ -112,18 +118,18 @@
             <td style="width: 60%;"></td>
             <td style="width: 40%;">
                 <table class="totals" style="width: 100%;">
-                    <tr><td>សរុបរង</td><td class="right">${{ number_format($sale->subtotal, 2) }}</td></tr>
+                    <tr><td>សរុបរង</td><td class="right">${{ number_format($sale->subtotal, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->subtotal) }}</span></td></tr>
                     @if($sale->discount > 0)
-                    <tr><td>បញ្ចុះតម្លៃ</td><td class="right">- ${{ number_format($sale->discount, 2) }}</td></tr>
+                    <tr><td>បញ្ចុះតម្លៃ</td><td class="right">- ${{ number_format($sale->discount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->discount) }}</span></td></tr>
                     @endif
                     @if($sale->tax_amount > 0)
                     @php
                         $taxLabel = $settings['tax_label'] ?? 'VAT';
                         $defaultTaxRate = (float) ($settings['default_tax_rate'] ?? 10);
                     @endphp
-                    <tr><td>ពន្ធ {{ $taxLabel }} ({{ $defaultTaxRate }}%)</td><td class="right">${{ number_format($sale->tax_amount, 2) }}</td></tr>
+                    <tr><td>ពន្ធ {{ $taxLabel }} ({{ $defaultTaxRate }}%)</td><td class="right">${{ number_format($sale->tax_amount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->tax_amount) }}</span></td></tr>
                     @endif
-                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }}</td></tr>
+                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }} / <span>{{ $formatRiel($sale->total) }}</span></td></tr>
                 </table>
             </td>
         </tr>

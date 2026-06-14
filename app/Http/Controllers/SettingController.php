@@ -27,7 +27,8 @@ class SettingController extends Controller
             'tax_enabled',
             'default_tax_rate',
             'tax_label',
-            'tax_number'
+            'tax_number',
+            'exchange_rate'
         ]);
 
         foreach ($data as $key => $value) {
@@ -48,6 +49,8 @@ class SettingController extends Controller
             'email' => 'required|email|max:255',
             'business_license' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'bank_qr' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'exchange_rate' => 'nullable|numeric',
         ]);
 
         // Handle logo upload
@@ -63,6 +66,19 @@ class SettingController extends Controller
             Setting::updateOrCreate(['key' => 'company_logo'], ['value' => $logoPath]);
         }
 
+        // Handle Bank QR upload
+        if ($request->hasFile('bank_qr')) {
+            // Delete old Bank QR if exists
+            $oldQr = Setting::where('key', 'company_bank_qr')->first();
+            if ($oldQr && $oldQr->value && Storage::disk('public')->exists($oldQr->value)) {
+                Storage::disk('public')->delete($oldQr->value);
+            }
+
+            // Store new Bank QR
+            $qrPath = $request->file('bank_qr')->store('company', 'public');
+            Setting::updateOrCreate(['key' => 'company_bank_qr'], ['value' => $qrPath]);
+        }
+
         // Update company settings
         $settingsData = [
             'company_name' => $validated['company_name'],
@@ -72,6 +88,7 @@ class SettingController extends Controller
             'company_phone' => $validated['phone'],
             'company_email' => $validated['email'],
             'company_business_license' => $validated['business_license'] ?? '',
+            'exchange_rate' => $validated['exchange_rate'] ?? '4100',
         ];
 
         foreach ($settingsData as $key => $value) {
