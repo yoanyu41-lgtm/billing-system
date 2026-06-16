@@ -1,25 +1,22 @@
 /**
  * Font Configuration for CityTech Billing System
- * - English: Times New Roman
- * - Khmer: SN-Kh-Menghorn
+ * - English: Poppins
+ * - Khmer: Battambang (Khmer OS Battambang)
  */
 
 /* ================================================================
    FONT IMPORTS & DEFINITIONS
    ================================================================ */
 
-/* Import Times New Roman (fallback from Google Fonts) */
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+/* Import Poppins and Battambang from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Battambang:wght@400;700;900&display=swap');
 
-/* Khmer OS Siemreap as a real webfont (works on every device, Khmer + English) */
-@import url('https://fonts.googleapis.com/css2?family=Siemreap&display=swap');
-
-/* Khmer Font - Khmer OS Siemreap (Primary for both English and Khmer) */
-/* Try Khmer OS Siemreap first, then fallbacks */
+/* Fallback for local Khmer OS Battambang */
 @font-face {
     font-family: 'Khmer-System';
-    src: local('Khmer OS Siemreap'),
-         local('KhmerOSSiemreap'),
+    src: local('Khmer OS Battambang'),
+         local('KhmerOSBattambang'),
+         local('Battambang'),
          local('Khmer OS'),
          local('KhmerOS'),
          local('Khmer UI'),
@@ -30,18 +27,17 @@
     unicode-range: U+0000-00FF, U+1780-17FF, U+19E0-19FF, U+200B-200D, U+25CC;
 }
 
-
 /* ================================================================
    GLOBAL FONT SETTINGS
    ================================================================ */
 
-/* Base font for entire application - Khmer OS Siemreap for all text */
+/* Base font for entire application - Poppins first, then Battambang */
 * {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 body {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -52,7 +48,7 @@ p, span, div, a, button,
 input, textarea, select,
 table, th, td,
 label, li {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 
@@ -60,18 +56,18 @@ label, li {
    LANGUAGE-SPECIFIC FONTS
    ================================================================ */
 
-/* English text - Khmer OS Siemreap (same as Khmer) */
+/* English text - Poppins */
 *:lang(en),
 [lang="en"],
 .lang-en {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+    font-family: 'Poppins', sans-serif !important;
 }
 
-/* Khmer text - Khmer OS Siemreap */
+/* Khmer text - Battambang */
 *:lang(km),
 [lang="km"],
 .lang-km {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
     line-height: 1.8; /* Better line height for Khmer */
 }
 
@@ -108,7 +104,7 @@ label, li {
 /* Better rendering for Khmer characters */
 .khmer-text,
 *:lang(km) {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
     line-height: 1.8;
     letter-spacing: 0.01em;
 }
@@ -136,17 +132,17 @@ h3.khmer-text, h3:lang(km) {
 
 /* For elements containing both English and Khmer */
 .mixed-content {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 /* Khmer within English context */
 .en-context .km {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+    font-family: 'Battambang', 'Khmer OS Battambang', sans-serif !important;
 }
 
 /* English within Khmer context */
 .km-context .en {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+    font-family: 'Poppins', sans-serif !important;
 }
 
 
@@ -171,19 +167,19 @@ code, pre, .monospace {
    UTILITY CLASSES
    ================================================================ */
 
-/* Force English font - Khmer OS Siemreap */
+/* Force English font - Poppins */
 .force-en {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+    font-family: 'Poppins', sans-serif !important;
 }
 
-/* Force Khmer font - Khmer OS Siemreap */
+/* Force Khmer font - Battambang */
 .force-km {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 /* Sans-serif fonts */
 .sans-serif {
-    font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 
@@ -193,33 +189,13 @@ code, pre, .monospace {
 
 @media print {
     * {
-        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+        font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', sans-serif !important;
     }
 }
 
 
 /* ================================================================
-   USAGE EXAMPLES
-   ================================================================ */
-
-/*
-   Basic Usage:
-   <p>This is English text</p>
-   <p lang="km">នេះជាអត្ថបទខ្មែរ</p>
-   
-   Force specific font:
-   <span class="force-en">Always English Font</span>
-   <span class="force-km">ពុម្ពអក្សរខ្មែរជានិច្ច</span>
-   
-   Mixed content:
-   <div class="mixed-content">
-       English text និងអត្ថបទខ្មែរ mixed together
-   </div>
-*/
-
-
-/* ================================================================
-   WEBFONT OVERRIDE - Siemreap (Google Fonts) as primary
+   WEBFONT OVERRIDE - Poppins + Battambang as primary
    Loads on every device even without the font installed locally.
    Applies to both English and Khmer.
    ================================================================ */
@@ -232,7 +208,7 @@ table, th, td,
 label, li,
 *:lang(en), [lang="en"], .lang-en,
 *:lang(km), [lang="km"], .lang-km {
-    font-family: 'Siemreap', 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', 'Khmer-System', sans-serif !important;
+    font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
 }
 
 /* Keep icons and code on their own fonts */

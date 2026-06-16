@@ -237,6 +237,22 @@ class InvoiceController extends Controller
         return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
+    public function publicDownload(Invoice $invoice)
+    {
+        // Load all necessary relationships
+        $invoice->load([
+            'payment.installment.customer',
+            'payment.installment.product',
+            'payment.installment.user',
+        ]);
+
+        // Get settings for company info
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'settings'));
+        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+    }
+
     public function print(Invoice $invoice)
     {
         // Load all necessary relationships

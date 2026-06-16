@@ -9,52 +9,24 @@ This document explains font installation and usage in the CityTech Billing Syste
 ## 📋 Font Configuration - ការកំណត់ពុម្ពអក្សរ
 
 ### ពុម្ពអក្សរសម្រាប់អង់គ្លេស (English Font)
-- **Font**: Times New Roman
-- **Type**: Serif
-- **Fallback**: Crimson Text (Google Fonts)
+- **Font**: Poppins
+- **Type**: Sans-serif
+- **Source**: Google Fonts (Webfont)
 
 ### ពុម្ពអក្សរសម្រាប់ខ្មែរ (Khmer Font)
-- **Font**: SN-Kh-Menghorn
+- **Font**: Khmer OS Battambang (Battambang)
 - **Type**: Khmer Unicode
-- **Source**: System installed or local files
+- **Source**: Google Fonts (Webfont)
 
 ---
 
 ## 🚀 Installation Steps - ជំហានដំឡើង
 
-### Step 1: Install Khmer Font - ដំឡើងពុម្ពអក្សរខ្មែរ
+ប្រព័ន្ធនេះប្រើប្រាស់ Google Fonts Webfonts ដូច្នេះមិនចាំបាច់ត្រូវការទាញយក ឬដំឡើង Font នៅក្នុងកុំព្យូទ័ររបស់អ្នកប្រើប្រាស់ឡើយ។ ពុម្ពអក្សរនឹងត្រូវទាញយកដោយស្វ័យប្រវត្តិតាមរយៈអ៊ីនធឺណិត។
 
-#### Windows:
-1. Download SN-Kh-Menghorn font files (.ttf)
-   ទាញយក font files SN-Kh-Menghorn (.ttf)
+ដើម្បីធានាថាពុម្ពអក្សរដំណើរការបានល្អ សូមបញ្ចូល Font CSS ទៅក្នុង Layout របស់អ្នក។
 
-2. Right-click on font file → Install
-   ចុចស្តាំលើ font file → ជ្រើសរើស Install
-
-3. Font will be available system-wide
-   Font នឹងអាចប្រើបានទូទាំងប្រព័ន្ធ
-
-#### macOS:
-1. Download SN-Kh-Menghorn font files
-   ទាញយក font files SN-Kh-Menghorn
-
-2. Double-click font file → Install Font
-   ចុចពីរដងលើ font file → Install Font
-
-3. Font will be available in Font Book
-   Font នឹងមាននៅក្នុង Font Book
-
-#### Linux:
-```bash
-# Copy font files to fonts directory
-mkdir -p ~/.fonts
-cp SN-Kh-Menghorn*.ttf ~/.fonts/
-
-# Update font cache
-fc-cache -f -v
-```
-
-### Step 2: Include Font CSS - បញ្ចូល Font CSS
+### Include Font CSS - បញ្ចូល Font CSS
 
 បញ្ចូលក្នុង layout blade file របស់អ្នក:
 Include in your layout blade file:
@@ -77,10 +49,10 @@ Include in your layout blade file:
 
 ```html
 <!-- អត្ថបទជាភាសាអង់គ្លេស (English Text) -->
-<p>This text will appear in Times New Roman</p>
+<p>This text will appear in Poppins</p>
 
 <!-- អត្ថបទជាភាសាខ្មែរ (Khmer Text) -->
-<p lang="km">អត្ថបទនេះនឹងបង្ហាញជាពុម្ពអក្សរ SN-Kh-Menghorn</p>
+<p lang="km">អត្ថបទនេះនឹងបង្ហាញជាពុម្ពអក្សរ Battambang</p>
 
 <!-- អត្ថបទចម្រុះ (Mixed Content) -->
 <div class="mixed-content">
@@ -108,7 +80,7 @@ Include in your layout blade file:
 
 ```html
 <!-- Force English Font -->
-<span class="force-en">Always Times New Roman</span>
+<span class="force-en">Always Poppins</span>
 
 <!-- Force Khmer Font -->
 <span class="force-km">ពុម្ពអក្សរខ្មែរជានិច្ច</span>
@@ -137,7 +109,7 @@ Include in your layout blade file:
 
 ```html
 <!-- English Headings -->
-<h1>Main Title (Times New Roman)</h1>
+<h1>Main Title (Poppins)</h1>
 <h2>Subtitle</h2>
 <h3>Section Title</h3>
 
@@ -157,26 +129,12 @@ Include in your layout blade file:
 ពុម្ពអក្សរខ្មែរបង្ហាញជាប្រអប់ ឬពុម្ពអក្សរខុស
 
 **Solution (ដំណោះស្រាយ)**:
-1. ត្រួតពិនិត្យថា font SN-Kh-Menghorn ត្រូវបានដំឡើង
-   Verify SN-Kh-Menghorn font is installed
-
+1. ត្រួតពិនិត្យការភ្ជាប់អ៊ីនធឺណិតដើម្បីទាញយក Webfonts ពី Google
+   Verify internet connection to download Google Webfonts
 2. បើកឡើងវិញ browser
    Restart browser
-
 3. Clear browser cache
    សម្អាត cache របស់ browser
-
-### English Font Shows Wrong - ពុម្ពអក្សរអង់គ្លេសខុស
-
-**Problem (បញ្ហា)**: Times New Roman not loading
-Times New Roman មិន load
-
-**Solution (ដំណោះស្រាយ)**:
-- Times New Roman គឺជា system font នៅលើ Windows និង macOS
-  Times New Roman is a system font on Windows and macOS
-  
-- នៅលើ Linux, fallback font (Crimson Text) នឹងត្រូវបានប្រើ
-  On Linux, fallback font (Crimson Text) will be used
 
 ### Mixed Content Issues - បញ្ហាអត្ថបទចម្រុះ
 
@@ -187,14 +145,8 @@ Times New Roman មិន load
 ```html
 <!-- Use mixed-content class -->
 <div class="mixed-content">
-    English text និងអត្ថបទខ្មែរ
+    Poppins text និងអត្ថបទ Battambang
 </div>
-
-<!-- Or mark individual parts -->
-<p>
-    <span class="force-en">English</span>
-    <span class="force-km">និងខ្មែរ</span>
-</p>
 ```
 
 ---
@@ -204,20 +156,16 @@ Times New Roman មិន load
 ```
 e:\billing-system\
 ├── public\
-│   ├── css\
-│   │   ├── fonts.css           # Font configuration
-│   │   └── brand-colors.css    # Brand colors
-│   └── fonts\                  # Font files (if using local)
-│       ├── SN-Kh-Menghorn.ttf
-│       └── SN-Kh-Menghorn-Bold.ttf
+│   └── css\
+│       ├── fonts.css           # Font configuration
+│       └── brand-colors.css    # Brand colors
 ├── resources\
 │   └── views\
 │       ├── layouts\
 │       │   └── app.blade.php   # Main layout with font includes
 │       └── partials\
 │           └── brand.blade.php # Brand tokens with font setup
-├── FONT-SETUP.md              # This file
-└── BRAND-COLORS.md            # Brand colors documentation
+└── FONT-SETUP.md              # This file
 ```
 
 ---
@@ -230,8 +178,8 @@ Check if fonts are loaded correctly:
 ### Browser DevTools Console:
 ```javascript
 // Check if font is available
-document.fonts.check("1em 'SN-Kh-Menghorn'");
-document.fonts.check("1em 'Times New Roman'");
+document.fonts.check("1em 'Battambang'");
+document.fonts.check("1em 'Poppins'");
 
 // List all loaded fonts
 document.fonts.forEach(font => console.log(font.family));
@@ -239,47 +187,19 @@ document.fonts.forEach(font => console.log(font.family));
 
 ---
 
-## 📱 Responsive Font Sizes - ទំហំពុម្ពអក្សរ Responsive
-
-```css
-/* Base font sizes */
-body {
-    font-size: 16px; /* Default */
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    body {
-        font-size: 14px; /* Smaller on mobile */
-    }
-    
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.25rem; }
-}
-
-@media (min-width: 1200px) {
-    body {
-        font-size: 18px; /* Larger on desktop */
-    }
-}
-```
-
----
-
 ## ✅ Checklist - បញ្ជីត្រួតពិនិត្យ
 
-- [ ] ដំឡើង SN-Kh-Menghorn font នៅក្នុងប្រព័ន្ធ
-      Install SN-Kh-Menghorn font on system
+- [ ] ត្រួតពិនិត្យការភ្ជាប់ទៅកាន់ Google Fonts
+      Verify connection to Google Fonts
       
 - [ ] បញ្ចូល `fonts.css` ក្នុង layout
       Include `fonts.css` in layout
       
-- [ ] ត្រួតពិនិត្យអត្ថបទអង់គ្លេសប្រើ Times New Roman
-      Verify English text uses Times New Roman
+- [ ] ត្រួតពិនិត្យអត្ថបទអង់គ្លេសប្រើ Poppins
+      Verify English text uses Poppins
       
-- [ ] ត្រួតពិនិត្យអត្ថបទខ្មែរប្រើ SN-Kh-Menghorn
-      Verify Khmer text uses SN-Kh-Menghorn
+- [ ] ត្រួតពិនិត្យអត្ថបទខ្មែរប្រើ Battambang / Khmer OS Battambang
+      Verify Khmer text uses Battambang / Khmer OS Battambang
       
 - [ ] សាកល្បងអត្ថបទចម្រុះ (English និង Khmer)
       Test mixed content (English and Khmer)
@@ -296,15 +216,13 @@ If you have issues with fonts:
 
 1. ត្រួតពិនិត្យឯកសារនេះ (FONT-SETUP.md)
    Check this document
-
 2. ត្រួតពិនិត្យ `public/css/fonts.css`
    Review `public/css/fonts.css`
-
 3. ត្រួតពិនិត្យ browser console សម្រាប់កំហុស
    Check browser console for errors
 
 ---
 
-**Version**: 1.0
+**Version**: 1.1
 **Last Updated**: June 2026
 **អាប្ដេតចុងក្រោយ**: មិថុនា ២០២៦

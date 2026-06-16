@@ -156,7 +156,12 @@ class CustomerController extends Controller
 
         $totalPaid    = $payments->where('status', 'approved')->sum('amount');
         $totalPending = $payments->where('status', 'pending')->sum('amount');
-        $totalLate    = $installments->where('status', 'overdue')->count();
+        $totalLate    = $installments->filter(fn($inst) => 
+            $inst->status === 'active' && 
+            $inst->next_due_date && 
+            \Carbon\Carbon::parse($inst->next_due_date)->isPast() && 
+            $inst->remaining_balance > 0
+        )->count();
         $totalBalance = $installments->sum('remaining_balance');
 
         return view('customers.show', compact(

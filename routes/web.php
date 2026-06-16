@@ -182,11 +182,17 @@ Route::middleware('auth')->group(function () {
         // Contract Terms
         Route::resource('contract-terms', App\Http\Controllers\ContractTermController::class)->except(['show']);
 
+        // Broadcast
+        Route::get('broadcast', [App\Http\Controllers\BroadcastController::class, 'index'])->name('broadcast.index');
+        Route::post('broadcast', [App\Http\Controllers\BroadcastController::class, 'send'])->name('broadcast.send');
+
         // Backups
         Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('backups', [BackupController::class, 'create'])->name('backups.create');
         Route::get('backups/{filename}', [BackupController::class, 'download'])->name('backups.download');
         Route::post('backups/restore', [BackupController::class, 'restore'])->name('backups.restore');
+        Route::post('backups/restore-file/{filename}', [BackupController::class, 'restoreFromFile'])->name('backups.restore-file');
+        Route::delete('backups/{filename}', [BackupController::class, 'destroy'])->name('backups.destroy');
     });
 
     // Telegram Center
@@ -194,5 +200,9 @@ Route::middleware('auth')->group(function () {
     Route::post('telegram-logs/set-webhook', [TelegramLogController::class, 'setWebhook'])->name('telegram-logs.set-webhook');
     Route::post('telegram-logs/send-test', [TelegramLogController::class, 'sendTestMessage'])->name('telegram-logs.send-test');
 });
+
+// Public / Guest Routes for Telegram Bot customers
+Route::get('public/invoices/{invoice}/download', [\App\Http\Controllers\InvoiceController::class, 'publicDownload'])->name('public.invoices.download');
+Route::get('public/installments/{installment}/contract/download', [\App\Http\Controllers\InstallmentController::class, 'publicDownloadContract'])->name('public.installments.download-contract');
 
 require __DIR__.'/auth.php';

@@ -54,6 +54,11 @@ class AppServiceProvider extends ServiceProvider
             $user->role === 'admin'
         );
 
+        // Only admin can delete installments
+        Gate::define('delete-installment', fn($user) =>
+            $user->role === 'admin'
+        );
+
         // Staff + admin can manage any installment; regular user only owns
         Gate::define('manage-installment', fn($user, Installment $installment) =>
             in_array($user->role, ['admin', 'staff']) || $installment->created_by === $user->id

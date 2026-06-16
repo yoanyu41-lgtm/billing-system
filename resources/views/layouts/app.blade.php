@@ -104,9 +104,9 @@
             color: #94a3b8 !important;
         }
 
-        /* Font: Khmer OS Siemreap for both English and Khmer */
+        /* Font: Poppins for English, Battambang for Khmer */
         * { 
-            font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif !important;
+            font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
@@ -120,11 +120,11 @@
             display: flex; flex-direction: column;
             position: fixed; top: 0; left: 0; bottom: 0; z-index: 50;
             box-shadow: 4px 0 24px rgba(15,23,42,0.16);
-            transition: transform 0.3s ease;
+            transition: width 0.3s ease, transform 0.3s ease;
             overflow-x: hidden;
         }
         #sidebar.collapsed {
-            transform: translateX(-280px);
+            width: 80px;
         }
         
         /* Custom scrollbar for sidebar */
@@ -280,8 +280,94 @@
             transition: all 0.3s ease;
         }
         .main-wrapper.expanded { 
-            margin-left: 0;
-            width: 100%;
+            margin-left: 80px;
+            width: calc(100% - 80px);
+        }
+
+        /* ── Collapsed Sidebar styles for desktop ── */
+        @media (min-width: 769px) {
+            #sidebar.collapsed {
+                width: 80px;
+            }
+            #sidebar.collapsed .sb-logo {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+                gap: 0;
+            }
+            #sidebar.collapsed .sb-logo > div:not(.sb-logo-icon) {
+                display: none !important;
+            }
+            #sidebar.collapsed .sb-nav a,
+            #sidebar.collapsed .sb-dropdown-toggle {
+                font-size: 0 !important;
+                justify-content: center;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                gap: 0 !important;
+            }
+            #sidebar.collapsed .sb-nav a i,
+            #sidebar.collapsed .sb-dropdown-toggle i {
+                font-size: 18px !important;
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+                width: 100% !important;
+                text-align: center;
+            }
+            #sidebar.collapsed .sb-dropdown-toggle .fa-chevron-down,
+            #sidebar.collapsed .sb-dropdown-toggle span {
+                display: none !important;
+            }
+            #sidebar.collapsed .sb-dropdown-menu {
+                padding-left: 0 !important;
+            }
+            #sidebar.collapsed .sb-dropdown-menu a {
+                justify-content: center;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            #sidebar.collapsed .sb-promo {
+                display: none !important;
+            }
+            #sidebar.collapsed .sb-logout {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            #sidebar.collapsed .sb-logout button {
+                font-size: 0 !important;
+                justify-content: center;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                gap: 0 !important;
+            }
+            #sidebar.collapsed .sb-logout button i {
+                font-size: 18px !important;
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+                width: 100% !important;
+                text-align: center;
+            }
+        }
+
+        /* ── Mobile Responsive Sidebar (Floating Drawer) ── */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 280px !important;
+                transform: translateX(0);
+                transition: transform 0.3s ease;
+            }
+            #sidebar.collapsed {
+                width: 280px !important;
+                transform: translateX(-280px) !important;
+            }
+            .main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            .main-wrapper.expanded {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
         }
 
         /* ── Topbar ── */
@@ -1054,6 +1140,10 @@
 
             <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') ? 'active' : '' }}">
                 <i class="fab fa-telegram-plane"></i> {{ __('app.telegram_center') }}
+            </a>
+
+            <a href="{{ route('admin.broadcast.index') }}" class="{{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                <i class="fas fa-bullhorn"></i> ផ្សព្វផ្សាយ Telegram
             </a>
 
             <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">

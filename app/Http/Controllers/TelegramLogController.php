@@ -21,7 +21,13 @@ class TelegramLogController extends Controller
         $customers = Customer::whereNotNull('telegram_id')->orderBy('name')->get();
         $tokenConfigured = ! blank($settings['telegram_token'] ?? null) || ! blank(config('services.telegram.bot_token'));
 
-        return view('admin.telegram-logs.index', compact('telegramLogs', 'settings', 'customers', 'tokenConfigured'));
+        // Fetch actual webhook URL from Telegram API
+        $webhookInfo = $this->telegramService->getWebhookInfo();
+        $actualWebhookUrl = data_get($webhookInfo, 'result.url');
+
+        return view('admin.telegram-logs.index', compact(
+            'telegramLogs', 'settings', 'customers', 'tokenConfigured', 'actualWebhookUrl'
+        ));
     }
 
     public function setWebhook(Request $request)

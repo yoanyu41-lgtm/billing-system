@@ -359,17 +359,34 @@
 document.addEventListener('DOMContentLoaded', function() {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-    const revenueData = @json($monthlyIncome->pluck('total') ?? collect([]));
-    const labels      = @json($monthlyIncome->pluck('month') ?? collect([]));
+    // Helper formatter function for Y-axis ticks
+    function formatYAxis(v) {
+        if (v === 0) return '$0';
+        if (v < 1000) return '$' + Number(v).toFixed(0);
+        return '$' + (v / 1000).toFixed(0) + 'K';
+    }
+
+    // 1. Process Revenue Data
+    const rawRevenue = @json($monthlyIncome ?? collect([]));
+    const revenueData = Array(12).fill(0);
+    rawRevenue.forEach(item => {
+        const idx = parseInt(item.month_num) - 1;
+        if (idx >= 0 && idx < 12) {
+            revenueData[idx] = parseFloat(item.total) || 0;
+        }
+    });
+
+    const hasRevenue = revenueData.some(v => v > 0);
+    const displayRevenue = hasRevenue ? revenueData : [5000,8000,6500,9000,12000,10000,14000,13000,16000,18000,22000,24580];
 
     // Revenue Chart
     new Chart(document.getElementById('revenueChart'), {
         type: 'line',
         data: {
-            labels: labels.length ? labels : months,
+            labels: months,
             datasets: [{
                 label: 'Revenue',
-                data: revenueData.length ? revenueData : [5000,8000,6500,9000,12000,10000,14000,13000,16000,18000,22000,24580],
+                data: displayRevenue,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59,130,246,0.08)',
                 borderWidth: 2.5, fill: true, tension: 0.4,
@@ -384,25 +401,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: { callbacks: { label: c => ' $' + c.parsed.y.toLocaleString() } }
             },
             scales: {
-                y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font:{size:10}, color:'#94a3b8', callback: v => '$'+(v/1000).toFixed(0)+'K' } },
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' }, 
+                    ticks: { 
+                        font:{size:10}, 
+                        color:'#94a3b8', 
+                        callback: formatYAxis 
+                    } 
+                },
                 x: { grid: { display: false }, ticks: { font:{size:10}, color:'#94a3b8' } }
             }
         }
     });
 
+    // 2. Process Collection Data
+    const rawCollection = @json($monthlyCollection ?? collect([]));
+    const collectionData = Array(12).fill(0);
+    rawCollection.forEach(item => {
+        const idx = parseInt(item.month_num) - 1;
+        if (idx >= 0 && idx < 12) {
+            collectionData[idx] = parseFloat(item.total) || 0;
+        }
+    });
+
+    const hasCollection = collectionData.some(v => v > 0);
+    const displayCollection = hasCollection ? collectionData : [3000,4500,3800,6000,7000,6500,8000,9000,10000,12000,14000,18750];
+
     // Collection Chart
     new Chart(document.getElementById('collectionChart'), {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: months,
             datasets: [{
                 label: 'Collection',
-                data: [3000,4500,3800,6000,7000,6500,8000,9000,10000,12000,14000,18750],
+                data: displayCollection,
+                backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                hoverBackgroundColor: 'rgba(16, 185, 129, 0.95)',
                 borderColor: '#10b981',
-                backgroundColor: 'rgba(16,185,129,0.08)',
-                borderWidth: 2.5, fill: true, tension: 0.4,
-                pointRadius: 4, pointBackgroundColor: '#10b981',
-                pointBorderColor: '#fff', pointBorderWidth: 2
+                borderWidth: 1,
+                borderRadius: 4,
+                borderSkipped: false
             }]
         },
         options: {
@@ -412,7 +451,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: { callbacks: { label: c => ' $' + c.parsed.y.toLocaleString() } }
             },
             scales: {
-                y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font:{size:10}, color:'#94a3b8', callback: v => '$'+(v/1000).toFixed(0)+'K' } },
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' }, 
+                    ticks: { 
+                        font:{size:10}, 
+                        color:'#94a3b8', 
+                        callback: formatYAxis 
+                    } 
+                },
                 x: { grid: { display: false }, ticks: { font:{size:10}, color:'#94a3b8' } }
             }
         }
@@ -423,7 +470,11 @@ document.addEventListener('DOMContentLoaded', function() {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [45, 25, 8],
+                data: [
+                    {{ $installmentStatus['paid']['count'] ?? 0 }}, 
+                    {{ $installmentStatus['ongoing']['count'] ?? 0 }}, 
+                    {{ $installmentStatus['overdue']['count'] ?? 0 }}
+                ],
                 backgroundColor: ['#10b981','#f59e0b','#ef4444'],
                 borderWidth: 0, hoverOffset: 4
             }]

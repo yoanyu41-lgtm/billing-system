@@ -32,28 +32,28 @@
 ============================================================ --}}
 <style>
     /* ── Font Configuration - ការកំណត់ពុម្ពអក្សរ ── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Battambang:wght@400;700;900&display=swap');
     
     /* Font family setup - ការដំឡើងពុម្ពអក្សរ */
-    /* Both English & Khmer: Khmer OS Siemreap */
+    /* English: Poppins, Khmer: Battambang */
     * {
-        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+        font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
     }
     
-    /* English text - អត្ថបទអង់គ្លេស - Khmer OS Siemreap */
+    /* English text - អត្ថបទអង់គ្លេស */
     *:lang(en) {
-        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+        font-family: 'Poppins', sans-serif;
     }
     
-    /* Khmer text - អត្ថបទខ្មែរ - Khmer OS Siemreap */
+    /* Khmer text - អត្ថបទខ្មែរ */
     *:lang(km) {
-        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+        font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
         line-height: 1.8; /* Better spacing for Khmer - គម្លាតល្អសម្រាប់ខ្មែរ */
     }
     
     /* Fallback for mixed content - សម្រាប់អត្ថបទចម្រុះ */
     body {
-        font-family: 'Khmer OS Siemreap', 'KhmerOSSiemreap', 'Khmer OS', sans-serif;
+        font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
     }
 
     :root {

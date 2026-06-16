@@ -24,19 +24,11 @@
 <!-- Tabs Navigation -->
 <div class="mb-4 flex space-x-1 rounded-lg bg-slate-200 p-1">
     <button 
-        onclick="switchTab('general')"
-        id="tab-general"
+        onclick="switchTab('company')"
+        id="tab-company"
         class="tab-button flex-1 rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-900 shadow-sm"
         role="tab"
         aria-selected="true">
-        ⚙️ {{ __('app.general_settings') }}
-    </button>
-    <button 
-        onclick="switchTab('company')"
-        id="tab-company"
-        class="tab-button flex-1 rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-        role="tab"
-        aria-selected="false">
         🏢 {{ __('app.company_settings') }}
     </button>
     <button 
@@ -49,63 +41,10 @@
     </button>
 </div>
 
-<!-- General Settings Tab -->
-<div id="content-general" class="tab-content">
-    <div class="grid gap-6 lg:grid-cols-3">
-        <form method="POST" action="{{ route('admin.settings.update') }}" class="rounded-xl bg-white p-6 shadow border border-slate-100 lg:col-span-2">
-            @csrf
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Shop Name</label>
-                <input type="text" name="shop_name" value="{{ $settings['shop_name'] ?? 'City Tech Computer' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Shop Address</label>
-                <input type="text" name="shop_address" value="{{ $settings['shop_address'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Shop Phone</label>
-                <input type="text" name="shop_phone" value="{{ $settings['shop_phone'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Shop Email</label>
-                <input type="email" name="shop_email" value="{{ $settings['shop_email'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="info@example.com">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Currency</label>
-                <input type="text" name="currency" value="{{ $settings['currency'] ?? 'USD' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Default Interest Rate (%)</label>
-                <input type="number" name="default_interest_rate" value="{{ $settings['default_interest_rate'] ?? 0 }}" step="0.01" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-slate-700">Telegram Token</label>
-                <input type="text" name="telegram_token" value="{{ $settings['telegram_token'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Paste your bot token here">
-            </div>
-            <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Update</button>
-        </form>
-
-        <div class="rounded-xl bg-white p-6 shadow border border-slate-100">
-            <h2 class="mb-3 text-base font-semibold text-slate-900">Telegram Setup</h2>
-            <p class="mb-3 text-xs text-slate-600">Use this webhook URL in your Telegram bot configuration.</p>
-            <div class="rounded-lg bg-slate-100 p-3 text-xs text-slate-800 break-all">
-                {{ url('/api/telegram/webhook') }}
-            </div>
-            <p class="mt-4 text-xs text-slate-600">
-                Status:
-                <span class="font-semibold {{ !empty($settings['telegram_token']) ? 'text-emerald-600' : 'text-rose-600' }}">
-                    {{ !empty($settings['telegram_token']) ? 'Configured' : 'Not configured' }}
-                </span>
-            </p>
-            <a href="{{ route('telegram-logs.index') }}" class="mt-4 inline-flex rounded-lg bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-700">Open Telegram Center</a>
-        </div>
-    </div>
-</div>
-
 <!-- Company Settings Tab -->
-<div id="content-company" class="tab-content hidden">
-    <div class="rounded-xl bg-white shadow border border-slate-100">
-        <form method="POST" action="{{ route('admin.settings.company.update') }}" enctype="multipart/form-data" class="p-6">
+<div id="content-company" class="tab-content">
+    <div class="grid gap-6 lg:grid-cols-3">
+        <form method="POST" action="{{ route('admin.settings.company.update') }}" enctype="multipart/form-data" class="rounded-xl bg-white p-6 shadow border border-slate-100 lg:col-span-2">
             @csrf
             
             <!-- Company Name Section -->
@@ -213,13 +152,13 @@
                 </div>
             </div>
             
-            <!-- Business License & Exchange Rate Section -->
+            <!-- Business License & Financials Section -->
             <div class="mb-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                    អាជ្ញាប័ណ្ណ និងការកំណត់ហិរញ្ញវត្ថុ / License & Financials
+                </h3>
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
-                        <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                            {{ __('app.business_license') }}
-                        </h3>
                         <label class="mb-1.5 block text-sm text-slate-700">
                             {{ __('app.business_license_number') }}
                         </label>
@@ -229,13 +168,9 @@
                             value="{{ old('business_license', $settings['company_business_license'] ?? '') }}" 
                             class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             placeholder="BL-2024-xxxxx">
-                        <p class="mt-1 text-xs text-slate-600">{{ __('app.optional_field') }}</p>
                     </div>
                     
                     <div>
-                        <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                            អត្រាប្តូរប្រាក់រៀល / KHR Exchange Rate
-                        </h3>
                         <label class="mb-1.5 block text-sm text-slate-700">
                             អត្រាប្តូរប្រាក់រៀល / KHR Exchange Rate ($1 = ៛) <span class="text-rose-500">*</span>
                         </label>
@@ -243,6 +178,32 @@
                             type="number" 
                             name="exchange_rate" 
                             value="{{ old('exchange_rate', $settings['exchange_rate'] ?? '4100') }}" 
+                            required
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            រូបិយប័ណ្ណ / Currency <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="currency" 
+                            value="{{ old('currency', $settings['currency'] ?? 'USD') }}" 
+                            required
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="USD">
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            អត្រាការប្រាក់លំនាំដើម / Default Interest Rate (%) <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            step="0.01"
+                            name="default_interest_rate" 
+                            value="{{ old('default_interest_rate', $settings['default_interest_rate'] ?? '0') }}" 
                             required
                             class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
@@ -300,7 +261,44 @@
                     <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
                 </div>
             </div>
+
+            <!-- ABA Pay Link Section -->
+            <div class="mb-6 border-t border-slate-100 pt-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                    តំណភ្ជាប់ទូទាត់ប្រាក់ ABA Pay / ABA Pay Link
+                </h3>
+                <div>
+                    <label class="mb-1.5 block text-sm text-slate-700">
+                        ABA Pay Link (Deep Link/Merchant Link)
+                    </label>
+                    <input 
+                        type="url" 
+                        name="company_aba_pay_link" 
+                        value="{{ old('company_aba_pay_link', $settings['company_aba_pay_link'] ?? '') }}" 
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="https://link.aba.com.kh/...">
+                    <p class="mt-1 text-xs text-slate-600">ប្រសិនបើលោកអ្នកមិនដាក់ Link នេះទេ នោះប្រព័ន្ធនឹងផ្ញើត្រឹមរូបភាព QR Code ធម្មតាទៅកាន់អតិថិជន</p>
+                </div>
+            </div>
             
+            <!-- Telegram Token Section -->
+            <div class="mb-6 border-t border-slate-100 pt-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900">
+                    កូនសោ Telegram / Telegram Token
+                </h3>
+                <div>
+                    <label class="mb-1.5 block text-sm text-slate-700">
+                        Telegram Bot Token
+                    </label>
+                    <input 
+                        type="text" 
+                        name="telegram_token" 
+                        value="{{ old('telegram_token', $settings['telegram_token'] ?? '') }}" 
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="វាយបញ្ចូល Telegram Bot Token នៅទីនេះ...">
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
                 <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
@@ -308,6 +306,22 @@
                 </button>
             </div>
         </form>
+
+        <!-- Telegram Setup Card -->
+        <div class="rounded-xl bg-white p-6 shadow border border-slate-100 self-start">
+            <h2 class="mb-3 text-base font-semibold text-slate-900">Telegram Setup</h2>
+            <p class="mb-3 text-xs text-slate-600">Use this webhook URL in your Telegram bot configuration.</p>
+            <div class="rounded-lg bg-slate-100 p-3 text-xs text-slate-800 break-all font-mono">
+                {{ url('/api/v1/telegram/webhook') }}
+            </div>
+            <p class="mt-4 text-xs text-slate-600">
+                Status:
+                <span class="font-semibold {{ !empty($settings['telegram_token']) ? 'text-emerald-600' : 'text-rose-600' }}">
+                    {{ !empty($settings['telegram_token']) ? 'Configured' : 'Not configured' }}
+                </span>
+            </p>
+            <a href="{{ route('telegram-logs.index') }}" class="mt-4 inline-flex rounded-lg bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-700">Open Telegram Center</a>
+        </div>
     </div>
 </div>
 
@@ -425,8 +439,6 @@ function switchTab(tabName) {
 }
 
 // Check if there are validation errors and switch to company tab if needed
-@if($errors->any() && old('company_name'))
-    switchTab('company');
-@endif
+switchTab('company');
 </script>
 @endsection
