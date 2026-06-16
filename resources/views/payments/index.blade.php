@@ -151,6 +151,18 @@
                                     </button>
                                 </form>
                                 @endif
+                                @if(auth()->user()->role === 'admin')
+                                <form method="POST" action="{{ route('payments.destroy', $payment) }}" class="inline" onsubmit="return confirm('តើលោកអ្នកប្រាកដជាចង់លុបការទូទាត់នេះមែនទេ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 hover:text-rose-900 rounded-lg transition duration-150 border-0 cursor-pointer" 
+                                            title="លុបចោល / Delete"
+                                    >
+                                        <i class="fas fa-trash text-base"></i>
+                                    </button>
+                                </form>
+                                @endif
                             </div>
                         </td>
                     </tr>

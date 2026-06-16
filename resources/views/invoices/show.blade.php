@@ -8,7 +8,8 @@
     $companyAddress = \App\Models\Setting::where('key','company_address')->value('value');
     $companyAddressKm = \App\Models\Setting::where('key','company_address_km')->value('value') ?? $companyAddress;
     $companyEmail   = \App\Models\Setting::where('key','company_email')->value('value');
-    $companyLogo    = \App\Models\Setting::where('key','company_logo')->value('value');
+    $companyLogoRaw = \App\Models\Setting::where('key','company_logo')->value('value');
+    $companyLogo    = $companyLogoRaw ? asset('storage/' . $companyLogoRaw) : asset('logo-ct.svg');
 
     // Single-language output based on current locale
     $isKm = app()->getLocale() === 'km';

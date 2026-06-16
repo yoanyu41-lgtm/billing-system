@@ -51,6 +51,10 @@ class SettingController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'bank_qr' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'exchange_rate' => 'nullable|numeric',
+            'company_aba_pay_link' => 'nullable|url',
+            'currency' => 'nullable|string|max:10',
+            'default_interest_rate' => 'nullable|numeric',
+            'telegram_token' => 'nullable|string|max:255',
         ]);
 
         // Handle logo upload
@@ -89,6 +93,10 @@ class SettingController extends Controller
             'company_email' => $validated['email'],
             'company_business_license' => $validated['business_license'] ?? '',
             'exchange_rate' => $validated['exchange_rate'] ?? '4100',
+            'company_aba_pay_link' => $validated['company_aba_pay_link'] ?? '',
+            'currency' => $validated['currency'] ?? 'USD',
+            'default_interest_rate' => $validated['default_interest_rate'] ?? '0',
+            'telegram_token' => $validated['telegram_token'] ?? '',
         ];
 
         foreach ($settingsData as $key => $value) {

@@ -10,10 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('app.installment_contract') }} - #INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</title>
 
-    <!-- Khmer OS Siemreap webfont (same as the system) -->
+    <!-- Poppins & Battambang webfonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Siemreap&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
         * {
@@ -23,7 +23,7 @@
         }
         
         body {
-            font-family: 'Siemreap', 'Khmer OS Siemreap', 'Times New Roman', serif;
+            font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', sans-serif;
             font-size: 12pt;
             line-height: 1.7;
             color: #000;
@@ -32,7 +32,7 @@
         }
         
         [lang="km"] {
-            font-family: 'Siemreap', 'Khmer OS Siemreap', 'Khmer OS', sans-serif;
+            font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer OS', sans-serif;
             line-height: 1.8;
         }
         
@@ -76,15 +76,19 @@
         }
         
         .section-title {
-            background: #f0f0f0;
-            padding: 8px 10px;
-            border: 1px solid #000;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-left: 4px solid #2563eb;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            color: #1e293b;
+            border-radius: 0 6px 6px 0;
         }
         
         .party-box {
-            border: 2px solid #000;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
         }
@@ -126,9 +130,10 @@
         }
         
         .party-box h3 {
-            font-size: 12pt;
+            font-size: 11pt;
             margin-bottom: 10px;
-            text-decoration: underline;
+            color: #1e40af;
+            font-weight: bold;
         }
         
         .info-row {
@@ -146,7 +151,9 @@
         }
         
         .payment-details {
-            border: 1px solid #000;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
         }
@@ -159,7 +166,7 @@
         }
         
         .total-row {
-            border-top: 2px solid #000;
+            border-top: 2px dashed #cbd5e1;
             margin-top: 10px;
             padding-top: 10px;
             font-weight: bold;
@@ -173,7 +180,7 @@
         }
         
         table, th, td {
-            border: 1px solid #000;
+            border: 1px solid #e2e8f0;
         }
         
         th, td {
@@ -182,7 +189,8 @@
         }
         
         th {
-            background: #e0e0e0;
+            background: #f1f5f9;
+            color: #1e40af;
             font-weight: bold;
         }
         
@@ -227,10 +235,74 @@
         @media print {
             body {
                 padding: 0;
+                font-size: 10.5pt;
+                line-height: 1.5;
+            }
+            
+            [lang="km"] {
+                line-height: 1.6;
             }
             
             .no-print {
                 display: none;
+            }
+
+            .header {
+                margin-bottom: 12px;
+                padding-bottom: 5px;
+            }
+            
+            .header h1 {
+                font-size: 15pt;
+            }
+            
+            .header h2 {
+                font-size: 11pt;
+            }
+            
+            .company-info {
+                font-size: 9pt;
+            }
+            
+            .contract-info {
+                margin-bottom: 12px;
+                font-size: 9pt;
+            }
+
+            .section {
+                margin-bottom: 12px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .section-title {
+                padding: 5px 8px;
+                margin-bottom: 8px;
+                font-size: 11pt;
+            }
+
+            .party-box {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .parties-grid {
+                margin-bottom: 10px;
+                gap: 10px;
+            }
+            
+            .two-col-sections {
+                gap: 10px;
+            }
+            
+            .payment-details {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .info-row {
+                margin-bottom: 3px;
+                font-size: 10.5pt;
             }
 
             /* Start Terms & Conditions on a new page */
@@ -238,10 +310,28 @@
                 page-break-before: always;
                 break-before: page;
             }
+            
             /* Avoid breaking a term block across pages */
             .terms p, .terms ol {
                 page-break-inside: avoid;
                 break-inside: avoid;
+            }
+            
+            .signatures {
+                margin-top: 25px;
+                gap: 20px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .signature-line {
+                margin: 40px 20px 10px;
+            }
+            
+            .footer {
+                margin-top: 25px;
+                padding-top: 15px;
+                font-size: 8.5pt;
             }
             
             @page {
@@ -529,27 +619,36 @@
         <!-- Signatures -->
         <div class="section">
             <div class="section-title" lang="km">
-                ✍️ {{ $L('ហត្ថលេខា និងការអនុម័ត', 'SIGNATURES & APPROVAL') }}
+                ✍️ {{ $L('ហត្ថលេខា និងស្នាមមេដៃ', 'SIGNATURES & THUMBPRINTS') }}
             </div>
             
             <p lang="km" style="text-align: center; margin: 20px 0;">
-                {{ $L('យើងខ្ញុំភាគីទាំងពីរ បានអាន យល់ និងព្រមព្រៀងតាមលក្ខខណ្ឌទាំងអស់ដែលមានក្នុងកិច្ចសន្យានេះ។', 'Both parties have read, understood, and agreed to all the terms contained in this contract.') }}
+                {{ $L('យើងខ្ញុំភាគីទាំងអស់ បានអាន យល់ និងព្រមព្រៀងតាមលក្ខខណ្ឌទាំងអស់ដែលមានក្នុងកិច្ចសន្យានេះ។', 'All parties have read, understood, and agreed to all the terms contained in this contract.') }}
             </p>
             
-            <div class="signatures">
+            <div class="signatures" style="grid-template-columns: {{ $guarantor ? '1fr 1fr 1fr' : '1fr 1fr' }};">
                 <div class="signature-box">
                     <div class="signature-line"></div>
-                    <p lang="km"><strong>{{ $L('ហត្ថលេខាអ្នកលក់', 'Seller Signature') }}</strong></p>
+                    <p lang="km"><strong>{{ $L('ហត្ថលេខា និងមេដៃអ្នកលក់', 'Seller Signature & Thumbprint') }}</strong></p>
                     <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________________</p>
                     <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
                 </div>
                 
                 <div class="signature-box">
                     <div class="signature-line"></div>
-                    <p lang="km"><strong>{{ $L('ហត្ថលេខាអ្នកទិញ', 'Buyer Signature') }}</strong></p>
+                    <p lang="km"><strong>{{ $L('ហត្ថលេខា និងមេដៃអ្នកទិញ', 'Buyer Signature & Thumbprint') }}</strong></p>
                     <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: {{ $customer->name }}</p>
                     <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
                 </div>
+
+                @if($guarantor)
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <p lang="km"><strong>{{ $L('ហត្ថលេខា និងមេដៃអ្នកធានា', 'Guarantor Signature & Thumbprint') }}</strong></p>
+                    <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: {{ $guarantor->name }}</p>
+                    <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
+                </div>
+                @endif
             </div>
             
         </div>

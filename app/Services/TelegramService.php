@@ -46,13 +46,33 @@ class TelegramService
             return ['ok' => false, 'reason' => 'Telegram token is not configured.'];
         }
 
+        // Look up ABA Pay link to append quick pay button to reminders
+        $abaLink = Setting::where('key', 'company_aba_pay_link')->value('value');
+        $replyMarkup = null;
+        if ($abaLink && (str_starts_with(trim($message), '⏰') || str_contains(strtolower($message), 'reminder') || str_contains(strtolower($message), 'due'))) {
+            $replyMarkup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📲 ABA Instant Pay 💳', 'url' => $abaLink]
+                    ]
+                ]
+            ];
+        }
+
+        $params = [
+            'chat_id' => $customer->telegram_id,
+            'text' => $message,
+            'parse_mode' => 'Markdown',
+        ];
+
+        if ($replyMarkup) {
+            $params['reply_markup'] = json_encode($replyMarkup);
+        }
+
         try {
             $response = Http::asForm()
                 ->timeout(15)
-                ->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                    'chat_id' => $customer->telegram_id,
-                    'text' => $message,
-                ]);
+                ->post("https://api.telegram.org/bot{$token}/sendMessage", $params);
 
             if ($response->successful() && data_get($response->json(), 'ok') === true) {
                 TelegramLog::create([
@@ -131,12 +151,31 @@ class TelegramService
                 $this->sendToCustomerTextOnly($customer, $caption, $token);
             }
 
-            $response = Http::attach(
-                'photo', file_get_contents($fullPath), basename($photoPath)
-            )->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+            $abaLink = Setting::where('key', 'company_aba_pay_link')->value('value');
+            $replyMarkup = null;
+            if ($abaLink && (str_starts_with(trim($caption), '⏰') || str_contains(strtolower($caption), 'reminder') || str_contains(strtolower($caption), 'due'))) {
+                $replyMarkup = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '📲 ABA Instant Pay 💳', 'url' => $abaLink]
+                        ]
+                    ]
+                ];
+            }
+
+            $params = [
                 'chat_id' => $customer->telegram_id,
                 'caption' => $caption,
-            ]);
+                'parse_mode' => 'Markdown',
+            ];
+
+            if ($replyMarkup) {
+                $params['reply_markup'] = json_encode($replyMarkup);
+            }
+
+            $response = Http::attach(
+                'photo', file_get_contents($fullPath), basename($photoPath)
+            )->post("https://api.telegram.org/bot{$token}/sendPhoto", $params);
 
             if ($response->successful() && data_get($response->json(), 'ok') === true) {
                 TelegramLog::create([
@@ -207,7 +246,7 @@ class TelegramService
     public function setWebhook(?string $webhookUrl = null): array
     {
         $token = $this->getToken();
-        $webhookUrl = $webhookUrl ?: url('/api/telegram/webhook');
+        $webhookUrl = $webhookUrl ?: url('/api/v1/telegram/webhook');
 
         if (blank($token)) {
             return ['ok' => false, 'reason' => 'Telegram token is not configured.'];
@@ -248,6 +287,24 @@ class TelegramService
         }
 
         return $this->sendToCustomer((int) $customerId, $message);
+    }
+
+    public function getWebhookInfo(): array
+    {
+        $token = $this->getToken();
+        if (blank($token)) {
+            return ['ok' => false, 'reason' => 'Telegram token is not configured.'];
+        }
+
+        try {
+            $response = Http::timeout(10)->get("https://api.telegram.org/bot{$token}/getWebhookInfo");
+            if ($response->successful()) {
+                return $response->json();
+            }
+            return ['ok' => false, 'reason' => 'Failed to fetch webhook info.'];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'reason' => $e->getMessage()];
+        }
     }
 
     private function getToken(): ?string

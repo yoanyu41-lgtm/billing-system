@@ -118,18 +118,40 @@ class PaymentController extends Controller
 
         $installment = $payment->installment;
         $installment->remaining_balance -= $payment->amount;
+        
+        if ($installment->remaining_balance <= 0) {
+            $installment->status = 'completed';
+        }
+
         $installment->save();
 
-        Invoice::create([
+        $invoice = Invoice::create([
             'payment_id' => $payment->id,
             'invoice_number' => 'INV-' . $payment->id,
         ]);
 
-        $message = "✅ Payment approved\n"
-            . "Customer: {$installment->customer->name}\n"
-            . "Amount: $" . number_format($payment->amount, 2) . "\n"
-            . "Method: " . ($payment->paymentMethod->name ?? 'System') . "\n"
-            . "Remaining: $" . number_format($installment->remaining_balance, 2);
+        // Dynamically find and update next unpaid due date
+        $schedule = $installment->getPaymentSchedule();
+        $nextUnpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+        if ($nextUnpaidRow) {
+            $installment->next_due_date = $nextUnpaidRow['due_date']->toDateString();
+        } else {
+            $installment->next_due_date = null; // Paid off completely
+        }
+        $installment->save();
+
+        $paymentCount = $installment->payments()->where('status', 'approved')->count();
+        $khmerMonth = $this->toKhmerNumerals($paymentCount);
+        $paymentType = $payment->is_settlement ? 'សម្រាប់ការទូទាត់ផ្តាច់ (Payoff)' : "សម្រាប់ខែទី {$khmerMonth}";
+        
+        $khmerAmount = number_format($payment->amount, 2);
+        $khmerRemaining = number_format($installment->remaining_balance, 2);
+        $downloadLink = route('public.invoices.download', $invoice->id);
+
+        $message = "🙏 *សូមអរគុណ!*\n"
+            . "ការបង់ប្រាក់ចំនួន *\${$khmerAmount}* {$paymentType} ត្រូវបានអនុម័តជោគជ័យ។\n"
+            . "• តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
+            . "• ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
 
         $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
 
@@ -140,11 +162,73 @@ class PaymentController extends Controller
         return redirect()->route('payments.index')->with('success', $flashMessage);
     }
 
+    private function toKhmerNumerals($num): string
+    {
+        $khmerDigits = ['0' => '០', '1' => '១', '2' => '២', '3' => '៣', '4' => '៤', '5' => '៥', '6' => '៦', '7' => '៧', '8' => '៨', '9' => '៩'];
+        return strtr((string)$num, $khmerDigits);
+    }
+
     public function reject(Payment $payment)
     {
         Gate::authorize('approve-payment');
         $payment->update(['status' => 'rejected']);
-        return redirect()->route('payments.index')->with('success', 'Payment rejected.');
+
+        $installment = $payment->installment;
+        $customerName = $installment->customer->name;
+        $productName = $installment->product->name;
+        $amount = number_format($payment->amount, 2);
+
+        $message = "❌ *ការបង់ប្រាក់ត្រូវបានបដិសេធ!*\n\n"
+            . "សូមជម្រាបជូនអតិថិជន *{$customerName}*៖\n"
+            . "ការទូទាត់ប្រាក់ចំនួន *\${$amount}* សម្រាប់គម្រោងបង់រំលស់៖ *{$productName}* ត្រូវបានបដិសេធ (មិនមានការអនុម័ត)។\n"
+            . "សូមលោកអ្នកទាក់ទងមកកាន់ហាង ឬពិនិត្យផ្ទៀងផ្ទាត់ឡើងវិញ រួចផ្ញើបង្កាន់ដៃបង់ប្រាក់ម្តងទៀត។ សូមអរគុណ! 🙏";
+
+        $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
+
+        $flashMessage = $telegramResult['ok']
+            ? 'Payment rejected and Telegram notification sent.'
+            : 'Payment rejected. Telegram notice: ' . $telegramResult['reason'];
+
+        return redirect()->route('payments.index')->with('success', $flashMessage);
+    }
+
+    public function destroy(Payment $payment)
+    {
+        Gate::authorize('approve-payment');
+
+        $installment = $payment->installment;
+
+        if ($payment->status === 'approved') {
+            $installment->remaining_balance += $payment->amount;
+            
+            if ($installment->status === 'completed') {
+                $installment->status = 'active';
+            }
+            
+            $installment->save();
+
+            // Recalculate and reset next unpaid due date
+            $schedule = $installment->getPaymentSchedule();
+            $nextUnpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+            if ($nextUnpaidRow) {
+                $installment->next_due_date = $nextUnpaidRow['due_date']->toDateString();
+            } else {
+                $installment->next_due_date = null;
+            }
+            $installment->save();
+        }
+
+        // Delete associated invoice if exists
+        $payment->invoice()?->delete();
+
+        // Delete payment QR code image from storage if exists
+        if ($payment->qr_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->qr_image)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($payment->qr_image);
+        }
+
+        $payment->delete();
+
+        return redirect()->route('payments.index')->with('success', 'Payment deleted successfully.');
     }
 
     public function show(Payment $payment)

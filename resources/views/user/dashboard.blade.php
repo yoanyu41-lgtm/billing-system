@@ -232,35 +232,42 @@
 document.addEventListener("DOMContentLoaded", function() {
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     
+    // Helper formatter function for Y-axis ticks
+    function formatYAxis(v) {
+        if (v === 0) return '$0';
+        if (v < 1000) return '$' + Number(v).toFixed(0);
+        return '$' + (v / 1000).toFixed(0) + 'K';
+    }
+
     // Collection Data
-    const collectionDataRaw = @json($monthlyCollection ?? collect([]));
-    const collectionData = collectionDataRaw.length > 0 
-        ? collectionDataRaw.map(item => item.total) 
-        : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        
-    const labels = collectionDataRaw.length > 0 
-        ? collectionDataRaw.map(item => item.month) 
-        : months;
+    const rawCollection = @json($monthlyCollection ?? collect([]));
+    const collectionData = Array(12).fill(0);
+    rawCollection.forEach(item => {
+        const idx = parseInt(item.month_num) - 1;
+        if (idx >= 0 && idx < 12) {
+            collectionData[idx] = parseFloat(item.total) || 0;
+        }
+    });
+
+    const hasCollection = collectionData.some(v => v > 0);
+    const displayCollection = hasCollection ? collectionData : [1200, 1900, 1500, 2200, 1800, 2500, 2100, 2800, 2400, 3100, 2900, 3500];
 
     // Staff Collection Chart
     const ctxCol = document.getElementById('staffCollectionChart');
     if (ctxCol) {
         new Chart(ctxCol, {
-            type: 'line',
+            type: 'bar',
             data: {
-                labels: labels,
+                labels: months,
                 datasets: [{
                     label: 'Collection',
-                    data: collectionData.length > 0 && Math.max(...collectionData) > 0 ? collectionData : [1200, 1900, 1500, 2200, 1800, 2500, 2100, 2800, 2400, 3100, 2900, 3500],
+                    data: displayCollection,
+                    backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                    hoverBackgroundColor: 'rgba(16, 185, 129, 0.95)',
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#10b981',
-                    pointHoverRadius: 6
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderSkipped: false
                 }]
             },
             options: {
@@ -280,7 +287,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     y: {
                         beginAtZero: true,
                         grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
-                        ticks: { font: { size: 11 }, color: '#9ca3af' }
+                        ticks: { 
+                            font: { size: 11 }, 
+                            color: '#9ca3af',
+                            callback: formatYAxis
+                        }
                     },
                     x: {
                         grid: { display: false },

@@ -10,14 +10,50 @@ class BackupController extends Controller
 {
     public function index()
     {
-        $backups = Storage::files('backups');
-        return view('admin.backups.index', compact('backups'));
+        $backupFiles = Storage::files('backups');
+        
+        $backups = [];
+        $totalSize = 0;
+        $lastBackupTime = null;
+        
+        foreach ($backupFiles as $file) {
+            $name = basename($file);
+            try {
+                $size = Storage::size($file);
+                $modified = Storage::lastModified($file);
+            } catch (\Throwable $e) {
+                $size = 0;
+                $modified = time();
+            }
+            
+            $totalSize += $size;
+            if (is_null($lastBackupTime) || $modified > $lastBackupTime) {
+                $lastBackupTime = $modified;
+            }
+            
+            $backups[] = [
+                'name' => $name,
+                'size' => $size,
+                'date' => \Carbon\Carbon::createFromTimestamp($modified)->setTimezone('Asia/Phnom_Penh'),
+            ];
+        }
+        
+        // Sort backups by date descending
+        usort($backups, function($a, $b) {
+            return $b['date']->timestamp <=> $a['date']->timestamp;
+        });
+
+        return view('admin.backups.index', compact('backups', 'totalSize', 'lastBackupTime'));
     }
 
     public function create()
     {
-        Artisan::call('db:backup');
-        return redirect()->back()->with('success', 'Backup created.');
+        try {
+            Artisan::call('db:backup');
+            return redirect()->back()->with('success', __('app.backup_success'));
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', __('app.backup_failed') . ': ' . $e->getMessage());
+        }
     }
 
     public function download($filename)
@@ -27,11 +63,69 @@ class BackupController extends Controller
 
     public function restore(Request $request)
     {
-        $request->validate(['file' => 'required|file']);
-        $file = $request->file('file');
-        $path = $file->storeAs('backups', 'restore.sql');
+        $request->validate([
+            'file' => 'required'
+        ]);
 
-        // For restore, it's complex, perhaps just upload and note.
-        return redirect()->back()->with('success', 'File uploaded for restore.');
+        $file = $request->file('file');
+        
+        try {
+            $sql = file_get_contents($file->getRealPath());
+
+            // Disable foreign keys and execute raw SQL statements
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            \Illuminate\Support\Facades\DB::unprepared($sql);
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            return redirect()->back()->with('success', __('app.restore_success'));
+        } catch (\Throwable $e) {
+            try {
+                \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            } catch (\Throwable $ex) {}
+
+            return redirect()->back()->with('error', __('app.restore_failed') . ': ' . $e->getMessage());
+        }
+    }
+
+    public function restoreFromFile($filename)
+    {
+        // Prevent directory traversal
+        $filename = basename($filename);
+        $filePath = 'backups/' . $filename;
+
+        if (!Storage::exists($filePath)) {
+            return redirect()->back()->with('error', 'Backup file not found.');
+        }
+
+        try {
+            $sql = Storage::get($filePath);
+
+            // Disable foreign keys and execute raw SQL statements
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            \Illuminate\Support\Facades\DB::unprepared($sql);
+            \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            return redirect()->back()->with('success', __('app.restore_success'));
+        } catch (\Throwable $e) {
+            try {
+                \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            } catch (\Throwable $ex) {}
+
+            return redirect()->back()->with('error', __('app.restore_failed') . ': ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($filename)
+    {
+        // Prevent directory traversal
+        $filename = basename($filename);
+        $filePath = 'backups/' . $filename;
+
+        if (Storage::exists($filePath)) {
+            Storage::delete($filePath);
+            return redirect()->back()->with('success', __('app.delete_success'));
+        }
+
+        return redirect()->back()->with('error', 'Backup file not found.');
     }
 }

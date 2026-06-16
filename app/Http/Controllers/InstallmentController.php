@@ -82,7 +82,7 @@ class InstallmentController extends Controller
         $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
         $remainingBalance = round($monthlyPayment * $duration, 2);
 
-        Installment::create([
+        $installment = Installment::create([
             'customer_id' => $request->customer_id,
             'product_id' => $request->product_id,
             'total_price' => $totalPrice,
@@ -97,6 +97,25 @@ class InstallmentController extends Controller
             'created_by' => auth()->id(),
             'next_due_date' => now()->addMonth()->toDateString(),
         ]);
+
+        // Send welcoming Telegram message with contract if customer is linked
+        $customer = Customer::find($request->customer_id);
+        if ($customer && !empty($customer->telegram_id)) {
+            $contractDownloadLink = route('public.installments.download-contract', $installment->id);
+            $khmerAmount = number_format($installment->total_price, 2);
+            $khmerMonthly = number_format($installment->monthly_payment, 2);
+            
+            $msg = "📄 *កិច្ចសន្យាបង់រំលស់ថ្មី / New Installment Contract*\n\n"
+                . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
+                . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$product->name}* ត្រូវបានបង្កើតឡើងដោយជោគជ័យនៅក្នុងប្រព័ន្ធ។\n"
+                . "• លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
+                . "• តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
+                . "• ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"
+                . "• រយៈពេលបង់រំលស់៖ *{$installment->duration_months} ខែ*\n\n"
+                . "សូមលោកអ្នកទាញយកឯកសារកិច្ចសន្យាបង់រំលស់ផ្លូវការជា PDF ទីនេះ៖ [ទាញយកកិច្ចសន្យា PDF]({$contractDownloadLink})";
+
+            app(TelegramService::class)->sendToCustomer($customer->id, $msg);
+        }
 
         return redirect()->route('installments.index')->with('success', 'Installment created successfully.');
     }
@@ -210,7 +229,7 @@ class InstallmentController extends Controller
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
             'duration_months' => 'required|integer|min:1',
-            'status' => 'required|in:active,cancelled',
+            'status' => 'required|in:active,cancelled,completed,paid',
         ]);
 
         // Get tax settings
@@ -246,7 +265,7 @@ class InstallmentController extends Controller
         $principal = $totalPrice - $downPayment;
         $monthlyInterest = ($principal * $interestRate / 100) / 12;
         $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
-        $remainingBalance = round($monthlyPayment * $duration, 2);
+        $remainingBalance = in_array($request->status, ['cancelled', 'completed', 'paid']) ? 0 : round($monthlyPayment * $duration, 2);
 
         $installment->update([
             'total_price' => $totalPrice,
@@ -266,7 +285,7 @@ class InstallmentController extends Controller
 
     public function destroy(Installment $installment)
     {
-        Gate::authorize('manage-installment', $installment);
+        Gate::authorize('delete-installment');
 
         // Delete related records in correct order to avoid foreign key constraints
         // 1. First delete invoices related to payments from this installment
@@ -491,5 +510,36 @@ class InstallmentController extends Controller
         } else {
             return redirect()->back()->with('error', 'Telegram error: ' . $telegramResult['reason']);
         }
+    }
+
+    public function publicDownloadContract(Installment $installment)
+    {
+        $customer = $installment->customer;
+        $product = $installment->product;
+        $guarantor = $customer->guarantors()->first();
+        $contractTerms = \App\Models\ContractTerm::where('is_active', true)
+            ->orderBy('sort_order')->orderBy('id')->get();
+        
+        $paymentSchedule = [];
+        $currentDate = \Carbon\Carbon::parse($installment->created_at);
+        
+        for ($i = 1; $i <= $installment->duration_months; $i++) {
+            $dueDate = $currentDate->copy()->addMonths($i);
+            $principal = round(($installment->total_price - $installment->down_payment) / $installment->duration_months, 2);
+            $interest = round((($installment->total_price - $installment->down_payment) * $installment->interest_rate / 100) / 12, 2);
+            
+            $paymentSchedule[] = [
+                'month' => $i,
+                'date' => $dueDate->format('d/m/Y'),
+                'principal' => $principal,
+                'interest' => $interest,
+                'total' => round($principal + $interest, 2),
+            ];
+        }
+
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('installments.contract_pdf', compact('installment', 'customer', 'product', 'guarantor', 'paymentSchedule', 'contractTerms', 'settings'));
+        return $pdf->download('Contract-INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . '.pdf');
     }
 }

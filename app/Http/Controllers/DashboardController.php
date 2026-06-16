@@ -32,18 +32,21 @@ class DashboardController extends Controller
             // Combined revenue = installment payments + direct sales
             $combinedIncome      = $totalIncome + $directSalesTotal;
 
-            $activeInstallments = Installment::where('status', 'ongoing')->count();
-            $overdueAmount      = Installment::where('status', 'overdue')->sum('remaining_balance');
+            $activeInstallments = Installment::where('status', 'active')->count();
+            $overdueAmount      = Installment::where('status', 'active')
+                ->where('next_due_date', '<', today())
+                ->where('remaining_balance', '>', 0)
+                ->sum('remaining_balance');
 
             // New stat cards
             $totalPayments       = Payment::count();
             $pendingPayments     = Payment::where('status', 'pending')->count();
-            $completedInstallments = Installment::where('status', 'paid')->count();
+            $completedInstallments = Installment::where('status', 'completed')->count();
 
-            $lateCustomers = Installment::where('remaining_balance', '>', 0)
-                ->whereHas('payments', function ($q) {
-                    $q->where('payment_date', '<', now()->subDays(30));
-                })->count();
+            $lateCustomers = Installment::where('status', 'active')
+                ->where('next_due_date', '<', today())
+                ->where('remaining_balance', '>', 0)
+                ->count();
 
             // ── Low Stock Products ───────────────────────────────
             $lowStockProducts = Product::where('is_active', true)
@@ -55,25 +58,60 @@ class DashboardController extends Controller
                 ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
                 ->count();
 
-            // ── Monthly Revenue Chart ────────────────────────────
-            $monthlyIncome = Payment::where('status', 'approved')
+            // ── Monthly Revenue Chart (Installment payments + Direct sales) ────────────────────────────
+            $paymentsQuery = Payment::where('status', 'approved')
                 ->whereYear('payment_date', now()->year)
-                ->selectRaw("DATE_FORMAT(payment_date, '%b') as month, MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month', 'month_num')
-                ->orderBy('month_num')
-                ->get();
+                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+                ->groupBy('month_num')
+                ->pluck('total', 'month_num')
+                ->toArray();
 
-            // ── Monthly Collection Chart ─────────────────────────
-            $monthlyCollection = Payment::whereYear('payment_date', now()->year)
-                ->selectRaw("DATE_FORMAT(payment_date, '%b') as month, MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month', 'month_num')
-                ->orderBy('month_num')
-                ->get();
+            $salesQuery = \App\Models\Sale::whereYear('sale_date', now()->year)
+                ->selectRaw("MONTH(sale_date) as month_num, SUM(total) as total")
+                ->groupBy('month_num')
+                ->pluck('total', 'month_num')
+                ->toArray();
+
+            $monthlyIncome = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $paymentTotal = $paymentsQuery[$m] ?? 0;
+                $saleTotal = $salesQuery[$m] ?? 0;
+                $monthlyIncome[] = [
+                    'month_num' => $m,
+                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                    'total' => $paymentTotal + $saleTotal
+                ];
+            }
+
+            // ── Monthly Collection Chart (Installment payments only) ─────────────────────────
+            $collectionQuery = Payment::whereYear('payment_date', now()->year)
+                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+                ->groupBy('month_num')
+                ->pluck('total', 'month_num')
+                ->toArray();
+
+            $monthlyCollection = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $monthlyCollection[] = [
+                    'month_num' => $m,
+                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                    'total' => $collectionQuery[$m] ?? 0
+                ];
+            }
 
             // ── Installment Status Donut ─────────────────────────
-            $paidCount    = Installment::where('status', 'paid')->count();
-            $ongoingCount = Installment::where('status', 'ongoing')->count();
-            $overdueCount = Installment::where('status', 'overdue')->count();
+            $paidCount    = Installment::where('status', 'completed')->count();
+            $overdueCount = Installment::where('status', 'active')
+                ->where('next_due_date', '<', today())
+                ->where('remaining_balance', '>', 0)
+                ->count();
+            $ongoingCount = Installment::where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('next_due_date')
+                      ->orWhere('next_due_date', '>=', today())
+                      ->orWhere('remaining_balance', '<=', 0);
+                })
+                ->count();
             $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
 
             $installmentStatus = [
@@ -135,8 +173,9 @@ class DashboardController extends Controller
 
             $pendingPayments = Payment::where('status', 'pending')->count();
 
-            $lateCustomers = Installment::where('remaining_balance', '>', 0)
-                ->whereDoesntHave('payments', fn($q) => $q->where('payment_date', '>=', now()->subDays(30)))
+            $lateCustomers = Installment::where('status', 'active')
+                ->where('next_due_date', '<', today())
+                ->where('remaining_balance', '>', 0)
                 ->count();
 
             $recentPayments = Payment::with(['installment.customer', 'paymentMethod'])
@@ -145,16 +184,34 @@ class DashboardController extends Controller
                 ->get();
                 
             // ── Monthly Collection Chart ─────────────────────────
-            $monthlyCollection = Payment::whereYear('payment_date', now()->year)
-                ->selectRaw("DATE_FORMAT(payment_date, '%b') as month, MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month', 'month_num')
-                ->orderBy('month_num')
-                ->get();
+            $collectionQuery = Payment::whereYear('payment_date', now()->year)
+                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+                ->groupBy('month_num')
+                ->pluck('total', 'month_num')
+                ->toArray();
+
+            $monthlyCollection = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $monthlyCollection[] = [
+                    'month_num' => $m,
+                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                    'total' => $collectionQuery[$m] ?? 0
+                ];
+            }
 
             // ── Installment Status Donut ─────────────────────────
-            $paidCount    = Installment::where('status', 'paid')->count();
-            $ongoingCount = Installment::where('status', 'ongoing')->count();
-            $overdueCount = Installment::where('status', 'overdue')->count();
+            $paidCount    = Installment::where('status', 'completed')->count();
+            $overdueCount = Installment::where('status', 'active')
+                ->where('next_due_date', '<', today())
+                ->where('remaining_balance', '>', 0)
+                ->count();
+            $ongoingCount = Installment::where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('next_due_date')
+                      ->orWhere('next_due_date', '>=', today())
+                      ->orWhere('remaining_balance', '<=', 0);
+                })
+                ->count();
             $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
 
             $installmentStatus = [
@@ -182,14 +239,31 @@ class DashboardController extends Controller
     {
         $year = $request->input('year', now()->year);
 
-        return response()->json(
-            Payment::where('status', 'approved')
-                ->whereYear('payment_date', $year)
-                ->selectRaw("DATE_FORMAT(payment_date, '%b') as month, MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month', 'month_num')
-                ->orderBy('month_num')
-                ->get()
-        );
+        $paymentsQuery = Payment::where('status', 'approved')
+            ->whereYear('payment_date', $year)
+            ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
+
+        $salesQuery = \App\Models\Sale::whereYear('sale_date', $year)
+            ->selectRaw("MONTH(sale_date) as month_num, SUM(total) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
+
+        $data = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $paymentTotal = $paymentsQuery[$m] ?? 0;
+            $saleTotal = $salesQuery[$m] ?? 0;
+            $data[] = [
+                'month_num' => $m,
+                'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                'total' => $paymentTotal + $saleTotal
+            ];
+        }
+
+        return response()->json($data);
     }
 
     // ── API: Year filter Collection ──────────────────────────────
@@ -197,12 +271,21 @@ class DashboardController extends Controller
     {
         $year = $request->input('year', now()->year);
 
-        return response()->json(
-            Payment::whereYear('payment_date', $year)
-                ->selectRaw("DATE_FORMAT(payment_date, '%b') as month, MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month', 'month_num')
-                ->orderBy('month_num')
-                ->get()
-        );
+        $collectionQuery = Payment::whereYear('payment_date', $year)
+            ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
+
+        $data = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $data[] = [
+                'month_num' => $m,
+                'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                'total' => $collectionQuery[$m] ?? 0
+            ];
+        }
+
+        return response()->json($data);
     }
 }

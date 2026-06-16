@@ -582,7 +582,19 @@
                     $barColor = $rc === 'emerald' ? '#10b981' : ($rc === 'amber' ? '#f59e0b' : '#ef4444');
                 @endphp
                 <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-4">Latest Credit Assessment</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-sm font-semibold text-gray-700">Latest Credit Assessment</h3>
+                        <form method="POST" action="{{ route('credit-checks.destroy', [$customer, $latestCredit]) }}"
+                              class="inline-block" onsubmit="return confirm('{{ __('app.confirm_delete') }}')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer" title="{{ __('app.delete') }}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                     <div class="flex items-center gap-6">
                         {{-- Score Circle --}}
                         <div class="relative w-24 h-24 flex-shrink-0">
@@ -625,6 +637,28 @@
                             </div>
                             @if($latestCredit->notes)
                                 <div class="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">{{ $latestCredit->notes }}</div>
+                            @endif
+
+                            @if($latestCredit->status === 'pending')
+                            <div class="mt-4 flex items-center gap-2 border-t border-gray-50 pt-3">
+                                <span class="text-xs text-gray-400 mr-1">{{ app()->getLocale() === 'km' ? 'ប្តូរស្ថានភាព៖' : 'Change Status:' }}</span>
+                                <form method="POST" action="{{ route('credit-checks.update', [$customer, $latestCredit]) }}" class="inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="approved">
+                                    <button type="submit" class="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-emerald-200 transition-colors cursor-pointer">
+                                        ✅ {{ __('app.approve') }}
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('credit-checks.update', [$customer, $latestCredit]) }}" class="inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button type="submit" class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-200 transition-colors cursor-pointer">
+                                        ❌ {{ __('app.reject') }}
+                                    </button>
+                                </form>
+                            </div>
                             @endif
                         </div>
                     </div>
@@ -669,8 +703,12 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.decision') }}</label>
-                                    <input type="text" name="status" required placeholder="e.g., Pending, Approved, Rejected, etc."
-                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <select name="status" required
+                                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                        <option value="pending">{{ __('app.pending') }}</option>
+                                        <option value="approved">{{ __('app.approved') }}</option>
+                                        <option value="rejected">{{ __('app.rejected') }}</option>
+                                    </select>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.notes') }}</label>
@@ -728,6 +766,18 @@
                                     @if($cc->monthly_income) · {{ format_currency($cc->monthly_income) }}/{{ __('app.months') }} @endif
                                 </div>
                             </div>
+                            <div class="flex-shrink-0">
+                                <form method="POST" action="{{ route('credit-checks.destroy', [$customer, $cc]) }}"
+                                      class="inline-block" onsubmit="return confirm('{{ __('app.confirm_delete') }}')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer" title="{{ __('app.delete') }}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         @endforeach
                     </div>
@@ -763,12 +813,47 @@ function toggleSection(id) {
 function calcScore() {
     const income = parseFloat(document.querySelector('[name=monthly_income]')?.value) || 0;
     const debt   = parseFloat(document.querySelector('[name=existing_debt]')?.value) || 0;
-    const employ = document.querySelector('[name=employment_status]')?.value;
+    const employ = (document.querySelector('[name=employment_status]')?.value || '').toLowerCase();
 
     let score = 50;
-    if (employ === 'employed')      score += 25;
-    else if (employ === 'self-employed') score += 15;
-    else if (employ === 'student')  score += 5;
+    if (
+        employ.includes('employed') || 
+        employ.includes('work') || 
+        employ.includes('job') || 
+        employ.includes('បុគ្គលិក') || 
+        employ.includes('ធ្វើការ') || 
+        employ.includes('មានការងារ')
+    ) {
+        if (
+            employ.includes('self') || 
+            employ.includes('លក់ដូរ') || 
+            employ.includes('រកស៊ី') || 
+            employ.includes('ខ្លួនឯង') || 
+            employ.includes('អាជីវករ')
+        ) {
+            score += 15;
+        } else {
+            score += 25;
+        }
+    } else if (
+        employ.includes('self-employed') || 
+        employ.includes('business') || 
+        employ.includes('owner') || 
+        employ.includes('លក់ដូរ') || 
+        employ.includes('រកស៊ី') || 
+        employ.includes('ខ្លួនឯង') || 
+        employ.includes('អាជីវករ')
+    ) {
+        score += 15;
+    } else if (
+        employ.includes('student') || 
+        employ.includes('study') || 
+        employ.includes('សិស្ស') || 
+        employ.includes('និស្សិត') || 
+        employ.includes('រៀន')
+    ) {
+        score += 5;
+    }
 
     if (income > 0) {
         const ratio = debt / income;
@@ -808,6 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (['installments','payments','guarantors','credit'].includes(hash)) {
         switchTab(hash);
     }
+    calcScore();
 });
 
 // ── Lightbox ──

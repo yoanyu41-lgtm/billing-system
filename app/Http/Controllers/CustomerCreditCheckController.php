@@ -11,7 +11,7 @@ class CustomerCreditCheckController extends Controller
     public function store(Request $request, Customer $customer)
     {
         $request->validate([
-            'employment_status' => 'nullable|in:employed,self-employed,unemployed,student',
+            'employment_status' => 'nullable|string|max:255',
             'monthly_income'    => 'nullable|numeric|min:0',
             'existing_debt'     => 'nullable|numeric|min:0',
             'notes'             => 'nullable|string',
@@ -60,13 +60,49 @@ class CustomerCreditCheckController extends Controller
     {
         $score = 50;
 
-        // Employment score
-        $score += match($employment) {
-            'employed'      => 25,
-            'self-employed' => 15,
-            'student'       => 5,
-            default         => 0,
-        };
+        // Employment score via flexible keyword matching
+        if ($employment) {
+            $emp = mb_strtolower($employment);
+            if (
+                str_contains($emp, 'employed') ||
+                str_contains($emp, 'work') ||
+                str_contains($emp, 'job') ||
+                str_contains($emp, 'បុគ្គលិក') ||
+                str_contains($emp, 'ធ្វើការ') ||
+                str_contains($emp, 'មានការងារ')
+            ) {
+                // Check if it's self-employed
+                if (
+                    str_contains($emp, 'self') ||
+                    str_contains($emp, 'លក់ដូរ') ||
+                    str_contains($emp, 'រកស៊ី') ||
+                    str_contains($emp, 'ខ្លួនឯង') ||
+                    str_contains($emp, 'អាជីវករ')
+                ) {
+                    $score += 15;
+                } else {
+                    $score += 25;
+                }
+            } elseif (
+                str_contains($emp, 'self-employed') ||
+                str_contains($emp, 'business') ||
+                str_contains($emp, 'owner') ||
+                str_contains($emp, 'លក់ដូរ') ||
+                str_contains($emp, 'រកស៊ី') ||
+                str_contains($emp, 'ខ្លួនឯង') ||
+                str_contains($emp, 'អាជីវករ')
+            ) {
+                $score += 15;
+            } elseif (
+                str_contains($emp, 'student') ||
+                str_contains($emp, 'study') ||
+                str_contains($emp, 'សិស្ស') ||
+                str_contains($emp, 'និស្សិត') ||
+                str_contains($emp, 'រៀន')
+            ) {
+                $score += 5;
+            }
+        }
 
         // Income vs debt ratio
         if ($income > 0) {
@@ -78,5 +114,14 @@ class CustomerCreditCheckController extends Controller
         }
 
         return max(0, min(100, $score));
+    }
+
+    public function destroy(Customer $customer, CustomerCreditCheck $creditCheck)
+    {
+        $creditCheck->delete();
+
+        return redirect()->route('customers.show', $customer)
+            ->with('success', 'Credit check assessment deleted successfully.')
+            ->withFragment('tab-credit');
     }
 }

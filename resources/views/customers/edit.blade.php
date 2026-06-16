@@ -62,12 +62,6 @@
                     <input type="text" name="id_card" value="{{ old('id_card', $customer->id_card) }}"
                            class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
                 </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.telegram_id') }}</label>
-                    <input type="text" name="telegram_id" value="{{ old('telegram_id', $customer->telegram_id) }}"
-                           class="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
                 @endif
 
                 <div class="sm:col-span-2">

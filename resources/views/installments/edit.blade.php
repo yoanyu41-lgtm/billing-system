@@ -27,7 +27,7 @@
                         <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.total_price') }} <span class="text-red-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
-                            <input type="number" step="0.01" name="total_price" id="totalPrice" value="{{ old('total_price', $installment->total_price) }}" required class="w-full border pl-8 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('total_price') ? 'border-red-500' : 'border-gray-300' }}" placeholder="0.00">
+                            <input type="number" step="0.01" name="total_price" id="totalPrice" value="{{ old('total_price', $installment->subtotal_before_tax ?? $installment->total_price) }}" required class="w-full border pl-8 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('total_price') ? 'border-red-500' : 'border-gray-300' }}" placeholder="0.00">
                         </div>
                         @error('total_price')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -73,6 +73,7 @@
                         <select name="status" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('status') ? 'border-red-500' : 'border-gray-300' }}">
                             <option value="active" {{ old('status', $installment->status) == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="cancelled" {{ old('status', $installment->status) == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            <option value="completed" {{ old('status', $installment->status) == 'completed' || old('status', $installment->status) == 'paid' ? 'selected' : '' }}>Completed</option>
                         </select>
                         @error('status')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -159,12 +160,12 @@
 
     // Get product tax info from current installment
     const productId = {{ $installment->product_id }};
-    const productData = @json([
+    const productData = {!! json_encode([
         'id' => $installment->product->id,
-        'is_taxable' => $installment->product->is_taxable ?? false,
-        'tax_rate' => $installment->product->tax_rate ?? 0,
+        'is_taxable' => (bool) ($installment->product->is_taxable ?? false),
+        'tax_rate' => (float) ($installment->product->tax_rate ?? 0),
         'tax_type' => $installment->product->tax_type ?? 'exclusive'
-    ]);
+    ]) !!};
 
     // Tax settings
     const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
@@ -199,7 +200,7 @@
             }
             
             taxRow.style.display = 'flex';
-            taxRateLabel.innerText = taxRate.toFixed(0);
+            taxRateLabel.innerText = Number(taxRate).toFixed(0);
         } else {
             taxRow.style.display = 'none';
         }
