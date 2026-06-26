@@ -24,12 +24,13 @@ class SettingController extends Controller
             'currency', 
             'default_interest_rate', 
             'telegram_token',
-            'tax_enabled',
             'default_tax_rate',
             'tax_label',
             'tax_number',
             'exchange_rate'
         ]);
+
+        $data['tax_enabled'] = $request->has('tax_enabled') ? '1' : '0';
 
         foreach ($data as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);

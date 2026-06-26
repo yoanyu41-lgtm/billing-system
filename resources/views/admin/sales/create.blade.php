@@ -256,13 +256,12 @@
             const btn = item.querySelector('.remove-item');
             if (items.length > 1) btn.classList.remove('hidden');
             else btn.classList.add('hidden');
-        });
-    }
-
-    function calculateTotal() {
-        let subtotal = 0;
+        });    function calculateTotal() {
+        let originalSubtotal = 0;
+        let subtotalBeforeTax = 0;
         let totalTax = 0;
         let hasTaxableItem = false;
+        let hasInclusiveTax = false;
         
         document.querySelectorAll('.item').forEach(item => {
             const qty = parseFloat(item.querySelector('.item-qty')?.value || 0);
@@ -272,7 +271,7 @@
             
             const line = qty * price;
             item.querySelector('.item-subtotal').value = line.toFixed(2);
-            subtotal += line;
+            originalSubtotal += line;
             
             // Calculate tax for this item
             if (taxEnabled && opt) {
@@ -288,45 +287,52 @@
                         // Tax included
                         const itemTax = line - (line / (1 + itemTaxRate / 100));
                         totalTax += itemTax;
+                        subtotalBeforeTax += (line - itemTax);
+                        hasInclusiveTax = true;
                     } else {
                         // Tax exclusive
                         const itemTax = line * (itemTaxRate / 100);
                         totalTax += itemTax;
+                        subtotalBeforeTax += line;
                     }
+                } else {
+                    subtotalBeforeTax += line;
                 }
+            } else {
+                subtotalBeforeTax += line;
             }
         });
         
         const discount = parseFloat(document.getElementById('discountInput')?.value || 0);
+        const totalBeforeDiscount = subtotalBeforeTax + totalTax;
+        const total = Math.max(totalBeforeDiscount - discount, 0);
         
         // Apply discount proportionally to tax
-        if (discount > 0 && subtotal > 0) {
-            const discountRatio = Math.max(subtotal - discount, 0) / subtotal;
-            totalTax = totalTax * discountRatio;
+        let finalTax = totalTax;
+        if (discount > 0 && totalBeforeDiscount > 0) {
+            const discountRatio = total / totalBeforeDiscount;
+            finalTax = totalTax * discountRatio;
         }
-        
-        const subtotalAfterDiscount = Math.max(subtotal - discount, 0);
-        const total = subtotalAfterDiscount + totalTax;
         
         // Display tax row if applicable
         const taxRow = document.getElementById('taxRow');
-        if (hasTaxableItem && totalTax > 0) {
+        if (hasTaxableItem && finalTax > 0) {
             taxRow.style.display = 'flex';
-            document.getElementById('taxRateDisplay').textContent = `(${taxLabel})`;
-            document.getElementById('taxLabel').textContent = '$' + totalTax.toFixed(2);
-            const rielTax = Math.round(totalTax * exchangeRate);
+            document.getElementById('taxRateDisplay').textContent = hasInclusiveTax ? `(${taxLabel} ${ { en: 'Included', km: 'រួមបញ្ចូល' }[document.documentElement.lang || 'km'] || 'Included' })` : `(${taxLabel})`;
+            document.getElementById('taxLabel').textContent = '$' + finalTax.toFixed(2);
+            const rielTax = Math.round(finalTax * exchangeRate);
             document.getElementById('taxLabelRiel').textContent = rielTax.toLocaleString('en-US') + ' ៛';
         } else {
             taxRow.style.display = 'none';
         }
         
-        document.getElementById('subtotalLabel').textContent = '$' + subtotal.toFixed(2);
-        const rielSubtotal = Math.round(subtotal * exchangeRate);
+        document.getElementById('subtotalLabel').textContent = '$' + originalSubtotal.toFixed(2);
+        const rielSubtotal = Math.round(originalSubtotal * exchangeRate);
         document.getElementById('subtotalLabelRiel').textContent = rielSubtotal.toLocaleString('en-US') + ' ៛';
-
+ 
         const rielDiscount = Math.round(discount * exchangeRate);
         document.getElementById('discountLabelRiel').textContent = rielDiscount.toLocaleString('en-US') + ' ៛';
-
+ 
         document.getElementById('grandTotal').textContent = '$' + total.toFixed(2);
         const rielTotal = Math.round(total * exchangeRate);
         document.getElementById('grandTotalRiel').textContent = rielTotal.toLocaleString('en-US') + ' ៛';

@@ -71,13 +71,19 @@ class ReportController extends Controller
     {
         $data = [];
         if ($type === 'daily') {
-            $date = $request->date ?? today();
+            $date = $request->date ?? today()->toDateString();
             $data['payments'] = Payment::with('installment.customer')
                 ->whereDate('payment_date', $date)
                 ->where('status', 'approved')
                 ->get();
             $data['total'] = $data['payments']->sum('amount');
             $data['date'] = $date;
+            
+            // Direct sales
+            $data['sales'] = \App\Models\Sale::with('items')->whereDate('sale_date', $date)->get();
+            $data['salesTotal'] = $data['sales']->sum('total');
+            $data['grandTotal'] = $data['total'] + $data['salesTotal'];
+            
             $view = 'admin.reports.pdf.daily';
         } elseif ($type === 'monthly') {
             $month = $request->month ?? now()->month;
@@ -90,6 +96,15 @@ class ReportController extends Controller
             $data['total'] = $data['payments']->sum('amount');
             $data['month'] = $month;
             $data['year'] = $year;
+            
+            // Direct sales
+            $data['sales'] = \App\Models\Sale::with('items')
+                ->whereYear('sale_date', $year)
+                ->whereMonth('sale_date', $month)
+                ->get();
+            $data['salesTotal'] = $data['sales']->sum('total');
+            $data['grandTotal'] = $data['total'] + $data['salesTotal'];
+            
             $view = 'admin.reports.pdf.monthly';
         }
 

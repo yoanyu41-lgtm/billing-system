@@ -111,6 +111,13 @@
             margin: 0; 
             padding: 0; 
         }
+        
+        /* Exclude Font Awesome icons from generic font overrides */
+        .fa, .fas, .far, .fal, .fad, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Font Awesome 5 Free", "Font Awesome 5 Brands", "FontAwesome" !important;
+            line-height: 1 !important;
+            display: inline-block;
+        }
         body { margin: 0; padding: 0; background: var(--bg); overflow-x: hidden; }
         html { margin: 0; padding: 0; }
 
@@ -992,6 +999,9 @@
                     <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') ? 'active' : '' }}">
                         <i class="fas fa-file-signature"></i> {{ __('app.contracts') }}
                     </a>
+                    <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
+                        <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
+                    </a>
                 </div>
             </div>
 
@@ -1019,16 +1029,31 @@
             @endif
 
             @php
-                $isInvoiceOpen = request()->routeIs('invoices.*') || (request()->routeIs('admin.sales.*') && request('from') === 'invoice');
-                
                 $showInvoice = request()->route('invoice');
                 if (is_numeric($showInvoice)) {
                     $showInvoice = \App\Models\Invoice::find($showInvoice);
                 }
                 $isPayoffShow = $showInvoice && $showInvoice->payment?->is_settlement;
                 
+                $isCompletedInvoiceShow = false;
+                if ($showInvoice && $showInvoice->payment) {
+                    $inst = $showInvoice->payment->installment;
+                    if ($inst && $inst->status === 'completed' && !$showInvoice->payment->is_settlement) {
+                        $latestApproved = $inst->payments()
+                            ->where('status', 'approved')
+                            ->orderBy('id', 'desc')
+                            ->first();
+                        if ($latestApproved && $latestApproved->id === $showInvoice->payment->id) {
+                            $isCompletedInvoiceShow = true;
+                        }
+                    }
+                }
+                
+                $isCompletedInvoice = (request()->routeIs('invoices.index') && request('type') === 'completed') || (request()->routeIs('invoices.show') && (request('type') === 'completed' || $isCompletedInvoiceShow));
+                $isInvoiceOpen = request()->routeIs('invoices.*') || (request()->routeIs('admin.sales.*') && request('from') === 'invoice');
+                
                 $isAllInvoicesActive = request()->routeIs('invoices.index') && !request()->has('type');
-                $isInstallmentInvoice = (request()->routeIs('invoices.index') && request('type') === 'installment') || (request()->routeIs('invoices.show') && request('type') !== 'payoff' && request('type') !== 'direct' && !$isPayoffShow);
+                $isInstallmentInvoice = (request()->routeIs('invoices.index') && request('type') === 'installment') || (request()->routeIs('invoices.show') && request('type') !== 'payoff' && request('type') !== 'direct' && request('type') !== 'completed' && !$isPayoffShow && !$isCompletedInvoiceShow);
                 $isPayoffInvoice = (request()->routeIs('invoices.index') && request('type') === 'payoff') || (request()->routeIs('invoices.show') && (request('type') === 'payoff' || $isPayoffShow));
                 $isDirectSaleInvoice = (request()->routeIs('invoices.index') && request('type') === 'direct') || (request()->routeIs('invoices.show') && request('type') === 'direct');
             @endphp
@@ -1050,6 +1075,10 @@
                     </a>
                     <a href="{{ route('invoices.index', ['type' => 'direct']) }}" class="{{ $isDirectSaleInvoice ? 'active' : '' }}">
                         <i class="fas fa-cash-register"></i> {{ __('app.direct_sale_invoices') }}
+                    </a>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 16px;"></div>
+                    <a href="{{ route('invoices.index', ['type' => 'completed']) }}" class="{{ $isCompletedInvoice ? 'active' : '' }}">
+                        <i class="fas fa-check-circle"></i> {{ __('app.completed_invoices') }}
                     </a>
                 </div>
             </div>
@@ -1197,6 +1226,8 @@
                     @elseif(request()->routeIs('invoices.index'))
                         @if(request('type') === 'installment')
                             {{ __('app.installment_invoices') }}
+                        @elseif(request('type') === 'completed')
+                            {{ __('app.completed_invoices') }}
                         @elseif(request('type') === 'payoff')
                             {{ __('app.payoff_invoices') }}
                         @elseif(request('type') === 'direct')
@@ -1211,11 +1242,26 @@
                                 $showInvoice = \App\Models\Invoice::find($showInvoice);
                             }
                             $isPayoffShow = $showInvoice && $showInvoice->payment?->is_settlement;
+                            $isCompletedInvoiceShow = false;
+                            if ($showInvoice && $showInvoice->payment) {
+                                $inst = $showInvoice->payment->installment;
+                                if ($inst && $inst->status === 'completed' && !$showInvoice->payment->is_settlement) {
+                                    $latestApproved = $inst->payments()
+                                        ->where('status', 'approved')
+                                        ->orderBy('id', 'desc')
+                                        ->first();
+                                    if ($latestApproved && $latestApproved->id === $showInvoice->payment->id) {
+                                        $isCompletedInvoiceShow = true;
+                                    }
+                                }
+                            }
                         @endphp
                         @if(request('type') === 'direct')
                             {{ __('app.direct_sale_invoices') }}
                         @elseif($isPayoffShow)
                             {{ __('app.payoff_invoices') }}
+                        @elseif(request('type') === 'completed' || $isCompletedInvoiceShow)
+                            {{ __('app.completed_invoices') }}
                         @else
                             {{ __('app.installment_invoices') }}
                         @endif

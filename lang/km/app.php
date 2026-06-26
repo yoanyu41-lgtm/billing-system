@@ -147,8 +147,8 @@ return [
     'other_gender'          => 'ផ្សេងទៀត',
     'dob'                   => 'ថ្ងៃខែឆ្នាំកំណើត',
     'age'                   => 'អាយុ',
-    'id_card'               => 'លេខ Telegram',
-    'telegram_id'           => 'Telegram ID',
+    'id_card'               => 'អត្តសញ្ញាណប័ណ្ណ',
+    'telegram_id'           => 'លេខសម្គាល់ Telegram',
     'documents'             => 'ឯកសារ',
     'id_card_photo'         => 'រូបថតអត្តសញ្ញាណប័ណ្ណ',
     'income_proof'          => 'ភស្តុតាងប្រាក់ចំណូល',
@@ -513,6 +513,9 @@ return [
     'email_reset_link'      => 'ផ្ញើតំណកំណត់ពាក្យសម្ងាត់ឡើងវិញ',
     'back_to_login'         => 'ត្រឡប់ទៅចូលប្រព័ន្ធ',
     'or'                    => 'ឬ',
+    'secret_code'           => 'លេខកូដសម្ងាត់ក្រុមហ៊ុន',
+    'secret_code_placeholder' => 'បញ្ចូលលេខកូដសម្ងាត់ក្រុមហ៊ុន',
+    'invalid_secret_code'   => 'លេខកូដសម្ងាត់ក្រុមហ៊ុនមិនត្រឹមត្រូវទេ។',
 
     // ── Messages ──
     'created_successfully'  => 'បានបង្កើតដោយជោគជ័យ',
@@ -656,6 +659,7 @@ return [
     'installment_invoices'  => 'វិក្កយបត្របង់រំលស់',
     'payoff_invoices'       => 'វិក្កយបត្របង់ផ្តាច់',
     'direct_sale_invoices'  => 'វិក្កយបត្រទិញដាច់',
+    'completed_invoices'    => 'វិក្កយបត្រទូទាត់បញ្ចប់',
     
     // ── Telegram QR and Direct Payment Slip Upload ──
     'send_qr_telegram'      => 'ផ្ញើ QR តាម Telegram',
@@ -685,4 +689,10 @@ return [
     'upload_and_restore'    => 'បញ្ចូល និង ស្ដារឡើងវិញ',
     'total_backups'         => 'ចំនួនឯកសារបម្រុងទុកសរុប',
     'total_size'            => 'ទំហំសរុប',
+    'clearance_certificate' => 'លិខិតបញ្ជាក់ការបង់ដាច់',
+    'print_clearance'       => 'បោះពុម្ពលិខិតបង់ដាច់',
+    'final_installment_invoice' => 'វិក្កយបត្រទូទាត់បញ្ចប់',
+    'final_paid'            => 'បានទូទាត់បញ្ចប់',
+    'clearance_certificates' => 'លិខិតបញ្ជាក់ការបង់ដាច់',
+    'clearance_sub'         => 'មើល និងបោះពុម្ពលិខិតបញ្ជាក់ការបង់ដាច់សម្រាប់គម្រោងដែលបានបញ្ចប់។',
 ];

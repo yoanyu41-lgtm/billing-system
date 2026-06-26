@@ -102,8 +102,10 @@ Route::middleware('auth')->group(function () {
     Route::post('installments/{installment}/pay-off', [InstallmentController::class, 'payOff'])->name('installments.pay-off');
     Route::get('payment-schedules', [InstallmentController::class, 'scheduleIndex'])->name('installments.schedule-index');
     Route::get('contracts', [InstallmentController::class, 'contractIndex'])->name('installments.contract-index');
+    Route::get('clearance-certificates', [InstallmentController::class, 'clearanceIndex'])->name('installments.clearance-index');
     Route::get('installments/{installment}/schedule', [InstallmentController::class, 'paymentSchedule'])->name('installments.schedule');
     Route::get('installments/{installment}/contract', [InstallmentController::class, 'printContract'])->name('installments.contract');
+    Route::get('installments/{installment}/clearance', [InstallmentController::class, 'printClearance'])->name('installments.clearance');
     Route::post('installments/{installment}/upload-contract', [InstallmentController::class, 'uploadContract'])->name('installments.uploadContract');
     Route::get('installments/{installment}/download-contract', [InstallmentController::class, 'downloadContract'])->name('installments.downloadContract');
     Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
