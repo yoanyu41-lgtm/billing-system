@@ -55,6 +55,13 @@
     body {
         font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
     }
+    
+    /* Exclude Font Awesome icons from generic font family overrides */
+    .fa, .fas, .far, .fal, .fad, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Font Awesome 5 Free", "Font Awesome 5 Brands", "FontAwesome" !important;
+        line-height: 1 !important;
+        display: inline-block;
+    }
 
     :root {
         /* ── Brand - ពណ៌ Brand ── */

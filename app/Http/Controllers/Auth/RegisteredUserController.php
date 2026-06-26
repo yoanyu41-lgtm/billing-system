@@ -34,12 +34,20 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'registration_code' => ['required', 'string'],
         ]);
+
+        if ($request->registration_code !== env('REGISTRATION_CODE', 'CITYTECH2026')) {
+            throw ValidationException::withMessages([
+                'registration_code' => [__('app.invalid_secret_code')],
+            ]);
+        }
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'staff',
         ]);
 
         event(new Registered($user));

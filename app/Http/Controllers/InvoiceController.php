@@ -105,8 +105,24 @@ class InvoiceController extends Controller
             $invoicesItems = $invoicesQuery->get();
             $salesItems = $salesQuery->get();
 
-            $invoicesItems->each(function($item) {
-                $item->invoice_type = $item->payment?->is_settlement ? 'payoff' : 'installment';
+            $completedInstallmentFinalPayments = \DB::table('payments')
+                ->join('installments', 'payments.installment_id', '=', 'installments.id')
+                ->where('payments.status', 'approved')
+                ->where('installments.status', 'completed')
+                ->where('payments.is_settlement', false)
+                ->groupBy('payments.installment_id')
+                ->selectRaw('max(payments.id) as max_id')
+                ->pluck('max_id')
+                ->toArray();
+
+            $invoicesItems->each(function($item) use ($completedInstallmentFinalPayments) {
+                if ($item->payment?->is_settlement) {
+                    $item->invoice_type = 'payoff';
+                } elseif ($item->payment && in_array($item->payment->id, $completedInstallmentFinalPayments)) {
+                    $item->invoice_type = 'completed';
+                } else {
+                    $item->invoice_type = 'installment';
+                }
             });
             $salesItems->each(function($item) {
                 $item->invoice_type = 'direct';
@@ -143,14 +159,20 @@ class InvoiceController extends Controller
             });
         }
 
-        // Type filter: installment vs payoff
+        // Type filter: installment vs payoff vs completed
         if ($type === 'payoff') {
             $query->whereHas('payment', function ($q) {
                 $q->where('is_settlement', true);
             });
         } elseif ($type === 'installment') {
             $query->whereHas('payment', function ($q) {
-                $q->where('is_settlement', false);
+                $q->where('is_settlement', false)
+                  ->whereRaw('payments.id != COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
+            });
+        } elseif ($type === 'completed') {
+            $query->whereHas('payment', function ($q) {
+                $q->where('is_settlement', false)
+                  ->whereRaw('payments.id = COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
             });
         }
 
@@ -186,7 +208,13 @@ class InvoiceController extends Controller
             });
         } elseif ($type === 'installment') {
             $statsQuery->whereHas('payment', function ($q) {
-                $q->where('is_settlement', false);
+                $q->where('is_settlement', false)
+                  ->whereRaw('payments.id != COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
+            });
+        } elseif ($type === 'completed') {
+            $statsQuery->whereHas('payment', function ($q) {
+                $q->where('is_settlement', false)
+                  ->whereRaw('payments.id = COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
             });
         }
         if ($request->filled('search')) {

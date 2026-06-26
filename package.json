@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "dev-all": "concurrently -c \"blue,magenta,cyan\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"vite\" --names=server,queue,vite --kill-others"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",

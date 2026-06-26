@@ -7,6 +7,8 @@
         <h1 class="text-3xl font-bold text-gray-800">
             @if(request('type') === 'installment')
                 {{ __('app.installment_invoices') }}
+            @elseif(request('type') === 'completed')
+                {{ __('app.completed_invoices') }}
             @elseif(request('type') === 'payoff')
                 {{ __('app.payoff_invoices') }}
             @elseif(request('type') === 'direct')
@@ -142,6 +144,28 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($invoices as $invoice)
+                    @php
+                        $invoiceType = $invoice->invoice_type ?? null;
+                        if (!$invoiceType && !$invoice instanceof \App\Models\Sale) {
+                            if ($invoice->payment?->is_settlement) {
+                                $invoiceType = 'payoff';
+                            } else {
+                                $inst = $invoice->payment?->installment;
+                                if ($inst && $inst->status === 'completed') {
+                                    $latestApprovedId = \App\Models\Payment::where('installment_id', $inst->id)
+                                        ->where('status', 'approved')
+                                        ->max('id');
+                                    if ($latestApprovedId && $latestApprovedId === $invoice->payment?->id) {
+                                        $invoiceType = 'completed';
+                                    } else {
+                                        $invoiceType = 'installment';
+                                    }
+                                } else {
+                                    $invoiceType = 'installment';
+                                }
+                            }
+                        }
+                    @endphp
                     <tr class="hover:bg-gray-50 transition duration-150">
                         @if($invoice instanceof \App\Models\Sale)
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
@@ -181,9 +205,13 @@
                                 {{ $invoice->invoice_number }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                @if($invoice->payment?->is_settlement)
+                                @if($invoiceType === 'payoff')
                                     <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
                                         {{ __('app.payoff') }}
+                                    </span>
+                                @elseif($invoiceType === 'completed')
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                                        {{ __('app.final_paid') }}
                                     </span>
                                 @else
                                     <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">

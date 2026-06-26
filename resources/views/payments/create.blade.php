@@ -102,6 +102,34 @@
         </div>
         @endif
 
+        <!-- Credit Card Fields Display Card (Hidden by default) -->
+        <div id="creditCardContainer" class="hidden rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 p-5 space-y-4">
+            <h4 class="text-sm font-bold text-blue-800 mb-1">
+                <i class="fas fa-credit-card mr-1"></i>
+                {{ app()->getLocale() === 'km' ? 'ព័ត៌មានកាតឥណទាន' : 'Credit Card Information' }}
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">{{ app()->getLocale() === 'km' ? 'ឈ្មោះម្ចាស់កាត' : 'Cardholder Name' }}</label>
+                    <input type="text" name="card_holder_name" placeholder="e.g. SOK DARA" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">{{ app()->getLocale() === 'km' ? 'លេខកាត (៤ខ្ទង់ចុងក្រោយ)' : 'Card Number (Last 4 digits)' }}</label>
+                    <input type="text" name="card_number" maxlength="4" placeholder="e.g. 1234" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">{{ app()->getLocale() === 'km' ? 'ប្រភេទកាត' : 'Card Brand' }}</label>
+                    <select name="card_brand" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                        <option value="Visa">Visa</option>
+                        <option value="MasterCard">MasterCard</option>
+                        <option value="UnionPay">UnionPay</option>
+                        <option value="JCB">JCB</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- Attachment -->
         <div class="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/50 p-5">
             <label class="block text-sm font-bold text-gray-700 mb-2">
@@ -150,25 +178,37 @@
         amountInput.addEventListener('input', updateRiel);
         updateRiel();
 
-        // Toggle Bank QR Code Display
+        // Toggle Payment Method Fields
         const methodSelect = document.querySelector('select[name="payment_method_id"]');
         const bankQrContainer = document.getElementById('bankQrContainer');
+        const creditCardContainer = document.getElementById('creditCardContainer');
 
-        function toggleBankQr() {
-            if (!bankQrContainer) return;
+        function togglePaymentMethodFields() {
             const selectedOption = methodSelect.options[methodSelect.selectedIndex];
             const methodType = selectedOption ? selectedOption.getAttribute('data-type') : '';
             
-            if (methodType === 'qr_code') {
-                bankQrContainer.classList.remove('hidden');
-            } else {
-                bankQrContainer.classList.add('hidden');
+            // Handle QR Code
+            if (bankQrContainer) {
+                if (methodType === 'qr_code') {
+                    bankQrContainer.classList.remove('hidden');
+                } else {
+                    bankQrContainer.classList.add('hidden');
+                }
+            }
+
+            // Handle Credit Card
+            if (creditCardContainer) {
+                if (methodType === 'credit_card') {
+                    creditCardContainer.classList.remove('hidden');
+                } else {
+                    creditCardContainer.classList.add('hidden');
+                }
             }
         }
 
         if (methodSelect) {
-            methodSelect.addEventListener('change', toggleBankQr);
-            toggleBankQr(); // Run once on load
+            methodSelect.addEventListener('change', togglePaymentMethodFields);
+            togglePaymentMethodFields(); // Run once on load
         }
     });
 </script>

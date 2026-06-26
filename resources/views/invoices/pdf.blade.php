@@ -2,10 +2,31 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>{{ $invoice->payment?->is_settlement ? 'វិក្កយបត្របង់ផ្តាច់' : 'វិក្កយបត្របង់រំលស់' }} {{ $invoice->invoice_number }}</title>
+    @php
+        $isSettlement = (bool) ($invoice->payment?->is_settlement ?? false);
+        $isFinalPayment = false;
+        $installment = $invoice->payment?->installment;
+        if ($installment && $installment->status === 'completed' && $invoice->payment) {
+            $latestApprovedPayment = $installment->payments()
+                ->where('status', 'approved')
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($latestApprovedPayment && $latestApprovedPayment->id === $invoice->payment->id && !$isSettlement) {
+                $isFinalPayment = true;
+            }
+        }
+        
+        $titleText = 'វិក្កយបត្របង់រំលស់';
+        if ($isSettlement) {
+            $titleText = 'វិក្កយបត្របង់ផ្តាច់';
+        } elseif ($isFinalPayment) {
+            $titleText = __('app.final_installment_invoice');
+        }
+    @endphp
+    <title>{{ $titleText }} {{ $invoice->invoice_number }}</title>
     <style>
         body { 
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 24px; 
             font-size: 12px; 
@@ -46,7 +67,6 @@
         $formatRiel = function($usdAmount) use ($exchangeRate) {
             return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
         };
-        $isSettlement = (bool) ($invoice->payment?->is_settlement ?? false);
     @endphp
 
     {{-- Header --}}
@@ -59,7 +79,15 @@
                 @if($companyEmail)<div class="muted">អ៊ីមែល: {{ $companyEmail }}</div>@endif
             </td>
             <td style="width: 45%;">
-                <div class="title">{{ $isSettlement ? 'វិក្កយបត្របង់ផ្តាច់' : 'វិក្កយបត្របង់រំលស់' }}</div>
+                <div class="title">
+                    @if($isSettlement)
+                        វិក្កយបត្របង់ផ្តាច់
+                    @elseif($isFinalPayment)
+                        {{ __('app.final_installment_invoice') }}
+                    @else
+                        វិក្កយបត្របង់រំលស់
+                    @endif
+                </div>
                 <table class="meta" style="width: 100%;">
                     <tr><td class="lbl">លេខវិក្កយបត្រ</td><td>{{ $invoice->invoice_number }}</td></tr>
                     <tr><td class="lbl">កាលបរិច្ឆេទ</td><td>{{ $invoice->created_at?->format('d-m-Y') }}</td></tr>
@@ -84,7 +112,15 @@
                     <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
                     <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
                 </table>
-                <div class="status">{{ $isSettlement ? 'បានបង់ផ្តាច់' : 'បានបង់ប្រចាំខែ' }}</div>
+                <div class="status">
+                    @if($isSettlement)
+                        បានបង់ផ្តាច់
+                    @elseif($isFinalPayment)
+                        {{ __('app.final_paid') }}
+                    @else
+                        បានបង់ប្រចាំខែ
+                    @endif
+                </div>
             </td>
         </tr>
     </table>
