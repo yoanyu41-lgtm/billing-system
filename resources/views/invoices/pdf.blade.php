@@ -58,14 +58,15 @@
 </head>
 <body>
     @php
-        $companyName = $settings['company_name'] ?? 'CityTech';
+        $isKm = app()->getLocale() === 'km';
+        $companyName = ($isKm && !empty($settings['company_name_km'])) ? $settings['company_name_km'] : ($settings['company_name'] ?? 'CityTech');
+        $companyAddress = ($isKm && !empty($settings['company_address_km'])) ? $settings['company_address_km'] : ($settings['company_address'] ?? '');
         $companyPhone = $settings['company_phone'] ?? '';
-        $companyAddress = $settings['company_address'] ?? '';
         $companyEmail = $settings['company_email'] ?? '';
         
         $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
         $formatRiel = function($usdAmount) use ($exchangeRate) {
-            return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
+            return number_format(round($usdAmount * $exchangeRate)) . ' រៀល';
         };
     @endphp
 

@@ -58,7 +58,7 @@
         $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
         
         $formatRiel = function($usdAmount) use ($exchangeRate) {
-            return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
+            return number_format(round($usdAmount * $exchangeRate)) . ' រៀល';
         };
     @endphp
 
