@@ -372,6 +372,28 @@ class TelegramController extends Controller
                         }
                     }
 
+                    // Parse bank details from the KHQR payload if available, otherwise fallback to defaults
+                    $bankName = 'ABA Bank';
+                    $accountName = 'CITYTECH COMPUTER';
+                    $accountNo = '000 111 222';
+
+                    if (!empty($bankQrPayload)) {
+                        $khqrService = new \App\Services\KhqrService();
+                        $parsed = $khqrService->parsePayload($bankQrPayload);
+                        if (isset($parsed['59'])) {
+                            $accountName = $parsed['59'];
+                        }
+                        if (isset($parsed['29'])) {
+                            $subParsed = $khqrService->parsePayload($parsed['29']);
+                            if (isset($subParsed['01'])) {
+                                $accountNo = $subParsed['01'];
+                            }
+                            if (isset($subParsed['02'])) {
+                                $bankName = $subParsed['02'];
+                            }
+                        }
+                    }
+
                     $msg = "🏦 <b>ព័ត៌មានបង់ប្រាក់របស់ហាង " . htmlspecialchars($shopName) . "</b>\n\n";
                     if ($dueAmount > 0 && $productName) {
                         $msg .= "👤 <b>អតិថិជន ៖ " . htmlspecialchars($customer->name) . "</b>\n";
@@ -379,9 +401,9 @@ class TelegramController extends Controller
                         $msg .= "💵 <b>ចំនួនត្រូវបង់ប្រចាំខែ ៖ " . $this->formatPrice($dueAmount) . "</b>\n\n";
                     }
                     $msg .= "លោកអ្នកអាចធ្វើការទូទាត់ប្រាក់ប្រចាំខែតាមរយៈគណនីធនាគាររបស់ហាងដូចខាងក្រោម៖\n\n";
-                    $msg .= "🏦 <b>ធនាគារ ៖ ABA Bank</b>\n";
-                    $msg .= "👤 <b>ឈ្មោះគណនី ៖ CITYTECH COMPUTER</b>\n";
-                    $msg .= "🔢 <b>លេខគណនី ៖ 000 111 222</b>\n\n";
+                    $msg .= "🏦 <b>ធនាគារ ៖ " . htmlspecialchars($bankName) . "</b>\n";
+                    $msg .= "👤 <b>ឈ្មោះគណនី ៖ " . htmlspecialchars($accountName) . "</b>\n";
+                    $msg .= "🔢 <b>លេខគណនី ៖ " . htmlspecialchars($accountNo) . "</b>\n\n";
                     $msg .= "⚠️ <i>បញ្ជាក់៖ បន្ទាប់ពីផ្ទេរប្រាក់រួច សូមផ្ញើវិក្កយបត្រផ្ទេរប្រាក់មកកាន់ក្រុមការងារដើម្បីផ្ទៀងផ្ទាត់ និងអនុម័តការបង់ប្រាក់។</i>";
 
                     $dynamicQrPath = null;
