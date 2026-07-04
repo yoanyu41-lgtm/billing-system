@@ -76,8 +76,8 @@
             <td style="width: 55%;">
                 <div class="company-name">{{ $companyName }}</div>
                 @if($companyAddress)<div class="muted">{{ $companyAddress }}</div>@endif
-                @if($companyPhone)<div class="muted">ទូរស័ព្ទ: {{ $companyPhone }}</div>@endif
-                @if($companyEmail)<div class="muted">អ៊ីមែល: {{ $companyEmail }}</div>@endif
+                @if($companyPhone)<div class="muted">{{ __('app.phone') }}: {{ $companyPhone }}</div>@endif
+                @if($companyEmail)<div class="muted">{{ __('app.email') }}: {{ $companyEmail }}</div>@endif
             </td>
             <td style="width: 45%;">
                 <div class="title">
@@ -101,17 +101,17 @@
     <table style="width: 100%; margin-top: 12px;">
         <tr>
             <td style="width: 50%; vertical-align: top;">
-                <div class="section-title">ព័ត៌មានអតិថិជន</div>
+                <div class="section-title">{{ __('app.personal_information') ?? 'ព័ត៌មានអតិថិជន' }}</div>
                 <table class="info">
-                    <tr><td style="width: 90px; color:#6b7280;">ឈ្មោះ</td><td>: {{ $invoice->payment?->installment?->customer?->name ?? 'N/A' }}</td></tr>
-                    <tr><td style="color:#6b7280;">ទូរស័ព្ទ</td><td>: {{ $invoice->payment?->installment?->customer?->phone ?? '-' }}</td></tr>
+                    <tr><td style="width: 90px; color:#6b7280;">{{ __('app.name') }}</td><td>: {{ $invoice->payment?->installment?->customer?->name ?? 'N/A' }}</td></tr>
+                    <tr><td style="color:#6b7280;">{{ __('app.phone') }}</td><td>: {{ $invoice->payment?->installment?->customer?->phone ?? '-' }}</td></tr>
                 </table>
             </td>
             <td style="width: 50%; vertical-align: top;">
-                <div class="section-title">ព័ត៌មានការទូទាត់</div>
+                <div class="section-title">{{ __('app.payment_details') ?? 'ព័ត៌មានការទូទាត់' }}</div>
                 <table class="info" style="width: 100%;">
-                    <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
-                    <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">{{ __('app.total') }}</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">{{ __('app.total_paid') }}</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
                 </table>
                 <div class="status">
                     @if($isSettlement)
@@ -130,11 +130,11 @@
     <table class="items">
         <thead>
             <tr>
-                <th class="center" style="width: 40px;">លរ</th>
-                <th>ផលិតផល</th>
-                <th class="center" style="width: 60px;">បរិមាណ</th>
-                <th class="right" style="width: 90px;">តម្លៃឯកតា</th>
-                <th class="right" style="width: 90px;">សរុប</th>
+                <th class="center" style="width: 40px;">ល.រ</th>
+                <th>{{ __('app.product') }}</th>
+                <th class="center" style="width: 60px;">{{ __('app.quantity') }}</th>
+                <th class="right" style="width: 90px;">{{ __('app.unit_price') ?? 'តម្លៃឯកតា' }}</th>
+                <th class="right" style="width: 90px;">{{ __('app.total') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -159,9 +159,9 @@
             <td style="width: 50%;"></td>
             <td style="width: 50%;">
                 <table class="totals" style="width: 100%;">
-                    <tr><td>សរុបរង</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
-                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
-                    <tr class="remaining"><td>ប្រាក់នៅសល់</td><td class="right">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->installment?->remaining_balance ?? 0) }}</span></td></tr>
+                    <tr><td>{{ __('app.subtotal') }}</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr class="grand"><td>{{ __('app.total') }}</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr class="remaining"><td>{{ __('app.remaining_balance') }}</td><td class="right">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->installment?->remaining_balance ?? 0) }}</span></td></tr>
                 </table>
             </td>
         </tr>
