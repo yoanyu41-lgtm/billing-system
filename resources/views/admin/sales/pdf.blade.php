@@ -4,8 +4,20 @@
     <meta charset="UTF-8">
     <title>បង្កាន់ដៃ {{ $sale->invoice_no ?? $sale->id }}</title>
     <style>
+        @font-face {
+            font-family: 'Khmer OS Siemreap';
+            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Khmer OS Siemreap';
+            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
         body { 
-            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer OS Siemreap', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 24px; 
             font-size: 12px; 
@@ -36,9 +48,9 @@
 </head>
 <body>
     @php
-        $companyName = !empty($settings['company_name_km']) ? $settings['company_name_km'] : ($settings['company_name'] ?? 'CityTech');
-        $companyAddress = !empty($settings['company_address_km']) ? $settings['company_address_km'] : ($settings['company_address'] ?? '');
+        $companyName = $settings['company_name'] ?? 'CityTech';
         $companyPhone = $settings['company_phone'] ?? '';
+        $companyAddress = $settings['company_address'] ?? '';
         $companyEmail = $settings['company_email'] ?? '';
     @endphp
 
@@ -48,8 +60,8 @@
             <td style="width: 55%;">
                 <div class="company-name">{{ $companyName }}</div>
                 @if($companyAddress)<div class="muted">{{ $companyAddress }}</div>@endif
-                @if($companyPhone)<div class="muted">{{ __('app.phone') }}: {{ $companyPhone }}</div>@endif
-                @if($companyEmail)<div class="muted">{{ __('app.email') }}: {{ $companyEmail }}</div>@endif
+                @if($companyPhone)<div class="muted">ទូរស័ព្ទ: {{ $companyPhone }}</div>@endif
+                @if($companyEmail)<div class="muted">អ៊ីមែល: {{ $companyEmail }}</div>@endif
             </td>
             <td style="width: 45%;">
                 <div class="title">វិក្កយបត្រទិញដាច់</div>
@@ -65,23 +77,23 @@
     <table style="width: 100%; margin-top: 12px;">
         <tr>
             <td style="width: 50%; vertical-align: top;">
-                <div class="section-title">{{ __('app.personal_information') ?? 'ព័ត៌មានអតិថិជន' }}</div>
+                <div class="section-title">ព័ត៌មានអតិថិជន</div>
                 <table class="info">
-                    <tr><td style="width: 90px; color:#6b7280;">{{ __('app.name') }}</td><td>: {{ $sale->customer_name ?: 'អតិថិជនទូទៅ' }}</td></tr>
-                    <tr><td style="color:#6b7280;">{{ __('app.phone') }}</td><td>: {{ $sale->customer_phone ?: '-' }}</td></tr>
+                    <tr><td style="width: 90px; color:#6b7280;">ឈ្មោះ</td><td>: {{ $sale->customer_name ?: 'អតិថិជនទូទៅ' }}</td></tr>
+                    <tr><td style="color:#6b7280;">ទូរស័ព្ទ</td><td>: {{ $sale->customer_phone ?: '-' }}</td></tr>
                 </table>
             </td>
             <td style="width: 50%; vertical-align: top;">
-                <div class="section-title">{{ __('app.payment_details') ?? 'ព័ត៌មានការទូទាត់' }}</div>
+                <div class="section-title">ព័ត៌មានការទូទាត់</div>
                 @php
                     $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
                     $formatRiel = function($usdAmount) use ($exchangeRate) {
-                        return number_format(round($usdAmount * $exchangeRate)) . ' រៀល';
+                        return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
                     };
                 @endphp
                 <table class="info" style="width: 100%;">
-                    <tr><td style="color:#6b7280;">{{ __('app.total') }}</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
-                    <tr><td style="color:#6b7280;">{{ __('app.total_paid') }}</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($sale->total, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->total) }}</span></td></tr>
                 </table>
                 <div class="status">បង់ប្រាក់ពេញ</div>
             </td>
@@ -92,11 +104,11 @@
     <table class="items">
         <thead>
             <tr>
-                <th class="center" style="width: 40px;">ល.រ</th>
-                <th>{{ __('app.product') }}</th>
-                <th class="center" style="width: 60px;">{{ __('app.quantity') }}</th>
-                <th class="right" style="width: 90px;">{{ __('app.unit_price') ?? 'តម្លៃឯកតា' }}</th>
-                <th class="right" style="width: 90px;">{{ __('app.total') }}</th>
+                <th class="center" style="width: 40px;">លរ</th>
+                <th>ផលិតផល</th>
+                <th class="center" style="width: 60px;">បរិមាណ</th>
+                <th class="right" style="width: 90px;">តម្លៃឯកតា</th>
+                <th class="right" style="width: 90px;">សរុប</th>
             </tr>
         </thead>
         <tbody>
@@ -118,9 +130,9 @@
             <td style="width: 60%;"></td>
             <td style="width: 40%;">
                 <table class="totals" style="width: 100%;">
-                    <tr><td>{{ __('app.subtotal') }}</td><td class="right">${{ number_format($sale->subtotal, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->subtotal) }}</span></td></tr>
+                    <tr><td>សរុបរង</td><td class="right">${{ number_format($sale->subtotal, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->subtotal) }}</span></td></tr>
                     @if($sale->discount > 0)
-                    <tr><td>{{ __('app.discount') }}</td><td class="right">- ${{ number_format($sale->discount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->discount) }}</span></td></tr>
+                    <tr><td>បញ្ចុះតម្លៃ</td><td class="right">- ${{ number_format($sale->discount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->discount) }}</span></td></tr>
                     @endif
                     @if($sale->tax_amount > 0)
                     @php
@@ -132,15 +144,15 @@
                     <tr>
                         <td>
                             @if($isTaxInclusive)
-                                {{ __('app.tax_inclusive') }} ({{ $taxLabel }} {{ $firstItemTaxRate }}%)
+                                ពន្ធ {{ $taxLabel }} រួមបញ្ចូល ({{ $firstItemTaxRate }}%)
                             @else
-                                {{ __('app.tax') }} ({{ $taxLabel }} {{ $firstItemTaxRate }}%)
+                                ពន្ធ {{ $taxLabel }} ({{ $firstItemTaxRate }}%)
                             @endif
                         </td>
                         <td class="right">${{ number_format($sale->tax_amount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->tax_amount) }}</span></td>
                     </tr>
                     @endif
-                    <tr class="grand"><td>{{ __('app.total') }}</td><td class="right">${{ number_format($sale->total, 2) }} / <span>{{ $formatRiel($sale->total) }}</span></td></tr>
+                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }} / <span>{{ $formatRiel($sale->total) }}</span></td></tr>
                 </table>
             </td>
         </tr>

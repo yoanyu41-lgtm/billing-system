@@ -25,8 +25,20 @@
     @endphp
     <title>{{ $titleText }} {{ $invoice->invoice_number }}</title>
     <style>
+        @font-face {
+            font-family: 'Khmer OS Siemreap';
+            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Khmer OS Siemreap';
+            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
+            font-weight: bold;
+            font-style: normal;
+        }
         body { 
-            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer OS Siemreap', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 24px; 
             font-size: 12px; 
@@ -100,7 +112,7 @@
     <table style="width: 100%; margin-top: 12px;">
         <tr>
             <td style="width: 50%; vertical-align: top;">
-                <div class="section-title">{{ __('app.personal_information') ?? 'ព័ត៌មានអតិថិជន' }}</div>
+                <div class="section-title">ព័ត៌មានអតិថិជន</div>
                 <table class="info">
                     <tr><td style="width: 90px; color:#6b7280;">{{ __('app.name') }}</td><td>: {{ $invoice->payment?->installment?->customer?->name ?? 'N/A' }}</td></tr>
                     <tr><td style="color:#6b7280;">{{ __('app.phone') }}</td><td>: {{ $invoice->payment?->installment?->customer?->phone ?? '-' }}</td></tr>
@@ -132,7 +144,7 @@
                 <th class="center" style="width: 40px;">ល.រ</th>
                 <th>{{ __('app.product') }}</th>
                 <th class="center" style="width: 60px;">{{ __('app.quantity') }}</th>
-                <th class="right" style="width: 90px;">{{ __('app.unit_price') ?? 'តម្លៃឯកតា' }}</th>
+                <th class="right" style="width: 90px;">តម្លៃឯកតា</th>
                 <th class="right" style="width: 90px;">{{ __('app.total') }}</th>
             </tr>
         </thead>

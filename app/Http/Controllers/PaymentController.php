@@ -30,11 +30,7 @@ class PaymentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $payments = $query
-            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
-            ->orderBy('payment_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $payments = $query->paginate(10);
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
         return view('payments.index', compact('payments', 'exchangeRate'));
     }
@@ -168,8 +164,8 @@ class PaymentController extends Controller
 
         $message = "🙏 *សូមអរគុណ!*\n"
             . "ការបង់ប្រាក់ចំនួន *\${$khmerAmount}* {$paymentType} ត្រូវបានអនុម័តជោគជ័យ។\n"
-            . "- តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
-            . "- ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
+            . "• តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
+            . "• ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
 
         $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
 

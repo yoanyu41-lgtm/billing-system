@@ -111,10 +111,10 @@ class InstallmentController extends Controller
             $msg = "📄 *កិច្ចសន្យាបង់រំលស់ថ្មី / New Installment Contract*\n\n"
                 . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
                 . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$product->name}* ត្រូវបានបង្កើតឡើងដោយជោគជ័យនៅក្នុងប្រព័ន្ធ។\n"
-                . "- លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
-                . "- តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
-                . "- ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"
-                . "- រយៈពេលបង់រំលស់៖ *{$installment->duration_months} ខែ*\n\n"
+                . "• លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
+                . "• តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
+                . "• ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"
+                . "• រយៈពេលបង់រំលស់៖ *{$installment->duration_months} ខែ*\n\n"
                 . "សូមលោកអ្នកទាញយកឯកសារកិច្ចសន្យាបង់រំលស់ផ្លូវការជា PDF ទីនេះ៖ [ទាញយកកិច្ចសន្យា PDF]({$contractDownloadLink})";
 
             app(TelegramService::class)->sendToCustomer($customer->id, $msg);
@@ -495,17 +495,17 @@ class InstallmentController extends Controller
             $message = "⏰ *សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់ / Payment Request Notification*\n\n"
                 . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
                 . "នេះជាកាលវិភាគបង់ប្រាក់សម្រាប់គម្រោងបង់រំលស់ទំនិញ៖ *{$installment->product->name}*\n"
-                . "- " . __('app.installment_month') . "៖ *{$month}*\n"
-                . "- ថ្ងៃកំណត់បង់៖ *{$dueDate}*\n"
-                . "- ទឹកប្រាក់ត្រូវបង់៖ *$" . number_format($amount, 2) . "* (ឬ ~ *" . number_format($amountRiel) . "* ៛)\n\n"
+                . "• " . __('app.installment_month') . "៖ *{$month}*\n"
+                . "• ថ្ងៃកំណត់បង់៖ *{$dueDate}*\n"
+                . "• ទឹកប្រាក់ត្រូវបង់៖ *$" . number_format($amount, 2) . "* (ឬ ~ *" . number_format($amountRiel) . "* ៛)\n\n"
                 . "សូមលោកអ្នកស្កេន QR Code ខាងក្រោមដើម្បីទូទាត់ប្រាក់ និងផ្ញើរូបភាពបង្កាន់ដៃ (Payment Slip) ត្រឡប់មកវិញដើម្បីបញ្ជាក់ការបង់ប្រាក់។ សូមអរគុណ! 🙏";
         } else {
             $message = "⏰ *Payment Request Notification / សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់*\n\n"
                 . "Dear Customer *{$customer->name}*:\n"
                 . "This is the payment request for your installment plan: *{$installment->product->name}*\n"
-                . "- " . __('app.installment_month') . ": *{$month}*\n"
-                . "- Due Date: *{$dueDate}*\n"
-                . "- Amount Due: *$" . number_format($amount, 2) . "* (or ~ *" . number_format($amountRiel) . "* KHR)\n\n"
+                . "• " . __('app.installment_month') . ": *{$month}*\n"
+                . "• Due Date: *{$dueDate}*\n"
+                . "• Amount Due: *$" . number_format($amount, 2) . "* (or ~ *" . number_format($amountRiel) . "* KHR)\n\n"
                 . "Please scan the QR Code below to make payment and reply with your transfer receipt/slip image. Thank you! 🙏";
         }
 
