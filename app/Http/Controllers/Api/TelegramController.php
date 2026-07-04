@@ -357,15 +357,51 @@ class TelegramController extends Controller
                         ?: 'CityTech Computer Shop';
 
                     $bankQr = Setting::where('key', 'company_bank_qr')->value('value');
+                    $bankQrPayload = Setting::where('key', 'company_bank_qr_payload')->value('value');
+
+                    // Check if there is an active/overdue installment to generate a dynamic QR code
+                    $inst = $customer->installments()->whereIn('status', ['active', 'overdue'])->first();
+                    $dueAmount = 0;
+                    $productName = '';
+                    if ($inst) {
+                        $productName = $inst->product ? $inst->product->name : '';
+                        $schedule = $inst->getPaymentSchedule();
+                        $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+                        if ($unpaidRow) {
+                            $dueAmount = $unpaidRow['amount'];
+                        }
+                    }
 
                     $msg = "🏦 <b>ព័ត៌មានបង់ប្រាក់របស់ហាង " . htmlspecialchars($shopName) . "</b>\n\n";
+                    if ($dueAmount > 0 && $productName) {
+                        $msg .= "👤 <b>អតិថិជន ៖ " . htmlspecialchars($customer->name) . "</b>\n";
+                        $msg .= "📦 <b>ទូទាត់សម្រាប់ ៖ " . htmlspecialchars($productName) . "</b>\n";
+                        $msg .= "💵 <b>ចំនួនត្រូវបង់ប្រចាំខែ ៖ " . $this->formatPrice($dueAmount) . "</b>\n\n";
+                    }
                     $msg .= "លោកអ្នកអាចធ្វើការទូទាត់ប្រាក់ប្រចាំខែតាមរយៈគណនីធនាគាររបស់ហាងដូចខាងក្រោម៖\n\n";
                     $msg .= "🏦 <b>ធនាគារ ៖ ABA Bank</b>\n";
                     $msg .= "👤 <b>ឈ្មោះគណនី ៖ CITYTECH COMPUTER</b>\n";
                     $msg .= "🔢 <b>លេខគណនី ៖ 000 111 222</b>\n\n";
                     $msg .= "⚠️ <i>បញ្ជាក់៖ បន្ទាប់ពីផ្ទេរប្រាក់រួច សូមផ្ញើវិក្កយបត្រផ្ទេរប្រាក់មកកាន់ក្រុមការងារដើម្បីផ្ទៀងផ្ទាត់ និងអនុម័តការបង់ប្រាក់។</i>";
 
-                    if ($bankQr) {
+                    $dynamicQrPath = null;
+                    if ($dueAmount > 0 && !empty($bankQrPayload)) {
+                        $khqrService = new \App\Services\KhqrService();
+                        $currency = Setting::where('key', 'currency')->value('value') ?: 'USD';
+                        $dynamicPayload = $khqrService->generatePayload($bankQrPayload, $dueAmount, $currency);
+                        if ($dynamicPayload) {
+                            $dynamicQrPath = $khqrService->generateQrCodeImage($dynamicPayload);
+                        }
+                    }
+
+                    if ($dynamicQrPath) {
+                        $this->replyPhotoToChat($chatId, $dynamicQrPath, $msg, $this->getMainMenuKeyboard());
+                        // Clean up temporary dynamic QR file
+                        $fullPath = storage_path('app/public/' . $dynamicQrPath);
+                        if (file_exists($fullPath)) {
+                            @unlink($fullPath);
+                        }
+                    } elseif ($bankQr) {
                         $this->replyPhotoToChat($chatId, $bankQr, $msg, $this->getMainMenuKeyboard());
                     } else {
                         $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
