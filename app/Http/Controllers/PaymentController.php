@@ -30,7 +30,11 @@ class PaymentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $payments = $query->paginate(10);
+        $payments = $query
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderBy('payment_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
         return view('payments.index', compact('payments', 'exchangeRate'));
     }
