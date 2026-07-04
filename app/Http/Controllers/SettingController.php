@@ -51,8 +51,8 @@ class SettingController extends Controller
             'business_license' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'bank_qr' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'company_bank_qr_payload' => 'nullable|string',
             'exchange_rate' => 'nullable|numeric',
-            'company_aba_pay_link' => 'nullable|url',
             'currency' => 'nullable|string|max:10',
             'default_interest_rate' => 'nullable|numeric',
             'telegram_token' => 'nullable|string|max:255',
@@ -82,6 +82,27 @@ class SettingController extends Controller
             // Store new Bank QR
             $qrPath = $request->file('bank_qr')->store('company', 'public');
             Setting::updateOrCreate(['key' => 'company_bank_qr'], ['value' => $qrPath]);
+
+            // Try to auto-decode the QR payload from image using API
+            try {
+                $response = \Illuminate\Support\Facades\Http::attach(
+                    'file', 
+                    file_get_contents($request->file('bank_qr')->getRealPath()), 
+                    $request->file('bank_qr')->getClientOriginalName()
+                )->post('https://api.qrserver.com/v1/read-qr-code/');
+
+                if ($response->successful()) {
+                    $result = $response->json();
+                    $qrText = $result[0]['symbol'][0]['data'] ?? null;
+                    if ($qrText) {
+                        Setting::updateOrCreate(['key' => 'company_bank_qr_payload'], ['value' => $qrText]);
+                        // Update in the current request data too so it doesn't get overwritten with empty
+                        $validated['company_bank_qr_payload'] = $qrText;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignore API failure, user can still edit it manually
+            }
         }
 
         // Update company settings
@@ -93,8 +114,8 @@ class SettingController extends Controller
             'company_phone' => $validated['phone'],
             'company_email' => $validated['email'],
             'company_business_license' => $validated['business_license'] ?? '',
+            'company_bank_qr_payload' => $validated['company_bank_qr_payload'] ?? '',
             'exchange_rate' => $validated['exchange_rate'] ?? '4100',
-            'company_aba_pay_link' => $validated['company_aba_pay_link'] ?? '',
             'currency' => $validated['currency'] ?? 'USD',
             'default_interest_rate' => $validated['default_interest_rate'] ?? '0',
             'telegram_token' => $validated['telegram_token'] ?? '',
