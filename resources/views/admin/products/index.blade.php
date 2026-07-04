@@ -124,11 +124,25 @@
                     <td class="px-6 py-4">
                         <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
                         <div class="text-sm text-gray-500">{{ $product->code }}</div>
-                        @if($product->cpu)
-                            <div class="text-xs mt-1.5 flex flex-wrap gap-1.5 items-center">
+                        @php
+                            $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
+                        @endphp
+                        <div class="text-xs mt-1.5 flex flex-wrap gap-1.5 items-center">
+                            @if($product->cpu)
                                 <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
-                            </div>
-                        @endif
+                            @endif
+                            @if($taxEnabled == '1')
+                                @if($product->is_taxable)
+                                    <span class="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-100 font-medium" title="{{ $product->tax_type === 'inclusive' ? __('app.tax_inclusive') : __('app.tax_exclusive') }}">
+                                        VAT ({{ (float) $product->tax_rate }}%)
+                                    </span>
+                                @else
+                                    <span class="bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 font-medium">
+                                        {{ __('app.non_taxable') }}
+                                    </span>
+                                @endif
+                            @endif
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $product->category }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ number_format($product->price, 2) }}</td>

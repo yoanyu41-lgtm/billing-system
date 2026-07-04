@@ -5,7 +5,7 @@
     <title>បង្កាន់ដៃ {{ $sale->invoice_no ?? $sale->id }}</title>
     <style>
         body { 
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 24px; 
             font-size: 12px; 
@@ -126,8 +126,19 @@
                     @php
                         $taxLabel = $settings['tax_label'] ?? 'VAT';
                         $defaultTaxRate = (float) ($settings['default_tax_rate'] ?? 10);
+                        $firstItemTaxRate = (float) ($sale->items->first()->tax_rate ?? $defaultTaxRate);
+                        $isTaxInclusive = abs(($sale->subtotal - $sale->discount) - $sale->total) < 0.05;
                     @endphp
-                    <tr><td>ពន្ធ {{ $taxLabel }} ({{ $defaultTaxRate }}%)</td><td class="right">${{ number_format($sale->tax_amount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->tax_amount) }}</span></td></tr>
+                    <tr>
+                        <td>
+                            @if($isTaxInclusive)
+                                ពន្ធ {{ $taxLabel }} រួមបញ្ចូល ({{ $firstItemTaxRate }}%)
+                            @else
+                                ពន្ធ {{ $taxLabel }} ({{ $firstItemTaxRate }}%)
+                            @endif
+                        </td>
+                        <td class="right">${{ number_format($sale->tax_amount, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($sale->tax_amount) }}</span></td>
+                    </tr>
                     @endif
                     <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($sale->total, 2) }} / <span>{{ $formatRiel($sale->total) }}</span></td></tr>
                 </table>

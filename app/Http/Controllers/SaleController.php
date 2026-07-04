@@ -118,6 +118,7 @@ class SaleController extends Controller
                 $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
                 $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
 
+                $originalSubtotal = 0;
                 $subtotalBeforeTax = 0;
                 $totalTaxAmount = 0;
 
@@ -125,11 +126,13 @@ class SaleController extends Controller
                 $itemsWithTax = [];
                 foreach ($validated['items'] as $it) {
                     $product = Product::find($it['product_id']);
-                    $itemSubtotal = $it['price'] * $it['quantity'];
+                    $itemTotal = $it['price'] * $it['quantity'];
+                    $originalSubtotal += $itemTotal;
                     
                     // Determine if this item is taxable and what rate to use
                     $itemTaxRate = 0;
                     $itemTaxAmount = 0;
+                    $itemSubtotal = $itemTotal;
                     
                     if ($taxEnabled && $product->is_taxable) {
                         // Use product-specific tax rate if set, otherwise use default
@@ -138,10 +141,12 @@ class SaleController extends Controller
                         // Calculate tax based on tax type
                         if ($product->tax_type === 'inclusive') {
                             // Tax is already included in price, extract it
-                            $itemTaxAmount = $itemSubtotal - ($itemSubtotal / (1 + $itemTaxRate / 100));
+                            $itemTaxAmount = $itemTotal - ($itemTotal / (1 + $itemTaxRate / 100));
+                            $itemSubtotal = $itemTotal - $itemTaxAmount;
                         } else {
                             // Tax is exclusive (default), add it on top
-                            $itemTaxAmount = $itemSubtotal * ($itemTaxRate / 100);
+                            $itemTaxAmount = $itemTotal * ($itemTaxRate / 100);
+                            $itemSubtotal = $itemTotal;
                         }
                     }
                     
@@ -157,15 +162,15 @@ class SaleController extends Controller
 
                 // Calculate final totals
                 $discount = (float) ($validated['discount'] ?? 0);
-                $subtotalAfterDiscount = max($subtotalBeforeTax - $discount, 0);
+                $totalBeforeDiscount = $subtotalBeforeTax + $totalTaxAmount;
+                $total = max($totalBeforeDiscount - $discount, 0);
                 
                 // Apply discount proportionally to tax if discount exists
-                if ($discount > 0 && $subtotalBeforeTax > 0) {
-                    $discountRatio = $subtotalAfterDiscount / $subtotalBeforeTax;
-                    $totalTaxAmount = $totalTaxAmount * $discountRatio;
+                $finalTaxAmount = $totalTaxAmount;
+                if ($discount > 0 && $totalBeforeDiscount > 0) {
+                    $discountRatio = $total / $totalBeforeDiscount;
+                    $finalTaxAmount = $totalTaxAmount * $discountRatio;
                 }
-                
-                $total = $subtotalAfterDiscount + $totalTaxAmount;
 
                 $sale = Sale::create([
                     'invoice_no'         => Sale::generateInvoiceNo(),
@@ -173,10 +178,10 @@ class SaleController extends Controller
                     'customer_name'      => $validated['customer_name'] ?? null,
                     'customer_phone'     => $validated['customer_phone'] ?? null,
                     'sale_date'          => $validated['sale_date'] ?? now(),
-                    'subtotal'           => $subtotalBeforeTax,
+                    'subtotal'           => $originalSubtotal,
                     'subtotal_before_tax' => $subtotalBeforeTax,
                     'discount'           => $discount,
-                    'tax_amount'         => $totalTaxAmount,
+                    'tax_amount'         => $finalTaxAmount,
                     'total'              => $total,
                     'payment_method'     => $validated['payment_method'] ?? 'cash',
                     'note'               => $validated['note'] ?? null,

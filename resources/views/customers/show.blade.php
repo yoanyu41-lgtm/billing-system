@@ -218,6 +218,16 @@
                         <span class="font-mono text-xs">{{ $customer->id_card }}</span>
                     </div>
                     @endif
+                    @if($customer->telegram_id)
+                    <div class="flex items-center gap-2.5 text-sm text-gray-600">
+                        <div class="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-3.5 h-3.5 text-sky-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15.82-1.05 4.79-1.5 7.15-.19 1-.56 1.34-.92 1.37-.79.07-1.39-.52-2.15-1.02-1.19-.78-1.86-1.27-3.02-2.03-1.34-.88-.47-1.37.29-2.16.2-.2.36-.62.68-1.08.31-.47.62-1 .92-1.5c.16-.27.24-.52.12-.73-.12-.2-.53-.13-.74-.08-.3.07-1.92 1.13-2.92 1.8-.73.49-1.39.73-1.98.72-.65-.01-1.9-.36-2.83-.66-1.14-.37-2.05-.57-1.97-1.21.04-.33.5-.67 1.38-1.02 5.37-2.33 8.96-3.88 10.77-4.63 5.12-2.13 6.18-2.5 6.88-2.5.15 0 .5.04.73.22.19.16.25.38.27.53-.02.15-.02.48-.04.79z"/>
+                            </svg>
+                        </div>
+                        <span class="font-mono text-xs">{{ $customer->telegram_id }}</span>
+                    </div>
+                    @endif
                     @if($customer->address)
                     <div class="flex items-start gap-2.5 text-sm text-gray-600">
                         <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 mt-0.5">

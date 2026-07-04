@@ -83,6 +83,20 @@
             @endif
         </div>
 
+        @if($payment->title && strtolower(str_replace(' ', '_', $payment->paymentMethod->name ?? '')) === 'credit_card')
+        <div class="pt-4 border-t border-gray-100">
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                {{ app()->getLocale() === 'km' ? 'ព័ត៌មានកាតឥណទាន' : 'Credit Card Details' }}
+            </label>
+            <div class="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-150 p-3 rounded-lg flex items-center gap-3">
+                <i class="fas fa-credit-card text-blue-600 text-lg"></i>
+                <div>
+                    {{ $payment->title }}
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Attachment -->
         @if($payment->qr_image)
         <div class="pt-4 border-t border-gray-100">

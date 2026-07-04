@@ -5,7 +5,7 @@
     <title>កិច្ចសន្យាបង់រំលោះ #INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</title>
     <style>
         body { 
-            font-family: 'DejaVu Sans', 'Khmer OS Siemreap', 'Khmer UI', sans-serif;
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 15px; 
             font-size: 11px; 

@@ -193,11 +193,18 @@
                 @if($sale->tax_amount > 0)
                 @php
                     $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
-                    $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
                     $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 10);
+                    $firstItemTaxRate = (float) ($sale->items->first()->tax_rate ?? $defaultTaxRate);
+                    $isTaxInclusive = abs(($sale->subtotal - $sale->discount) - $sale->total) < 0.05;
                 @endphp
                 <tr class="bg-blue-50">
-                    <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L("ពន្ធ {$taxLabel} ({$defaultTaxRate}%)", "{$taxLabel} Tax ({$defaultTaxRate}%)") }}</td>
+                    <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">
+                        @if($isTaxInclusive)
+                            {{ $L("ពន្ធ {$taxLabel} រួមបញ្ចូល ({$firstItemTaxRate}%)", "{$taxLabel} Included ({$firstItemTaxRate}%)") }}
+                        @else
+                            {{ $L("ពន្ធ {$taxLabel} ({$firstItemTaxRate}%)", "{$taxLabel} Tax ({$firstItemTaxRate}%)") }}
+                        @endif
+                    </td>
                     <td class="px-3 py-2 text-right">
                         <span class="font-semibold text-gray-900 block">${{ number_format($sale->tax_amount, 2) }}</span>
                         <span class="text-xs text-gray-500 block font-medium">{{ number_format(round($sale->tax_amount * $exchangeRate)) }} ៛</span>

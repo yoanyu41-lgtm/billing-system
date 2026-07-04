@@ -1,0 +1,671 @@
+==================================================
+POTENTIAL MATCHES FOR: contract_print.blade.php
+==================================================
+[0] Hash: 1ea9f3ec19758dc571ff0e77daacb8e39120770d | Size: 51269 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[1] Hash: 20331623d1f149a40f48634bcfd0bd4f7ecf875b | Size: 46081 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[2] Hash: 2230226965236906dd71d54d7917e28f9f531581 | Size: 45307 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[3] Hash: 29b8b12d17693184f20fd4b8ba6bf8e451aeedb4 | Size: 45764 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[4] Hash: 4c549bd5e4625d28e464e7761ad0cceedb656dda | Size: 15899 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+
+{{-- ── Stat Cards ── --}}
+<div class="stat-grid">
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sc-label">Total Products</div>
+            <div class="sc-value">{{ number_format($totalProducts) }}</div>
+            <div class="sc-trend">↑ 12% from last month</div>
+        </div>
+        <svg class="sc-wave" viewBox="0 0 200 36" preserveAspec
+--------------------------------------------------
+
+[5] Hash: 4da79d319d7f2608607ff372e630539038ba9381 | Size: 13047 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<style>
+.schedule-table th, .schedule-table td {
+    padding: 4px 6px !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+}
+.schedule-table th { font-size: 10px !important; }
+@media print {
+    /* Hide app chrome */
+    #sidebar, .topbar, .no-print { display: none !important; }
+    .main-wrapper { margin: 0 !important; width: 100% !important; }
+    body { background: #fff !important; }
+    /* Remove card styling for clean pri
+--------------------------------------------------
+
+[6] Hash: 4f7e83c590f00d2f421505bcafffeabe6168016c | Size: 21962 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+    @if(session('success'))
+        <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow-sm">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm">{{ session('error') }}</div>
+    @endif
+    <!-- Header Section -->
+    <div class="mb-8 flex fle
+--------------------------------------------------
+
+[7] Hash: 54c890714d5a675fad15e6f394e222da766128e0 | Size: 52863 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[8] Hash: 55b467d686049745c8e8a7900dbac5c130c67c95 | Size: 44203 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[9] Hash: 58a14643f6f72cd8b7bf847b5730bec499a2c2cb | Size: 52696 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[10] Hash: 5afc87a89327e8c7d8cef00e1b44a3fc5bb30bef | Size: 51848 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[11] Hash: 65b2e1e50f1fdca86a701dfa72e1db8b310c7ca0 | Size: 46001 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[12] Hash: 74b9a876f95a7c47b87d0eb7a06c58322e13e7d4 | Size: 3953 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="max-w-3xl">
+    <h1 class="mb-2 text-2xl font-bold text-slate-900">Add Payment</h1>
+    <p class="mb-6 text-sm text-slate-600">Select the installment, choose the payment channel, and attach a QR or receipt image when needed.</p>
+
+    <form method="POST" action="{{ route('payments.store') }}" enctype="multipart/form-data" class="space-y-5 rounded-xl bg-white p-6 shadow">
+        @csrf
+
+        <div class="grid gap-5 md:grid-cols-2">
+--------------------------------------------------
+
+[13] Hash: 7597b4945a8bc0474b57d35b7f12ac7676cc5df6 | Size: 44183 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[14] Hash: 76c8e5c91a696297d2f8a5ec68f1c684627d805d | Size: 42844 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[15] Hash: 7cee9af240e5629ca2ddfecff39542d788381497 | Size: 45660 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[16] Hash: 9f90961945d40761d0dc695f99de4be76b254a70 | Size: 52743 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[17] Hash: a20130c11fff51c330b746b9b0ca2eb20fd65470 | Size: 16723 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+
+{{-- ── Stat Cards ── --}}
+<div class="stat-grid">
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sc-label">{{ __('app.total_products') }}</div>
+            <div class="sc-value">{{ number_format($totalProducts) }}</div>
+            <div class="sc-trend">↑ 12% {{ __('app.from_last_month') }}</div>
+        </div>
+        <svg class="sc-wave" vi
+--------------------------------------------------
+
+[18] Hash: a602f86030af3ad7d9e6b53dbc692de146f5d10c | Size: 41828 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[19] Hash: aff6046a88779a42a283d7daac4005fb594bc5ae | Size: 44986 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[20] Hash: b85bab04cdbd14ecd1840f627158acfeb0b9f447 | Size: 14176 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+
+{{-- ── Stat Cards ── --}}
+<div class="stat-grid">
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sc-label">Total Products</div>
+            <div class="sc-value">{{ number_format($totalProducts) }}</div>
+            <div class="sc-trend">↑ 12% from last month</div>
+        </div>
+        <svg class="sc-wave" viewBox="0 0 200 36" preserveAspec
+--------------------------------------------------
+
+[21] Hash: bcccd71518c685a53fc956f3d916c402bdea30b2 | Size: 41909 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[22] Hash: bdee11ca2e355baef5520b57fb2e4c2a20e3cb57 | Size: 53787 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[23] Hash: be6ec447b3eaa01f5806153d31f08739095dd6bf | Size: 15902 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+
+{{-- ── Stat Cards ── --}}
+<div class="stat-grid">
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sc-label">Total Products</div>
+            <div class="sc-value">{{ number_format($totalProducts) }}</div>
+            <div class="sc-trend">↑ 12% from last month</div>
+        </div>
+        <svg class="sc-wave" viewBox="0 0 200 36" preserveAspec
+--------------------------------------------------
+
+[24] Hash: c040f54638531afa119dfc85ea0bb301d54dbd6e | Size: 16707 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+
+{{-- ── Stat Cards ── --}}
+<div class="stat-grid">
+
+    <div class="stat-card sc-blue">
+        <div>
+            <div class="sc-icon"><i class="fas fa-box-open"></i></div>
+            <div class="sc-label">{{ __('app.total_products') }}</div>
+            <div class="sc-value">{{ number_format($totalProducts) }}</div>
+            <div class="sc-trend">↑ 12% {{ __('app.from_last_month') }}</div>
+        </div>
+        <svg class="sc-wave" vi
+--------------------------------------------------
+
+[25] Hash: cf4d8597cef765f78b77924b2a8a6cc5e8571b9b | Size: 84090 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    
+    <!-- Font Configuration -->
+    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4
+--------------------------------------------------
+
+[26] Hash: d94ee221207e5b2e6049f093af688388638ce93b | Size: 17787 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *
+--------------------------------------------------
+
+[27] Hash: dc82184ed311349d425c17ec73579a6b08a4582e | Size: 41810 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *
+--------------------------------------------------
+
+[28] Hash: de892e11f20f0b90e47dc625437ed203b76e05b3 | Size: 42169 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[29] Hash: e2fd516283c9aa437673e7dfc6037d9ed1cfd2fa | Size: 45350 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[30] Hash: ed9be1b9a201e4194a12919bf59a01a81d98c568 | Size: 45993 bytes
+--- PREVIEW ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityTech — Installment System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials
+--------------------------------------------------
+
+[31] Hash: f643e533bbf5fa33277d1c0397de06c1ce93a082 | Size: 55029 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    {{-- ── Header ── --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('customers.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-li
+--------------------------------------------------
+
+[32] Hash: fdc7b595a2c2b2a36f9accc75ce1abdc7f869ecc | Size: 12708 bytes
+--- PREVIEW ---
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.customer_management') }}</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ __('') ?? 'Manage all customers and their installment records' }}</p>
+        </div>
+        <a href="{{ route('customers.create') }}"
+           class="inline-flex items-center ga
+--------------------------------------------------
+
+==================================================
+POTENTIAL MATCHES FOR: save_qr_text.php / QR script
+==================================================
+[0] Hash: 24cfcfde4d6dce039e20222f6fc0158804ff3c58 | Size: 14653 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'Dashboard',
+    'customers'             => 'Customers',
+    'installment_plans'     => 'Installment Plans',
+    'invoices'              => 'Invoices',
+    'payments'              => 'Payments',
+    'products'              => 'Products',
+    'user_management'       => 'User Management',
+    'reports'               => 'Reports',
+    'settings'              => 'Settings',
+    'backup_restore'        => 'Backup & Restore
+--------------------------------------------------
+
+[1] Hash: 42391e00cd482b298d08a31a054acf89d45b4de7 | Size: 5413 bytes
+--- PREVIEW ---
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Installment;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PaymentMethod;
+use App\Services\TelegramService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+
+class PaymentController extends Controller
+{
+    public function __construct(private readonly TelegramService $telegramService)
+    {
+    }
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $query = Payment::with(
+--------------------------------------------------
+
+[2] Hash: 4ce42204f460085cefe7dc78e1d7b978c369af06 | Size: 30020 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'Dashboard',
+    'customers'             => 'Customers',
+    'installment_plans'     => 'Installment Management',
+    'invoices'              => 'Invoices',
+    'payments'              => 'Payments',
+    'products'              => 'Products',
+    'user_management'       => 'User Management',
+    'reports'               => 'Reports',
+    'settings'              => 'Settings',
+    'backup_restore'        => 'Backup & Re
+--------------------------------------------------
+
+[3] Hash: 61a5697439e52ffdb288cfcd82f4a2cab32ad9cc | Size: 22517 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'customers'             => 'អតិថិជន',
+    'installment_plans'     => 'គម្រោងបង់រំលស់',
+    'invoices'              => 'វិក្កយបត្រ',
+    'payments'              => 'ការទូទាត់',
+    'products'              => 'ផលិតផល',
+    'user_management'       => 'គ្រប់គ្រង
+--------------------------------------------------
+
+[4] Hash: 730bdb27fc08df5109f4bb8df0c2856fc1d8cd29 | Size: 15930 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'Dashboard',
+    'customers'             => 'Customers',
+    'installment_plans'     => 'Installment Plans',
+    'invoices'              => 'Invoices',
+    'payments'              => 'Payments',
+    'products'              => 'Products',
+    'user_management'       => 'User Management',
+    'reports'               => 'Reports',
+    'settings'              => 'Settings',
+    'backup_restore'        => 'Backup & Restore
+--------------------------------------------------
+
+[5] Hash: 8f78befd68c6caf1d398b8546d580b6f7cb4d317 | Size: 22529 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'customers'             => 'អតិថិជន',
+    'installment_plans'     => 'គម្រោងបង់រំលស់',
+    'invoices'              => 'វិក្កយបត្រ',
+    'payments'              => 'ការទូទាត់',
+    'products'              => 'ផលិតផល',
+    'user_management'       => 'គ្រប់គ្រង
+--------------------------------------------------
+
+[6] Hash: a10f9731ccd9d52c69b11d8b16fbcaed91d05408 | Size: 24840 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'customers'             => 'អតិថិជន',
+    'installment_plans'     => 'គម្រោងបង់រំលស់',
+    'invoices'              => 'វិក្កយបត្រ',
+    'payments'              => 'ការទូទាត់',
+    'products'              => 'ផលិតផល',
+    'user_management'       => 'គ្រប់គ្រង
+--------------------------------------------------
+
+[7] Hash: b17edaf6e902c53fd31c678edc9a6cfb1161cd04 | Size: 23611 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'customers'             => 'អតិថិជន',
+    'installment_plans'     => 'គម្រោងបង់រំលស់',
+    'invoices'              => 'វិក្កយបត្រ',
+    'payments'              => 'ការទូទាត់',
+    'products'              => 'ផលិតផល',
+    'user_management'       => 'គ្រប់គ្រង
+--------------------------------------------------
+
+[8] Hash: f68efa47a35d4a94a57936e57996d3d143422aba | Size: 49315 bytes
+--- PREVIEW ---
+<?php
+
+return [
+    // ── Navigation ──
+    'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'customers'             => 'អតិថិជន',
+    'installment_plans'     => 'គម្រោងបង់រំលស់',
+    'invoices'              => 'វិក្កយបត្រ',
+    'payments'              => 'ការទូទាត់',
+    'products'              => 'ផលិតផល',
+    'user_management'       => 'គ្រប់គ្រង
+--------------------------------------------------
+

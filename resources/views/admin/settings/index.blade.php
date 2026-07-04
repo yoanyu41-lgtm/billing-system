@@ -239,19 +239,19 @@
             <!-- Bank QR Code Section -->
             <div class="mb-6 border-t border-slate-100 pt-6">
                 <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                    រូបភាព QR Code ធនាគាររបស់ហាង / Shop Bank QR Code
+                    រូបភាពកូដធនាគារ Bakong KHQR / Bakong KHQR Image
                 </h3>
                 
                 @if(!empty($settings['company_bank_qr']))
                 <div class="mb-3">
                     <img src="{{ asset('storage/' . $settings['company_bank_qr']) }}" alt="Bank QR Code" class="h-44 rounded-lg border border-slate-300 object-contain bg-white p-2">
-                    <p class="mt-1.5 text-xs text-slate-600">QR Code បច្ចុប្បន្ន / Current QR Code</p>
+                    <p class="mt-1.5 text-xs text-slate-600">កូដ QR Code បច្ចុប្បន្ន / Current Bakong KHQR Image</p>
                 </div>
                 @endif
                 
-                <div>
+                <div class="mb-4">
                     <label class="mb-1.5 block text-sm text-slate-700">
-                        បញ្ចូលរូបភាព QR Code ថ្មី / Upload New QR Code Image
+                        បញ្ចូលរូបភាពកូដ Bakong KHQR ថ្មី / Upload New Bakong KHQR Image
                     </label>
                     <input 
                         type="file" 
@@ -260,31 +260,27 @@
                         class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
                     <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
                 </div>
-            </div>
 
-            <!-- ABA Pay Link Section -->
-            <div class="mb-6 border-t border-slate-100 pt-6">
-                <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                    តំណភ្ជាប់ទូទាត់ប្រាក់ ABA Pay / ABA Pay Link
-                </h3>
-                <div>
-                    <label class="mb-1.5 block text-sm text-slate-700">
-                        ABA Pay Link (Deep Link/Merchant Link)
+                <div class="mt-4">
+                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">
+                        អត្ថបទកូដធនាគារ Bakong KHQR (Bakong KHQR Payload Text)
                     </label>
-                    <input 
-                        type="url" 
-                        name="company_aba_pay_link" 
-                        value="{{ old('company_aba_pay_link', $settings['company_aba_pay_link'] ?? '') }}" 
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="https://link.aba.com.kh/...">
-                    <p class="mt-1 text-xs text-slate-600">ប្រសិនបើលោកអ្នកមិនដាក់ Link នេះទេ នោះប្រព័ន្ធនឹងផ្ញើត្រឹមរូបភាព QR Code ធម្មតាទៅកាន់អតិថិជន</p>
+                    <textarea 
+                        name="company_bank_qr_payload" 
+                        rows="3"
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                        placeholder="ឧទហរណ៍៖ 0002010102122930... (ប្រព័ន្ធនឹងព្យាយាមទាញយកកូដនេះដោយស្វ័យប្រវត្តនៅពេលដែលលោកអ្នកបញ្ចូលរូបភាព QR Code ថ្មី)"
+                    >{{ old('company_bank_qr_payload', $settings['company_bank_qr_payload'] ?? '') }}</textarea>
+                    <p class="mt-1 text-xs text-slate-600">ប្រព័ន្ធនឹងប្រើប្រាស់អត្ថបទកូដនេះ ដើម្បីគណនា និងបង្កើត QR Code ស្វ័យប្រវត្តតាមចំនួនទឹកប្រាក់ដែលត្រូវទូទាត់។</p>
                 </div>
             </div>
+
+
             
             <!-- Telegram Token Section -->
             <div class="mb-6 border-t border-slate-100 pt-6">
                 <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                    កូនសោ Telegram / Telegram Token
+                    Telegram Token
                 </h3>
                 <div>
                     <label class="mb-1.5 block text-sm text-slate-700">

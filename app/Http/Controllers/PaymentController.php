@@ -59,6 +59,9 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
             'qr_image' => 'nullable|image',
+            'card_holder_name' => 'nullable|string|max:255',
+            'card_number' => 'nullable|string|max:4',
+            'card_brand' => 'nullable|string|max:255',
         ]);
 
         $qrPath = null;
@@ -69,6 +72,16 @@ class PaymentController extends Controller
 
         $approveNow = $request->has('approve_now') && Gate::allows('approve-payment');
 
+        // Capture Credit Card details into title field if Credit Card method
+        $title = null;
+        $method = PaymentMethod::find($request->payment_method_id);
+        if ($method && strtolower(str_replace(' ', '_', $method->name)) === 'credit_card') {
+            $cardHolder = $request->card_holder_name ? trim($request->card_holder_name) : 'N/A';
+            $cardNumber = $request->card_number ? trim($request->card_number) : 'N/A';
+            $cardBrand = $request->card_brand ? trim($request->card_brand) : 'N/A';
+            $title = "Cardholder: {$cardHolder} | Card: {$cardBrand} ****{$cardNumber}";
+        }
+
         $payment = Payment::create([
             'installment_id' => $request->installment_id,
             'payment_method_id' => $request->payment_method_id,
@@ -77,6 +90,7 @@ class PaymentController extends Controller
             'qr_image' => $qrPath,
             'status' => $approveNow ? 'approved' : 'pending',
             'approved_by' => $approveNow ? auth()->id() : null,
+            'title' => $title,
         ]);
 
         if ($approveNow) {

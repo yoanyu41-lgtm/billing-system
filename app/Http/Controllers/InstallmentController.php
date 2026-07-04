@@ -66,13 +66,16 @@ class InstallmentController extends Controller
             if ($product->tax_type === 'inclusive') {
                 // Tax is already included in price, extract it
                 $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
+                $subtotalBeforeTax = $request->total_price - $taxAmount;
+                $totalPrice = $request->total_price;
             } else {
                 // Tax is exclusive (default), add it on top
                 $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
+                $totalPrice = $subtotalBeforeTax + $taxAmount;
             }
+        } else {
+            $totalPrice = $subtotalBeforeTax;
         }
-        
-        $totalPrice = $subtotalBeforeTax + $taxAmount;
         $downPayment = $request->down_payment;
         $interestRate = $request->interest_rate ?? 0;
         $duration = $request->duration_months;
@@ -251,13 +254,16 @@ class InstallmentController extends Controller
             if ($product->tax_type === 'inclusive') {
                 // Tax is already included in price, extract it
                 $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
+                $subtotalBeforeTax = $request->total_price - $taxAmount;
+                $totalPrice = $request->total_price;
             } else {
                 // Tax is exclusive (default), add it on top
                 $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
+                $totalPrice = $subtotalBeforeTax + $taxAmount;
             }
+        } else {
+            $totalPrice = $subtotalBeforeTax;
         }
-        
-        $totalPrice = $subtotalBeforeTax + $taxAmount;
         $downPayment = $request->down_payment;
         $interestRate = $request->interest_rate ?? 0;
         $duration = $request->duration_months;
@@ -541,5 +547,63 @@ class InstallmentController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('installments.contract_pdf', compact('installment', 'customer', 'product', 'guarantor', 'paymentSchedule', 'contractTerms', 'settings'));
         return $pdf->download('Contract-INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . '.pdf');
+    }
+
+    public function printClearance(Installment $installment)
+    {
+        Gate::authorize('manage-installment', $installment);
+        
+        if ($installment->status !== 'completed' && $installment->remaining_balance > 0) {
+            $errorMsg = app()->getLocale() === 'km' 
+                ? 'គម្រោងបង់រំលស់នេះមិនទាន់បានបញ្ចប់ការបង់ប្រាក់នៅឡើយទេ។' 
+                : 'This installment plan is not completed yet.';
+            return redirect()->route('installments.show', $installment)->with('error', $errorMsg);
+        }
+
+        $customer = $installment->customer;
+        $product = $installment->product;
+        
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+
+        // Sum of all approved payments
+        $totalPaid = $installment->payments()
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        // Total interest and principal paid
+        $schedule = $installment->getPaymentSchedule();
+        $totalInterest = array_sum(array_column($schedule, 'interest'));
+        $totalPrincipal = array_sum(array_column($schedule, 'principal'));
+
+        return view('installments.clearance', compact(
+            'installment',
+            'customer',
+            'product',
+            'totalPaid',
+            'totalInterest',
+            'totalPrincipal',
+            'settings',
+            'exchangeRate'
+        ));
+    }
+
+    public function clearanceIndex()
+    {
+        $user = auth()->user();
+        $query = Installment::with('customer', 'product')
+            ->where(function($q) {
+                $q->where('status', 'completed')
+                  ->orWhere('remaining_balance', '<=', 0);
+            });
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        $installments = $query->latest()->paginate(10);
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+
+        return view('installments.clearance-index', compact('installments', 'exchangeRate'));
     }
 }

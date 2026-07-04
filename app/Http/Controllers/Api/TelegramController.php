@@ -395,8 +395,12 @@ class TelegramController extends Controller
         return $this->telegramService->sendToCustomer($customerId, $message);
     }
 
-    private function cleanPhoneNumber(string $phone): string
+    private function cleanPhoneNumber(?string $phone): string
     {
+        if (blank($phone)) {
+            return '';
+        }
+
         // Remove all non-numeric characters
         $cleaned = preg_replace('/[^0-9]/', '', $phone);
 

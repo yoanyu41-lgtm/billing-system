@@ -14,12 +14,33 @@
 
     $isSettlement = (bool) ($invoice->payment?->is_settlement ?? false);
     $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+
+    $isFinalPayment = false;
+    $installment = $invoice->payment?->installment;
+    if ($installment && $installment->status === 'completed' && $invoice->payment) {
+        $latestApprovedPayment = $installment->payments()
+            ->where('status', 'approved')
+            ->orderBy('id', 'desc')
+            ->first();
+        if ($latestApprovedPayment && $latestApprovedPayment->id === $invoice->payment->id && !$isSettlement) {
+            $isFinalPayment = true;
+        }
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ $isSettlement ? $L('វិក្កយបត្របង់ផ្តាច់', 'Payoff Invoice') : $L('វិក្កយបត្របង់រំលស់', 'Installment Invoice') }} {{ $invoice->invoice_number }}</title>
+    <title>
+        @if($isSettlement)
+            {{ $L('វិក្កយបត្របង់ផ្តាច់', 'Payoff Invoice') }}
+        @elseif($isFinalPayment)
+            {{ __('app.final_installment_invoice') }}
+        @else
+            {{ $L('វិក្កយបត្របង់រំលស់', 'Installment Invoice') }}
+        @endif
+        {{ $invoice->invoice_number }}
+    </title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -108,11 +129,23 @@
             <div class="text-center flex flex-col justify-center">
                 @if($isKm)
                     <div class="text-2xl font-extrabold text-blue-800" lang="km">
-                        {{ $isSettlement ? 'វិក្កយបត្របង់ផ្តាច់' : 'វិក្កយបត្របង់រំលស់' }}
+                        @if($isSettlement)
+                            វិក្កយបត្របង់ផ្តាច់
+                        @elseif($isFinalPayment)
+                            {{ __('app.final_installment_invoice') }}
+                        @else
+                            វិក្កយបត្របង់រំលស់
+                        @endif
                     </div>
                 @else
                     <div class="text-xl font-extrabold text-blue-800 tracking-wide text-center">
-                        {{ $isSettlement ? 'PAYOFF INVOICE' : 'INSTALLMENT INVOICE' }}
+                        @if($isSettlement)
+                            PAYOFF INVOICE
+                        @elseif($isFinalPayment)
+                            {{ strtoupper(__('app.final_installment_invoice')) }}
+                        @else
+                            INSTALLMENT INVOICE
+                        @endif
                     </div>
                 @endif
                 <div class="text-blue-300 text-xs mt-1">◆ ━━━━━ ◆</div>
@@ -178,7 +211,13 @@
                         <span class="text-sm font-semibold" lang="km">{{ $L('ស្ថានភាព', 'Status') }} :</span>
                         <span class="flex items-center gap-2 font-extrabold">
                             <i class="fas fa-circle-check"></i> 
-                            {{ $isSettlement ? $L('បានបង់ផ្តាច់', 'SETTLED') : $L('បានបង់ប្រចាំខែ', 'MONTHLY PAID') }}
+                            @if($isSettlement)
+                                {{ $L('បានបង់ផ្តាច់', 'SETTLED') }}
+                            @elseif($isFinalPayment)
+                                {{ __('app.final_paid') }}
+                            @else
+                                {{ $L('បានបង់ប្រចាំខែ', 'MONTHLY PAID') }}
+                            @endif
                         </span>
                     </div>
                 </div>

@@ -163,13 +163,16 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
             'supplier_id' => 'nullable|exists:suppliers,id',
+            'is_taxable' => 'nullable|boolean',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'tax_type' => 'nullable|in:inclusive,exclusive,none',
         ]);
 
         $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
         $data['is_taxable'] = $request->boolean('is_taxable');
-        $data['tax_rate'] = $request->input('tax_rate', 0);
-        $data['tax_type'] = $request->input('tax_type', 'មិនរួមពន្ធ');
+        $data['tax_rate'] = $request->input('is_taxable') ? $request->input('tax_rate', 0) : 0;
+        $data['tax_type'] = $request->input('tax_type', 'exclusive');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -234,13 +237,16 @@ class ProductController extends Controller
             'condition' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'nullable',
+            'is_taxable' => 'nullable|boolean',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'tax_type' => 'nullable|in:inclusive,exclusive,none',
         ]);
 
         $data = $request->only(['code', 'name', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'category', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description']);
         $data['is_active'] = $request->boolean('is_active');
         $data['is_taxable'] = $request->boolean('is_taxable');
-        $data['tax_rate'] = $request->input('tax_rate', 0);
-        $data['tax_type'] = $request->input('tax_type', 'មិនរួមពន្ធ');
+        $data['tax_rate'] = $request->input('is_taxable') ? $request->input('tax_rate', 0) : 0;
+        $data['tax_type'] = $request->input('tax_type', 'exclusive');
 
         if ($request->hasFile('image')) {
             if ($product->image) {
