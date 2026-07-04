@@ -168,8 +168,8 @@ class PaymentController extends Controller
 
         $message = "🙏 *សូមអរគុណ!*\n"
             . "ការបង់ប្រាក់ចំនួន *\${$khmerAmount}* {$paymentType} ត្រូវបានអនុម័តជោគជ័យ។\n"
-            . "• តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
-            . "• ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
+            . "- តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
+            . "- ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
 
         $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
 
