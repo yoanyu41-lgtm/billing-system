@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\Setting;
 use App\Models\TelegramLog;
+use App\Services\KhqrService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -15,6 +16,22 @@ class TelegramService
         // Check if message is a reminder and we have a Bank QR Code configured
         $bankQr = Setting::where('key', 'company_bank_qr')->value('value');
         if ($bankQr && (str_starts_with(trim($message), '⏰') || str_contains(strtolower($message), 'reminder') || str_contains(strtolower($message), 'due'))) {
+            // Check if we have KHQR payload configured to generate a dynamic one
+            $bankQrPayload = Setting::where('key', 'company_bank_qr_payload')->value('value');
+            if (!empty($bankQrPayload)) {
+                [$amount, $currency] = $this->extractAmountAndCurrency($message);
+                if ($amount > 0) {
+                    $khqrService = new KhqrService();
+                    $dynamicPayload = $khqrService->generatePayload($bankQrPayload, $amount, $currency);
+                    if ($dynamicPayload) {
+                        $dynamicQrPath = $khqrService->generateQrCodeImage($dynamicPayload);
+                        if ($dynamicQrPath) {
+                            return $this->sendPhotoToCustomer($customerId, $dynamicQrPath, $message);
+                        }
+                    }
+                }
+            }
+
             return $this->sendPhotoToCustomer($customerId, $bankQr, $message);
         }
 
@@ -144,8 +161,9 @@ class TelegramService
             return ['ok' => false, 'reason' => 'Telegram token is not configured.'];
         }
 
+        $fullPath = storage_path('app/public/' . $photoPath);
+
         try {
-            $fullPath = storage_path('app/public/' . $photoPath);
             if (!file_exists($fullPath)) {
                 // Fallback to text message if photo file is missing in storage
                 $this->sendToCustomerTextOnly($customer, $caption, $token);
@@ -214,6 +232,11 @@ class TelegramService
             ]);
 
             return ['ok' => false, 'reason' => 'Telegram request failed.'];
+        } finally {
+            // Clean up temporary QR code file if it's dynamic
+            if (str_contains($photoPath, 'temp_qrs/') && file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
         }
     }
 
@@ -305,6 +328,32 @@ class TelegramService
         } catch (\Throwable $e) {
             return ['ok' => false, 'reason' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Extract amount and currency from reminder message text.
+     *
+     * @param string $message
+     * @return array [amount, currency]
+     */
+    public function extractAmountAndCurrency(string $message): array
+    {
+        // Default to USD from settings
+        $currency = Setting::where('key', 'currency')->value('value') ?: 'USD';
+        $amount = 0.0;
+
+        // Match USD: $10.00 or $1,250.00
+        if (preg_match('/\$([0-9,]+\.[0-9]{2})/', $message, $matches)) {
+            $amount = (float) str_replace(',', '', $matches[1]);
+            $currency = 'USD';
+        } 
+        // Match Riel: 40,000 ៛ or 40,000៛ or 40000 Riel
+        elseif (preg_match('/([0-9,]+)\s*(?:៛|riel|Riel)/iu', $message, $matches)) {
+            $amount = (float) str_replace(',', '', $matches[1]);
+            $currency = 'KHR';
+        }
+
+        return [$amount, $currency];
     }
 
     private function getToken(): ?string
