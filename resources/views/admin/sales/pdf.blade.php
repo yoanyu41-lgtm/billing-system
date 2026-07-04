@@ -36,9 +36,9 @@
 </head>
 <body>
     @php
-        $companyName = $settings['company_name'] ?? 'CityTech';
+        $companyName = !empty($settings['company_name_km']) ? $settings['company_name_km'] : ($settings['company_name'] ?? 'CityTech');
+        $companyAddress = !empty($settings['company_address_km']) ? $settings['company_address_km'] : ($settings['company_address'] ?? '');
         $companyPhone = $settings['company_phone'] ?? '';
-        $companyAddress = $settings['company_address'] ?? '';
         $companyEmail = $settings['company_email'] ?? '';
     @endphp
 
@@ -48,8 +48,8 @@
             <td style="width: 55%;">
                 <div class="company-name">{{ $companyName }}</div>
                 @if($companyAddress)<div class="muted">{{ $companyAddress }}</div>@endif
-                @if($companyPhone)<div class="muted">ទូរស័ព្ទ: {{ $companyPhone }}</div>@endif
-                @if($companyEmail)<div class="muted">អ៊ីមែល: {{ $companyEmail }}</div>@endif
+                @if($companyPhone)<div class="muted">{{ __('app.phone') }}: {{ $companyPhone }}</div>@endif
+                @if($companyEmail)<div class="muted">{{ __('app.email') }}: {{ $companyEmail }}</div>@endif
             </td>
             <td style="width: 45%;">
                 <div class="title">វិក្កយបត្រទិញដាច់</div>

@@ -58,9 +58,8 @@
 </head>
 <body>
     @php
-        $isKm = app()->getLocale() === 'km';
-        $companyName = ($isKm && !empty($settings['company_name_km'])) ? $settings['company_name_km'] : ($settings['company_name'] ?? 'CityTech');
-        $companyAddress = ($isKm && !empty($settings['company_address_km'])) ? $settings['company_address_km'] : ($settings['company_address'] ?? '');
+        $companyName = !empty($settings['company_name_km']) ? $settings['company_name_km'] : ($settings['company_name'] ?? 'CityTech');
+        $companyAddress = !empty($settings['company_address_km']) ? $settings['company_address_km'] : ($settings['company_address'] ?? '');
         $companyPhone = $settings['company_phone'] ?? '';
         $companyEmail = $settings['company_email'] ?? '';
         
