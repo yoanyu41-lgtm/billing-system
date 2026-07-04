@@ -253,14 +253,14 @@ class TelegramController extends Controller
                     $completedCount = $customer->installments()->where('status', 'completed')->count();
 
                     $msg = "👤 <b>ព័ត៌មានគណនីរបស់លោកអ្នក</b>\n\n";
-                    $msg .= "- <b>ឈ្មោះ៖</b> " . htmlspecialchars($customer->name) . "\n";
-                    $msg .= "- <b>ភេទ៖</b> " . ($customer->gender === 'female' ? 'ស្រី' : 'ប្រុស') . "\n";
-                    $msg .= "- <b>លេខទូរស័ព្ទ៖</b> " . htmlspecialchars($customer->phone) . "\n";
-                    $msg .= "- <b>អត្តសញ្ញាណប័ណ្ណ៖</b> " . htmlspecialchars($customer->id_card ?? '-') . "\n";
-                    $msg .= "- <b>អាសយដ្ឋាន៖</b> " . htmlspecialchars($customer->address ?? '-') . "\n\n";
+                    $msg .= "• <b>ឈ្មោះ៖</b> " . htmlspecialchars($customer->name) . "\n";
+                    $msg .= "• <b>ភេទ៖</b> " . ($customer->gender === 'female' ? 'ស្រី' : 'ប្រុស') . "\n";
+                    $msg .= "• <b>លេខទូរស័ព្ទ៖</b> " . htmlspecialchars($customer->phone) . "\n";
+                    $msg .= "• <b>អត្តសញ្ញាណប័ណ្ណ៖</b> " . htmlspecialchars($customer->id_card ?? '-') . "\n";
+                    $msg .= "• <b>អាសយដ្ឋាន៖</b> " . htmlspecialchars($customer->address ?? '-') . "\n\n";
                     $msg .= "📊 <b>ស្ថានភាពគម្រោង៖</b>\n";
-                    $msg .= "- កំពុងដំណើរការ៖ <b>{$activeCount}</b> គម្រោង\n";
-                    $msg .= "- បានបង់រួចរាល់៖ <b>{$completedCount}</b> គម្រោង\n";
+                    $msg .= "• កំពុងដំណើរការ៖ <b>{$activeCount}</b> គម្រោង\n";
+                    $msg .= "• បានបង់រួចរាល់៖ <b>{$completedCount}</b> គម្រោង\n";
 
                     $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
                     break;
@@ -292,16 +292,16 @@ class TelegramController extends Controller
                                 $msg .= "   <i>(" . implode(', ', $specs) . ")</i>\n";
                             }
                         }
-                        $msg .= "   - តម្លៃសរុប៖ " . $this->formatPrice($inst->total_price) . "\n";
-                        $msg .= "   - ប្រាក់កក់មុន៖ " . $this->formatPrice($inst->down_payment) . "\n";
-                        $msg .= "   - ត្រូវបង់ប្រចាំខែ៖ <b>" . $this->formatPrice($inst->monthly_payment) . " / ខែ</b>\n";
-                        $msg .= "   - ប្រាក់នៅសល់៖ <b>" . $this->formatPrice($inst->remaining_balance) . "</b>\n";
+                        $msg .= "   • តម្លៃសរុប៖ " . $this->formatPrice($inst->total_price) . "\n";
+                        $msg .= "   • ប្រាក់កក់មុន៖ " . $this->formatPrice($inst->down_payment) . "\n";
+                        $msg .= "   • ត្រូវបង់ប្រចាំខែ៖ <b>" . $this->formatPrice($inst->monthly_payment) . " / ខែ</b>\n";
+                        $msg .= "   • ប្រាក់នៅសល់៖ <b>" . $this->formatPrice($inst->remaining_balance) . "</b>\n";
 
                         if ($inst->next_due_date) {
                             $dueDate = Carbon::parse($inst->next_due_date)->format('d-M-Y');
-                            $msg .= "   - ថ្ងៃត្រូវបង់បន្ទាប់៖ <b>{$dueDate}</b>\n";
+                            $msg .= "   • ថ្ងៃត្រូវបង់បន្ទាប់៖ <b>{$dueDate}</b>\n";
                         }
-                        $msg .= "   - ស្ថានភាព៖ {$statusText}\n\n";
+                        $msg .= "   • ស្ថានភាព៖ {$statusText}\n\n";
                     }
 
                     $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
@@ -343,9 +343,9 @@ class TelegramController extends Controller
                         }
 
                         $msg .= "{$statusEmoji} <b>" . $this->formatPrice($payment->amount) . "</b> - {$statusText}\n";
-                        $msg .= "   - ថ្ងៃបង់៖ {$date}\n";
-                        $msg .= "   - បង់តាម៖ {$method}\n";
-                        $msg .= "   - សម្រាប់៖ " . htmlspecialchars($productName) . "\n\n";
+                        $msg .= "   • ថ្ងៃបង់៖ {$date}\n";
+                        $msg .= "   • បង់តាម៖ {$method}\n";
+                        $msg .= "   • សម្រាប់៖ " . htmlspecialchars($productName) . "\n\n";
                     }
 
                     $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
@@ -512,15 +512,15 @@ class TelegramController extends Controller
     {
         $msg = "❓ <b>របៀបប្រើប្រាស់ Telegram Bot នេះ៖</b>\n\n";
         if ($isLinked) {
-            $msg .= "- <b>📋 គណនីរបស់ខ្ញុំ៖</b> ពិនិត្យមើលព័ត៌មានផ្ទាល់ខ្លួន និងចំនួនគម្រោងបង់រំលស់\n";
-            $msg .= "- <b>💳 ការបង់រំលស់៖</b> មើលព័ត៌មានលម្អិតនៃគម្រោងបង់រំលស់កំពុងដំណើរការ ចំនួនប្រាក់ត្រូវបង់ និងថ្ងៃត្រូវបង់បន្ទាប់\n";
-            $msg .= "- <b>📜 ប្រវត្តិបង់ប្រាក់៖</b> មើលប្រវត្តិនៃការបង់ប្រាក់ ៥ លើកចុងក្រោយរបស់លោកអ្នក\n";
-            $msg .= "- <b>🏦 ព័ត៌មានបង់ប្រាក់ &amp; QR៖</b> ទទួលបានព័ត៌មានគណនីធនាគារ និងរូបភាព QR Code សម្រាប់ទូទាត់ប្រាក់\n";
-            $msg .= "- <b>📞 ទំនាក់ទំនងហាង៖</b> ទទួលបានលេខទូរស័ព្ទ អាសយដ្ឋាន និងម៉ោងធ្វើការរបស់ហាង\n\n";
+            $msg .= "• <b>📋 គណនីរបស់ខ្ញុំ៖</b> ពិនិត្យមើលព័ត៌មានផ្ទាល់ខ្លួន និងចំនួនគម្រោងបង់រំលស់\n";
+            $msg .= "• <b>💳 ការបង់រំលស់៖</b> មើលព័ត៌មានលម្អិតនៃគម្រោងបង់រំលស់កំពុងដំណើរការ ចំនួនប្រាក់ត្រូវបង់ និងថ្ងៃត្រូវបង់បន្ទាប់\n";
+            $msg .= "• <b>📜 ប្រវត្តិបង់ប្រាក់៖</b> មើលប្រវត្តិនៃការបង់ប្រាក់ ៥ លើកចុងក្រោយរបស់លោកអ្នក\n";
+            $msg .= "• <b>🏦 ព័ត៌មានបង់ប្រាក់ &amp; QR៖</b> ទទួលបានព័ត៌មានគណនីធនាគារ និងរូបភាព QR Code សម្រាប់ទូទាត់ប្រាក់\n";
+            $msg .= "• <b>📞 ទំនាក់ទំនងហាង៖</b> ទទួលបានលេខទូរស័ព្ទ អាសយដ្ឋាន និងម៉ោងធ្វើការរបស់ហាង\n\n";
             $msg .= "👉 ប្រសិនបើលោកអ្នកចង់ផ្តាច់គណនីនេះពីប្រព័ន្ធ សូមវាយបញ្ជា៖ /unlink\n\n";
         } else {
-            $msg .= "- ចុចប៊ូតុង <b>«📱 ចែករំលែកលេខទូរស័ព្ទដើម្បីភ្ជាប់គណនី»</b> ដើម្បីភ្ជាប់គណនី Telegram នេះជាមួយប្រព័ន្ធបង់រំលស់\n";
-            $msg .= "- ចុចប៊ូតុង <b>«📞 ទំនាក់ទំនងហាង»</b> ដើម្បីមើលព័ត៌មានទំនាក់ទំនងរបស់ហាង\n\n";
+            $msg .= "• ចុចប៊ូតុង <b>«📱 ចែករំលែកលេខទូរស័ព្ទដើម្បីភ្ជាប់គណនី»</b> ដើម្បីភ្ជាប់គណនី Telegram នេះជាមួយប្រព័ន្ធបង់រំលស់\n";
+            $msg .= "• ចុចប៊ូតុង <b>«📞 ទំនាក់ទំនងហាង»</b> ដើម្បីមើលព័ត៌មានទំនាក់ទំនងរបស់ហាង\n\n";
             $msg .= "👉 ប្រសិនបើលោកអ្នកមានកូដភ្ជាប់គណនីពីខាងហាង លោកអ្នកអាចភ្ជាប់ដោយវាយបញ្ជា៖ <code>/start [កូដភ្ជាប់]</code>\n\n";
         }
 
