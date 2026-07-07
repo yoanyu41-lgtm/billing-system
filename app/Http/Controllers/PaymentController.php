@@ -7,13 +7,16 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Services\TelegramService;
+use App\Services\WingPayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly TelegramService $telegramService)
-    {
+    public function __construct(
+        private readonly TelegramService $telegramService,
+        private readonly WingPayService $wingPayService
+    ) {
     }
     public function index(Request $request)
     {
@@ -26,12 +29,28 @@ class PaymentController extends Controller
             });
         }
 
-        if ($request->status) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $payments = $query->paginate(10);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('installment.customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('paymentMethod', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('title', 'like', "%{$search}%")
+                ->orWhere('amount', 'like', "%{$search}%")
+                ->orWhere('payment_date', 'like', "%{$search}%");
+            });
+        }
+
+        $payments = $query->latest('id')->paginate(10);
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        
         return view('payments.index', compact('payments', 'exchangeRate'));
     }
 
@@ -75,11 +94,23 @@ class PaymentController extends Controller
         // Capture Credit Card details into title field if Credit Card method
         $title = null;
         $method = PaymentMethod::find($request->payment_method_id);
-        if ($method && strtolower(str_replace(' ', '_', $method->name)) === 'credit_card') {
+        $isCreditCard = $method && strtolower(str_replace(' ', '_', $method->name)) === 'credit_card';
+
+        if ($isCreditCard) {
             $cardHolder = $request->card_holder_name ? trim($request->card_holder_name) : 'N/A';
             $cardNumber = $request->card_number ? trim($request->card_number) : 'N/A';
             $cardBrand = $request->card_brand ? trim($request->card_brand) : 'N/A';
-            $title = "Cardholder: {$cardHolder} | Card: {$cardBrand} ****{$cardNumber}";
+            
+            // Standard fee calculation
+            $principal = (float) $request->amount;
+            $fee = $principal * 0.02; // 2% processing fee
+            $total = $principal + $fee;
+            
+            $formattedPrincipal = number_format($principal, 2);
+            $formattedFee = number_format($fee, 2);
+            $formattedTotal = number_format($total, 2);
+
+            $title = "Cardholder: {$cardHolder} | Card: {$cardBrand} ****{$cardNumber} | Fee: \${$formattedFee} | Total: \${$formattedTotal}";
         }
 
         $payment = Payment::create([
@@ -88,31 +119,31 @@ class PaymentController extends Controller
             'amount' => $request->amount,
             'payment_date' => $request->payment_date,
             'qr_image' => $qrPath,
-            'status' => $approveNow ? 'approved' : 'pending',
-            'approved_by' => $approveNow ? auth()->id() : null,
+            'status' => 'pending',
+            'approved_by' => null,
             'title' => $title,
         ]);
 
-        if ($approveNow) {
-            $installment = $payment->installment;
-            $installment->remaining_balance -= $payment->amount;
-            $installment->save();
-
-            Invoice::create([
+        // If it is Credit Card and Wing Pay is configured, redirect to Wing Checkout URL
+        if ($isCreditCard && $this->wingPayService->isConfigured()) {
+            $checkoutUrl = $this->wingPayService->createCheckoutSession([
                 'payment_id' => $payment->id,
-                'invoice_number' => 'INV-' . $payment->id,
+                'amount' => $payment->amount * 1.02, // Include 2% card fee
+                'currency' => 'USD',
+                'installment_id' => $payment->installment_id,
             ]);
 
-            $message = "✅ Payment approved\n"
-                . "Customer: {$installment->customer->name}\n"
-                . "Amount: $" . number_format($payment->amount, 2) . "\n"
-                . "Method: " . ($payment->paymentMethod->name ?? 'System') . "\n"
-                . "Remaining: $" . number_format($installment->remaining_balance, 2);
-
-            $this->telegramService->sendToCustomer($installment->customer_id, $message);
+            if ($checkoutUrl) {
+                return redirect()->away($checkoutUrl);
+            }
         }
 
-        $successMsg = $approveNow ? 'Payment recorded and approved successfully.' : 'Payment submitted successfully.';
+        // Standard Approval Flow if approve_now requested and allowed
+        if ($approveNow) {
+            $this->approvePaymentRecord($payment, auth()->id());
+        }
+
+        $successMsg = ($approveNow) ? 'Payment recorded and approved successfully.' : 'Payment submitted successfully.';
 
         if ($request->filled('redirect_to')) {
             return redirect($request->redirect_to)->with('success', $successMsg);
@@ -125,9 +156,83 @@ class PaymentController extends Controller
     {
         Gate::authorize('approve-payment');
 
+        $this->approvePaymentRecord($payment, auth()->id());
+
+        return redirect()->route('payments.index')->with('success', 'Payment approved and Telegram message sent.');
+    }
+
+    /**
+     * Handle browser redirect from Wing Pay.
+     */
+    public function wingReturn(Request $request)
+    {
+        \Log::info('Wing Pay Return received', $request->all());
+
+        if (empty($request->order_id)) {
+            return redirect()->route('payments.index')->with('error', 'Wing Pay return details missing.');
+        }
+
+        // Extract payment ID from order_id (e.g. WING-INV-12-1678234)
+        if (preg_match('/WING-INV-(\d+)-/', $request->order_id, $matches)) {
+            $paymentId = $matches[1];
+            $payment = Payment::find($paymentId);
+            
+            if ($payment) {
+                if ($request->status === 'success') {
+                    $this->approvePaymentRecord($payment, null);
+                    return redirect()->route('payments.index')->with('success', 'Wing Pay transaction completed and approved.');
+                } else {
+                    $payment->update(['status' => 'rejected']);
+                    return redirect()->route('payments.index')->with('error', 'Wing Pay transaction cancelled or failed.');
+                }
+            }
+        }
+
+        return redirect()->route('payments.index')->with('error', 'Wing Pay transaction could not be processed.');
+    }
+
+    /**
+     * Handle server-to-server webhook callback from Wing Bank.
+     */
+    public function wingCallback(Request $request)
+    {
+        \Log::info('Wing Pay Webhook received', $request->all());
+
+        if (!$this->wingPayService->verifyCallback($request->all())) {
+            \Log::warning('Wing Pay webhook signature verification failed');
+            return response()->json(['message' => 'Invalid signature'], 400);
+        }
+
+        if (preg_match('/WING-INV-(\d+)-/', $request->order_id, $matches)) {
+            $paymentId = $matches[1];
+            $payment = Payment::find($paymentId);
+
+            if ($payment) {
+                if ($request->status === 'success') {
+                    $this->approvePaymentRecord($payment, null);
+                    return response()->json(['status' => 'success']);
+                } else {
+                    $payment->update(['status' => 'rejected']);
+                    return response()->json(['status' => 'rejected']);
+                }
+            }
+        }
+
+        return response()->json(['message' => 'Order not found'], 404);
+    }
+
+    /**
+     * Private helper to encapsulate payment approval workflows.
+     */
+    private function approvePaymentRecord(Payment $payment, ?int $userId = null): void
+    {
+        if ($payment->status === 'approved') {
+            return;
+        }
+
         $payment->update([
             'status' => 'approved',
-            'approved_by' => auth()->id(),
+            'approved_by' => $userId,
         ]);
 
         $installment = $payment->installment;
@@ -136,7 +241,6 @@ class PaymentController extends Controller
         if ($installment->remaining_balance <= 0) {
             $installment->status = 'completed';
         }
-
         $installment->save();
 
         $invoice = Invoice::create([
@@ -167,13 +271,7 @@ class PaymentController extends Controller
             . "• តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
             . "• ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
 
-        $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
-
-        $flashMessage = $telegramResult['ok']
-            ? 'Payment approved and Telegram message sent.'
-            : 'Payment approved. Telegram notice: ' . $telegramResult['reason'];
-
-        return redirect()->route('payments.index')->with('success', $flashMessage);
+        $this->telegramService->sendToCustomer($installment->customer_id, $message);
     }
 
     private function toKhmerNumerals($num): string

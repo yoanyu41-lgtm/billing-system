@@ -46,10 +46,10 @@
                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
             </a>
-            <button onclick="savePDF()"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
-                <i class="fas fa-file-pdf"></i> PDF
-            </button>
+            <a href="{{ route('invoices.print', $invoice) }}" target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
+                <i class="fas fa-file-pdf"></i> {{ __('app.download') }} PDF
+            </a>
             <button onclick="window.print()"
                     class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
                 <i class="fas fa-print"></i> {{ $isSettlement ? $L('បោះពុម្ពវិក្កយបត្របង់ផ្តាច់', 'Print Payoff Invoice') : $L('បោះពុម្ពវិក្កយបត្រ', 'Print Invoice') }}

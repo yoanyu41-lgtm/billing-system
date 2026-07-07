@@ -240,11 +240,8 @@
                                     <a href="{{ route('invoices.show', [$invoice, 'type' => request('type')]) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                     </a>
-                                    <a href="{{ route('invoices.download', $invoice) }}" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150" title="{{ __('app.download') }}">
+                                    <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150" title="{{ __('app.download') }} PDF">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                    </a>
-                                    <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="p-2 text-purple-600 bg-purple-50 hover:bg-purple-100 hover:text-purple-900 rounded-lg transition duration-150" title="{{ __('app.print') }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                     </a>
                                 </div>
                             </td>

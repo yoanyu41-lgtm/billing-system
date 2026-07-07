@@ -37,6 +37,8 @@ return [
 
     // ── Topbar ──
     'welcome_back'          => 'Welcome back',
+    'search'                => 'Search',
+    'search_placeholder'    => 'Search by customer, method, amount...',
     'search_here'           => 'Search here...',
     'notifications'         => 'Notifications',
     'mark_all_read'         => 'Mark all as read',
@@ -685,4 +687,11 @@ return [
     'final_paid'            => 'Final Paid',
     'clearance_certificates' => 'Clearance Certificates',
     'clearance_sub'         => 'View and print clearance certificates for completed installment plans.',
+
+    // ── Late Payments ──
+    'remaining_balance'     => 'Remaining Balance',
+    'send_reminder'         => 'Send Reminder',
+    'send_due_date_reminders_today' => 'Send Due-Date Reminders (Today)',
+    'late_payments_desc'    => 'Monitor customer accounts that have not paid in the last 30 days and send manual Telegram reminders.',
+    'all_payments_up_to_date' => 'Excellent! All payments are up to date.',
 ];

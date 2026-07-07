@@ -545,8 +545,7 @@ class InstallmentController extends Controller
 
         $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('installments.contract_pdf', compact('installment', 'customer', 'product', 'guarantor', 'paymentSchedule', 'contractTerms', 'settings'));
-        return $pdf->download('Contract-INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . '.pdf');
+        return view('installments.contract', compact('installment', 'customer', 'product', 'guarantor', 'paymentSchedule', 'contractTerms', 'settings'));
     }
 
     public function printClearance(Installment $installment)

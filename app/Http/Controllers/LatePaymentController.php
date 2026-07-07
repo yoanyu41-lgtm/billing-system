@@ -15,7 +15,7 @@ class LatePaymentController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Installment::with('customer')
+        $query = Installment::with('customer', 'product')
             ->where('remaining_balance', '>', 0)
             ->where('status', 'active');
 

@@ -23,6 +23,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('telegram/webhook', [\App\Http\Controllers\Api\TelegramController::class, 'webhook'])
         ->name('telegram.webhook');
 
+    // Wing Pay server-to-server webhook (no auth)
+    Route::post('payments/wing-callback', [\App\Http\Controllers\PaymentController::class, 'wingCallback'])
+        ->name('payments.wing-callback');
+
     Route::middleware('auth:sanctum')->group(function () {
 
         // Authenticated user profile

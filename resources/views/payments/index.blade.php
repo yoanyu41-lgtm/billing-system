@@ -23,7 +23,25 @@
 
     <!-- Search and Filter Section -->
     <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <form method="GET" action="{{ route('payments.index') }}" class="flex flex-col md:flex-row gap-4 items-end">
+        <form method="GET" action="{{ route('payments.index') }}" class="flex flex-col md:flex-row gap-4 items-end w-full">
+            <!-- Search Bar -->
+            <div class="flex-1 w-full">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ __('app.search') }}</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        id="searchInput"
+                        value="{{ request('search') }}" 
+                        placeholder="{{ __('app.search_placeholder') }}" 
+                        class="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </div>
+                </div>
+            </div>
+
             <!-- Status Filter -->
             <div class="w-full md:w-48">
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ __('app.status') }}</label>
@@ -48,7 +66,7 @@
             </button>
 
             <!-- Clear Button -->
-            @if(request('status'))
+            @if(request('status') || request('search'))
             <a 
                 href="{{ route('payments.index') }}" 
                 class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-150 flex items-center justify-center gap-2 text-sm"
@@ -82,7 +100,7 @@
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody id="paymentsTableBody" class="divide-y divide-gray-200">
                     @forelse($payments as $payment)
                     <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
@@ -178,9 +196,54 @@
         </div>
     </div>
 
-    <!-- Pagination -->
     <div class="mt-4">
-        {{ $payments->links() }}
+        {{ $payments->appends(request()->query())->links() }}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('paymentsTableBody');
+    if (!searchInput || !tableBody) return;
+
+    searchInput.addEventListener('input', function () {
+        const filter = this.value.toLowerCase().trim();
+        const rows = tableBody.querySelectorAll('tr:not(.no-results-row)');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            // Find text in columns (Customer name, Method, Amount, Date, Status)
+            const text = row.innerText.toLowerCase();
+            if (text.includes(filter)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Show/hide no results message
+        let noResultsRow = tableBody.querySelector('.no-results-row');
+        if (visibleCount === 0) {
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-row';
+                noResultsRow.innerHTML = `
+                    <td colspan="6" class="px-6 py-6 text-center text-gray-500">
+                        {{ __('app.no_payments') }}
+                    </td>
+                `;
+                tableBody.appendChild(noResultsRow);
+            } else {
+                noResultsRow.style.display = '';
+            }
+        } else {
+            if (noResultsRow) {
+                noResultsRow.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
 @endsection

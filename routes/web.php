@@ -111,6 +111,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
     Route::post('installments/{installment}/send-telegram-qr/{month}', [InstallmentController::class, 'sendTelegramQr'])->name('installments.send-telegram-qr');
 
+    // Wing Pay Browser Return
+    Route::get('payments/wing-return', [PaymentController::class, 'wingReturn'])->name('payments.wing-return');
+
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update']);
     Route::post('payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');

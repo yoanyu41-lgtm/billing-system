@@ -31,6 +31,7 @@
 <html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         @if($isSettlement)
             {{ $L('វិក្កយបត្របង់ផ្តាច់', 'Payoff Invoice') }}
@@ -90,9 +91,14 @@
         <button onclick="window.close()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
             <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
         </button>
-        <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
-            <i class="fas fa-print"></i> {{ __('app.print') }}
-        </button>
+        <div class="flex gap-2">
+            <button onclick="savePDF()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
+                <i class="fas fa-file-pdf"></i> រក្សាទុក PDF
+            </button>
+            <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm">
+                <i class="fas fa-print"></i> {{ __('app.print') }}
+            </button>
+        </div>
     </div>
 
     <!-- ══════════ INVOICE CARD ══════════ -->
@@ -314,13 +320,40 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        // Auto trigger print after loading
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                window.print();
-            }, 600);
-        });
+        async function savePDF() {
+            const element = document.getElementById('receipt');
+            const btn = document.querySelector('button[onclick="savePDF()"]');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> កំពុងបង្កើត...';
+            btn.disabled = true;
+
+            try {
+                const canvas = await html2canvas(element, {
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const imgWidth = 210;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                pdf.save('invoice-{{ $invoice->invoice_number }}.pdf');
+            } catch (err) {
+                alert('មានបញ្ហាក្នុងការបង្កើត PDF: ' + err.message);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>

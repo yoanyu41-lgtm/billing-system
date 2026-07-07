@@ -261,7 +261,13 @@ class InvoiceController extends Controller
         // Get settings for company info
         $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'settings'));
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'settings'))
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('defaultFont', 'khmer ui')
+            ->setOption('isFontSubsettingEnabled', false);
+
         return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
@@ -277,10 +283,8 @@ class InvoiceController extends Controller
         // Get settings for company info
         $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'settings'));
-        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+        return view('invoices.print', compact('invoice', 'settings'));
     }
-
     public function print(Invoice $invoice)
     {
         // Load all necessary relationships

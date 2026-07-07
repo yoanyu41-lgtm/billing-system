@@ -56,6 +56,9 @@ class SettingController extends Controller
             'currency' => 'nullable|string|max:10',
             'default_interest_rate' => 'nullable|numeric',
             'telegram_token' => 'nullable|string|max:255',
+            'wing_pay_merchant_id' => 'nullable|string|max:255',
+            'wing_pay_secret_key' => 'nullable|string|max:255',
+            'wing_pay_api_url' => 'nullable|url|max:255',
         ]);
 
         // Handle logo upload
@@ -119,6 +122,9 @@ class SettingController extends Controller
             'currency' => $validated['currency'] ?? 'USD',
             'default_interest_rate' => $validated['default_interest_rate'] ?? '0',
             'telegram_token' => $validated['telegram_token'] ?? '',
+            'wing_pay_merchant_id' => $validated['wing_pay_merchant_id'] ?? '',
+            'wing_pay_secret_key' => $validated['wing_pay_secret_key'] ?? '',
+            'wing_pay_api_url' => $validated['wing_pay_api_url'] ?? '',
         ];
 
         foreach ($settingsData as $key => $value) {

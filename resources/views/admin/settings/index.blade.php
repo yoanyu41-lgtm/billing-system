@@ -277,6 +277,51 @@
 
 
             
+            <!-- Wing Pay Gateway Section -->
+            <div class="mb-6 border-t border-slate-100 pt-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-lime-500"></span>
+                    Wing Pay Gateway Configuration (សម្រាប់ទូទាត់កាតឥណទានពិតប្រាកដ)
+                </h3>
+                
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            Wing Pay Merchant ID
+                        </label>
+                        <input 
+                            type="text" 
+                            name="wing_pay_merchant_id" 
+                            value="{{ old('wing_pay_merchant_id', $settings['wing_pay_merchant_id'] ?? '') }}" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Enter Wing Merchant ID">
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            Wing Pay Secret Key / API Key
+                        </label>
+                        <input 
+                            type="password" 
+                            name="wing_pay_secret_key" 
+                            value="{{ old('wing_pay_secret_key', $settings['wing_pay_secret_key'] ?? '') }}" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="••••••••••••••••">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="mb-1.5 block text-sm text-slate-700">
+                        Wing Pay API Endpoint URL
+                    </label>
+                    <input 
+                        type="text" 
+                        name="wing_pay_api_url" 
+                        value="{{ old('wing_pay_api_url', $settings['wing_pay_api_url'] ?? 'https://sandbox-api.wingmoney.com/v1/payments') }}" 
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                        placeholder="https://sandbox-api.wingmoney.com/v1/payments">
+                    <p class="mt-1 text-xs text-slate-500">Default Sandbox URL is configured. Replace with production endpoint when launching live.</p>
+                </div>
+            </div>
+
             <!-- Telegram Token Section -->
             <div class="mb-6 border-t border-slate-100 pt-6">
                 <h3 class="mb-3 text-sm font-semibold text-slate-900">
