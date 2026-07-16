@@ -25,8 +25,12 @@ class TelegramLogController extends Controller
         $webhookInfo = $this->telegramService->getWebhookInfo();
         $actualWebhookUrl = data_get($webhookInfo, 'result.url');
 
+        // Broadcast stats
+        $totalLinked = Customer::whereNotNull('telegram_id')->count();
+        $totalCustomers = Customer::count();
+
         return view('admin.telegram-logs.index', compact(
-            'telegramLogs', 'settings', 'customers', 'tokenConfigured', 'actualWebhookUrl'
+            'telegramLogs', 'settings', 'customers', 'tokenConfigured', 'actualWebhookUrl', 'totalLinked', 'totalCustomers'
         ));
     }
 

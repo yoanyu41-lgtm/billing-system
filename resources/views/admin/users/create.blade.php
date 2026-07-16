@@ -328,8 +328,8 @@
                     <i class="fas fa-shield-alt"></i> User Role
                 </label>
                 <select name="role" required class="form-select">
-                    <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>User</option>
-                    <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="staff" {{ old('role') == 'staff' ? 'selected' : '' }}>{{ __('app.staff') }}</option>
+                    <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>{{ __('app.admin') }}</option>
                 </select>
                 @error('role')
                     <p style="color:#ef4444;font-size:12px;margin-top:6px;">{{ $message }}</p>

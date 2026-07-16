@@ -279,7 +279,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        Gate::authorize('manage-product');
+        Gate::authorize('delete-product');
 
         if ($product->installments()->exists()) {
             return redirect()->route('admin.products.stock')->with('error', __('app.cannot_delete_product_has_installments'));

@@ -55,6 +55,12 @@
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             {{ __('app.remaining_balance') }}
                         </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            {{ __('app.days_late') }}
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            {{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }}
+                        </th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             {{ __('app.actions') }}
                         </th>
@@ -86,6 +92,16 @@
                                 ${{ number_format($installment->remaining_balance, 2) }}
                             </span>
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-semibold text-amber-600">
+                                {{ $installment->daysLate() }} {{ app()->getLocale() === 'km' ? 'ថ្ងៃ' : 'days' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-bold text-red-600">
+                                ${{ number_format($installment->calculatePenalty(), 2) }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <form method="POST" action="{{ route('late-payments.remind', $installment) }}" class="inline">
                                 @csrf
@@ -100,7 +116,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center">
+                        <td colspan="6" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center justify-center text-slate-400 gap-3">
                                 <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center text-2xl">
                                     <i class="fas fa-check-circle"></i>

@@ -21,13 +21,12 @@ class SettingController extends Controller
             'shop_address', 
             'shop_phone', 
             'shop_email', 
-            'currency', 
-            'default_interest_rate', 
             'telegram_token',
             'default_tax_rate',
             'tax_label',
             'tax_number',
-            'exchange_rate'
+            'exchange_rate',
+            'card_processing_fee'
         ]);
 
         $data['tax_enabled'] = $request->has('tax_enabled') ? '1' : '0';
@@ -53,8 +52,7 @@ class SettingController extends Controller
             'bank_qr' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'company_bank_qr_payload' => 'nullable|string',
             'exchange_rate' => 'nullable|numeric',
-            'currency' => 'nullable|string|max:10',
-            'default_interest_rate' => 'nullable|numeric',
+            'card_processing_fee' => 'nullable|numeric|min:0|max:100',
             'telegram_token' => 'nullable|string|max:255',
             'wing_pay_merchant_id' => 'nullable|string|max:255',
             'wing_pay_secret_key' => 'nullable|string|max:255',
@@ -119,8 +117,7 @@ class SettingController extends Controller
             'company_business_license' => $validated['business_license'] ?? '',
             'company_bank_qr_payload' => $validated['company_bank_qr_payload'] ?? '',
             'exchange_rate' => $validated['exchange_rate'] ?? '4100',
-            'currency' => $validated['currency'] ?? 'USD',
-            'default_interest_rate' => $validated['default_interest_rate'] ?? '0',
+            'card_processing_fee' => $validated['card_processing_fee'] ?? '2',
             'telegram_token' => $validated['telegram_token'] ?? '',
             'wing_pay_merchant_id' => $validated['wing_pay_merchant_id'] ?? '',
             'wing_pay_secret_key' => $validated['wing_pay_secret_key'] ?? '',

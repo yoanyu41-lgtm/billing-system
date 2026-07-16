@@ -30,8 +30,9 @@
                             $schedule = $installment->getPaymentSchedule();
                             $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
                             $dueAmount = $unpaidRow ? $unpaidRow['amount'] : 0;
+                            $penaltyAmount = $installment->calculatePenalty();
                         @endphp
-                        <option value="{{ $installment->id }}" data-due-amount="{{ $dueAmount }}" {{ old('installment_id') == $installment->id ? 'selected' : '' }}>
+                        <option value="{{ $installment->id }}" data-due-amount="{{ $dueAmount }}" data-penalty-amount="{{ $penaltyAmount }}" {{ old('installment_id') == $installment->id ? 'selected' : '' }}>
                             {{ $installment->customer->name }} - {{ $installment->product->name }}
                         </option>
                     @endforeach
@@ -76,6 +77,23 @@
                 <span class="mt-1.5 block text-sm font-semibold text-indigo-600" id="amountRiel">0 ៛</span>
             </div>
 
+            <!-- Penalty Fee -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (USD)</label>
+                <input 
+                    type="number" 
+                    name="penalty_amount" 
+                    id="penaltyInput" 
+                    step="0.01" 
+                    min="0" 
+                    value="{{ old('penalty_amount', '0.00') }}" 
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                <span class="mt-1.5 block text-sm font-semibold text-indigo-600" id="penaltyRiel">0 ៛</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Payment Date -->
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-2">{{ __('app.payment_date') }}</label>
@@ -203,9 +221,12 @@
                         <span>{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់ (Principal Amount):' : 'Principal Amount:' }}</span>
                         <span class="font-semibold text-gray-900" id="calcPrincipal">$0.00</span>
                     </div>
+                    @php
+                        $cardProcessingFeePercent = \App\Models\Setting::where('key', 'card_processing_fee')->value('value') ?? '2';
+                    @endphp
                     <div class="flex justify-between">
                         <span class="flex items-center gap-1">
-                            {{ app()->getLocale() === 'km' ? 'កម្រៃសេវាទូទាត់កាត (Processing Fee 2%):' : 'Card Processing Fee (2%):' }}
+                            {{ app()->getLocale() === 'km' ? "កម្រៃសេវាទូទាត់កាត (Processing Fee {$cardProcessingFeePercent}%):" : "Card Processing Fee ({$cardProcessingFeePercent}%):" }}
                             <i class="fas fa-info-circle text-xs text-indigo-500 cursor-help" title="Standard merchant fee for Visa/Mastercard processing."></i>
                         </span>
                         <span class="font-semibold text-indigo-600" id="calcFee">+$0.00</span>
@@ -403,6 +424,8 @@
         const btnText = document.getElementById('btnText');
         const amountInput = document.getElementById('amountInput');
         const amountRiel = document.getElementById('amountRiel');
+        const penaltyInput = document.getElementById('penaltyInput');
+        const penaltyRiel = document.getElementById('penaltyRiel');
         const exchangeRate = {{ $exchangeRate }};
         const baseQrPayload = @json($bankQrPayload);
         const bankQrImage = document.getElementById('bankQrImage');
@@ -603,11 +626,14 @@
         // Calculations & Breakdown (ដែលអាចគណនា)
         function updateCalculations() {
             const usd = parseFloat(amountInput.value) || 0;
+            const penalty = penaltyInput ? (parseFloat(penaltyInput.value) || 0) : 0;
+            const subtotal = usd + penalty;
+            const feePercent = parseFloat("{{ \App\Models\Setting::where('key', 'card_processing_fee')->value('value') ?? '2' }}");
             const fee = (methodSelect && methodSelect.options[methodSelect.selectedIndex]?.getAttribute('data-type') === 'credit_card')
-                ? usd * 0.02 // 2.0% fee
+                ? subtotal * (feePercent / 100)
                 : 0;
 
-            const totalUSD = usd + fee;
+            const totalUSD = subtotal + fee;
             const totalKHR = Math.round(totalUSD * exchangeRate);
 
             const principalEl = document.getElementById('calcPrincipal');
@@ -615,7 +641,7 @@
             const totalUSDEl = document.getElementById('calcTotalUSD');
             const totalKHREl = document.getElementById('calcTotalKHR');
 
-            if (principalEl) principalEl.innerText = '$' + usd.toFixed(2);
+            if (principalEl) principalEl.innerText = '$' + subtotal.toFixed(2);
             if (feeEl) feeEl.innerText = '+$' + fee.toFixed(2);
             if (totalUSDEl) totalUSDEl.innerText = '$' + totalUSD.toFixed(2);
             if (totalKHREl) totalKHREl.innerText = totalKHR.toLocaleString('en-US') + ' ៛';
@@ -630,6 +656,13 @@
             const usd = parseFloat(amountInput.value) || 0;
             const riel = Math.round(usd * exchangeRate);
             amountRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
+        }
+
+        function updatePenaltyRiel() {
+            if (!penaltyInput || !penaltyRiel) return;
+            const usd = parseFloat(penaltyInput.value) || 0;
+            const riel = Math.round(usd * exchangeRate);
+            penaltyRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
         }
 
         function calculateCRC16_JS(payload) {
@@ -812,6 +845,18 @@
                 } else {
                     amountInput.value = '';
                 }
+
+                // Add penalty auto-fill
+                const penaltyAmount = selectedOption.getAttribute('data-penalty-amount');
+                if (penaltyInput) {
+                    if (penaltyAmount && parseFloat(penaltyAmount) > 0) {
+                        penaltyInput.value = parseFloat(penaltyAmount).toFixed(2);
+                    } else {
+                        penaltyInput.value = '0.00';
+                    }
+                    updatePenaltyRiel();
+                }
+
                 updateRiel();
                 checkAndAutoSwitchCurrency();
                 updateDynamicQr();
@@ -823,8 +868,16 @@
             installmentSelect.addEventListener('change', handleInstallmentChange);
         }
 
+        if (penaltyInput) {
+            penaltyInput.addEventListener('input', function() {
+                updatePenaltyRiel();
+                updateCalculations();
+            });
+        }
+
         // Run initializers
         updateRiel();
+        updatePenaltyRiel();
         checkAndAutoSwitchCurrency();
         updateDynamicQr();
         if (methodSelect) {

@@ -11,12 +11,24 @@
 @media print {
     /* Hide app chrome */
     #sidebar, .topbar, .no-print { display: none !important; }
-    .main-wrapper { margin: 0 !important; width: 100% !important; }
-    body { background: #fff !important; }
+    .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
+    body { background: #fff !important; padding: 15mm !important; }
     /* Remove card styling for clean print */
     .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; }
     .schedule-table th, .schedule-table td { border: 1px solid #000 !important; padding: 2px 4px !important; font-size: 10px !important; }
-    @page { size: A4 portrait; margin: 12mm; }
+    @page { size: A4 portrait; margin: 0; }
+    .print-footer {
+        display: block !important;
+        position: fixed;
+        bottom: 10mm;
+        left: 15mm;
+        right: 15mm;
+        font-size: 8pt;
+        color: #94a3b8;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 4px;
+        text-align: left;
+    }
 }
 </style>
 <div class="container mx-auto px-4 py-8 max-w-5xl">
@@ -194,6 +206,13 @@
                     <span class="border-b border-dotted border-gray-400 flex-1 ml-2"></span>
                 </div>
             </div>
+        </div>
+        <div class="print-footer hidden" style="display: none;">
+            @php
+                $companyName = \App\Models\Setting::where('key', 'company_name')->value('value') ?? 'CityTech Computer Shop';
+                $companyPhone = \App\Models\Setting::where('key', 'company_phone')->value('value') ?? '';
+            @endphp
+            {{ $companyName }} @if($companyPhone)| Tel: {{ $companyPhone }}@endif
         </div>
     </div>
 </div>

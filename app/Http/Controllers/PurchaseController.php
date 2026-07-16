@@ -47,7 +47,6 @@ class PurchaseController extends Controller
         $purchase->load(['supplier', 'items.product']);
         return view('admin.purchases.show', compact('purchase'));
     }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -58,44 +57,83 @@ class PurchaseController extends Controller
             'items.*.cost_price' => 'nullable|numeric',
         ]);
 
-        DB::transaction(function () use ($request, &$purchase, &$total) {
+        DB::transaction(function () use ($request, &$purchase) {
             $purchase = Purchase::create([
                 'supplier_id' => $request->supplier_id,
                 'purchase_date' => $request->purchase_date ?? now(),
                 'total' => 0,
+                'tax_amount' => 0,
             ]);
 
-            $total = 0;
+            $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+            $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+
+            $subtotalBeforeTax = 0;
+            $totalTaxAmount = 0;
+
             foreach ($request->items as $it) {
-                $pi = PurchaseItem::create([
+                $product = Product::find($it['product_id']);
+                $costPrice = $it['cost_price'] ?? 0;
+                $quantity = $it['quantity'];
+                $itemTotal = $costPrice * $quantity;
+
+                $itemTaxRate = 0;
+                $itemTaxAmount = 0;
+                $itemSubtotal = $itemTotal;
+
+                if ($taxEnabled && $product->is_taxable) {
+                    $itemTaxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+                    if ($product->tax_type === 'inclusive') {
+                        $itemTaxAmount = $itemTotal - ($itemTotal / (1 + $itemTaxRate / 100));
+                        $itemSubtotal = $itemTotal - $itemTaxAmount;
+                    } else {
+                        $itemTaxAmount = $itemTotal * ($itemTaxRate / 100);
+                        $itemSubtotal = $itemTotal;
+                    }
+                }
+
+                PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $it['product_id'],
-                    'quantity' => $it['quantity'],
-                    'cost_price' => $it['cost_price'] ?? null,
+                    'quantity' => $quantity,
+                    'cost_price' => $costPrice,
+                    'tax_rate' => $itemTaxRate,
+                    'tax_amount' => $itemTaxAmount,
                 ]);
 
-            $total += ($it['cost_price'] ?? 0) * $it['quantity'];
+                $subtotalBeforeTax += $itemSubtotal;
+                $totalTaxAmount += $itemTaxAmount;
 
-            // create stock movement IN
-            StockMovement::create([
-                'product_id' => $it['product_id'],
-                'type' => 'in',
-                'quantity' => $it['quantity'],
-                'supplier_id' => $request->supplier_id,
-                'related_id' => $purchase->id,
-                'note' => 'Purchase #' . $purchase->id,
-            ]);
+                // create stock movement IN
+                StockMovement::create([
+                    'product_id' => $it['product_id'],
+                    'type' => 'in',
+                    'quantity' => $quantity,
+                    'supplier_id' => $request->supplier_id,
+                    'related_id' => $purchase->id,
+                    'note' => 'Purchase #' . $purchase->id,
+                ]);
 
-            // update product stock
-            $product = Product::find($it['product_id']);
-            $product->increment('stock', $it['quantity']);
-            if ($it['cost_price']) {
-                $product->update(['cost_price' => $it['cost_price']]);
+                // update product stock
+                $product->increment('stock', $quantity);
+                if ($costPrice > 0) {
+                    $product->update(['cost_price' => $costPrice]);
+                }
             }
-        }
 
-            $purchase->update(['total' => $total]);
+            $purchase->update([
+                'total' => $subtotalBeforeTax + $totalTaxAmount,
+                'tax_amount' => $totalTaxAmount,
+            ]);
         });
+
+        $purchase->load('supplier');
+        \App\Models\Notification::createSystemNotification(
+            'purchase', 'New Purchase Recorded',
+            'New purchase recorded from supplier: ' . ($purchase->supplier ? $purchase->supplier->name : 'Unknown') . '. Total: $' . number_format($purchase->total, 2),
+            'truck', 'purple',
+            route('admin.purchases.index')
+        );
 
         return redirect()->route('admin.products.stock')->with('success','Purchase recorded and stock updated.');
     }
@@ -118,9 +156,7 @@ class PurchaseController extends Controller
             'items.*.cost_price' => 'nullable|numeric',
         ]);
 
-        DB::transaction(function () use ($request, $purchase, &$total) {
-            $total = 0;
-
+        DB::transaction(function () use ($request, $purchase) {
             // reverse previous stock
             foreach ($purchase->items as $item) {
                 $product = Product::find($item->product_id);
@@ -130,36 +166,65 @@ class PurchaseController extends Controller
             $purchase->items()->delete();
             StockMovement::where('type', 'in')->where('related_id', $purchase->id)->delete();
 
+            $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+            $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+
+            $subtotalBeforeTax = 0;
+            $totalTaxAmount = 0;
+
             foreach ($request->items as $it) {
+                $product = Product::find($it['product_id']);
+                $costPrice = $it['cost_price'] ?? 0;
+                $quantity = $it['quantity'];
+                $itemTotal = $costPrice * $quantity;
+
+                $itemTaxRate = 0;
+                $itemTaxAmount = 0;
+                $itemSubtotal = $itemTotal;
+
+                if ($taxEnabled && $product->is_taxable) {
+                    $itemTaxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+                    if ($product->tax_type === 'inclusive') {
+                        $itemTaxAmount = $itemTotal - ($itemTotal / (1 + $itemTaxRate / 100));
+                        $itemSubtotal = $itemTotal - $itemTaxAmount;
+                    } else {
+                        $itemTaxAmount = $itemTotal * ($itemTaxRate / 100);
+                        $itemSubtotal = $itemTotal;
+                    }
+                }
+
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $it['product_id'],
-                    'quantity' => $it['quantity'],
-                    'cost_price' => $it['cost_price'] ?? null,
+                    'quantity' => $quantity,
+                    'cost_price' => $costPrice,
+                    'tax_rate' => $itemTaxRate,
+                    'tax_amount' => $itemTaxAmount,
                 ]);
 
-                $total += ($it['cost_price'] ?? 0) * $it['quantity'];
+                $subtotalBeforeTax += $itemSubtotal;
+                $totalTaxAmount += $itemTaxAmount;
 
                 StockMovement::create([
                     'product_id' => $it['product_id'],
                     'type' => 'in',
-                    'quantity' => $it['quantity'],
+                    'quantity' => $quantity,
                     'supplier_id' => $request->supplier_id,
                     'related_id' => $purchase->id,
                     'note' => 'Purchase #' . $purchase->id,
                 ]);
 
-                $product = Product::find($it['product_id']);
-                $product->increment('stock', $it['quantity']);
-                if ($it['cost_price']) {
-                    $product->update(['cost_price' => $it['cost_price']]);
+                $product->increment('stock', $quantity);
+                if ($costPrice > 0) {
+                    $product->update(['cost_price' => $costPrice]);
                 }
             }
 
             $purchase->update([
                 'supplier_id' => $request->supplier_id,
                 'purchase_date' => $request->purchase_date ?? now(),
-                'total' => $total,
+                'total' => $subtotalBeforeTax + $totalTaxAmount,
+                'tax_amount' => $totalTaxAmount,
             ]);
         });
 
@@ -171,7 +236,10 @@ class PurchaseController extends Controller
         DB::transaction(function () use ($purchase) {
             foreach ($purchase->items as $item) {
                 $product = Product::find($item->product_id);
-                $product->decrement('stock', $item->quantity);
+                if ($product) {
+                    $product->decrement('stock', $item->quantity);
+                    $product->checkLowStockAlert();
+                }
             }
             StockMovement::where('type', 'in')->where('related_id', $purchase->id)->delete();
             $purchase->items()->delete();

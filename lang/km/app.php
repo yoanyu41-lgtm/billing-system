@@ -469,6 +469,7 @@ return [
     // ── Late Payment ──
     'late_payment_list'     => 'បញ្ជីការទូទាត់យឺត',
     'days_late'             => 'ថ្ងៃយឺត',
+    'penalty_fee'           => 'ប្រាក់ពិន័យ',
     'send_reminder'         => 'ផ្ញើការរំឭក',
     'no_late_payments'      => 'គ្មានការទូទាត់យឺត',
 
@@ -704,4 +705,16 @@ return [
     'send_due_date_reminders_today' => 'ផ្ញើសាររំលឹកថ្ងៃកំណត់បង់ប្រាក់ (ថ្ងៃនេះ)',
     'late_payments_desc'    => 'ពិនិត្យតាមដានគណនីអតិថិជនដែលមិនទាន់បង់ប្រាក់ក្នុងរយៈពេល ៣០ ថ្ងៃចុងក្រោយ និងផ្ញើសាររំលឹកតាម Telegram ដោយដៃ។',
     'all_payments_up_to_date' => 'អស្ចារ្យណាស់! ការបង់ប្រាក់ទាំងអស់ត្រូវបានធ្វើបច្ចុប្បន្នភាពរួចរាល់ហើយ។',
+
+    // ── Customer Report ──
+    'customer_report_subtitle' => 'ទិដ្ឋភាពទូទៅនៃផលប័ត្រអតិថិជន ការទូទាត់ និងសមតុល្យជំពាក់។',
+    'portfolio_value'       => 'តម្លៃផលប័ត្រ',
+    'outstanding_balance'   => 'សមតុល្យជំពាក់',
+    'customers_portfolio_summary' => 'សេចក្តីសង្ខេបផលប័ត្រអតិថិជន',
+    'active_plans'          => 'គម្រោងសកម្ម',
+    'total_value'           => 'តម្លៃសរុប',
+    'outstanding'           => 'ជំពាក់',
+    'progress'              => 'វឌ្ឍនភាព',
+    'no_phone'              => 'គ្មានលេខទូរស័ព្ទ',
+    'no_customers_found'    => 'រកមិនឃើញអតិថិជនទេ',
 ];

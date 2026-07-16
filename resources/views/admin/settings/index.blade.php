@@ -184,26 +184,13 @@
 
                     <div>
                         <label class="mb-1.5 block text-sm text-slate-700">
-                            រូបិយប័ណ្ណ / Currency <span class="text-rose-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="currency" 
-                            value="{{ old('currency', $settings['currency'] ?? 'USD') }}" 
-                            required
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="USD">
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-sm text-slate-700">
-                            អត្រាការប្រាក់លំនាំដើម / Default Interest Rate (%) <span class="text-rose-500">*</span>
+                            កម្រៃសេវាទូទាត់កាត / Card Processing Fee (%) <span class="text-rose-500">*</span>
                         </label>
                         <input 
                             type="number" 
                             step="0.01"
-                            name="default_interest_rate" 
-                            value="{{ old('default_interest_rate', $settings['default_interest_rate'] ?? '0') }}" 
+                            name="card_processing_fee" 
+                            value="{{ old('card_processing_fee', $settings['card_processing_fee'] ?? '2') }}" 
                             required
                             class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>

@@ -21,10 +21,17 @@ class InvoiceController extends Controller
             // Search functionality for direct sales
             if ($request->filled('search')) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('invoice_no', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                $searchLower = mb_strtolower(trim($search), 'UTF-8');
+                $matchDirect = (str_contains($searchLower, 'ទិញដាច់') || str_contains($searchLower, 'direct') || str_contains($searchLower, 'cash'));
+
+                $query->where(function($q) use ($search, $matchDirect) {
+                    if ($matchDirect) {
+                        $q->whereRaw('1 = 1');
+                    } else {
+                        $q->where('invoice_no', 'like', "%{$search}%")
+                          ->orWhere('customer_name', 'like', "%{$search}%")
+                          ->orWhere('customer_phone', 'like', "%{$search}%");
+                    }
                 });
             }
 
@@ -39,10 +46,17 @@ class InvoiceController extends Controller
             $statsQuery = \App\Models\Sale::query();
             if ($request->filled('search')) {
                 $search = $request->search;
-                $statsQuery->where(function ($q) use ($search) {
-                    $q->where('invoice_no', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                $searchLower = mb_strtolower(trim($search), 'UTF-8');
+                $matchDirect = (str_contains($searchLower, 'ទិញដាច់') || str_contains($searchLower, 'direct') || str_contains($searchLower, 'cash'));
+
+                $statsQuery->where(function ($q) use ($search, $matchDirect) {
+                    if ($matchDirect) {
+                        $q->whereRaw('1 = 1');
+                    } else {
+                        $q->where('invoice_no', 'like', "%{$search}%")
+                          ->orWhere('customer_name', 'like', "%{$search}%")
+                          ->orWhere('customer_phone', 'like', "%{$search}%");
+                    }
                 });
             }
             if ($request->filled('date')) {
@@ -59,19 +73,49 @@ class InvoiceController extends Controller
             
             // 1. regular invoices query
             $invoicesQuery = Invoice::with('payment.installment.customer');
-            if ($user->role === 'user') {
-                $invoicesQuery->whereHas('payment.installment', function ($q) use ($user) {
-                    $q->where('created_by', $user->id);
-                });
-            }
+
             if ($request->filled('search')) {
                 $search = $request->search;
-                $invoicesQuery->where(function($q) use ($search) {
-                    $q->where('invoice_number', 'like', "%{$search}%")
-                      ->orWhereHas('payment.installment.customer', function($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%");
-                      });
+                $searchLower = mb_strtolower(trim($search), 'UTF-8');
+                
+                $matchDirect = (str_contains($searchLower, 'ទិញដាច់') || str_contains($searchLower, 'direct') || str_contains($searchLower, 'cash'));
+                $matchInstallment = (str_contains($searchLower, 'បង់រំលស់') || str_contains($searchLower, 'រំលស់') || str_contains($searchLower, 'installment'));
+                $matchPayoff = (str_contains($searchLower, 'បង់ផ្តាច់') || str_contains($searchLower, 'ផ្តាច់') || str_contains($searchLower, 'payoff') || str_contains($searchLower, 'pay_off') || str_contains($searchLower, 'settlement'));
+                $matchCompleted = (str_contains($searchLower, 'ទូទាត់បញ្ចប់') || str_contains($searchLower, 'បញ្ចប់') || str_contains($searchLower, 'completed') || str_contains($searchLower, 'final_paid') || str_contains($searchLower, 'final paid'));
+
+                $isTypeSearch = $matchDirect || $matchInstallment || $matchPayoff || $matchCompleted;
+
+                $invoicesQuery->where(function($q) use ($search, $isTypeSearch, $matchInstallment, $matchPayoff, $matchCompleted) {
+                    if ($isTypeSearch) {
+                        $q->where(function($subQ) use ($matchInstallment, $matchPayoff, $matchCompleted) {
+                            if ($matchPayoff) {
+                                $subQ->orWhereHas('payment', function ($pq) {
+                                    $pq->where('is_settlement', true);
+                                });
+                            }
+                            if ($matchInstallment) {
+                                $subQ->orWhereHas('payment', function ($pq) {
+                                    $pq->where('is_settlement', false)
+                                      ->whereRaw('payments.id != COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
+                                });
+                            }
+                            if ($matchCompleted) {
+                                $subQ->orWhereHas('payment', function ($pq) {
+                                    $pq->where('is_settlement', false)
+                                      ->whereRaw('payments.id = COALESCE((select max(p.id) from payments p join installments i on p.installment_id = i.id where p.installment_id = payments.installment_id and p.status = "approved" and i.status = "completed"), 0)');
+                                });
+                            }
+                            if (!$matchPayoff && !$matchInstallment && !$matchCompleted) {
+                                $subQ->whereRaw('1 = 0');
+                            }
+                        });
+                    } else {
+                        $q->where('invoice_number', 'like', "%{$search}%")
+                          ->orWhereHas('payment.installment.customer', function($q) use ($search) {
+                              $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                          });
+                    }
                 });
             }
             if ($request->filled('date')) {
@@ -82,10 +126,27 @@ class InvoiceController extends Controller
             $salesQuery = \App\Models\Sale::with('customer');
             if ($request->filled('search')) {
                 $search = $request->search;
-                $salesQuery->where(function($q) use ($search) {
-                    $q->where('invoice_no', 'like', "%{$search}%")
-                      ->orWhere('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_phone', 'like', "%{$search}%");
+                $searchLower = mb_strtolower(trim($search), 'UTF-8');
+                
+                $matchDirect = (str_contains($searchLower, 'ទិញដាច់') || str_contains($searchLower, 'direct') || str_contains($searchLower, 'cash'));
+                $matchInstallment = (str_contains($searchLower, 'បង់រំលស់') || str_contains($searchLower, 'រំលស់') || str_contains($searchLower, 'installment'));
+                $matchPayoff = (str_contains($searchLower, 'បង់ផ្តាច់') || str_contains($searchLower, 'ផ្តាច់') || str_contains($searchLower, 'payoff') || str_contains($searchLower, 'pay_off') || str_contains($searchLower, 'settlement'));
+                $matchCompleted = (str_contains($searchLower, 'ទូទាត់បញ្ចប់') || str_contains($searchLower, 'បញ្ចប់') || str_contains($searchLower, 'completed') || str_contains($searchLower, 'final_paid') || str_contains($searchLower, 'final paid'));
+
+                $isTypeSearch = $matchDirect || $matchInstallment || $matchPayoff || $matchCompleted;
+
+                $salesQuery->where(function($q) use ($search, $isTypeSearch, $matchDirect) {
+                    if ($isTypeSearch) {
+                        if ($matchDirect) {
+                            $q->whereRaw('1 = 1');
+                        } else {
+                            $q->whereRaw('1 = 0');
+                        }
+                    } else {
+                        $q->where('invoice_no', 'like', "%{$search}%")
+                          ->orWhere('customer_name', 'like', "%{$search}%")
+                          ->orWhere('customer_phone', 'like', "%{$search}%");
+                    }
                 });
             }
             if ($request->filled('date')) {
@@ -153,12 +214,6 @@ class InvoiceController extends Controller
 
         $query = Invoice::with('payment.installment.customer');
 
-        if ($user->role === 'user') {
-            $query->whereHas('payment.installment', function ($q) use ($user) {
-                $q->where('created_by', $user->id);
-            });
-        }
-
         // Type filter: installment vs payoff vs completed
         if ($type === 'payoff') {
             $query->whereHas('payment', function ($q) {
@@ -179,12 +234,31 @@ class InvoiceController extends Controller
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('payment.installment.customer', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                  });
+            $searchLower = mb_strtolower(trim($search), 'UTF-8');
+            $matchInstallment = (str_contains($searchLower, 'បង់រំលស់') || str_contains($searchLower, 'រំលស់') || str_contains($searchLower, 'installment'));
+            $matchPayoff = (str_contains($searchLower, 'បង់ផ្តាច់') || str_contains($searchLower, 'ផ្តាច់') || str_contains($searchLower, 'payoff') || str_contains($searchLower, 'pay_off') || str_contains($searchLower, 'settlement'));
+            $matchCompleted = (str_contains($searchLower, 'ទូទាត់បញ្ចប់') || str_contains($searchLower, 'បញ្ចប់') || str_contains($searchLower, 'completed') || str_contains($searchLower, 'final_paid') || str_contains($searchLower, 'final paid'));
+
+            $query->where(function($q) use ($search, $type, $matchInstallment, $matchPayoff, $matchCompleted) {
+                $isTypeSearch = $matchInstallment || $matchPayoff || $matchCompleted;
+                if ($isTypeSearch) {
+                    $isMatch = false;
+                    if ($type === 'installment' && $matchInstallment) $isMatch = true;
+                    if ($type === 'payoff' && $matchPayoff) $isMatch = true;
+                    if ($type === 'completed' && $matchCompleted) $isMatch = true;
+                    
+                    if ($isMatch) {
+                        $q->whereRaw('1 = 1');
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                } else {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhereHas('payment.installment.customer', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                      });
+                }
             });
         }
 
@@ -197,11 +271,7 @@ class InvoiceController extends Controller
 
         // Summary stats (respecting current filters via a clone of the base query)
         $statsQuery = Invoice::query();
-        if ($user->role === 'user') {
-            $statsQuery->whereHas('payment.installment', function ($q) use ($user) {
-                $q->where('created_by', $user->id);
-            });
-        }
+
         if ($type === 'payoff') {
             $statsQuery->whereHas('payment', function ($q) {
                 $q->where('is_settlement', true);
@@ -219,12 +289,31 @@ class InvoiceController extends Controller
         }
         if ($request->filled('search')) {
             $search = $request->search;
-            $statsQuery->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('payment.installment.customer', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                  });
+            $searchLower = mb_strtolower(trim($search), 'UTF-8');
+            $matchInstallment = (str_contains($searchLower, 'បង់រំលស់') || str_contains($searchLower, 'រំលស់') || str_contains($searchLower, 'installment'));
+            $matchPayoff = (str_contains($searchLower, 'បង់ផ្តាច់') || str_contains($searchLower, 'ផ្តាច់') || str_contains($searchLower, 'payoff') || str_contains($searchLower, 'pay_off') || str_contains($searchLower, 'settlement'));
+            $matchCompleted = (str_contains($searchLower, 'ទូទាត់បញ្ចប់') || str_contains($searchLower, 'បញ្ចប់') || str_contains($searchLower, 'completed') || str_contains($searchLower, 'final_paid') || str_contains($searchLower, 'final paid'));
+
+            $statsQuery->where(function($q) use ($search, $type, $matchInstallment, $matchPayoff, $matchCompleted) {
+                $isTypeSearch = $matchInstallment || $matchPayoff || $matchCompleted;
+                if ($isTypeSearch) {
+                    $isMatch = false;
+                    if ($type === 'installment' && $matchInstallment) $isMatch = true;
+                    if ($type === 'payoff' && $matchPayoff) $isMatch = true;
+                    if ($type === 'completed' && $matchCompleted) $isMatch = true;
+                    
+                    if ($isMatch) {
+                        $q->whereRaw('1 = 1');
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                } else {
+                    $q->where('invoice_number', 'like', "%{$search}%")
+                      ->orWhereHas('payment.installment.customer', function($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                      });
+                }
             });
         }
         if ($request->filled('date')) {

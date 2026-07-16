@@ -464,6 +464,7 @@ return [
     // ── Late Payment ──
     'late_payment_list'     => 'Late Payment List',
     'days_late'             => 'Days Late',
+    'penalty_fee'           => 'Penalty Fee',
     'send_reminder'         => 'Send Reminder',
     'no_late_payments'      => 'No late payments',
 
@@ -694,4 +695,16 @@ return [
     'send_due_date_reminders_today' => 'Send Due-Date Reminders (Today)',
     'late_payments_desc'    => 'Monitor customer accounts that have not paid in the last 30 days and send manual Telegram reminders.',
     'all_payments_up_to_date' => 'Excellent! All payments are up to date.',
+
+    // ── Customer Report ──
+    'customer_report_subtitle' => 'Overview of customer portfolios, payments, and outstanding balances.',
+    'portfolio_value'       => 'Portfolio Value',
+    'outstanding_balance'   => 'Outstanding Balance',
+    'customers_portfolio_summary' => 'Customers Portfolio Summary',
+    'active_plans'          => 'Active Plans',
+    'total_value'           => 'Total Value',
+    'outstanding'           => 'Outstanding',
+    'progress'              => 'Progress',
+    'no_phone'              => 'No Phone',
+    'no_customers_found'    => 'No customers found',
 ];

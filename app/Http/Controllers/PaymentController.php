@@ -23,11 +23,7 @@ class PaymentController extends Controller
         $user = auth()->user();
         $query = Payment::with('installment.customer', 'paymentMethod', 'user');
 
-        if (!in_array($user->role, ['admin', 'staff'])) {
-            $query->whereHas('installment', function ($q) use ($user) {
-                $q->where('created_by', $user->id);
-            });
-        }
+
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -59,9 +55,7 @@ class PaymentController extends Controller
         $user = auth()->user();
         $installments = Installment::with('customer', 'product');
 
-        if (!in_array($user->role, ['admin', 'staff'])) {
-            $installments->where('created_by', $user->id);
-        }
+
 
         $installments = $installments->where('status', 'active')->get();
         $paymentMethods = $this->getPaymentMethods();
@@ -76,6 +70,7 @@ class PaymentController extends Controller
             'installment_id' => 'required|exists:installments,id',
             'payment_method_id' => 'required|exists:payment_methods,id',
             'amount' => 'required|numeric|min:0.01',
+            'penalty_amount' => 'nullable|numeric|min:0',
             'payment_date' => 'required|date',
             'qr_image' => 'nullable|image',
             'card_holder_name' => 'nullable|string|max:255',
@@ -89,21 +84,25 @@ class PaymentController extends Controller
             $qrPath = $request->file('qr_image')->store('qr_images', 'public');
         }
 
-        $approveNow = $request->has('approve_now') && Gate::allows('approve-payment');
+        $tempPayment = new Payment(['payment_method_id' => $request->payment_method_id]);
+        $approveNow = $request->has('approve_now') && Gate::allows('approve-payment', $tempPayment);
 
         // Capture Credit Card details into title field if Credit Card method
         $title = null;
         $method = PaymentMethod::find($request->payment_method_id);
         $isCreditCard = $method && strtolower(str_replace(' ', '_', $method->name)) === 'credit_card';
 
+        $feeRate = 0;
         if ($isCreditCard) {
             $cardHolder = $request->card_holder_name ? trim($request->card_holder_name) : 'N/A';
             $cardNumber = $request->card_number ? trim($request->card_number) : 'N/A';
             $cardBrand = $request->card_brand ? trim($request->card_brand) : 'N/A';
             
             // Standard fee calculation
-            $principal = (float) $request->amount;
-            $fee = $principal * 0.02; // 2% processing fee
+            $feePercentage = (float) (\App\Models\Setting::where('key', 'card_processing_fee')->value('value') ?? 2);
+            $feeRate = $feePercentage / 100;
+            $principal = (float) $request->amount + (float) ($request->penalty_amount ?? 0);
+            $fee = $principal * $feeRate; // processing fee
             $total = $principal + $fee;
             
             $formattedPrincipal = number_format($principal, 2);
@@ -117,6 +116,7 @@ class PaymentController extends Controller
             'installment_id' => $request->installment_id,
             'payment_method_id' => $request->payment_method_id,
             'amount' => $request->amount,
+            'penalty_amount' => $request->penalty_amount ?? 0,
             'payment_date' => $request->payment_date,
             'qr_image' => $qrPath,
             'status' => 'pending',
@@ -128,7 +128,7 @@ class PaymentController extends Controller
         if ($isCreditCard && $this->wingPayService->isConfigured()) {
             $checkoutUrl = $this->wingPayService->createCheckoutSession([
                 'payment_id' => $payment->id,
-                'amount' => $payment->amount * 1.02, // Include 2% card fee
+                'amount' => ($payment->amount + $payment->penalty_amount) * (1 + $feeRate), // Include penalty & card fee
                 'currency' => 'USD',
                 'installment_id' => $payment->installment_id,
             ]);
@@ -141,6 +141,13 @@ class PaymentController extends Controller
         // Standard Approval Flow if approve_now requested and allowed
         if ($approveNow) {
             $this->approvePaymentRecord($payment, auth()->id());
+        } else {
+            \App\Models\Notification::createSystemNotification(
+                'payment', 'New Payment Submitted',
+                'A new payment of $' . number_format($payment->amount, 2) . ' is pending approval for customer ' . $payment->installment->customer->name,
+                'dollar-sign', 'blue',
+                route('payments.index')
+            );
         }
 
         $successMsg = ($approveNow) ? 'Payment recorded and approved successfully.' : 'Payment submitted successfully.';
@@ -154,7 +161,7 @@ class PaymentController extends Controller
 
     public function approve(Payment $payment)
     {
-        Gate::authorize('approve-payment');
+        Gate::authorize('approve-payment', $payment);
 
         $this->approvePaymentRecord($payment, auth()->id());
 
@@ -263,15 +270,24 @@ class PaymentController extends Controller
         $paymentType = $payment->is_settlement ? 'សម្រាប់ការទូទាត់ផ្តាច់ (Payoff)' : "សម្រាប់ខែទី {$khmerMonth}";
         
         $khmerAmount = number_format($payment->amount, 2);
+        $khmerPenalty = $payment->penalty_amount > 0 ? number_format($payment->penalty_amount, 2) : null;
+        $totalPaidText = $khmerPenalty ? "*\${$khmerAmount}* (រួមទាំងប្រាក់ពិន័យ *\${$khmerPenalty}*)" : "*\${$khmerAmount}*";
         $khmerRemaining = number_format($installment->remaining_balance, 2);
         $downloadLink = route('public.invoices.download', $invoice->id);
 
         $message = "🙏 *សូមអរគុណ!*\n"
-            . "ការបង់ប្រាក់ចំនួន *\${$khmerAmount}* {$paymentType} ត្រូវបានអនុម័តជោគជ័យ។\n"
+            . "ការបង់ប្រាក់ចំនួន {$totalPaidText} {$paymentType} ត្រូវបានអនុម័តជោគជ័យ។\n"
             . "• តុល្យភាពប្រាក់នៅសល់គឺ៖ *\${$khmerRemaining}*\n"
             . "• ទាញយកវិក្កយបត្រ PDF ទីនេះ៖ [ទាញយកវិក្កយបត្រ]({$downloadLink})";
 
         $this->telegramService->sendToCustomer($installment->customer_id, $message);
+
+        \App\Models\Notification::createSystemNotification(
+            'payment', 'Payment Approved',
+            'Payment of $' . number_format($payment->amount, 2) . ' from ' . $installment->customer->name . ' has been approved.',
+            'dollar-sign', 'green',
+            route('payments.index')
+        );
     }
 
     private function toKhmerNumerals($num): string
@@ -282,7 +298,7 @@ class PaymentController extends Controller
 
     public function reject(Payment $payment)
     {
-        Gate::authorize('approve-payment');
+        Gate::authorize('approve-payment', $payment);
         $payment->update(['status' => 'rejected']);
 
         $installment = $payment->installment;
@@ -301,12 +317,19 @@ class PaymentController extends Controller
             ? 'Payment rejected and Telegram notification sent.'
             : 'Payment rejected. Telegram notice: ' . $telegramResult['reason'];
 
+        \App\Models\Notification::createSystemNotification(
+            'payment', 'Payment Rejected',
+            'Payment of $' . number_format($payment->amount, 2) . ' from ' . $installment->customer->name . ' has been rejected.',
+            'x-circle', 'red',
+            route('payments.index')
+        );
+
         return redirect()->route('payments.index')->with('success', $flashMessage);
     }
 
     public function destroy(Payment $payment)
     {
-        Gate::authorize('approve-payment');
+        Gate::authorize('delete-payment');
 
         $installment = $payment->installment;
 
@@ -345,7 +368,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        $payment->load('installment.customer', 'paymentMethod', 'user');
+        $payment->load('installment.customer', 'paymentMethod', 'user', 'invoice');
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
         return view('payments.show', compact('payment', 'exchangeRate'));

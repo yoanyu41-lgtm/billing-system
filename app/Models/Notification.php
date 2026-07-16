@@ -48,4 +48,21 @@ class Notification extends Model
             'link' => $link,
         ]);
     }
+
+    public static function createSystemNotification($type, $title, $message, $icon, $iconColor, $link = null)
+    {
+        $users = \App\Models\User::all();
+        foreach ($users as $user) {
+            self::create([
+                'user_id' => $user->id,
+                'type' => $type,
+                'title' => $title,
+                'message' => $message,
+                'icon' => $icon,
+                'icon_color' => $iconColor,
+                'link' => $link,
+                'is_read' => false,
+            ]);
+        }
+    }
 }

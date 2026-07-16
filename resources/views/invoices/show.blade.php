@@ -162,17 +162,29 @@
                 </div>
                 <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-500" lang="km">{{ $L('តម្លៃសរុប', 'Total Amount') }}</span>
+                        <span class="text-gray-500" lang="km">{{ $L('ទឹកប្រាក់បង់រំលស់', 'Installment Amount') }}</span>
                         <div class="text-right">
                             <span class="font-bold text-gray-900 block">: ${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
                             <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-gray-500" lang="km">{{ $L('ប្រាក់បានបង់', 'Paid Amount') }}</span>
+                    @if($invoice->payment && $invoice->payment->penalty_amount > 0)
+                    <div class="flex items-center justify-between text-red-600">
+                        <span class="font-medium" lang="km">{{ $L('ប្រាក់ពិន័យ', 'Penalty Fee') }}</span>
                         <div class="text-right">
-                            <span class="font-bold text-emerald-600 block">: ${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
-                            <span class="text-xs text-emerald-500/70 block font-semibold">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
+                            <span class="font-bold block">: ${{ number_format($invoice->payment->penalty_amount, 2) }}</span>
+                            <span class="text-xs block font-semibold">{{ number_format(round($invoice->payment->penalty_amount * $exchangeRate)) }} ៛</span>
+                        </div>
+                    </div>
+                    @endif
+                    @php
+                        $totalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
+                    @endphp
+                    <div class="flex items-center justify-between font-bold border-t border-gray-100 pt-2">
+                        <span class="text-gray-700" lang="km">{{ $L('ទឹកប្រាក់បានបង់សរុប', 'Total Paid') }}</span>
+                        <div class="text-right">
+                            <span class="font-bold text-gray-900 block">: ${{ number_format($totalPaid, 2) }}</span>
+                            <span class="text-xs text-gray-500 block font-semibold">{{ number_format(round($totalPaid * $exchangeRate)) }} ៛</span>
                         </div>
                     </div>
                     <div class="flex items-center justify-between rounded-lg bg-emerald-600 text-white px-4 py-2 mt-2">
@@ -227,11 +239,23 @@
                         <span class="text-xs text-gray-500 block font-medium">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
                     </td>
                 </tr>
+                @if($invoice->payment && $invoice->payment->penalty_amount > 0)
+                <tr class="bg-red-50/50">
+                    <td colspan="4" class="px-3 py-2 text-right font-semibold text-red-700" lang="km">{{ $L('ប្រាក់ពិន័យ (Penalty Fee)', 'Penalty Fee') }}</td>
+                    <td class="px-3 py-2 text-right text-red-600">
+                        <span class="font-semibold block">${{ number_format($invoice->payment->penalty_amount, 2) }}</span>
+                        <span class="text-xs block font-medium">{{ number_format(round($invoice->payment->penalty_amount * $exchangeRate)) }} ៛</span>
+                    </td>
+                </tr>
+                @endif
+                @php
+                    $grandTotalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
+                @endphp
                 <tr class="bg-blue-100">
                     <td colspan="4" class="px-3 py-3 text-right font-bold text-blue-800" lang="km">{{ $L('តម្លៃសរុប', 'Total Amount') }}</td>
                     <td class="px-3 py-3 text-right">
-                        <span class="text-lg font-extrabold text-blue-800 block">${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
-                        <span class="text-sm font-bold text-blue-700 block">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
+                        <span class="text-lg font-extrabold text-blue-800 block">${{ number_format($grandTotalPaid, 2) }}</span>
+                        <span class="text-sm font-bold text-blue-700 block">{{ number_format(round($grandTotalPaid * $exchangeRate)) }} ៛</span>
                     </td>
                 </tr>
                 <tr class="bg-amber-50">

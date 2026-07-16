@@ -930,6 +930,25 @@
             visibility: visible;
             transform: translateY(0);
         }
+
+        /* Print styling for clean browser printing */
+        @media print {
+            #sidebar, .topbar, header, button, form, .no-print, a.bg-emerald-600, a.bg-blue-600, .bg-blue-600, .bg-emerald-600 {
+                display: none !important;
+            }
+            body, .main-wrapper, .content, main {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                left: 0 !important;
+                margin-left: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -990,15 +1009,19 @@
                     <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_plans') }}
                     </a>
+                    @if(auth()->user()->role !== 'admin')
                     <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
                     </a>
+                    @endif
                     <a href="{{ route('installments.pay-off-index') }}" class="{{ request()->routeIs('installments.pay-off-index') ? 'active' : '' }}">
                         <i class="fas fa-hand-holding-usd"></i> {{ __('app.pay_off') }}
                     </a>
+                    @if(auth()->user()->role !== 'admin')
                     <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') ? 'active' : '' }}">
                         <i class="fas fa-file-signature"></i> {{ __('app.contracts') }}
                     </a>
+                    @endif
                     <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
                         <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
                     </a>
@@ -1011,6 +1034,12 @@
                 $isDirectSaleOpen = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
                 $isDirectSaleIndexActive = (request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show')) && request('from') !== 'invoice';
             @endphp
+            @if(auth()->user()->role === 'admin')
+            <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
+                <i class="fas fa-cash-register"></i>
+                <span>{{ __('app.direct_sale') }}</span>
+            </a>
+            @else
             <div class="sb-dropdown {{ $isDirectSaleOpen ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ $isDirectSaleOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>
@@ -1026,6 +1055,7 @@
                     </a>
                 </div>
             </div>
+            @endif
             @endif
 
             @php
@@ -1114,7 +1144,7 @@
                     <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.product_list') }}
                     </a>
-                    @if(auth()->user()->role === 'admin')
+                    @if(in_array(auth()->user()->role, ['admin', 'staff']))
                     <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
@@ -1137,14 +1167,9 @@
                 </div>
             </div>
 
-            {{-- ── Admin Only ── --}}
-            @if(auth()->user()->role === 'admin')
 
-            <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
-            </a>
-
-            {{-- Reports Dropdown --}}
+            {{-- Reports Dropdown (Admin & Staff for Daily Report) --}}
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-line"></i>
@@ -1155,6 +1180,7 @@
                     <a href="{{ route('admin.reports.daily') }}" class="{{ request()->routeIs('admin.reports.daily') ? 'active' : '' }}">
                         <i class="fas fa-calendar-day"></i> {{ __('app.daily_report') }}
                     </a>
+                    @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.reports.monthly') }}" class="{{ request()->routeIs('admin.reports.monthly') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.monthly_report') }}
                     </a>
@@ -1164,29 +1190,42 @@
                     <a href="{{ route('admin.reports.income') }}" class="{{ request()->routeIs('admin.reports.income') ? 'active' : '' }}">
                         <i class="fas fa-dollar-sign"></i> {{ __('app.income_report') }}
                     </a>
+                    @endif
                 </div>
             </div>
+            @endif
 
-            <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') ? 'active' : '' }}">
-                <i class="fab fa-telegram-plane"></i> {{ __('app.telegram_center') }}
+            {{-- Telegram Management (Admin & Staff) --}}
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
+            <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') || request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                <i class="fab fa-telegram-plane"></i>
+                <span>{{ app()->getLocale() === 'km' ? 'គ្រប់គ្រង Telegram' : 'Telegram Management' }}</span>
             </a>
+            @endif
 
-            <a href="{{ route('admin.broadcast.index') }}" class="{{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
-                <i class="fas fa-bullhorn"></i> ផ្សព្វផ្សាយ Telegram
-            </a>
-
-            <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
-                <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
-            </a>
-
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <i class="fas fa-cog"></i> {{ __('app.settings') }}
-            </a>
-
-            <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
-                <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
-            </a>
-
+            {{-- Settings Dropdown (Admin Only) --}}
+            @if(auth()->user()->role === 'admin')
+            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ __('app.settings') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
+                        <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
+                    </a>
+                    <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
+                    </a>
+                    <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
+                        <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
+                    </a>
+                    <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                        <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
+                    </a>
+                </div>
+            </div>
             @endif
 
         </nav>
@@ -1327,7 +1366,7 @@
             </div>
 
             {{-- Theme Switcher --}}
-            <div style="position:relative;" id="theme-switcher">
+            <div style="position:relative; display:none !important;" id="theme-switcher">
                 <button onclick="toggleThemeMenu()" style="
                     display:flex; align-items:center; justify-content:center;
                     width:36px; height:36px; border-radius:8px;
@@ -1439,7 +1478,7 @@
                 </div>
             </div>
 
-            <div class="topbar-search">
+            <div class="topbar-search" style="display:none !important;">
                 <i class="fas fa-search"></i>
                 <input type="text" id="global-search" placeholder="{{ __('app.search_here') }}" onkeyup="handleGlobalSearch(event)">
             </div>

@@ -195,7 +195,7 @@
         }
         
         .terms {
-            font-size: 10pt;
+            font-size: 12pt;
             line-height: 1.8;
         }
         
@@ -234,7 +234,7 @@
         
         @media print {
             body {
-                padding: 0;
+                padding: 15mm !important;
                 font-size: 10.5pt;
                 line-height: 1.5;
             }
@@ -336,7 +336,7 @@
             
             @page {
                 size: A4;
-                margin: 15mm;
+                margin: 0;
             }
         }
     </style>

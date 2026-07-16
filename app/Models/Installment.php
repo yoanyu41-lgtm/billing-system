@@ -148,4 +148,28 @@ class Installment extends Model
 
         return $schedule;
     }
+
+    public function daysLate(): int
+    {
+        if (!$this->next_due_date) {
+            return 0;
+        }
+        $dueDate = \Carbon\Carbon::parse($this->next_due_date);
+        if ($dueDate->isFuture()) {
+            return 0;
+        }
+        return (int) $dueDate->diffInDays(\Carbon\Carbon::today());
+    }
+
+    public function calculatePenalty(): float
+    {
+        $days = $this->daysLate();
+        if ($days <= 5) {
+            return 0.00;
+        }
+        if ($days <= 15) {
+            return round($days * 5.00, 2);
+        }
+        return round($days * 10.00, 2);
+    }
 }

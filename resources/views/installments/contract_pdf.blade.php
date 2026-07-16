@@ -37,7 +37,7 @@
         .right { text-align: right !important; }
         .center { text-align: center !important; }
         
-        .terms { font-size: 9px; color: #4b5563; line-height: 1.6; }
+        .terms { font-size: 11px; color: #4b5563; line-height: 1.6; }
         .terms p { font-weight: bold; margin: 5px 0 2px 0; color: #1f2937; }
         .terms ol { margin: 0 0 5px 15px; padding: 0; }
         .terms li { margin-bottom: 2px; }

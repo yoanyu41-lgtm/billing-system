@@ -19,9 +19,7 @@ class InstallmentController extends Controller
         $user = auth()->user();
         $query = Installment::with('customer', 'product');
 
-        if (!in_array($user->role, ['admin', 'staff'])) {
-            $query->where('created_by', $user->id);
-        }
+
 
         $installments = $query->paginate(10);
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
@@ -120,6 +118,13 @@ class InstallmentController extends Controller
             app(TelegramService::class)->sendToCustomer($customer->id, $msg);
         }
 
+        \App\Models\Notification::createSystemNotification(
+            'installment', 'New installment contract',
+            'New installment contract created for customer: ' . ($customer ? $customer->name : 'Unknown'),
+            'file-text', 'orange',
+            route('installments.show', $installment)
+        );
+
         return redirect()->route('installments.index')->with('success', 'Installment created successfully.');
     }
 
@@ -206,6 +211,13 @@ class InstallmentController extends Controller
             'payment_id'     => $payment->id,
             'invoice_number' => 'INV-' . $payment->id,
         ]);
+
+        \App\Models\Notification::createSystemNotification(
+            'payment', 'Installment Payoff',
+            'Installment contract for customer ' . $installment->customer->name . ' has been fully paid off with $' . number_format($payoffAmount, 2),
+            'check-circle', 'green',
+            route('installments.show', $installment)
+        );
 
         return redirect()->route('installments.show', $installment)
             ->with('success', __('app.pay_off_success', ['amount' => number_format($payoffAmount, 2)]));

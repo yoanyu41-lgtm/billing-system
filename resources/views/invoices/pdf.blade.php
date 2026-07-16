@@ -109,8 +109,14 @@
             <td style="width: 50%; vertical-align: top;">
                 <div class="section-title">ព័ត៌មានការទូទាត់</div>
                 <table class="info" style="width: 100%;">
-                    <tr><td style="color:#6b7280;">ចំនួនសរុប</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
-                    <tr><td style="color:#6b7280;">ចំនួនបានបង់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">ទឹកប្រាក់បង់រំលស់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    @if($invoice->payment && $invoice->payment->penalty_amount > 0)
+                    <tr style="color: #dc2626;"><td style="color: #dc2626;">ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }} / <span style="font-weight: bold;">{{ $formatRiel($invoice->payment->penalty_amount) }}</span></td></tr>
+                    @endif
+                    @php
+                        $totalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
+                    @endphp
+                    <tr style="font-weight: bold;"><td style="color:#1f2937;">ទឹកប្រាក់បានបង់សរុប</td><td class="right">${{ number_format($totalPaid, 2) }} / <span style="color: #1d4ed8;">{{ $formatRiel($totalPaid) }}</span></td></tr>
                 </table>
                 <div class="status">
                     @if($isSettlement)
@@ -159,7 +165,13 @@
             <td style="width: 50%;">
                 <table class="totals" style="width: 100%;">
                     <tr><td>សរុបរង</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
-                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    @if($invoice->payment && $invoice->payment->penalty_amount > 0)
+                    <tr style="color: #b91c1c;"><td>ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }} / <span style="font-weight: bold;">{{ $formatRiel($invoice->payment->penalty_amount) }}</span></td></tr>
+                    @endif
+                    @php
+                        $grandTotalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
+                    @endphp
+                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($grandTotalPaid, 2) }} / <span>{{ $formatRiel($grandTotalPaid) }}</span></td></tr>
                     <tr class="remaining"><td>ប្រាក់នៅសល់</td><td class="right">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->installment?->remaining_balance ?? 0) }}</span></td></tr>
                 </table>
             </td>

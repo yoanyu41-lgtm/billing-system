@@ -606,17 +606,22 @@
                         </form>
                     </div>
                     <div class="flex items-center gap-6">
-                        {{-- Score Circle --}}
-                        <div class="relative w-24 h-24 flex-shrink-0">
-                            <svg class="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
-                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" stroke-width="3"/>
-                                <circle cx="18" cy="18" r="15.9" fill="none" stroke="{{ $barColor }}" stroke-width="3"
-                                        stroke-dasharray="{{ $score }}, 100" stroke-linecap="round"/>
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-xl font-bold text-gray-800">{{ $score }}</span>
-                                <span class="text-xs text-gray-400">/ 100</span>
-                            </div>
+                        {{-- Risk Status Icon Card --}}
+                        <div class="w-20 h-20 rounded-2xl flex-shrink-0 flex items-center justify-center
+                            {{ $rc === 'emerald' ? 'bg-emerald-50 text-emerald-500 border border-emerald-200 shadow-sm' : ($rc === 'amber' ? 'bg-amber-50 text-amber-500 border border-amber-200 shadow-sm' : 'bg-red-50 text-red-500 border border-red-200 shadow-sm') }}">
+                            @if($latestCredit->risk_level === 'low')
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            @elseif($latestCredit->risk_level === 'medium')
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            @else
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            @endif
                         </div>
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-2">
@@ -696,20 +701,17 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.employment_status') }}</label>
                                     <input type="text" name="employment_status" placeholder="e.g., Employed, Self-employed, Student, etc."
-                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           oninput="calcScore()">
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.monthly_income') }} ($)</label>
                                     <input type="number" name="monthly_income" step="0.01" min="0" placeholder="0.00"
-                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           oninput="calcScore()">
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.existing_debt') }} ($)</label>
                                     <input type="number" name="existing_debt" step="0.01" min="0" value="0" placeholder="0.00"
-                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           oninput="calcScore()">
+                                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.decision') }}</label>
@@ -724,18 +726,6 @@
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('app.notes') }}</label>
                                     <textarea name="notes" rows="2" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
                                 </div>
-                            </div>
-
-                            {{-- Live Score Preview --}}
-                            <div class="bg-gray-50 rounded-lg p-4">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-xs font-medium text-gray-600">{{ __('app.est_credit_score') }}</span>
-                                    <span id="score-preview" class="text-lg font-bold text-gray-800">—</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div id="score-bar" class="h-2 rounded-full bg-gray-300 transition-all duration-500" style="width:0%"></div>
-                                </div>
-                                <div id="score-label" class="text-xs text-gray-400 mt-1">{{ __('app.score_hint') }}</div>
                             </div>
 
                             <div class="flex justify-end">
@@ -757,15 +747,34 @@
                         @foreach($creditChecks as $cc)
                         <div class="px-5 py-3.5 flex items-center gap-4">
                             @php $ccRc = $cc->risk_color; @endphp
-                            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
-                                {{ $ccRc === 'emerald' ? 'bg-emerald-100' : ($ccRc === 'amber' ? 'bg-amber-100' : 'bg-red-100') }}">
-                                <span class="text-sm font-bold {{ $ccRc === 'emerald' ? 'text-emerald-700' : ($ccRc === 'amber' ? 'text-amber-700' : 'text-red-600') }}">
-                                    {{ $cc->credit_score }}
-                                </span>
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                                {{ $ccRc === 'emerald' ? 'bg-emerald-100 text-emerald-600' : ($ccRc === 'amber' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600') }}">
+                                @if($cc->risk_level === 'low')
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                @elseif($cc->risk_level === 'medium')
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                @else
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                @endif
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="text-sm font-semibold text-gray-700">{{ __('app.credit_score') }}: {{ $cc->credit_score }}/100</span>
+                                    <span class="text-sm font-semibold text-gray-700">
+                                        {{ __('app.risk_level') }}: 
+                                        @if($cc->risk_level === 'low')
+                                            <span class="text-emerald-600 font-bold">{{ __('app.low_risk') }}</span>
+                                        @elseif($cc->risk_level === 'medium')
+                                            <span class="text-amber-600 font-bold">{{ __('app.medium_risk') }}</span>
+                                        @else
+                                            <span class="text-red-600 font-bold">{{ __('app.high_risk') }}</span>
+                                        @endif
+                                    </span>
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold
                                         {{ $cc->status === 'approved' ? 'bg-emerald-100 text-emerald-700' : ($cc->status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700') }}">
                                         {{ __('app.' . $cc->status) }}
@@ -820,90 +829,12 @@ function toggleSection(id) {
     if (chevron) chevron.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
 }
 
-function calcScore() {
-    const income = parseFloat(document.querySelector('[name=monthly_income]')?.value) || 0;
-    const debt   = parseFloat(document.querySelector('[name=existing_debt]')?.value) || 0;
-    const employ = (document.querySelector('[name=employment_status]')?.value || '').toLowerCase();
-
-    let score = 50;
-    if (
-        employ.includes('employed') || 
-        employ.includes('work') || 
-        employ.includes('job') || 
-        employ.includes('បុគ្គលិក') || 
-        employ.includes('ធ្វើការ') || 
-        employ.includes('មានការងារ')
-    ) {
-        if (
-            employ.includes('self') || 
-            employ.includes('លក់ដូរ') || 
-            employ.includes('រកស៊ី') || 
-            employ.includes('ខ្លួនឯង') || 
-            employ.includes('អាជីវករ')
-        ) {
-            score += 15;
-        } else {
-            score += 25;
-        }
-    } else if (
-        employ.includes('self-employed') || 
-        employ.includes('business') || 
-        employ.includes('owner') || 
-        employ.includes('លក់ដូរ') || 
-        employ.includes('រកស៊ី') || 
-        employ.includes('ខ្លួនឯង') || 
-        employ.includes('អាជីវករ')
-    ) {
-        score += 15;
-    } else if (
-        employ.includes('student') || 
-        employ.includes('study') || 
-        employ.includes('សិស្ស') || 
-        employ.includes('និស្សិត') || 
-        employ.includes('រៀន')
-    ) {
-        score += 5;
-    }
-
-    if (income > 0) {
-        const ratio = debt / income;
-        if (ratio < 0.3)      score += 25;
-        else if (ratio < 0.5) score += 10;
-        else if (ratio < 0.8) score -= 10;
-        else                  score -= 25;
-    }
-    score = Math.max(0, Math.min(100, score));
-
-    const preview = document.getElementById('score-preview');
-    const bar     = document.getElementById('score-bar');
-    const label   = document.getElementById('score-label');
-    if (!preview) return;
-
-    preview.textContent = score;
-    bar.style.width = score + '%';
-
-    if (score >= 70) {
-        bar.className = 'h-2 rounded-full bg-emerald-500 transition-all duration-500';
-        label.textContent = '✅ {{ __("app.credit_good") }} — {{ __("app.low_risk") }}';
-        label.className = 'text-xs text-emerald-600 mt-1 font-medium';
-    } else if (score >= 40) {
-        bar.className = 'h-2 rounded-full bg-amber-400 transition-all duration-500';
-        label.textContent = '⚠️ {{ __("app.credit_fair") }} — {{ __("app.medium_risk") }}';
-        label.className = 'text-xs text-amber-600 mt-1 font-medium';
-    } else {
-        bar.className = 'h-2 rounded-full bg-red-500 transition-all duration-500';
-        label.textContent = '❌ {{ __("app.credit_poor") }} — {{ __("app.high_risk") }}';
-        label.className = 'text-xs text-red-600 mt-1 font-medium';
-    }
-}
-
 // Auto-open tab from URL fragment
 document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash.replace('#tab-', '');
     if (['installments','payments','guarantors','credit'].includes(hash)) {
         switchTab(hash);
     }
-    calcScore();
 });
 
 // ── Lightbox ──

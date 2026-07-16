@@ -11,7 +11,7 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        Gate::authorize('manage-product');
+        Gate::authorize('view-product');
 
         $query = Category::query();
         
@@ -78,7 +78,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
-        Gate::authorize('manage-product');
+        Gate::authorize('delete-product');
 
         $category->delete();
 

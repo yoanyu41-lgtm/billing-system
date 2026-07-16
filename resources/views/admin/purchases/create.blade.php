@@ -93,6 +93,28 @@
                 {{ __('app.add_item') }}
             </button>
         </div>
+        <div class="mt-6 border-t border-gray-100 pt-6 flex justify-end">
+            <div class="w-full md:w-80 bg-gray-50 p-5 rounded-xl border border-gray-200 text-sm space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">{{ __('app.subtotal') }}</span>
+                    <span class="font-bold text-gray-900" id="previewSubtotal">$0.00</span>
+                </div>
+                @php
+                    $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+                    $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                @endphp
+                @if($taxEnabled)
+                <div class="flex justify-between" id="taxRow" style="display: none;">
+                    <span class="text-gray-600">{{ __('app.tax') }} ({{ $taxLabel }})</span>
+                    <span class="font-bold text-gray-900" id="previewTax">$0.00</span>
+                </div>
+                @endif
+                <div class="flex justify-between border-t border-gray-200 pt-3 text-base font-bold">
+                    <span class="text-gray-900">{{ __('app.total') }}</span>
+                    <span class="text-indigo-600" id="previewTotal">$0.00</span>
+                </div>
+            </div>
+        </div>
 
         <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100">
             <a href="{{ route('admin.purchases.index') }}" class="px-6 py-2.5 font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">
@@ -143,6 +165,7 @@ document.getElementById('addItem').addEventListener('click', () => {
     container.appendChild(div);
     idx++;
     updateRemoveButtons();
+    calculateTotals();
 });
 
 function updateRemoveButtons() {
@@ -165,6 +188,7 @@ document.getElementById('items-container').addEventListener('click', (e) => {
         const row = btn.closest('.item-row');
         row.remove();
         updateRemoveButtons();
+        calculateTotals();
     }
 });
 
@@ -186,6 +210,7 @@ function fillCostPrice(select) {
     } else {
         costInput.value = '';
     }
+    calculateTotals();
 }
 
 // Pre-fill cost price for the first row if a product is already selected on load
@@ -193,6 +218,81 @@ document.querySelectorAll('select[name$="[product_id]"]').forEach(select => {
     if (select.value) fillCostPrice(select);
 });
 
+function calculateTotals() {
+    let subtotal = 0;
+    let totalTax = 0;
+    let hasTaxableItem = false;
+    
+    const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
+    const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
+
+    document.querySelectorAll('.item-row').forEach(row => {
+        const select = row.querySelector('select[name$="[product_id]"]');
+        const qty = parseFloat(row.querySelector('input[name$="[quantity]"]').value) || 0;
+        const costPrice = parseFloat(row.querySelector('input[name$="[cost_price]"]').value) || 0;
+        const lineTotal = qty * costPrice;
+        
+        if (select && select.value) {
+            const product = productsJson.find(p => String(p.id) === String(select.value));
+            if (product) {
+                let itemTaxRate = 0;
+                let itemTaxAmount = 0;
+                let itemSubtotal = lineTotal;
+                
+                if (taxEnabled && product.is_taxable) {
+                    hasTaxableItem = true;
+                    itemTaxRate = product.tax_rate > 0 ? parseFloat(product.tax_rate) : defaultTaxRate;
+                    if (product.tax_type === 'inclusive') {
+                        itemTaxAmount = lineTotal - (lineTotal / (1 + itemTaxRate / 100));
+                        itemSubtotal = lineTotal - itemTaxAmount;
+                    } else {
+                        itemTaxAmount = lineTotal * (itemTaxRate / 100);
+                        itemSubtotal = lineTotal;
+                    }
+                }
+                
+                subtotal += itemSubtotal;
+                totalTax += itemTaxAmount;
+            } else {
+                subtotal += lineTotal;
+            }
+        } else {
+            subtotal += lineTotal;
+        }
+    });
+
+    const total = subtotal + totalTax;
+    
+    const previewSubtotal = document.getElementById('previewSubtotal');
+    const previewTax = document.getElementById('previewTax');
+    const previewTotal = document.getElementById('previewTotal');
+    const taxRow = document.getElementById('taxRow');
+    
+    if (previewSubtotal) previewSubtotal.innerText = '$' + subtotal.toFixed(2);
+    if (previewTax) previewTax.innerText = '$' + totalTax.toFixed(2);
+    if (previewTotal) previewTotal.innerText = '$' + total.toFixed(2);
+    
+    if (taxRow) {
+        if (hasTaxableItem && totalTax > 0) {
+            taxRow.style.display = 'flex';
+        } else {
+            taxRow.style.display = 'none';
+        }
+    }
+}
+
+document.getElementById('items-container').addEventListener('input', (e) => {
+    if (e.target.matches('input[name$="[quantity]"]') || e.target.matches('input[name$="[cost_price]"]')) {
+        calculateTotals();
+    }
+});
+document.getElementById('items-container').addEventListener('change', (e) => {
+    if (e.target.matches('select[name$="[product_id]"]')) {
+        calculateTotals();
+    }
+});
+
 updateRemoveButtons();
+calculateTotals();
 </script>
 @endsection

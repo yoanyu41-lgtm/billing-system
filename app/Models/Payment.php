@@ -9,6 +9,7 @@ class Payment extends Model
     protected $fillable = [
         'installment_id',
         'amount',
+        'penalty_amount',
         'payment_date',
         'payment_method_id',
         'status',
@@ -21,6 +22,7 @@ class Payment extends Model
 
     protected $casts = [
         'is_settlement' => 'boolean',
+        'penalty_amount' => 'decimal:2',
     ];
 
     public function installment()

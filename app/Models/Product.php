@@ -84,4 +84,26 @@ class Product extends Model
                 ->whereNotNull('supplier_id');
         })->orderBy('name')->get();
     }
+
+    public function checkLowStockAlert()
+    {
+        $threshold = $this->low_stock_threshold ?? 5;
+        if ($this->stock <= $threshold) {
+            $alreadyNotified = Notification::where('type', 'low_stock')
+                ->where('link', route('admin.products.show', $this->id))
+                ->where('is_read', false)
+                ->exists();
+
+            if (!$alreadyNotified) {
+                Notification::createSystemNotification(
+                    'low_stock',
+                    'Low Stock Alert',
+                    'Product ' . $this->name . ' is running low on stock. Current stock: ' . $this->stock,
+                    'archive',
+                    'orange',
+                    route('admin.products.show', $this->id)
+                );
+            }
+        }
+    }
 }

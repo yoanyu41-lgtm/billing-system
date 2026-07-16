@@ -16,9 +16,7 @@ class CustomerController extends Controller
         $user = auth()->user();
         $query = Customer::query();
 
-        if (!in_array($user->role, ['admin', 'staff', 'user'])) {
-            $query->where('created_by', $user->id);
-        }
+
 
         // Filter by customer type: 'installment' (default) or 'direct'
         $type = $request->get('type', 'installment');
@@ -81,11 +79,11 @@ class CustomerController extends Controller
 
         $customer = Customer::create($data);
 
-        Notification::createNotification(
+        Notification::createSystemNotification(
             'customer', 'New customer added',
             'A new customer has been added: ' . $customer->name,
             'user-plus', 'green',
-            route('customers.show', $customer), null
+            route('customers.show', $customer)
         );
 
         // If a product was chosen for a direct-sale customer, record the sale immediately.
@@ -127,6 +125,7 @@ class CustomerController extends Controller
                     ]);
 
                     $product->decrement('stock', $quantity);
+                    $product->checkLowStockAlert();
                 });
             }
         }
