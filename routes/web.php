@@ -22,6 +22,7 @@ use App\Http\Controllers\TelegramLogController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/', function () {
     // Redirect to dashboard if authenticated, otherwise to login
     if (auth()->check()) {
@@ -54,6 +55,8 @@ Route::get('/currency/{currency}', function ($currency) {
     }
     return back();
 })->name('currency.switch');
+
+
 
 // Global Search API
 Route::get('/api/search', function (Request $request) {
@@ -143,6 +146,9 @@ Route::middleware('auth')->group(function () {
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
         // Products
+        Route::get('products/import/template', [ProductController::class, 'downloadTemplate'])->name('products.import-template');
+        Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import-form');
+        Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
         Route::get('products/stock', [ProductController::class, 'stockIndex'])->name('products.stock');
         Route::post('products/{product}/stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
         Route::resource('products', ProductController::class);

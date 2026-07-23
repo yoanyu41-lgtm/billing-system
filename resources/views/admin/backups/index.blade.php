@@ -114,7 +114,7 @@
                         <p class="text-sm font-semibold text-gray-700 group-hover:text-blue-600 transition-colors duration-200" id="file-label">
                             {{ __('app.select_sql_file') }}
                         </p>
-                        <p class="text-xs text-gray-400">SQL file maximum size 20MB</p>
+                        <p class="text-xs text-gray-400">{{ app()->getLocale() === 'km' ? 'ទំហំឯកសារ SQL ធំបំផុត 20MB' : 'SQL file maximum size 20MB' }}</p>
                     </div>
                 </div>
                 
@@ -150,8 +150,8 @@
                     <tr class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-100">
                         <th class="py-4 px-6 w-16">#</th>
                         <th class="py-4 px-6">{{ __('app.backup_file') }}</th>
-                        <th class="py-4 px-6">Generated Date</th>
-                        <th class="py-4 px-6">File Size</th>
+                        <th class="py-4 px-6">{{ __('app.generated_date') }}</th>
+                        <th class="py-4 px-6">{{ __('app.file_size') }}</th>
                         <th class="py-4 px-6 text-center w-48">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>

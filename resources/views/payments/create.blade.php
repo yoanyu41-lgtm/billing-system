@@ -63,7 +63,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Amount -->
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">{{ __('app.amount') }} (USD)</label>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-bold text-gray-700" id="amountLabel">{{ __('app.amount') }} (USD)</label>
+                    <div class="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100" role="group">
+                        <button type="button" id="toggleCurrencyUsd" class="px-3 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition">USD ($)</button>
+                        <button type="button" id="toggleCurrencyKhr" class="px-3 py-1 text-xs font-bold rounded-md text-gray-600 hover:text-blue-600 transition">KHR (៛)</button>
+                    </div>
+                </div>
                 <input 
                     type="number" 
                     name="amount" 
@@ -79,7 +85,7 @@
 
             <!-- Penalty Fee -->
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (USD)</label>
+                <label class="block text-sm font-bold text-gray-700 mb-2" id="penaltyLabel">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (USD)</label>
                 <input 
                     type="number" 
                     name="penalty_amount" 
@@ -92,6 +98,7 @@
                 <span class="mt-1.5 block text-sm font-semibold text-indigo-600" id="penaltyRiel">0 ៛</span>
             </div>
         </div>
+
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Payment Date -->
@@ -420,6 +427,10 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
+        const methodSelect = document.querySelector('select[name="payment_method_id"]');
+        const bankQrContainer = document.getElementById('bankQrContainer');
+        const creditCardContainer = document.getElementById('creditCardContainer');
+
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
         const amountInput = document.getElementById('amountInput');
@@ -653,22 +664,34 @@
         }
 
         function updateRiel() {
-            const usd = parseFloat(amountInput.value) || 0;
-            const riel = Math.round(usd * exchangeRate);
-            amountRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
+            const val = parseFloat(amountInput.value) || 0;
+            if (qrCurrencyMode === 'KHR') {
+                const usd = val / exchangeRate;
+                amountRiel.innerText = '$' + usd.toFixed(2);
+            } else {
+                const riel = Math.round(val * exchangeRate);
+                amountRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
+            }
         }
 
         function updatePenaltyRiel() {
             if (!penaltyInput || !penaltyRiel) return;
-            const usd = parseFloat(penaltyInput.value) || 0;
-            const riel = Math.round(usd * exchangeRate);
-            penaltyRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
+            const val = parseFloat(penaltyInput.value) || 0;
+            if (qrCurrencyMode === 'KHR') {
+                const usd = val / exchangeRate;
+                penaltyRiel.innerText = '$' + usd.toFixed(2);
+            } else {
+                const riel = Math.round(val * exchangeRate);
+                penaltyRiel.innerText = riel.toLocaleString('en-US') + ' ៛';
+            }
         }
 
+
         function calculateCRC16_JS(payload) {
+            const bytes = new TextEncoder().encode(payload);
             let crc = 0xFFFF;
-            for (let c = 0; c < payload.length; c++) {
-                crc ^= payload.charCodeAt(c) << 8;
+            for (let c = 0; c < bytes.length; c++) {
+                crc ^= bytes[c] << 8;
                 for (let i = 0; i < 8; i++) {
                     if (crc & 0x8000) {
                         crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
@@ -680,88 +703,118 @@
             return crc.toString(16).toUpperCase().padStart(4, '0');
         }
 
+
         function getByteLength(str) {
             return new TextEncoder().encode(str).length;
         }
 
         function parseEMVCo(payload) {
-            let tags = {};
+            let tags = [];
             let i = 0;
             while (i < payload.length) {
                 if (i + 4 > payload.length) break;
                 let tag = payload.substring(i, i + 2);
-                let length = parseInt(payload.substring(i + 2, i + 4));
+                let lenStr = payload.substring(i + 2, i + 4);
+                let length = parseInt(lenStr);
+                if (isNaN(length)) break;
                 let value = payload.substring(i + 4, i + 4 + length);
-                tags[tag] = value;
+                tags.push({ tag: tag, lenStr: lenStr, val: value });
                 i += 4 + length;
                 if (tag === '63') break;
             }
             return tags;
         }
 
+
+
         function updateDynamicQr() {
-            if (!baseQrPayload || !bankQrImage) return;
+            if (!bankQrImage) return;
+
+            const staticSrc = bankQrImage.getAttribute('data-static-src');
+
+            // No payload saved → always show uploaded static image
+            if (!baseQrPayload || baseQrPayload.trim() === '') {
+                bankQrImage.src = staticSrc;
+                return;
+            }
 
             const usd = parseFloat(amountInput.value) || 0;
+            const msgEl = document.getElementById('qrInstructionMessage');
+
+            // No amount yet → show static uploaded QR image
             if (usd <= 0) {
-                bankQrImage.src = bankQrImage.getAttribute('data-static-src');
+                bankQrImage.src = staticSrc;
+                if (msgEl) msgEl.innerText = '';
                 return;
             }
 
             try {
                 let tags = parseEMVCo(baseQrPayload.trim());
-                const msgEl = document.getElementById('qrInstructionMessage');
 
-                if (msgEl) {
-                    const isKh = '{{ app()->getLocale() }}' === 'km';
-                    msgEl.innerText = isKh 
-                        ? '* ទឹកប្រាក់ត្រូវបានបំពេញស្វ័យប្រវត្តិតាមវិក្កយបត្រ។' 
-                        : '* Amount is automatically pre-filled.';
-                }
-
-                tags['01'] = '12';
-
-                let baseCurrency = (tags['53'] === '116') ? 'KHR' : 'USD';
-                let finalCurrency = '840';
-                let finalAmountStr = '0';
-
-                if (baseCurrency === 'KHR') {
-                    finalCurrency = '116';
-                    let amountInKhr = (qrCurrencyMode === 'USD') ? Math.round(usd * exchangeRate) : usd;
-                    finalAmountStr = amountInKhr.toString();
-                } else {
-                    if (qrCurrencyMode === 'KHR') {
-                        finalCurrency = '116';
-                        finalAmountStr = Math.round(usd * exchangeRate).toString();
+                // Helper to update or insert a tag
+                function setTag(tag, lenStr, val, insertAfterTag = null) {
+                    let index = tags.findIndex(item => item.tag === tag);
+                    if (index !== -1) {
+                        tags[index].lenStr = lenStr;
+                        tags[index].val = val;
                     } else {
-                        if (usd < 1.00) {
-                            finalCurrency = '116';
-                            finalAmountStr = Math.round(usd * exchangeRate).toString();
+                        let newItem = { tag: tag, lenStr: lenStr, val: val };
+                        if (insertAfterTag) {
+                            let afterIdx = tags.findIndex(item => item.tag === insertAfterTag);
+                            if (afterIdx !== -1) {
+                                tags.splice(afterIdx + 1, 0, newItem);
+                                return;
+                            }
+                        }
+                        // Default to push before Tag 63 (which is always last)
+                        let idx63 = tags.findIndex(item => item.tag === '63');
+                        if (idx63 !== -1) {
+                            tags.splice(idx63, 0, newItem);
                         } else {
-                            finalCurrency = '840';
-                            finalAmountStr = usd.toFixed(2);
+                            tags.push(newItem);
                         }
                     }
                 }
 
-                tags['53'] = finalCurrency;
-                tags['54'] = finalAmountStr;
+                // Set dynamic mode
+                setTag('01', '02', '12');
 
+                let inputCurrency = qrCurrencyMode;
+                let finalCurrency = (qrCurrencyMode === 'KHR') ? '116' : '840';
+                
+                // Force KHR for USD amounts less than $1.00 (since Bakong minimum for USD is $1.00)
+                if (inputCurrency === 'USD' && usd > 0 && usd < 1.00) {
+                    finalCurrency = '116';
+                }
+
+                let finalAmountStr = '0';
+
+                if (finalCurrency === '116') {
+                    let amountInKhr = (inputCurrency === 'USD') ? Math.round(usd * exchangeRate) : usd;
+                    finalAmountStr = Math.round(amountInKhr).toString();
+                } else {
+                    let amountInUsd = (inputCurrency === 'KHR') ? (usd / exchangeRate) : usd;
+                    finalAmountStr = amountInUsd.toFixed(2);
+                }
+
+
+
+
+                setTag('53', '03', finalCurrency);
+                setTag('54', finalAmountStr.length.toString().padStart(2, '0'), finalAmountStr, '53');
+
+                // Wing timestamp tag
                 if (baseQrPayload.includes('wing_khqr@wing')) {
                     const nowMs = Date.now();
                     const expireMs = nowMs + 24 * 60 * 60 * 1000;
-                    tags['99'] = `0013${nowMs}0113${expireMs}`;
+                    let wingVal = `0013${nowMs}0113${expireMs}`;
+                    setTag('99', wingVal.length.toString().padStart(2, '0'), wingVal);
                 }
 
-                let sortedKeys = Object.keys(tags).sort();
                 let reconstructed = '';
-                for (let key of sortedKeys) {
-                    if (key === '63') continue;
-                    let val = tags[key];
-                    // Correct standard multi-byte byte length encoding
-                    let byteLen = getByteLength(val);
-                    let lenStr = byteLen.toString().padStart(2, '0');
-                    reconstructed += key + lenStr + val;
+                for (let item of tags) {
+                    if (item.tag === '63') continue;
+                    reconstructed += item.tag + item.lenStr + item.val;
                 }
                 reconstructed += '6304';
                 let crc = calculateCRC16_JS(reconstructed);
@@ -774,28 +827,95 @@
             }
         }
 
+
+
         let qrCurrencyMode = '{{ session('display_currency', 'USD') }}';
 
-        function checkAndAutoSwitchCurrency() {
-            const usd = parseFloat(amountInput.value) || 0;
-            if (usd > 0 && usd < 1.00) {
-                qrCurrencyMode = 'KHR';
-            } else {
-                qrCurrencyMode = '{{ session('display_currency', 'USD') }}';
+        const toggleUsd = document.getElementById('toggleCurrencyUsd');
+        const toggleKhr = document.getElementById('toggleCurrencyKhr');
+        const amountLabel = document.getElementById('amountLabel');
+        const penaltyLabel = document.getElementById('penaltyLabel');
+
+        function setCurrencyMode(mode) {
+            const oldMode = qrCurrencyMode;
+            qrCurrencyMode = mode;
+            
+            // Convert current input values if mode actually changed
+            if (oldMode !== mode) {
+                const currentAmount = parseFloat(amountInput.value) || 0;
+                const currentPenalty = penaltyInput ? (parseFloat(penaltyInput.value) || 0) : 0;
+                
+                if (currentAmount > 0) {
+                    if (mode === 'KHR') {
+                        amountInput.value = Math.round(currentAmount * exchangeRate);
+                    } else {
+                        amountInput.value = (currentAmount / exchangeRate).toFixed(2);
+                    }
+                }
+                
+                if (penaltyInput && currentPenalty > 0) {
+                    if (mode === 'KHR') {
+                        penaltyInput.value = Math.round(currentPenalty * exchangeRate);
+                    } else {
+                        penaltyInput.value = (currentPenalty / exchangeRate).toFixed(2);
+                    }
+                }
             }
+
+            if (mode === 'KHR') {
+                toggleKhr.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                toggleKhr.classList.remove('text-gray-600');
+                toggleUsd.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                toggleUsd.classList.add('text-gray-600');
+                
+                if (amountLabel) amountLabel.innerText = '{{ __('app.amount') }} (KHR)';
+                if (penaltyLabel) penaltyLabel.innerText = '{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (KHR)';
+                
+                amountInput.step = '100';
+                amountInput.min = '100';
+                if (penaltyInput) {
+                    penaltyInput.step = '100';
+                    penaltyInput.min = '0';
+                }
+            } else {
+                toggleUsd.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                toggleUsd.classList.remove('text-gray-600');
+                toggleKhr.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                toggleKhr.classList.add('text-gray-600');
+                
+                if (amountLabel) amountLabel.innerText = '{{ __('app.amount') }} (USD)';
+                if (penaltyLabel) penaltyLabel.innerText = '{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (USD)';
+                
+                amountInput.step = '0.01';
+                amountInput.min = '0.01';
+                if (penaltyInput) {
+                    penaltyInput.step = '0.01';
+                    penaltyInput.min = '0';
+                }
+            }
+            
+            updateRiel();
+            updatePenaltyRiel();
+            updateDynamicQr();
+            updateCalculations();
         }
+
+        if (toggleUsd && toggleKhr) {
+            toggleUsd.addEventListener('click', () => setCurrencyMode('USD'));
+            toggleKhr.addEventListener('click', () => setCurrencyMode('KHR'));
+        }
+
+        // Set initial state matching session currency
+        setCurrencyMode(qrCurrencyMode);
 
         amountInput.addEventListener('input', function() {
             updateRiel();
-            checkAndAutoSwitchCurrency();
             updateDynamicQr();
             updateCalculations();
         });
+
         
         // Toggle Payment Method Fields
-        const methodSelect = document.querySelector('select[name="payment_method_id"]');
-        const bankQrContainer = document.getElementById('bankQrContainer');
-        const creditCardContainer = document.getElementById('creditCardContainer');
 
         function togglePaymentMethodFields() {
             const selectedOption = methodSelect.options[methodSelect.selectedIndex];
@@ -839,26 +959,34 @@
         function handleInstallmentChange() {
             const selectedOption = installmentSelect.options[installmentSelect.selectedIndex];
             if (selectedOption) {
-                const dueAmount = selectedOption.getAttribute('data-due-amount');
-                if (dueAmount && parseFloat(dueAmount) > 0) {
-                    amountInput.value = parseFloat(dueAmount).toFixed(2);
+                const dueAmount = parseFloat(selectedOption.getAttribute('data-due-amount')) || 0;
+                const penaltyAmount = parseFloat(selectedOption.getAttribute('data-penalty-amount')) || 0;
+                
+                if (dueAmount > 0) {
+                    if (qrCurrencyMode === 'KHR') {
+                        amountInput.value = Math.round(dueAmount * exchangeRate);
+                    } else {
+                        amountInput.value = dueAmount.toFixed(2);
+                    }
                 } else {
                     amountInput.value = '';
                 }
 
                 // Add penalty auto-fill
-                const penaltyAmount = selectedOption.getAttribute('data-penalty-amount');
                 if (penaltyInput) {
-                    if (penaltyAmount && parseFloat(penaltyAmount) > 0) {
-                        penaltyInput.value = parseFloat(penaltyAmount).toFixed(2);
+                    if (penaltyAmount > 0) {
+                        if (qrCurrencyMode === 'KHR') {
+                            penaltyInput.value = Math.round(penaltyAmount * exchangeRate);
+                        } else {
+                            penaltyInput.value = penaltyAmount.toFixed(2);
+                        }
                     } else {
-                        penaltyInput.value = '0.00';
+                        penaltyInput.value = qrCurrencyMode === 'KHR' ? '0' : '0.00';
                     }
                     updatePenaltyRiel();
                 }
 
                 updateRiel();
-                checkAndAutoSwitchCurrency();
                 updateDynamicQr();
                 updateCalculations();
             }
@@ -878,7 +1006,6 @@
         // Run initializers
         updateRiel();
         updatePenaltyRiel();
-        checkAndAutoSwitchCurrency();
         updateDynamicQr();
         if (methodSelect) {
             togglePaymentMethodFields();

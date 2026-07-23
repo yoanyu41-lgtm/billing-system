@@ -246,11 +246,13 @@
             @unless($isDirect)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">{{ __('app.documents') }}</h3>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                     @foreach([
                         ['key' => 'id_card_photo', 'label' => __('app.id_card_photo'), 'emoji' => '🪪'],
+                        ['key' => 'family_photo',  'label' => __('app.family_photo'),  'emoji' => '📖'],
                         ['key' => 'income_proof',  'label' => __('app.income_proof'),  'emoji' => '💰'],
                     ] as $doc)
+
                     <div>
                         <p class="text-xs text-gray-400 mb-1.5">{{ $doc['emoji'] }} {{ $doc['label'] }}</p>
                         @if($customer->{$doc['key']})

@@ -79,19 +79,43 @@ class ReportController extends Controller
 
     public function income(Request $request)
     {
-        $start = $request->start ?? now()->startOfYear()->toDateString();
-        $end = $request->end ?? now()->endOfYear()->toDateString();
+        $start = $request->start ?? now()->startOfMonth()->toDateString();
+        $end = $request->end ?? now()->endOfMonth()->toDateString();
         
-        $payments = Payment::with('installment.customer', 'paymentMethod')
+        $payments = Payment::with(['installment.customer', 'installment.product', 'paymentMethod'])
             ->whereBetween('payment_date', [$start, $end])
             ->where('status', 'approved')
             ->get();
             
-        $sales = \App\Models\Sale::whereBetween('sale_date', [$start, $end])->get();
+        $sales = \App\Models\Sale::with('items.product')
+            ->whereBetween('sale_date', [$start, $end])
+            ->get();
         
         $ledger = collect();
         
         foreach ($payments as $p) {
+            $cost = 0;
+            if ($p->installment && $p->installment->product) {
+                $product = $p->installment->product;
+                $inst = $p->installment;
+                $costPrice = (float)($product->cost_price ?? 0);
+                $sellingPrice = (float)($inst->subtotal_before_tax ?: ($inst->total_price ?: 1));
+                if ($sellingPrice <= 0) $sellingPrice = 1;
+                $costRatio = $costPrice / $sellingPrice;
+                
+                $principalBase = max($inst->total_price - $inst->down_payment, 0);
+                $duration = max($inst->duration_months, 1);
+                $monthlyPrincipal = round($principalBase / $duration, 2);
+                $monthlyInterest = round(($principalBase * $inst->interest_rate / 100) / 12, 2);
+                $monthlyPayment = $monthlyPrincipal + $monthlyInterest;
+                
+                $principalRatio = $monthlyPayment > 0 ? ($monthlyPrincipal / $monthlyPayment) : 1.0;
+                $principalPaid = $p->amount * $principalRatio;
+                $cost = $principalPaid * $costRatio;
+                if ($cost > $p->amount) $cost = $p->amount;
+            }
+            $profit = ($p->amount + $p->penalty_amount) - $cost;
+
             $ledger->push((object)[
                 'date' => \Carbon\Carbon::parse($p->payment_date),
                 'invoice_no' => 'PAY-' . $p->id,
@@ -100,11 +124,19 @@ class ReportController extends Controller
                 'method' => $p->paymentMethod->name ?? '-',
                 'amount' => (float)$p->amount,
                 'penalty' => (float)$p->penalty_amount,
+                'cost' => (float)$cost,
+                'profit' => (float)$profit,
                 'total' => (float)($p->amount + $p->penalty_amount)
             ]);
         }
         
         foreach ($sales as $s) {
+            $cost = 0;
+            foreach ($s->items as $item) {
+                $cost += ($item->product->cost_price ?? 0) * $item->quantity;
+            }
+            $profit = $s->total - $cost;
+
             $ledger->push((object)[
                 'date' => \Carbon\Carbon::parse($s->sale_date),
                 'invoice_no' => $s->invoice_no ?? ('#SALE-' . $s->id),
@@ -113,6 +145,8 @@ class ReportController extends Controller
                 'method' => 'Cash',
                 'amount' => (float)$s->subtotal_before_tax,
                 'penalty' => 0.00,
+                'cost' => (float)$cost,
+                'profit' => (float)$profit,
                 'total' => (float)$s->total
             ]);
         }
@@ -123,8 +157,15 @@ class ReportController extends Controller
         $totalPenalties = $payments->sum('penalty_amount');
         $totalSales = $sales->sum('total');
         $grandTotal = $totalInstallments + $totalPenalties + $totalSales;
+        
+        $totalCost = $ledger->sum('cost');
+        $totalProfit = $ledger->sum('profit');
 
-        return view('admin.reports.income', compact('ledger', 'start', 'end', 'totalInstallments', 'totalPenalties', 'totalSales', 'grandTotal'));
+        return view('admin.reports.income', compact(
+            'ledger', 'start', 'end', 
+            'totalInstallments', 'totalPenalties', 'totalSales', 'grandTotal',
+            'totalCost', 'totalProfit'
+        ));
     }
 
     public function exportPdf(Request $request, $type)
