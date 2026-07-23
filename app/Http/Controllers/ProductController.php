@@ -279,7 +279,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        Gate::authorize('manage-product');
+        Gate::authorize('delete-product');
 
         if ($product->installments()->exists()) {
             return redirect()->route('admin.products.stock')->with('error', __('app.cannot_delete_product_has_installments'));
@@ -311,5 +311,274 @@ class ProductController extends Controller
         });
 
         return back()->with('success', __('app.updated_successfully'));
+    }
+
+    public function downloadTemplate()
+    {
+        Gate::authorize('manage-product');
+        
+        $filename = "products_import_template.csv";
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = [
+            'code', 
+            'name', 
+            'price', 
+            'cost_price', 
+            'stock', 
+            'low_stock_threshold', 
+            'category', 
+            'brand', 
+            'model', 
+            'cpu', 
+            'ram', 
+            'storage', 
+            'graphics_card', 
+            'is_taxable', 
+            'tax_rate', 
+            'tax_type', 
+            'description'
+        ];
+
+        $exampleRow = [
+            'PC-002',
+            'Gaming Laptop Asus TUF',
+            '1200.00',
+            '950.00',
+            '10',
+            '3',
+            'Laptop',
+            'Asus',
+            'TUF A15',
+            'Ryzen 7',
+            '16GB DDR5',
+            '512GB SSD',
+            'RTX 4060',
+            '1',
+            '10.00',
+            'exclusive',
+            'High performance gaming laptop'
+        ];
+
+        $callback = function() use ($columns, $exampleRow) {
+            $file = fopen('php://output', 'w');
+            
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            
+            fputcsv($file, $columns);
+            fputcsv($file, $exampleRow);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function importForm()
+    {
+        Gate::authorize('manage-product');
+        return view('admin.products.import');
+    }
+
+    public function import(Request $request)
+    {
+        Gate::authorize('manage-product');
+        
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+            'duplicate_handling' => 'required|in:skip,update',
+            'stock_handling' => 'required|in:add,overwrite',
+        ]);
+
+        $file = $request->file('csv_file');
+        $duplicateHandling = $request->input('duplicate_handling', 'skip');
+        $stockHandling = $request->input('stock_handling', 'add');
+
+        $filePath = $file->getRealPath();
+        $handle = fopen($filePath, 'r');
+        
+        if (!$handle) {
+            return back()->with('error', __('app.invalid_csv'));
+        }
+
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $headers = fgetcsv($handle);
+        if (!$headers) {
+            fclose($handle);
+            return back()->with('error', __('app.invalid_csv'));
+        }
+
+        $headers = array_map(function($h) {
+            return strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace([' ', '-'], '_', $h))));
+        }, $headers);
+
+        $importCount = 0;
+        $errorCount = 0;
+        $rowNumber = 1;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $rowNumber++;
+                
+                if (count($row) === 1 && empty($row[0])) {
+                    continue;
+                }
+
+                if (count($row) < count($headers)) {
+                    $row = array_pad($row, count($headers), '');
+                } elseif (count($row) > count($headers)) {
+                    $row = array_slice($row, 0, count($headers));
+                }
+
+                $data = array_combine($headers, $row);
+
+                $code = trim($data['code'] ?? '');
+                $name = trim($data['name'] ?? '');
+                $price = trim($data['price'] ?? '');
+
+                if (empty($code) || empty($name) || $price === '') {
+                    $errorCount++;
+                    continue;
+                }
+
+                $price = (float) $price;
+                $costPrice = isset($data['cost_price']) && trim($data['cost_price']) !== '' ? (float) trim($data['cost_price']) : null;
+                $stock = isset($data['stock']) && trim($data['stock']) !== '' ? (int) trim($data['stock']) : 0;
+                $lowStock = isset($data['low_stock_threshold']) && trim($data['low_stock_threshold']) !== '' ? (int) trim($data['low_stock_threshold']) : 5;
+                
+                $isTaxable = 1;
+                if (isset($data['is_taxable'])) {
+                    $taxVal = trim(strtolower($data['is_taxable']));
+                    if ($taxVal === '0' || $taxVal === 'false' || $taxVal === 'no') {
+                        $isTaxable = 0;
+                    }
+                }
+                
+                $taxRate = isset($data['tax_rate']) && trim($data['tax_rate']) !== '' ? (float) trim($data['tax_rate']) : 10.00;
+                $taxType = isset($data['tax_type']) && in_array(strtolower(trim($data['tax_type'])), ['inclusive', 'exclusive', 'none']) ? strtolower(trim($data['tax_type'])) : 'exclusive';
+
+                $product = Product::where('code', $code)->first();
+
+                if ($product) {
+                    if ($duplicateHandling === 'skip') {
+                        continue;
+                    }
+
+                    $oldStock = $product->stock;
+                    $newStock = $oldStock;
+                    
+                    if ($stockHandling === 'add') {
+                        $newStock = $oldStock + $stock;
+                        $diff = $stock;
+                    } else {
+                        $newStock = $stock;
+                        $diff = $newStock - $oldStock;
+                    }
+
+                    $categoryName = trim($data['category'] ?? '');
+                    if (!empty($categoryName)) {
+                        Category::firstOrCreate(
+                            ['name' => $categoryName],
+                            ['brand' => trim($data['brand'] ?? '')]
+                        );
+                    }
+
+                    $product->update([
+                        'name' => $name,
+                        'price' => $price,
+                        'cost_price' => $costPrice,
+                        'stock' => $newStock,
+                        'low_stock_threshold' => $lowStock,
+                        'category' => $categoryName ?: $product->category,
+                        'brand' => trim($data['brand'] ?? '') ?: $product->brand,
+                        'model' => trim($data['model'] ?? '') ?: $product->model,
+                        'cpu' => trim($data['cpu'] ?? '') ?: $product->cpu,
+                        'ram' => trim($data['ram'] ?? '') ?: $product->ram,
+                        'storage' => trim($data['storage'] ?? '') ?: $product->storage,
+                        'graphics_card' => trim($data['graphics_card'] ?? '') ?: $product->graphics_card,
+                        'is_taxable' => $isTaxable,
+                        'tax_rate' => $taxRate,
+                        'tax_type' => $taxType,
+                        'description' => trim($data['description'] ?? '') ?: $product->description,
+                    ]);
+
+                    if ($diff != 0) {
+                        $type = $diff > 0 ? 'in' : 'out';
+                        \App\Models\StockMovement::create([
+                            'product_id' => $product->id,
+                            'type' => $type,
+                            'quantity' => abs($diff),
+                            'note' => 'Stock updated via CSV Import'
+                        ]);
+                    }
+
+                    $importCount++;
+                } else {
+                    $categoryName = trim($data['category'] ?? '');
+                    if (!empty($categoryName)) {
+                        Category::firstOrCreate(
+                            ['name' => $categoryName],
+                            ['brand' => trim($data['brand'] ?? '')]
+                        );
+                    }
+
+                    $newProduct = Product::create([
+                        'code' => $code,
+                        'name' => $name,
+                        'price' => $price,
+                        'cost_price' => $costPrice,
+                        'stock' => $stock,
+                        'low_stock_threshold' => $lowStock,
+                        'category' => $categoryName ?: null,
+                        'brand' => trim($data['brand'] ?? '') ?: null,
+                        'model' => trim($data['model'] ?? '') ?: null,
+                        'cpu' => trim($data['cpu'] ?? '') ?: null,
+                        'ram' => trim($data['ram'] ?? '') ?: null,
+                        'storage' => trim($data['storage'] ?? '') ?: null,
+                        'graphics_card' => trim($data['graphics_card'] ?? '') ?: null,
+                        'is_taxable' => $isTaxable,
+                        'tax_rate' => $taxRate,
+                        'tax_type' => $taxType,
+                        'description' => trim($data['description'] ?? '') ?: null,
+                        'is_active' => true,
+                    ]);
+
+                    if ($stock > 0) {
+                        \App\Models\StockMovement::create([
+                            'product_id' => $newProduct->id,
+                            'type' => 'in',
+                            'quantity' => $stock,
+                            'note' => 'Initial stock via CSV Import'
+                        ]);
+                    }
+
+                    $importCount++;
+                }
+            }
+
+            fclose($handle);
+            \Illuminate\Support\Facades\DB::commit();
+
+            return redirect()->route('admin.products.index')
+                ->with('success', __('app.import_success', ['count' => $importCount]) . ($errorCount > 0 ? " (Skipped {$errorCount} invalid rows)" : ""));
+
+        } catch (\Exception $e) {
+            fclose($handle);
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Log::error('Product import error: ' . $e->getMessage());
+            return back()->with('error', __('app.import_failed') . ' ' . $e->getMessage());
+        }
     }
 }

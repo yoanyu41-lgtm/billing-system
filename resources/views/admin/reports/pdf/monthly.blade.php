@@ -25,15 +25,19 @@
     {{-- Summary Cards --}}
     <table style="width: 100%; margin-bottom: 20px; border: none;">
         <tr style="border: none;">
-            <td style="width: 33%; border: 1px solid #e5e7eb; padding: 10px; background: #f9fafb;">
+            <td style="width: 25%; border: 1px solid #e5e7eb; padding: 10px; background: #f9fafb;">
                 <div style="color: #6b7280; font-size: 9px; text-transform: uppercase;">បង់រំលស់ (Installment)</div>
                 <div style="font-size: 16px; font-weight: bold; color: #2563eb; margin-top: 3px;">${{ number_format($total, 2) }}</div>
             </td>
-            <td style="width: 33%; border: 1px solid #e5e7eb; padding: 10px; background: #f9fafb;">
+            <td style="width: 25%; border: 1px solid #e5e7eb; padding: 10px; background: #f9fafb;">
+                <div style="color: #6b7280; font-size: 9px; text-transform: uppercase;">ប្រាក់ពិន័យ (Penalty)</div>
+                <div style="font-size: 16px; font-weight: bold; color: #dc2626; margin-top: 3px;">${{ number_format($penaltyTotal, 2) }}</div>
+            </td>
+            <td style="width: 25%; border: 1px solid #e5e7eb; padding: 10px; background: #f9fafb;">
                 <div style="color: #6b7280; font-size: 9px; text-transform: uppercase;">លក់ផ្ទាល់ (Direct Sale)</div>
                 <div style="font-size: 16px; font-weight: bold; color: #059669; margin-top: 3px;">${{ number_format($salesTotal, 2) }}</div>
             </td>
-            <td style="width: 33%; border: 1px solid #bfdbfe; padding: 10px; background: #eff6ff;">
+            <td style="width: 25%; border: 1px solid #bfdbfe; padding: 10px; background: #eff6ff;">
                 <div style="color: #1e40af; font-size: 9px; text-transform: uppercase; font-weight: bold;">សរុបរួម (Grand Total)</div>
                 <div style="font-size: 16px; font-weight: bold; color: #1d4ed8; margin-top: 3px;">${{ number_format($grandTotal, 2) }}</div>
             </td>
@@ -46,21 +50,28 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 40px;">លរ</th>
+                <th style="width: 30px;">លរ</th>
                 <th style="width: 80px;">កាលបរិច្ឆេទ</th>
                 <th>អតិថិជន</th>
                 <th>ទូរស័ព្ទ</th>
-                <th class="right" style="width: 100px;">ចំនួនទឹកប្រាក់</th>
+                <th class="right" style="width: 80px;">បង់រំលស់</th>
+                <th class="right" style="width: 80px;">ប្រាក់ពិន័យ</th>
+                <th class="right" style="width: 80px;">សរុប</th>
             </tr>
         </thead>
         <tbody>
             @foreach($payments as $i => $payment)
+            @php
+                $payTotal = $payment->amount + $payment->penalty_amount;
+            @endphp
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ optional($payment->payment_date)->format('d-m-Y') }}</td>
                 <td>{{ $payment->installment->customer->name ?? '-' }}</td>
                 <td>{{ $payment->installment->customer->phone ?? '-' }}</td>
                 <td class="right">${{ number_format($payment->amount, 2) }}</td>
+                <td class="right" style="color: #dc2626;">${{ number_format($payment->penalty_amount, 2) }}</td>
+                <td class="right" style="font-weight: bold; color: #1e40af;">${{ number_format($payTotal, 2) }}</td>
             </tr>
             @endforeach
         </tbody>

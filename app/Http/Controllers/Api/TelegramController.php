@@ -122,7 +122,7 @@ class TelegramController extends Controller
                             ->value('id') 
                             ?: (\App\Models\PaymentMethod::first()->id ?? null);
 
-                        Payment::create([
+                        $payment = Payment::create([
                             'installment_id' => $installment->id,
                             'amount' => $installment->monthly_payment,
                             'payment_date' => now()->toDateString(),
@@ -130,6 +130,13 @@ class TelegramController extends Controller
                             'status' => 'pending',
                             'qr_image' => $qrImagePath,
                         ]);
+
+                        \App\Models\Notification::createSystemNotification(
+                            'payment', 'Telegram Payment Uploaded',
+                            'A new payment of $' . number_format($payment->amount, 2) . ' is uploaded via Telegram and pending approval for customer ' . $installment->customer->name,
+                            'dollar-sign', 'blue',
+                            route('payments.index')
+                        );
 
                         $msg = "⏳ <b>ទទួលបានវិក្កយបត្ររួចរាល់!</b>\n\n";
                         $msg .= "ការទូទាត់ប្រាក់ចំនួន <b>" . $this->formatPrice($installment->monthly_payment) . "</b> ត្រូវបានបញ្ចូលទៅក្នុងប្រព័ន្ធរង់ចាំការពិនិត្យ។\n\n";

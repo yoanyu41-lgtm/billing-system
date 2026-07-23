@@ -181,6 +181,29 @@
                         <div class="text-2xl font-bold text-gray-700">${{ $product->cost_price ? number_format($product->cost_price, 2) : '—' }}</div>
                     </div>
                 </div>
+                @php
+                    $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
+                @endphp
+                @if($taxEnabled == '1')
+                <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-400 font-semibold uppercase text-xs">{{ __('app.taxable') }}:</span>
+                        <span class="ml-1 font-semibold text-gray-700">
+                            @if($product->is_taxable)
+                                {{ __('app.yes') }}
+                            @else
+                                {{ __('app.no') }}
+                            @endif
+                        </span>
+                    </div>
+                    @if($product->is_taxable)
+                    <div>
+                        <span class="text-gray-400 font-semibold uppercase text-xs">{{ __('app.tax_rate') }}:</span>
+                        <span class="ml-1 font-semibold text-gray-700">{{ (float) $product->tax_rate }}% ({{ $product->tax_type === 'inclusive' ? __('app.tax_inclusive') : __('app.tax_exclusive') }})</span>
+                    </div>
+                    @endif
+                </div>
+                @endif
             </div>
 
             <!-- Supplier card -->

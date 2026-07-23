@@ -108,13 +108,15 @@
                 <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">៣</span>
                 {{ __('app.documents') }}
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 @php
                 $docs = [
                     ['name' => 'id_card_photo', 'label' => __('app.id_card_photo'), 'icon' => '🪪'],
+                    ['name' => 'family_photo',  'label' => __('app.family_photo'),  'icon' => '📖'],
                     ['name' => 'income_proof',  'label' => __('app.income_proof'),  'icon' => '💰'],
                 ];
                 @endphp
+
                 @foreach($docs as $doc)
                 <div class="border border-gray-100 rounded-lg p-3 bg-gray-50">
                     <p class="text-xs font-medium text-gray-600 mb-2">{{ $doc['icon'] }} {{ $doc['label'] }}</p>

@@ -17,13 +17,14 @@ class ReportController extends Controller
             ->where('status', 'approved')
             ->get();
         $total = $payments->sum('amount');
+        $penaltyTotal = $payments->sum('penalty_amount');
 
         // Direct sales for the same day
         $sales = \App\Models\Sale::with('items')->whereDate('sale_date', $date)->get();
         $salesTotal = $sales->sum('total');
-        $grandTotal = $total + $salesTotal;
+        $grandTotal = $total + $penaltyTotal + $salesTotal;
 
-        return view('admin.reports.daily', compact('payments', 'total', 'date', 'sales', 'salesTotal', 'grandTotal'));
+        return view('admin.reports.daily', compact('payments', 'total', 'penaltyTotal', 'date', 'sales', 'salesTotal', 'grandTotal'));
     }
 
     public function monthly(Request $request)
@@ -36,6 +37,7 @@ class ReportController extends Controller
             ->where('status', 'approved')
             ->get();
         $total = $payments->sum('amount');
+        $penaltyTotal = $payments->sum('penalty_amount');
 
         // Direct sales for the same month
         $sales = \App\Models\Sale::with('items')
@@ -43,28 +45,127 @@ class ReportController extends Controller
             ->whereMonth('sale_date', $month)
             ->get();
         $salesTotal = $sales->sum('total');
-        $grandTotal = $total + $salesTotal;
+        $grandTotal = $total + $penaltyTotal + $salesTotal;
 
-        return view('admin.reports.monthly', compact('payments', 'total', 'month', 'year', 'sales', 'salesTotal', 'grandTotal'));
+        return view('admin.reports.monthly', compact('payments', 'total', 'penaltyTotal', 'month', 'year', 'sales', 'salesTotal', 'grandTotal'));
     }
 
     public function customer(Request $request)
     {
-        $customers = Customer::with('installments.payments')->get();
+        $query = Customer::has('installments')->with('installments.payments');
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+        
+        $customers = $query->get();
+        
+        // Sort by outstanding balance descending
+        $customers = $customers->sortByDesc(function($c) {
+            $val = $c->installments->sum('total_price');
+            $paid = 0;
+            foreach ($c->installments as $inst) {
+                $paid += $inst->payments->where('status', 'approved')->sum('amount');
+            }
+            return $val - $paid;
+        });
+
         return view('admin.reports.customer', compact('customers'));
     }
 
     public function income(Request $request)
     {
-        $start = $request->start ?? now()->startOfYear();
-        $end = $request->end ?? now()->endOfYear();
-        $payments = Payment::whereBetween('payment_date', [$start, $end])
+        $start = $request->start ?? now()->startOfMonth()->toDateString();
+        $end = $request->end ?? now()->endOfMonth()->toDateString();
+        
+        $payments = Payment::with(['installment.customer', 'installment.product', 'paymentMethod'])
+            ->whereBetween('payment_date', [$start, $end])
             ->where('status', 'approved')
-            ->selectRaw('DATE(payment_date) as date, SUM(amount) as total')
-            ->groupBy('date')
             ->get();
+            
+        $sales = \App\Models\Sale::with('items.product')
+            ->whereBetween('sale_date', [$start, $end])
+            ->get();
+        
+        $ledger = collect();
+        
+        foreach ($payments as $p) {
+            $cost = 0;
+            if ($p->installment && $p->installment->product) {
+                $product = $p->installment->product;
+                $inst = $p->installment;
+                $costPrice = (float)($product->cost_price ?? 0);
+                $sellingPrice = (float)($inst->subtotal_before_tax ?: ($inst->total_price ?: 1));
+                if ($sellingPrice <= 0) $sellingPrice = 1;
+                $costRatio = $costPrice / $sellingPrice;
+                
+                $principalBase = max($inst->total_price - $inst->down_payment, 0);
+                $duration = max($inst->duration_months, 1);
+                $monthlyPrincipal = round($principalBase / $duration, 2);
+                $monthlyInterest = round(($principalBase * $inst->interest_rate / 100) / 12, 2);
+                $monthlyPayment = $monthlyPrincipal + $monthlyInterest;
+                
+                $principalRatio = $monthlyPayment > 0 ? ($monthlyPrincipal / $monthlyPayment) : 1.0;
+                $principalPaid = $p->amount * $principalRatio;
+                $cost = $principalPaid * $costRatio;
+                if ($cost > $p->amount) $cost = $p->amount;
+            }
+            $profit = ($p->amount + $p->penalty_amount) - $cost;
 
-        return view('admin.reports.income', compact('payments', 'start', 'end'));
+            $ledger->push((object)[
+                'date' => \Carbon\Carbon::parse($p->payment_date),
+                'invoice_no' => 'PAY-' . $p->id,
+                'customer' => $p->installment->customer->name ?? '-',
+                'type' => 'Installment',
+                'method' => $p->paymentMethod->name ?? '-',
+                'amount' => (float)$p->amount,
+                'penalty' => (float)$p->penalty_amount,
+                'cost' => (float)$cost,
+                'profit' => (float)$profit,
+                'total' => (float)($p->amount + $p->penalty_amount)
+            ]);
+        }
+        
+        foreach ($sales as $s) {
+            $cost = 0;
+            foreach ($s->items as $item) {
+                $cost += ($item->product->cost_price ?? 0) * $item->quantity;
+            }
+            $profit = $s->total - $cost;
+
+            $ledger->push((object)[
+                'date' => \Carbon\Carbon::parse($s->sale_date),
+                'invoice_no' => $s->invoice_no ?? ('#SALE-' . $s->id),
+                'customer' => $s->customer_name ?: 'Walk-in Customer',
+                'type' => 'Direct Sale',
+                'method' => 'Cash',
+                'amount' => (float)$s->subtotal_before_tax,
+                'penalty' => 0.00,
+                'cost' => (float)$cost,
+                'profit' => (float)$profit,
+                'total' => (float)$s->total
+            ]);
+        }
+        
+        $ledger = $ledger->sortByDesc('date');
+        
+        $totalInstallments = $payments->sum('amount');
+        $totalPenalties = $payments->sum('penalty_amount');
+        $totalSales = $sales->sum('total');
+        $grandTotal = $totalInstallments + $totalPenalties + $totalSales;
+        
+        $totalCost = $ledger->sum('cost');
+        $totalProfit = $ledger->sum('profit');
+
+        return view('admin.reports.income', compact(
+            'ledger', 'start', 'end', 
+            'totalInstallments', 'totalPenalties', 'totalSales', 'grandTotal',
+            'totalCost', 'totalProfit'
+        ));
     }
 
     public function exportPdf(Request $request, $type)
@@ -77,12 +178,13 @@ class ReportController extends Controller
                 ->where('status', 'approved')
                 ->get();
             $data['total'] = $data['payments']->sum('amount');
+            $data['penaltyTotal'] = $data['payments']->sum('penalty_amount');
             $data['date'] = $date;
             
             // Direct sales
             $data['sales'] = \App\Models\Sale::with('items')->whereDate('sale_date', $date)->get();
             $data['salesTotal'] = $data['sales']->sum('total');
-            $data['grandTotal'] = $data['total'] + $data['salesTotal'];
+            $data['grandTotal'] = $data['total'] + $data['penaltyTotal'] + $data['salesTotal'];
             
             $view = 'admin.reports.pdf.daily';
         } elseif ($type === 'monthly') {
@@ -94,6 +196,7 @@ class ReportController extends Controller
                 ->where('status', 'approved')
                 ->get();
             $data['total'] = $data['payments']->sum('amount');
+            $data['penaltyTotal'] = $data['payments']->sum('penalty_amount');
             $data['month'] = $month;
             $data['year'] = $year;
             
@@ -103,18 +206,17 @@ class ReportController extends Controller
                 ->whereMonth('sale_date', $month)
                 ->get();
             $data['salesTotal'] = $data['sales']->sum('total');
-            $data['grandTotal'] = $data['total'] + $data['salesTotal'];
+            $data['grandTotal'] = $data['total'] + $data['penaltyTotal'] + $data['salesTotal'];
             
             $view = 'admin.reports.pdf.monthly';
         }
 
-        $pdf = Pdf::loadView($view, $data);
-        
-        // Configure for Khmer font support
-        $dompdf = $pdf->getDomPDF();
-        $fontDir = storage_path('fonts');
-        $dompdf->getOptions()->set('fontDir', $fontDir);
-        $dompdf->getOptions()->set('fontCache', $fontDir);
+        $pdf = Pdf::loadView($view, $data)
+            ->setPaper('a4', 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('defaultFont', 'khmer ui')
+            ->setOption('isFontSubsettingEnabled', false);
         
         return $pdf->download($type . '-report.pdf');
     }

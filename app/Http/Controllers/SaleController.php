@@ -43,8 +43,9 @@ class SaleController extends Controller
             ->orderBy('name')
             ->get();
         $customers = Customer::where('type', 'direct')->orderBy('name')->get();
+        $paymentMethods = \App\Models\PaymentMethod::orderBy('name')->get();
 
-        return view('admin.sales.create', compact('products', 'customers'));
+        return view('admin.sales.create', compact('products', 'customers', 'paymentMethods'));
     }
 
     /**
@@ -206,7 +207,11 @@ class SaleController extends Controller
                         'note'       => 'Direct Sale ' . $sale->invoice_no,
                     ]);
 
-                    Product::where('id', $item['data']['product_id'])->decrement('stock', $item['data']['quantity']);
+                    $prod = Product::find($item['data']['product_id']);
+                    if ($prod) {
+                        $prod->decrement('stock', $item['data']['quantity']);
+                        $prod->checkLowStockAlert();
+                    }
                 }
 
                 return $sale;
@@ -214,6 +219,13 @@ class SaleController extends Controller
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+
+        \App\Models\Notification::createSystemNotification(
+            'sale', 'New sale recorded',
+            'New sale: Invoice #' . $sale->invoice_no . ' for $' . number_format($sale->total, 2),
+            'shopping-cart', 'blue',
+            route('admin.sales.show', $sale)
+        );
 
         return redirect()->route('admin.sales.show', $sale)
             ->with('success', $savedNewCustomer

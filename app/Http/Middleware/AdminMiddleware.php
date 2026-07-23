@@ -37,13 +37,32 @@ class AdminMiddleware
                 'admin.sales.index',
                 'admin.sales.show',
                 'admin.sales.download',
+                'admin.reports.daily',
+                'admin.reports.export',
+                'admin.broadcast.index',
             ];
 
-            // Staff can create and manage sales (full access to sales)
+            // Staff can create/edit data (no delete access)
             $staffFullAccessRoutes = [
                 'admin.sales.create',
                 'admin.sales.store',
-                'admin.sales.destroy',
+                'admin.products.create',
+                'admin.products.store',
+                'admin.products.edit',
+                'admin.products.update',
+                'admin.categories.create',
+                'admin.categories.store',
+                'admin.categories.edit',
+                'admin.categories.update',
+                'admin.suppliers.create',
+                'admin.suppliers.store',
+                'admin.suppliers.edit',
+                'admin.suppliers.update',
+                'admin.purchases.create',
+                'admin.purchases.store',
+                'admin.purchases.edit',
+                'admin.purchases.update',
+                'admin.broadcast.send',
             ];
 
             if ($request->routeIs($staffAllowedRoutes) || $request->routeIs($staffFullAccessRoutes)) {

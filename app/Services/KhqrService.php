@@ -18,15 +18,15 @@ class KhqrService
     {
         $tags = [];
         $i = 0;
-        $len = strlen($payload);
+        $len = mb_strlen($payload, 'UTF-8');
         
         while ($i < $len) {
             if ($i + 4 > $len) {
                 break;
             }
-            $tag = substr($payload, $i, 2);
-            $length = (int)substr($payload, $i + 2, 2);
-            $value = substr($payload, $i + 4, $length);
+            $tag = mb_substr($payload, $i, 2, 'UTF-8');
+            $length = (int)mb_substr($payload, $i + 2, 2, 'UTF-8');
+            $value = mb_substr($payload, $i + 4, $length, 'UTF-8');
             
             $tags[$tag] = $value;
             $i += 4 + $length;
@@ -51,7 +51,8 @@ class KhqrService
     {
         if (empty($basePayload)) {
             return null;
-        }        $tags = $this->parsePayload(trim($basePayload));
+        }
+        $tags = $this->parsePayload(trim($basePayload));
         if (empty($tags)) {
             return null;
         }
@@ -67,32 +68,18 @@ class KhqrService
         // Force initiation method to '12' (Dynamic QR) to allow pre-filled amounts.
         $tags['01'] = '12';
 
-        // Detect base currency (e.g., KHR-only bank accounts must always remain KHR)
-        $baseCurrency = ($tags['53'] ?? '840') === '116' ? 'KHR' : 'USD';
+        $currencyCode = (strtoupper($currency) === 'KHR') ? '116' : '840';
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        if ($baseCurrency === 'KHR') {
-            $currencyCode = '116';
-            $finalAmount = (strtoupper($currency) === 'USD') ? round($amount * $exchangeRate) : $amount;
+        if ($currencyCode === '116') {
+            $finalAmount = (strtoupper($currency) === 'KHR') ? $amount : round($amount * $exchangeRate);
             $tags['54'] = (string)round($finalAmount);
         } else {
-            // Base is USD
-            if (strtoupper($currency) === 'USD' && $amount > 0 && $amount < 1.00) {
-                // Auto-switch small USD to KHR
-                $currencyCode = '116';
-                $finalAmount = round($amount * $exchangeRate);
-                $tags['54'] = (string)round($finalAmount);
-            } else {
-                $currencyCode = (strtoupper($currency) === 'KHR') ? '116' : '840';
-                $finalAmount = $amount;
-                if ($currencyCode === '116') {
-                    $tags['54'] = (string)round($finalAmount);
-                } else {
-                    $tags['54'] = number_format($finalAmount, 2, '.', '');
-                }
-            }
+            $finalAmount = $amount;
+            $tags['54'] = number_format($finalAmount, 2, '.', '');
         }
         $tags['53'] = $currencyCode;
+
 
         // Dynamically add Wing-specific Tag 99 with current and future expiration timestamps (24h)
         if (strpos($basePayload, 'wing_khqr@wing') !== false) {
@@ -101,16 +88,29 @@ class KhqrService
             $tags['99'] = "0013{$nowMs}0113{$expireMs}";
         }
 
-        // Reconstruct EMVCo string (keys should be ordered)
-        ksort($tags);
+        // Reconstruct EMVCo string (preserve original tag order, placing 54 right after 53)
+        $orderedTags = [];
+        foreach ($tags as $tag => $value) {
+            if ($tag === '54') {
+                continue;
+            }
+            $orderedTags[$tag] = $value;
+            if ($tag === '53' && isset($tags['54'])) {
+                $orderedTags['54'] = $tags['54'];
+            }
+        }
+        if (isset($tags['54']) && !isset($orderedTags['54'])) {
+            $orderedTags['54'] = $tags['54'];
+        }
         
         $reconstructed = '';
-        foreach ($tags as $tag => $value) {
+        foreach ($orderedTags as $tag => $value) {
             if ($tag == '63') {
                 continue; // Skip CRC tag for now
             }
-            $reconstructed .= $tag . str_pad(strlen($value), 2, '0', STR_PAD_LEFT) . $value;
+            $reconstructed .= $tag . str_pad(mb_strlen($value, 'UTF-8'), 2, '0', STR_PAD_LEFT) . $value;
         }
+
 
         // Append tag 63 prefix for CRC
         $reconstructed .= '6304';
@@ -120,6 +120,7 @@ class KhqrService
         
         return $reconstructed . $crc;
     }
+
 
     /**
      * Calculate CRC16 checksum (CCITT-FALSE).

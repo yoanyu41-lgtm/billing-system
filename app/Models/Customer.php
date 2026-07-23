@@ -18,6 +18,7 @@ class Customer extends Model
         'id_card',
         'photo',
         'id_card_photo',
+        'family_photo',
         'income_proof',
         'guarantor_doc',
         'telegram_id',

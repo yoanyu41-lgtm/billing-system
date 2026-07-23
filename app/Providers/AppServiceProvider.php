@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('companyLogo', $logoUrl);
         });
 
-        // Staff + admin can view/edit any customer; regular user only owns
+        // Staff + admin can view/edit any customer
         Gate::define('manage-customer', fn($user, Customer $customer) =>
             in_array($user->role, ['admin', 'staff']) || $customer->created_by === $user->id
         );
@@ -59,18 +59,35 @@ class AppServiceProvider extends ServiceProvider
             $user->role === 'admin'
         );
 
-        // Staff + admin can manage any installment; regular user only owns
+        // Staff + admin can manage any installment
         Gate::define('manage-installment', fn($user, Installment $installment) =>
             in_array($user->role, ['admin', 'staff']) || $installment->created_by === $user->id
         );
 
-        // Only admin can approve or reject payments
-        Gate::define('approve-payment', fn($user) =>
+        // Only admin can approve/reject Cash payments; staff can approve other methods (QR, Credit Card)
+        Gate::define('approve-payment', function ($user, ?\App\Models\Payment $payment = null) {
+            if ($user->role === 'admin') {
+                return true;
+            }
+            if ($user->role === 'staff' && $payment) {
+                $method = $payment->paymentMethod ?: \App\Models\PaymentMethod::find($payment->payment_method_id);
+                return $method && strtolower($method->name) !== 'cash';
+            }
+            return false;
+        });
+
+        // Only admin can delete payments
+        Gate::define('delete-payment', fn($user) =>
             $user->role === 'admin'
         );
 
-        // Only admin can manage products (create/edit/delete)
+        // Admin + staff can manage products (create/edit)
         Gate::define('manage-product', fn($user) =>
+            in_array($user->role, ['admin', 'staff'])
+        );
+
+        // Only admin can delete products/categories
+        Gate::define('delete-product', fn($user) =>
             $user->role === 'admin'
         );
 

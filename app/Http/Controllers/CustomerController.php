@@ -16,9 +16,7 @@ class CustomerController extends Controller
         $user = auth()->user();
         $query = Customer::query();
 
-        if (!in_array($user->role, ['admin', 'staff', 'user'])) {
-            $query->where('created_by', $user->id);
-        }
+
 
         // Filter by customer type: 'installment' (default) or 'direct'
         $type = $request->get('type', 'installment');
@@ -61,6 +59,7 @@ class CustomerController extends Controller
             'telegram_id'   => 'nullable|numeric',
             'photo'         => 'nullable|image|max:2048',
             'id_card_photo' => 'nullable|image|max:2048',
+            'family_photo'  => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             'income_proof'  => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             'guarantor_doc' => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             // Optional direct-sale fields
@@ -73,7 +72,7 @@ class CustomerController extends Controller
         $data['type'] = in_array($request->type, ['installment', 'direct']) ? $request->type : 'installment';
         $data['created_by'] = auth()->id();
 
-        foreach (['photo', 'id_card_photo', 'income_proof', 'guarantor_doc'] as $file) {
+        foreach (['photo', 'id_card_photo', 'family_photo', 'income_proof', 'guarantor_doc'] as $file) {
             if ($request->hasFile($file)) {
                 $data[$file] = $request->file($file)->store('customers', 'public');
             }
@@ -81,11 +80,11 @@ class CustomerController extends Controller
 
         $customer = Customer::create($data);
 
-        Notification::createNotification(
+        Notification::createSystemNotification(
             'customer', 'New customer added',
             'A new customer has been added: ' . $customer->name,
             'user-plus', 'green',
-            route('customers.show', $customer), null
+            route('customers.show', $customer)
         );
 
         // If a product was chosen for a direct-sale customer, record the sale immediately.
@@ -127,6 +126,7 @@ class CustomerController extends Controller
                     ]);
 
                     $product->decrement('stock', $quantity);
+                    $product->checkLowStockAlert();
                 });
             }
         }
@@ -194,13 +194,14 @@ class CustomerController extends Controller
             'telegram_id'   => 'nullable|numeric',
             'photo'         => 'nullable|image|max:2048',
             'id_card_photo' => 'nullable|image|max:2048',
+            'family_photo'  => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             'income_proof'  => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
             'guarantor_doc' => 'nullable|mimes:jpeg,png,jpg,pdf|max:5120',
         ]);
 
         $data = $request->only(['name', 'phone', 'gender', 'dob', 'id_card', 'address', 'telegram_id']);
 
-        foreach (['photo', 'id_card_photo', 'income_proof', 'guarantor_doc'] as $file) {
+        foreach (['photo', 'id_card_photo', 'family_photo', 'income_proof', 'guarantor_doc'] as $file) {
             if ($request->hasFile($file)) {
                 if ($customer->$file) Storage::disk('public')->delete($customer->$file);
                 $data[$file] = $request->file($file)->store('customers', 'public');

@@ -23,7 +23,7 @@ class AdminUserSeeder extends Seeder
             'name' => 'Staff',
             'email' => 'staff@example.com',
             'password' => bcrypt('password'),
-            'role' => 'user',
+            'role' => 'staff',
         ]);
     }
 }

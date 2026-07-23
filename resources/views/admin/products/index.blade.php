@@ -82,6 +82,11 @@
             <div class="md:col-span-4 flex justify-end items-center gap-3 mt-4 pt-4 border-t border-gray-100">
                 <a href="{{ route('admin.products.index') }}" class="text-gray-600 hover:text-gray-900 font-medium px-4 py-2 rounded-lg transition duration-150">{{ __('app.clear') }}</a>
                 
+                <a href="{{ route('admin.products.import-form') }}" class="inline-flex items-center bg-indigo-50/60 text-indigo-700 border border-indigo-200 hover:bg-indigo-100/80 hover:border-indigo-300 font-medium px-5 py-2.5 rounded-lg transition duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    {{ __('app.import_products') }}
+                </a>
+
                 <button type="submit" name="export" value="excel" class="inline-flex items-center bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-medium px-5 py-2.5 rounded-lg transition duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
                     {{ __('app.export') }} Excel

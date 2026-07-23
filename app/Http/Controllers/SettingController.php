@@ -21,16 +21,25 @@ class SettingController extends Controller
             'shop_address', 
             'shop_phone', 
             'shop_email', 
-            'currency', 
-            'default_interest_rate', 
             'telegram_token',
             'default_tax_rate',
             'tax_label',
             'tax_number',
-            'exchange_rate'
+            'exchange_rate',
+            'card_processing_fee',
+            'google_drive_folder_id',
+            'google_drive_service_account_json'
         ]);
 
+        if ($request->filled('google_drive_service_account_json')) {
+            $json = json_decode($request->google_drive_service_account_json, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return redirect()->back()->with('error', __('app.invalid_google_json') ?? 'Google Service Account JSON key is not a valid JSON.');
+            }
+        }
+
         $data['tax_enabled'] = $request->has('tax_enabled') ? '1' : '0';
+        $data['google_drive_backup_enabled'] = $request->has('google_drive_backup_enabled') ? '1' : '0';
 
         foreach ($data as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
@@ -53,9 +62,11 @@ class SettingController extends Controller
             'bank_qr' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'company_bank_qr_payload' => 'nullable|string',
             'exchange_rate' => 'nullable|numeric',
-            'currency' => 'nullable|string|max:10',
-            'default_interest_rate' => 'nullable|numeric',
+            'card_processing_fee' => 'nullable|numeric|min:0|max:100',
             'telegram_token' => 'nullable|string|max:255',
+            'wing_pay_merchant_id' => 'nullable|string|max:255',
+            'wing_pay_secret_key' => 'nullable|string|max:255',
+            'wing_pay_api_url' => 'nullable|url|max:255',
         ]);
 
         // Handle logo upload
@@ -85,7 +96,7 @@ class SettingController extends Controller
 
             // Try to auto-decode the QR payload from image using API
             try {
-                $response = \Illuminate\Support\Facades\Http::attach(
+                $response = \Illuminate\Support\Facades\Http::timeout(5)->attach(
                     'file', 
                     file_get_contents($request->file('bank_qr')->getRealPath()), 
                     $request->file('bank_qr')->getClientOriginalName()
@@ -94,14 +105,21 @@ class SettingController extends Controller
                 if ($response->successful()) {
                     $result = $response->json();
                     $qrText = $result[0]['symbol'][0]['data'] ?? null;
-                    if ($qrText) {
+                    $errorText = $result[0]['symbol'][0]['error'] ?? null;
+
+                    if ($qrText && !$errorText) {
                         Setting::updateOrCreate(['key' => 'company_bank_qr_payload'], ['value' => $qrText]);
-                        // Update in the current request data too so it doesn't get overwritten with empty
                         $validated['company_bank_qr_payload'] = $qrText;
+                    } else {
+                        session()->flash('warning', app()->getLocale() === 'km' 
+                            ? 'រូបភាព QR Code ត្រូវបានរក្សាទុក ប៉ុន្តែប្រព័ន្ធមិនអាចអានអត្ថបទ KHQR ស្វ័យប្រវត្តិបានទេ។ សូមចម្លង (Paste) អត្ថបទ KHQR Payload ដោយដៃក្នុងប្រអប់ខាងក្រោម។'
+                            : 'QR Code image saved, but system could not auto-read KHQR text payload. Please paste the KHQR text payload manually below.');
                     }
                 }
             } catch (\Throwable $e) {
-                // Ignore API failure, user can still edit it manually
+                session()->flash('warning', app()->getLocale() === 'km' 
+                    ? 'រូបភាព QR Code ត្រូវបានរក្សាទុក ប៉ុន្តែប្រព័ន្ធមិនអាចអានអត្ថបទ KHQR ស្វ័យប្រវត្តិបានទេ។ សូមចម្លង (Paste) អត្ថបទ KHQR Payload ដោយដៃក្នុងប្រអប់ខាងក្រោម។'
+                    : 'QR Code image saved, but system could not auto-read KHQR text payload. Please paste the KHQR text payload manually below.');
             }
         }
 
@@ -116,9 +134,11 @@ class SettingController extends Controller
             'company_business_license' => $validated['business_license'] ?? '',
             'company_bank_qr_payload' => $validated['company_bank_qr_payload'] ?? '',
             'exchange_rate' => $validated['exchange_rate'] ?? '4100',
-            'currency' => $validated['currency'] ?? 'USD',
-            'default_interest_rate' => $validated['default_interest_rate'] ?? '0',
+            'card_processing_fee' => $validated['card_processing_fee'] ?? '2',
             'telegram_token' => $validated['telegram_token'] ?? '',
+            'wing_pay_merchant_id' => $validated['wing_pay_merchant_id'] ?? '',
+            'wing_pay_secret_key' => $validated['wing_pay_secret_key'] ?? '',
+            'wing_pay_api_url' => $validated['wing_pay_api_url'] ?? '',
         ];
 
         foreach ($settingsData as $key => $value) {

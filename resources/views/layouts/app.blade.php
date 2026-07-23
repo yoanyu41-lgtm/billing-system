@@ -6,6 +6,9 @@
     <title>CityTech — Installment System</title>
     
     <!-- Font Configuration -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
     
     <!-- Tailwind CSS -->
@@ -930,6 +933,25 @@
             visibility: visible;
             transform: translateY(0);
         }
+
+        /* Print styling for clean browser printing */
+        @media print {
+            #sidebar, .topbar, header, button, form, .no-print, a.bg-emerald-600, a.bg-blue-600, .bg-blue-600, .bg-emerald-600 {
+                display: none !important;
+            }
+            body, .main-wrapper, .content, main {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                left: 0 !important;
+                margin-left: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                box-shadow: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -990,15 +1012,19 @@
                     <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_plans') }}
                     </a>
+                    @if(auth()->user()->role !== 'admin')
                     <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
                     </a>
+                    @endif
                     <a href="{{ route('installments.pay-off-index') }}" class="{{ request()->routeIs('installments.pay-off-index') ? 'active' : '' }}">
                         <i class="fas fa-hand-holding-usd"></i> {{ __('app.pay_off') }}
                     </a>
+                    @if(auth()->user()->role !== 'admin')
                     <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') ? 'active' : '' }}">
                         <i class="fas fa-file-signature"></i> {{ __('app.contracts') }}
                     </a>
+                    @endif
                     <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
                         <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
                     </a>
@@ -1011,6 +1037,12 @@
                 $isDirectSaleOpen = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
                 $isDirectSaleIndexActive = (request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show')) && request('from') !== 'invoice';
             @endphp
+            @if(auth()->user()->role === 'admin')
+            <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
+                <i class="fas fa-cash-register"></i>
+                <span>{{ __('app.direct_sale') }}</span>
+            </a>
+            @else
             <div class="sb-dropdown {{ $isDirectSaleOpen ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ $isDirectSaleOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>
@@ -1026,6 +1058,7 @@
                     </a>
                 </div>
             </div>
+            @endif
             @endif
 
             @php
@@ -1114,7 +1147,7 @@
                     <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.product_list') }}
                     </a>
-                    @if(auth()->user()->role === 'admin')
+                    @if(in_array(auth()->user()->role, ['admin', 'staff']))
                     <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
@@ -1137,14 +1170,9 @@
                 </div>
             </div>
 
-            {{-- ── Admin Only ── --}}
-            @if(auth()->user()->role === 'admin')
 
-            <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
-            </a>
-
-            {{-- Reports Dropdown --}}
+            {{-- Reports Dropdown (Admin & Staff for Daily Report) --}}
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-line"></i>
@@ -1155,6 +1183,7 @@
                     <a href="{{ route('admin.reports.daily') }}" class="{{ request()->routeIs('admin.reports.daily') ? 'active' : '' }}">
                         <i class="fas fa-calendar-day"></i> {{ __('app.daily_report') }}
                     </a>
+                    @if(auth()->user()->role === 'admin')
                     <a href="{{ route('admin.reports.monthly') }}" class="{{ request()->routeIs('admin.reports.monthly') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.monthly_report') }}
                     </a>
@@ -1164,29 +1193,42 @@
                     <a href="{{ route('admin.reports.income') }}" class="{{ request()->routeIs('admin.reports.income') ? 'active' : '' }}">
                         <i class="fas fa-dollar-sign"></i> {{ __('app.income_report') }}
                     </a>
+                    @endif
                 </div>
             </div>
+            @endif
 
-            <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') ? 'active' : '' }}">
-                <i class="fab fa-telegram-plane"></i> {{ __('app.telegram_center') }}
+            {{-- Telegram Management (Admin & Staff) --}}
+            @if(in_array(auth()->user()->role, ['admin', 'staff']))
+            <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') || request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+                <i class="fab fa-telegram-plane"></i>
+                <span>{{ app()->getLocale() === 'km' ? 'គ្រប់គ្រង Telegram' : 'Telegram Management' }}</span>
             </a>
+            @endif
 
-            <a href="{{ route('admin.broadcast.index') }}" class="{{ request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
-                <i class="fas fa-bullhorn"></i> ផ្សព្វផ្សាយ Telegram
-            </a>
-
-            <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
-                <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
-            </a>
-
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <i class="fas fa-cog"></i> {{ __('app.settings') }}
-            </a>
-
-            <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
-                <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
-            </a>
-
+            {{-- Settings Dropdown (Admin Only) --}}
+            @if(auth()->user()->role === 'admin')
+            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+                    <i class="fas fa-cog"></i>
+                    <span>{{ __('app.settings') }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="sb-dropdown-menu">
+                    <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
+                        <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
+                    </a>
+                    <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
+                    </a>
+                    <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
+                        <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
+                    </a>
+                    <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                        <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
+                    </a>
+                </div>
+            </div>
             @endif
 
         </nav>
@@ -1194,7 +1236,7 @@
         <div class="sb-logout">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="w-full text-left text-gray-300 hover:text-white flex items-center gap-3 px-4 py-3 rounded" style="background: transparent; border: none; cursor: pointer;">
+                <button type="button" onclick="confirmLogout(this, event)" class="w-full text-left text-gray-300 hover:text-white flex items-center gap-3 px-4 py-3 rounded" style="background: transparent; border: none; cursor: pointer;">
                     <i class="fas fa-sign-out-alt"></i> {{ __('app.logout') }}
                 </button>
             </form>
@@ -1327,7 +1369,7 @@
             </div>
 
             {{-- Theme Switcher --}}
-            <div style="position:relative;" id="theme-switcher">
+            <div style="position:relative; display:none !important;" id="theme-switcher">
                 <button onclick="toggleThemeMenu()" style="
                     display:flex; align-items:center; justify-content:center;
                     width:36px; height:36px; border-radius:8px;
@@ -1439,7 +1481,7 @@
                 </div>
             </div>
 
-            <div class="topbar-search">
+            <div class="topbar-search" style="display:none !important;">
                 <i class="fas fa-search"></i>
                 <input type="text" id="global-search" placeholder="{{ __('app.search_here') }}" onkeyup="handleGlobalSearch(event)">
             </div>
@@ -1520,7 +1562,7 @@
                         <div class="user-dropdown-divider"></div>
                         <form method="POST" action="{{ route('logout') }}" style="margin:0;">
                             @csrf
-                            <button type="submit" class="user-dropdown-item logout" style="width:100%;border:none;background:none;text-align:left;">
+                            <button type="button" onclick="confirmLogout(this, event)" class="user-dropdown-item logout" style="width:100%;border:none;background:none;text-align:left;">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>{{ __('app.logout') }}</span>
                             </button>
@@ -2039,6 +2081,97 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- Beautiful Custom Logout Confirmation Modal -->
+<div id="logout-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center" role="dialog" aria-modal="true">
+    <!-- Backdrop overlay -->
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ease-out opacity-0" id="logout-modal-backdrop" onclick="closeLogoutModal()"></div>
+    
+    <!-- Modal content wrapper -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div class="relative w-full max-w-sm transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all duration-300 ease-out scale-95 opacity-0 border border-slate-100 dark:border-slate-700 pointer-events-auto" id="logout-modal-content">
+            
+            <!-- Close button (x) -->
+            <button type="button" onclick="closeLogoutModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-150 cursor-pointer">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+            
+            <!-- Warning / Info Icon (gorgeous custom style) -->
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-500 mb-4 animate-pulse">
+                <i class="fas fa-sign-out-alt text-2xl"></i>
+            </div>
+            
+            <!-- Message text -->
+            <div class="text-center">
+                <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 leading-6" id="logout-modal-title">
+                    {{ __('app.logout') }}
+                </h3>
+                <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                    {{ __('app.logout_confirm') }}
+                </p>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="mt-6 flex flex-row justify-center gap-3">
+                <button type="button" onclick="closeLogoutModal()" class="w-1/2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors duration-200 cursor-pointer text-center">
+                    {{ __('app.cancel') }}
+                </button>
+                <button type="button" onclick="executeLogout()" class="w-1/2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 dark:shadow-none hover:shadow-rose-600/30 transition-all duration-200 cursor-pointer text-center">
+                    {{ __('app.logout') }}
+                </button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+let logoutFormToSubmit = null;
+
+function confirmLogout(button, event) {
+    if (event) event.preventDefault();
+    logoutFormToSubmit = button.closest('form');
+    
+    const modal = document.getElementById('logout-confirm-modal');
+    const backdrop = document.getElementById('logout-modal-backdrop');
+    const content = document.getElementById('logout-modal-content');
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Trigger transition animation
+    setTimeout(() => {
+        backdrop.classList.remove('opacity-0');
+        backdrop.classList.add('opacity-100');
+        content.classList.remove('opacity-0', 'scale-95');
+        content.classList.add('opacity-100', 'scale-100');
+    }, 10);
+}
+
+function closeLogoutModal() {
+    const backdrop = document.getElementById('logout-modal-backdrop');
+    const content = document.getElementById('logout-modal-content');
+    const modal = document.getElementById('logout-confirm-modal');
+    
+    backdrop.classList.remove('opacity-100');
+    backdrop.classList.add('opacity-0');
+    content.classList.remove('opacity-100', 'scale-100');
+    content.classList.add('opacity-0', 'scale-95');
+    
+    // Hide modal after animation completes
+    setTimeout(() => {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        logoutFormToSubmit = null;
+    }, 300);
+}
+
+function executeLogout() {
+    if (logoutFormToSubmit) {
+        logoutFormToSubmit.submit();
+    }
+}
 </script>
 </body>
 </html>

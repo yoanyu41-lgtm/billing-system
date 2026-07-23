@@ -19,6 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
             ->timezone('Asia/Phnom_Penh')
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Run automated database backup every night at 11:00 PM (Asia/Phnom_Penh)
+        $schedule->command('db:backup')
+            ->dailyAt('23:00')
+            ->timezone('Asia/Phnom_Penh')
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

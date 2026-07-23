@@ -89,9 +89,13 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('app.payment_method') }}</label>
-                            <input type="text" name="payment_method" value="{{ old('payment_method', __('app.cash')) }}"
-                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                   placeholder="{{ __('app.cash') }}">
+                            <select name="payment_method" class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                @foreach($paymentMethods as $pm)
+                                    <option value="{{ $pm->name }}" {{ old('payment_method', 'Cash') == $pm->name ? 'selected' : '' }}>
+                                        {{ $pm->name === 'Cash' ? __('app.cash') : ($pm->name === 'Credit Card' ? 'កាតឥណទាន (Credit Card)' : $pm->name) }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -256,7 +260,10 @@
             const btn = item.querySelector('.remove-item');
             if (items.length > 1) btn.classList.remove('hidden');
             else btn.classList.add('hidden');
-        });    function calculateTotal() {
+        });
+    }
+
+    function calculateTotal() {
         let originalSubtotal = 0;
         let subtotalBeforeTax = 0;
         let totalTax = 0;

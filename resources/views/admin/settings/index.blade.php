@@ -39,6 +39,14 @@
         aria-selected="false">
         💰 ពន្ធ / Tax
     </button>
+    <button 
+        onclick="switchTab('gdrive')"
+        id="tab-gdrive"
+        class="tab-button flex-1 rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+        role="tab"
+        aria-selected="false">
+        💾 Google Drive
+    </button>
 </div>
 
 <!-- Company Settings Tab -->
@@ -184,26 +192,13 @@
 
                     <div>
                         <label class="mb-1.5 block text-sm text-slate-700">
-                            រូបិយប័ណ្ណ / Currency <span class="text-rose-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="currency" 
-                            value="{{ old('currency', $settings['currency'] ?? 'USD') }}" 
-                            required
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            placeholder="USD">
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-sm text-slate-700">
-                            អត្រាការប្រាក់លំនាំដើម / Default Interest Rate (%) <span class="text-rose-500">*</span>
+                            កម្រៃសេវាទូទាត់កាត / Card Processing Fee (%) <span class="text-rose-500">*</span>
                         </label>
                         <input 
                             type="number" 
                             step="0.01"
-                            name="default_interest_rate" 
-                            value="{{ old('default_interest_rate', $settings['default_interest_rate'] ?? '0') }}" 
+                            name="card_processing_fee" 
+                            value="{{ old('card_processing_fee', $settings['card_processing_fee'] ?? '2') }}" 
                             required
                             class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
                     </div>
@@ -255,10 +250,12 @@
                     </label>
                     <input 
                         type="file" 
+                        id="bankQrFileInput"
                         name="bank_qr" 
                         accept="image/jpeg,image/jpg,image/png"
                         class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
                     <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
+                    <div id="qrStatusBadge" class="mt-2 text-xs font-semibold hidden"></div>
                 </div>
 
                 <div class="mt-4">
@@ -266,10 +263,11 @@
                         អត្ថបទកូដធនាគារ Bakong KHQR (Bakong KHQR Payload Text)
                     </label>
                     <textarea 
+                        id="companyBankQrPayloadTextarea"
                         name="company_bank_qr_payload" 
                         rows="3"
                         class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                        placeholder="ឧទហរណ៍៖ 0002010102122930... (ប្រព័ន្ធនឹងព្យាយាមទាញយកកូដនេះដោយស្វ័យប្រវត្តនៅពេលដែលលោកអ្នកបញ្ចូលរូបភាព QR Code ថ្មី)"
+                        placeholder="ឧទាហរណ៍៖ 0002010102122930... (ប្រព័ន្ធនឹងទាញយកកូដនេះដោយស្វ័យប្រវត្តនៅពេលលោកអ្នកជ្រើសរើសរូបភាព QR Code ថ្មី)"
                     >{{ old('company_bank_qr_payload', $settings['company_bank_qr_payload'] ?? '') }}</textarea>
                     <p class="mt-1 text-xs text-slate-600">ប្រព័ន្ធនឹងប្រើប្រាស់អត្ថបទកូដនេះ ដើម្បីគណនា និងបង្កើត QR Code ស្វ័យប្រវត្តតាមចំនួនទឹកប្រាក់ដែលត្រូវទូទាត់។</p>
                 </div>
@@ -277,6 +275,51 @@
 
 
             
+            <!-- Wing Pay Gateway Section -->
+            <div class="mb-6 border-t border-slate-100 pt-6">
+                <h3 class="mb-3 text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-lime-500"></span>
+                    Wing Pay Gateway Configuration (សម្រាប់ទូទាត់កាតឥណទានពិតប្រាកដ)
+                </h3>
+                
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            Wing Pay Merchant ID
+                        </label>
+                        <input 
+                            type="text" 
+                            name="wing_pay_merchant_id" 
+                            value="{{ old('wing_pay_merchant_id', $settings['wing_pay_merchant_id'] ?? '') }}" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Enter Wing Merchant ID">
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm text-slate-700">
+                            Wing Pay Secret Key / API Key
+                        </label>
+                        <input 
+                            type="password" 
+                            name="wing_pay_secret_key" 
+                            value="{{ old('wing_pay_secret_key', $settings['wing_pay_secret_key'] ?? '') }}" 
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="••••••••••••••••">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="mb-1.5 block text-sm text-slate-700">
+                        Wing Pay API Endpoint URL
+                    </label>
+                    <input 
+                        type="text" 
+                        name="wing_pay_api_url" 
+                        value="{{ old('wing_pay_api_url', $settings['wing_pay_api_url'] ?? 'https://sandbox-api.wingmoney.com/v1/payments') }}" 
+                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                        placeholder="https://sandbox-api.wingmoney.com/v1/payments">
+                    <p class="mt-1 text-xs text-slate-500">Default Sandbox URL is configured. Replace with production endpoint when launching live.</p>
+                </div>
+            </div>
+
             <!-- Telegram Token Section -->
             <div class="mb-6 border-t border-slate-100 pt-6">
                 <h3 class="mb-3 text-sm font-semibold text-slate-900">
@@ -410,6 +453,76 @@
     </div>
 </div>
 
+<!-- Google Drive Backup Tab -->
+<div id="content-gdrive" class="tab-content hidden">
+    <div class="rounded-xl bg-white shadow border border-slate-100">
+        <form method="POST" action="{{ route('admin.settings.update') }}" class="p-6">
+            @csrf
+            
+            <h2 class="mb-4 text-base font-bold text-slate-900 flex items-center gap-2">
+                <span>💾</span> {{ __('app.google_drive_backup') ?? 'Google Drive Backup Settings' }}
+            </h2>
+            
+            <!-- Enable Checkbox -->
+            <div class="mb-5">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="google_drive_backup_enabled" value="1" 
+                        {{ ($settings['google_drive_backup_enabled'] ?? '0') == '1' ? 'checked' : '' }} 
+                        class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="ml-3 text-sm font-medium text-slate-700">{{ __('app.enable_google_drive_backup') ?? 'Enable Google Drive Auto Backups' }}</span>
+                </label>
+                <p class="text-xs text-slate-500 mt-1 ml-8">បើកដំណើរការមុខងារបម្រុងទុកមូលដ្ឋានទិន្នន័យទៅកាន់ Google Drive ដោយស្វ័យប្រវត្តិនារៀងរាល់យប់។</p>
+            </div>
+
+            <!-- Folder ID -->
+            <div class="mb-5">
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">
+                    Google Drive Folder ID
+                </label>
+                <input type="text" name="google_drive_folder_id" 
+                    value="{{ old('google_drive_folder_id', $settings['google_drive_folder_id'] ?? '') }}" 
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="បញ្ចូល Folder ID នៅទីនេះ (ឧ. 1a2b3c4d5e...)">
+                <p class="mt-1 text-xs text-slate-500">ទុកទំនេរ ប្រសិនបើចង់រក្សាទុកក្នុង Root (ទំព័រដើម) នៃ Google Drive។</p>
+            </div>
+
+            <!-- Service Account JSON Key -->
+            <div class="mb-5">
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">
+                    Google Service Account JSON Key
+                </label>
+                <textarea name="google_drive_service_account_json" rows="6"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-mono text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    placeholder="ចម្លង (Copy) រួចបិទភ្ជាប់ (Paste) មាតិកានៅក្នុងឯកសារ JSON Key របស់ Google Service Account នៅទីនេះ...">{{ old('google_drive_service_account_json', $settings['google_drive_service_account_json'] ?? '') }}</textarea>
+                <p class="mt-1 text-xs text-slate-500">ចម្លងមាតិកាទាំងអស់ចេញពីឯកសារ JSON Key ដែលទាញយកពី Google Cloud Console។</p>
+            </div>
+
+            <!-- Setup Instructions Box -->
+            <div class="mb-6 p-5 bg-blue-50 rounded-xl border border-blue-200">
+                <h4 class="font-bold text-sm text-blue-900 mb-3 flex items-center gap-1.5">
+                    <span>💡</span> របៀបដំឡើង និងប្រើប្រាស់ (Setup Instructions)
+                </h4>
+                <ol class="list-decimal list-inside space-y-2 text-xs text-slate-700">
+                    <li>ចូលទៅកាន់ **Google Cloud Console** រួចបង្កើត Project ថ្មីមួយ។</li>
+                    <li>បើកដំណើរការ **Google Drive API** សម្រាប់ Project នោះ។</li>
+                    <li>បង្កើត **Service Account** រួចចូលទៅកាន់ Tab **Keys** -> **Add Key** -> **Create new key** (ជ្រើសរើសប្រភេទ **JSON**)។</li>
+                    <li>បើកមើលឯកសារ JSON នោះ រួចចម្លងមាតិកាទាំងអស់មកបិទភ្ជាប់ (Paste) ក្នុងប្រអប់ខាងលើ។</li>
+                    <li>ចម្លងអាសយដ្ឋានអ៊ីមែលរបស់ Service Account (មានកន្ទុយ `@...iam.gserviceaccount.com`)។</li>
+                    <li>ចូលទៅ **Google Drive** ផ្ទាល់ខ្លួន បង្កើត Folder មួយ រួចធ្វើការ Share ទៅកាន់អ៊ីមែលរបស់ Service Account នោះដោយផ្តល់សិទ្ធិជា **Editor**។</li>
+                </ol>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-slate-200 pt-4">
+                <button type="submit" class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition">
+                    <span>រក្សាទុក / Save Changes</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- jsQR Library for instant client-side QR decoding -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 function switchTab(tabName) {
     // Hide all tab contents
@@ -436,5 +549,68 @@ function switchTab(tabName) {
 
 // Check if there are validation errors and switch to company tab if needed
 switchTab('company');
+
+// Instant Browser-Side QR Code Decoder
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('bankQrFileInput');
+    const textarea = document.getElementById('companyBankQrPayloadTextarea');
+    const badge = document.getElementById('qrStatusBadge');
+
+    if (fileInput && textarea) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Clear the old payload first to avoid saving mismatched configurations
+            textarea.value = '';
+
+            if (badge) {
+                badge.classList.remove('hidden', 'text-emerald-600', 'text-amber-600');
+                badge.classList.add('text-blue-600');
+                badge.innerText = '⏳ កំពុងអានអត្ថបទ KHQR ពីរូបភាព...';
+            }
+
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+
+                    if (!code) {
+                        // Try with inversion
+                        code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "attemptBoth",
+                        });
+                    }
+
+                    if (code && code.data) {
+                        textarea.value = code.data;
+                        if (badge) {
+                            badge.className = 'mt-2 text-xs font-semibold text-emerald-600 flex items-center gap-1';
+                            badge.innerHTML = '✓ បានអានកូដ KHQR ជោគជ័យ និងទាញយកកូដដាក់ក្នុងប្រអប់ខាងក្រោមស្រាប់!';
+                        }
+                    } else {
+                        if (badge) {
+                            badge.className = 'mt-2 text-xs font-semibold text-amber-600 flex items-center gap-1';
+                            badge.innerHTML = '⚠️ ប្រព័ន្ធមិនអាចអានកូដស្វ័យប្រវត្តពីរូបភាពនេះបានទេ (ដោយសារមាន Logo បាំង)។ សូមចម្លង (Paste) អត្ថបទ KHQR ចូលក្នុងប្រអប់ខាងក្រោមដោយដៃ។';
+                        }
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+});
 </script>
 @endsection

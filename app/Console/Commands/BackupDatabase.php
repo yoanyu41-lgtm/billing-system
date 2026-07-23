@@ -72,5 +72,17 @@ class BackupDatabase extends Command
         Storage::put('backups/' . $filename, $sqlContent);
 
         $this->info('Database backup created: ' . $filename);
+
+        // Upload to Google Drive if enabled
+        $gdriveEnabled = \App\Models\Setting::where('key', 'google_drive_backup_enabled')->value('value') === '1';
+        if ($gdriveEnabled) {
+            $this->info('Uploading backup to Google Drive...');
+            $gdriveService = new \App\Services\GoogleDriveService();
+            if ($gdriveService->uploadFile($filename, $sqlContent)) {
+                $this->info('Uploaded to Google Drive successfully.');
+            } else {
+                $this->error('Failed to upload backup to Google Drive.');
+            }
+        }
     }
 }

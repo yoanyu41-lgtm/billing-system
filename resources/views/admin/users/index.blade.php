@@ -47,11 +47,15 @@
                     <td style="padding:14px 16px;">
                         @if($user->role === 'admin')
                             <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#eff6ff;color:#3b82f6;border-radius:6px;font-size:12px;font-weight:600;">
-                                <i class="fas fa-shield-alt"></i> Admin
+                                <i class="fas fa-shield-alt"></i> {{ __('app.admin') }}
+                            </span>
+                        @elseif($user->role === 'staff')
+                            <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#faf5ff;color:#a855f7;border-radius:6px;font-size:12px;font-weight:600;">
+                                <i class="fas fa-user-tie"></i> {{ __('app.staff') }}
                             </span>
                         @else
                             <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f0fdf4;color:#22c55e;border-radius:6px;font-size:12px;font-weight:600;">
-                                <i class="fas fa-user"></i> User
+                                <i class="fas fa-user"></i> {{ __('app.user') }}
                             </span>
                         @endif
                     </td>

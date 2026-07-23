@@ -4,20 +4,8 @@
     <meta charset="UTF-8">
     <title>បង្កាន់ដៃ {{ $sale->invoice_no ?? $sale->id }}</title>
     <style>
-        @font-face {
-            font-family: 'Khmer OS Siemreap';
-            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'Khmer OS Siemreap';
-            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
-            font-weight: bold;
-            font-style: normal;
-        }
         body { 
-            font-family: 'Khmer OS Siemreap', 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 24px; 
             font-size: 12px; 

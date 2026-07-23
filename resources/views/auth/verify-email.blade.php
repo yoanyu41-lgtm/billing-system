@@ -36,7 +36,7 @@
                 </button>
             </form>
 
-            <form method="POST" action="{{ route('logout') }}" style="flex: 1; min-width: 160px;">
+            <form method="POST" action="{{ route('logout') }}" style="flex: 1; min-width: 160px;" onsubmit="return confirm('{{ __('app.logout_confirm') }}')">
                 @csrf
                 <button type="submit" style="width: 100%; padding: 14px 10px; background: var(--surface); color: var(--secondary); border: 1.5px solid var(--secondary); border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box; box-shadow: var(--shadow-sm);" onmouseover="this.style.background='rgba(37, 99, 235, 0.05)'; this.style.borderColor='var(--brand)'; this.style.color='var(--brand)'" onmouseout="this.style.background='var(--surface)'; this.style.borderColor='var(--secondary)'; this.style.color='var(--secondary)'">
                     <i class="fas fa-sign-out-alt"></i> Log Out

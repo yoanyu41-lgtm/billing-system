@@ -1,11 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $isKm = app()->getLocale() === 'km';
+    $L = fn($km, $en) => $isKm ? $km : $en;
+@endphp
+
 <style>
     /* Styling for browser printing */
     @media print {
         @page {
-            size: portrait;
+            size: landscape;
             margin: 15mm 10mm 15mm 10mm;
         }
         body {
@@ -41,10 +46,10 @@
             width: 100% !important;
             table-layout: auto !important;
             page-break-inside: auto;
-            font-size: 12px !important; /* Standard text size for A4 portrait print */
+            font-size: 11px !important; /* Balanced text size for A4 landscape print */
         }
         th, td {
-            padding: 8px 6px !important; /* Reclaim width with compact padding while keeping text legible */
+            padding: 6px 5px !important; /* Reclaim width with compact padding while keeping text legible */
         }
         tr {
             page-break-inside: avoid !important;
@@ -70,8 +75,6 @@
         $companyEmail   = \App\Models\Setting::where('key','company_email')->value('value');
         $companyLogoRaw = \App\Models\Setting::where('key','company_logo')->value('value');
         $companyLogo    = $companyLogoRaw ? asset('storage/' . $companyLogoRaw) : asset('logo-ct.svg');
-        $isKm = app()->getLocale() === 'km';
-        $L = fn($km, $en) => $isKm ? $km : $en;
         $companyNameShow    = $isKm ? $companyNameKm : $companyName;
         $companyAddressShow = $isKm ? $companyAddressKm : $companyAddress;
     @endphp
@@ -103,125 +106,144 @@
     {{-- Header --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.monthly_report') ?? 'Monthly Report' }}</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ date('F', mktime(0,0,0,$month,1)) }} {{ $year }}</p>
+            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.income_report') ?? 'Income Report' }}</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                {{ $L('របាយការណ៍លម្អិតចំណូលចាប់ពី', 'Detailed income breakdown from') }} 
+                {{ \Carbon\Carbon::parse($start)->format('d M Y') }} 
+                {{ $L('ដល់', 'to') }} 
+                {{ \Carbon\Carbon::parse($end)->format('d M Y') }}.
+            </p>
         </div>
-        <form method="GET" class="flex items-center gap-2 no-print" data-html2canvas-ignore="true">
-            <select name="month" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @for($m=1; $m<=12; $m++)
-                    <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
-                @endfor
-            </select>
-            <input type="number" name="year" value="{{ $year }}"
-                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg border-0 cursor-pointer">{{ __('app.search') }}</button>
-            <button type="button" onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer">
+        <form method="GET" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 no-print" data-html2canvas-ignore="true">
+            <div class="flex items-center gap-2">
+                <input type="date" name="start" value="{{ \Carbon\Carbon::parse($start)->toDateString() }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <span class="text-gray-400 text-sm">to</span>
+                <input type="date" name="end" value="{{ \Carbon\Carbon::parse($end)->toDateString() }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg border-0 cursor-pointer transition">
+                {{ __('app.filter') ?? 'Filter' }}
+            </button>
+            <a href="{{ route('admin.reports.income') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg text-center flex items-center justify-center" style="text-decoration: none;">
+                Reset
+            </a>
+            <button type="button" onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer transition">
                 <i class="fas fa-print"></i> {{ __('app.print') ?? 'បោះពុម្ព' }}
             </button>
-            <button type="button" onclick="saveReportPDF(event)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer">
+            <button type="button" onclick="saveReportPDF(event)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer transition">
                 <i class="fas fa-file-pdf"></i> PDF
             </button>
         </form>
     </div>
 
-    {{-- Summary cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.installment') }}</p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">${{ number_format($total, 2) }}</p>
+    {{-- Summary Cards Grid --}}
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
+        {{-- Installment Income --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{{ $L('ប្រាក់បង់រំលស់', 'Installment Payments') }}</p>
+            <p class="text-lg font-black text-blue-600 mt-1">${{ number_format($totalInstallments, 2) }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }}</p>
-            <p class="text-2xl font-bold text-rose-600 mt-1">${{ number_format($penaltyTotal, 2) }}</p>
+        
+        {{-- Penalty Income --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{{ $L('ប្រាក់ពិន័យ', 'Penalty Fees') }}</p>
+            <p class="text-lg font-black text-red-500 mt-1">${{ number_format($totalPenalties, 2) }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.direct_sale') }}</p>
-            <p class="text-2xl font-bold text-emerald-600 mt-1">${{ number_format($salesTotal, 2) }}</p>
+
+        {{-- Direct Sales Income --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">{{ $L('លក់ផ្ទាល់', 'Direct Sales') }}</p>
+            <p class="text-lg font-black text-cyan-600 mt-1">${{ number_format($totalSales, 2) }}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-blue-100 bg-blue-50 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.grand_total') }}</p>
-            <p class="text-2xl font-extrabold text-blue-700 mt-1">${{ number_format($grandTotal, 2) }}</p>
+
+        {{-- Grand Total Income --}}
+        <div class="bg-white rounded-xl shadow-sm border border-blue-100 bg-blue-50/20 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">{{ $L('ចំណូលសរុប', 'Total Revenue') }}</p>
+            <p class="text-lg font-black text-blue-700 mt-1">${{ number_format($grandTotal, 2) }}</p>
+        </div>
+
+        {{-- Total Capital Cost --}}
+        <div class="bg-white rounded-xl shadow-sm border border-amber-100 bg-amber-50/20 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-amber-600 font-bold uppercase tracking-wider">{{ $L('ថ្លៃដើមសរុប', 'Total Cost Price') }}</p>
+            <p class="text-lg font-black text-amber-700 mt-1">${{ number_format($totalCost, 2) }}</p>
+        </div>
+
+        {{-- Total Profit --}}
+        <div class="bg-white rounded-xl shadow-sm border border-emerald-100 bg-emerald-50/20 p-4 transition duration-200 hover:shadow-md">
+            <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">{{ $L('ប្រាក់ចំណេញសរុប', 'Total Net Profit') }}</p>
+            <p class="text-lg font-black text-emerald-700 mt-1">${{ number_format($totalProfit, 2) }}</p>
         </div>
     </div>
 
-    {{-- Installment payments --}}
+    {{-- Income Breakdown Ledger Card --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-700">{{ __('app.payments') }}</div>
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.amount') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.status') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($payments as $payment)
-                @php
-                    $payTotal = $payment->amount + $payment->penalty_amount;
-                @endphp
-                <tr>
-                    <td class="px-5 py-3 text-gray-900 whitespace-nowrap">{{ $payment->installment->customer->name ?? '—' }}</td>
-                    <td class="px-5 py-3 text-right font-semibold text-gray-600">${{ number_format($payment->amount, 2) }}</td>
-                    <td class="px-5 py-3 text-right text-rose-600 font-medium">${{ number_format($payment->penalty_amount, 2) }}</td>
-                    <td class="px-5 py-3 text-right font-bold text-blue-700">${{ number_format($payTotal, 2) }}</td>
-                    <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">{{ __('app.'.$payment->status) }}</span></td>
-                </tr>
-                @empty
-                <tr><td colspan="3" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_payments') }}</td></tr>
-                @endforelse
-            </tbody>
-            <tfoot class="bg-slate-50 border-t border-slate-200 font-bold text-sm">
-                <tr>
-                    <td class="px-5 py-3 text-right text-gray-900">{{ $L('សរុប', 'Total') }}:</td>
-                    <td class="px-5 py-3 text-right text-gray-600">${{ number_format($payments->sum('amount'), 2) }}</td>
-                    <td class="px-5 py-3 text-right text-rose-600">${{ number_format($payments->sum('penalty_amount'), 2) }}</td>
-                    <td class="px-5 py-3 text-right text-blue-700">${{ number_format($payments->sum(fn($p) => $p->amount + $p->penalty_amount), 2) }}</td>
-                    <td class="px-5 py-3"></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-
-    {{-- Direct sales --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-700">{{ __('app.direct_sales') }}</div>
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.subtotal') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.tax') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @php $totalTax = 0; @endphp
-                @forelse($sales as $sale)
-                <tr>
-                    <td class="px-5 py-3 font-semibold text-blue-600">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td>
-                    <td class="px-5 py-3 text-gray-900 whitespace-nowrap">{{ $sale->customer_name ?: __('app.walk_in_customer') }}</td>
-                    <td class="px-5 py-3 text-right text-gray-700">${{ number_format($sale->subtotal, 2) }}</td>
-                    <td class="px-5 py-3 text-right text-gray-600">${{ number_format($sale->tax_amount ?? 0, 2) }}</td>
-                    <td class="px-5 py-3 text-right font-semibold">${{ number_format($sale->total, 2) }}</td>
-                </tr>
-                @php $totalTax += ($sale->tax_amount ?? 0); @endphp
-                @empty
-                <tr><td colspan="5" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_sales_yet') }}</td></tr>
-                @endforelse
-                @if($sales->count() > 0)
-                <tr class="bg-blue-50 font-bold">
-                    <td colspan="2" class="px-5 py-3 text-right">{{ __('app.total') }}:</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('subtotal'), 2) }}</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($totalTax, 2) }}</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('total'), 2) }}</td>
-                </tr>
-                @endif
-            </tbody>
-        </table>
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="font-bold text-gray-800">{{ $L('សៀវភៅបញ្ជីប្រតិបត្តិការចំណូលលម្អិត', 'Detailed Income Transaction Ledger') }}</div>
+            <span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg">{{ $ledger->count() }} {{ $L('ប្រតិបត្តិការ', 'Transactions') }}</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-100 text-slate-600">
+                    <tr>
+                        <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('កាលបរិច្ឆេទ', 'Date') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('លេខវិក្កយបត្រ', 'Invoice No') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('អតិថិជន', 'Customer') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('ទឹកប្រាក់', 'Amount') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('ប្រាក់ពិន័យ', 'Penalty') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('ថ្លៃដើម', 'Cost') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('ប្រាក់ចំណេញ', 'Profit') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap">{{ $L('សរុប', 'Total') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    @forelse($ledger as $item)
+                        <tr class="hover:bg-slate-50/60 transition duration-150">
+                            <td class="px-5 py-3.5 whitespace-nowrap text-slate-600 font-medium">
+                                {{ $item->date->format('d-m-Y (D)') }}
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap font-bold text-slate-800">
+                                {{ $item->invoice_no }}
+                            </td>
+                            <td class="px-5 py-3.5 font-semibold text-slate-800 whitespace-nowrap">
+                                {{ $item->customer }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-semibold text-slate-700">
+                                ${{ number_format($item->amount, 2) }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-bold {{ $item->penalty > 0 ? 'text-red-500' : 'text-slate-400' }}">
+                                ${{ number_format($item->penalty, 2) }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-semibold text-amber-600">
+                                ${{ number_format($item->cost, 2) }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-semibold text-emerald-600">
+                                ${{ number_format($item->profit, 2) }}
+                            </td>
+                            <td class="px-5 py-3.5 text-right font-extrabold text-slate-900">
+                                ${{ number_format($item->total, 2) }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-5 py-8 text-center text-slate-400">
+                                {{ $L('គ្មានទិន្នន័យប្រតិបត្តិការចំណូលក្នុងអំឡុងពេលនេះទេ។', 'No income transaction ledger records in this period.') }}
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                <tfoot class="bg-slate-50 border-t-2 border-slate-200 text-slate-900 font-bold">
+                    <tr>
+                        <td colspan="3" class="px-5 py-3 text-right">{{ $L('សរុប', 'Total') }}:</td>
+                        <td class="px-5 py-3 text-right font-extrabold text-blue-700">${{ number_format($ledger->sum('amount'), 2) }}</td>
+                        <td class="px-5 py-3 text-right font-extrabold text-red-500">${{ number_format($ledger->sum('penalty'), 2) }}</td>
+                        <td class="px-5 py-3 text-right font-extrabold text-amber-700">${{ number_format($ledger->sum('cost'), 2) }}</td>
+                        <td class="px-5 py-3 text-right font-extrabold text-emerald-700">${{ number_format($ledger->sum('profit'), 2) }}</td>
+                        <td class="px-5 py-3 text-right font-black text-slate-900">${{ number_format($ledger->sum('total'), 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -232,7 +254,7 @@
 <script>
 async function saveReportPDF(event) {
     const element = document.getElementById('reportContent');
-    const filename = 'monthly-report-{{ $month }}-{{ $year }}.pdf';
+    const filename = 'income-report-{{ $start }}-to-{{ $end }}.pdf';
     
     const btn = event.target.closest('button');
     const originalHTML = btn.innerHTML;
@@ -243,8 +265,8 @@ async function saveReportPDF(event) {
     let clone = element.cloneNode(true);
     
     try {
-        const pageWidth = 210; // A4 portrait width
-        const pageHeight = 297; // A4 portrait height
+        const pageWidth = 297; // A4 landscape width
+        const pageHeight = 210; // A4 landscape height
         
         // Remove no-print and filter form elements from clone
         const noPrint = clone.querySelectorAll('.no-print, [data-html2canvas-ignore]');
@@ -261,7 +283,7 @@ async function saveReportPDF(event) {
         clone.style.position = 'absolute';
         clone.style.left = '-9999px';
         clone.style.top = '-9999px';
-        clone.style.width = '1024px'; // Expanded width to fit columns with breathing room in portrait (scaled down in PDF)
+        clone.style.width = '1400px'; // Expanded width to fit all columns without clipping (scaled down in PDF)
         clone.style.background = '#ffffff';
         clone.style.padding = '30px';
         clone.style.boxSizing = 'border-box';
@@ -301,7 +323,7 @@ async function saveReportPDF(event) {
         clone = null;
         
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = new jsPDF('l', 'mm', 'a4');
         
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
@@ -406,8 +428,8 @@ function adjustPageBreaks(clone, pageWidth, pageHeight) {
                     if (headerRow) {
                         const clonedHeader = headerRow.cloneNode(true);
                         clonedHeader.classList.add('pdf-cloned-header');
-                        clonedHeader.style.background = '#f9fafb'; // Match background color of original header
-                        clonedHeader.style.borderBottom = '1px solid #e5e7eb'; // Match borders
+                        clonedHeader.style.background = '#f8fafc'; // Match background color of original header
+                        clonedHeader.style.borderBottom = '1px solid #f1f5f9'; // Match borders
                         tr.parentNode.insertBefore(clonedHeader, tr);
                     }
                 }

@@ -4,20 +4,8 @@
     <meta charset="UTF-8">
     <title>កិច្ចសន្យាបង់រំលោះ #INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</title>
     <style>
-        @font-face {
-            font-family: 'Khmer OS Siemreap';
-            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
-            font-weight: normal;
-            font-style: normal;
-        }
-        @font-face {
-            font-family: 'Khmer OS Siemreap';
-            src: url('{{ storage_path("fonts/KhmerOSSiemreap.ttf") }}') format('truetype');
-            font-weight: bold;
-            font-style: normal;
-        }
         body { 
-            font-family: 'Khmer OS Siemreap', 'DejaVu Sans', sans-serif;
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
             margin: 0; 
             padding: 15px; 
             font-size: 11px; 
@@ -49,7 +37,7 @@
         .right { text-align: right !important; }
         .center { text-align: center !important; }
         
-        .terms { font-size: 9px; color: #4b5563; line-height: 1.6; }
+        .terms { font-size: 11px; color: #4b5563; line-height: 1.6; }
         .terms p { font-weight: bold; margin: 5px 0 2px 0; color: #1f2937; }
         .terms ol { margin: 0 0 5px 15px; padding: 0; }
         .terms li { margin-bottom: 2px; }

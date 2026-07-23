@@ -71,9 +71,23 @@
                     @endforeach
                 </tbody>
                 <tfoot class="bg-gray-50">
+                    @php
+                        $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+                        $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                    @endphp
+                    @if($taxEnabled && $purchase->tax_amount > 0)
                     <tr>
-                        <td colspan="3" class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('app.total') }}</td>
-                        <td class="px-4 py-3 text-right font-bold text-gray-900">${{ number_format($purchase->total, 2) }}</td>
+                        <td colspan="3" class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('app.subtotal') }}</td>
+                        <td class="px-4 py-3 text-right font-bold text-gray-900">${{ number_format($purchase->total - $purchase->tax_amount, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('app.tax') }} ({{ $taxLabel }})</td>
+                        <td class="px-4 py-3 text-right font-bold text-gray-900">${{ number_format($purchase->tax_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right font-bold text-gray-700 bg-gray-100/50">{{ __('app.total') }}</td>
+                        <td class="px-4 py-3 text-right font-extrabold text-indigo-700 bg-gray-100/50">${{ number_format($purchase->total, 2) }}</td>
                     </tr>
                 </tfoot>
             </table>

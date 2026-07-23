@@ -22,6 +22,7 @@ use App\Http\Controllers\TelegramLogController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/', function () {
     // Redirect to dashboard if authenticated, otherwise to login
     if (auth()->check()) {
@@ -54,6 +55,8 @@ Route::get('/currency/{currency}', function ($currency) {
     }
     return back();
 })->name('currency.switch');
+
+
 
 // Global Search API
 Route::get('/api/search', function (Request $request) {
@@ -111,6 +114,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
     Route::post('installments/{installment}/send-telegram-qr/{month}', [InstallmentController::class, 'sendTelegramQr'])->name('installments.send-telegram-qr');
 
+    // Wing Pay Browser Return
+    Route::get('payments/wing-return', [PaymentController::class, 'wingReturn'])->name('payments.wing-return');
+
     // Payments
     Route::resource('payments', PaymentController::class)->except(['edit', 'update']);
     Route::post('payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
@@ -140,6 +146,9 @@ Route::middleware('auth')->group(function () {
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
         // Products
+        Route::get('products/import/template', [ProductController::class, 'downloadTemplate'])->name('products.import-template');
+        Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import-form');
+        Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
         Route::get('products/stock', [ProductController::class, 'stockIndex'])->name('products.stock');
         Route::post('products/{product}/stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
         Route::resource('products', ProductController::class);
