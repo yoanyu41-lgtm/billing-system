@@ -90,6 +90,41 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/monthly-revenue',    [DashboardController::class, 'monthlyRevenue'])->name('dashboard.monthly-revenue');
     Route::get('/dashboard/monthly-collection', [DashboardController::class, 'monthlyCollection'])->name('dashboard.monthly-collection');
 
+    // Customers Trash
+    Route::get('customers/trash', [CustomerController::class, 'trash'])->name('customers.trash');
+    Route::post('customers/{id}/restore', [CustomerController::class, 'restore'])->name('customers.restore');
+    Route::delete('customers/{id}/force-delete', [CustomerController::class, 'forceDelete'])->name('customers.force-delete');
+    Route::post('trash/restore-all', [CustomerController::class, 'restoreAll'])->name('trash.restore-all');
+    Route::delete('trash/empty', [CustomerController::class, 'emptyTrash'])->name('trash.empty');
+
+    // Installments Trash
+    Route::post('installments/{id}/restore', [InstallmentController::class, 'restore'])->name('installments.restore');
+    Route::delete('installments/{id}/force-delete', [InstallmentController::class, 'forceDelete'])->name('installments.force-delete');
+
+    // Products Trash
+    Route::post('products/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
+    Route::delete('products/{id}/force-delete', [ProductController::class, 'forceDelete'])->name('products.force-delete');
+
+    // Users Trash
+    Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::delete('users/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.force-delete');
+
+    // Payments Trash
+    Route::post('payments/{id}/restore', [PaymentController::class, 'restore'])->name('payments.restore');
+    Route::delete('payments/{id}/force-delete', [PaymentController::class, 'forceDelete'])->name('payments.force-delete');
+
+    // Suppliers Trash
+    Route::post('suppliers/{id}/restore', [\App\Http\Controllers\SupplierController::class, 'restore'])->name('suppliers.restore');
+    Route::delete('suppliers/{id}/force-delete', [\App\Http\Controllers\SupplierController::class, 'forceDelete'])->name('suppliers.force-delete');
+
+    // Categories Trash
+    Route::post('categories/{id}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
+    Route::delete('categories/{id}/force-delete', [CategoryController::class, 'forceDelete'])->name('categories.force-delete');
+
+    // Sales Trash
+    Route::post('sales/{id}/restore', [\App\Http\Controllers\SaleController::class, 'restore'])->name('sales.restore');
+    Route::delete('sales/{id}/force-delete', [\App\Http\Controllers\SaleController::class, 'forceDelete'])->name('sales.force-delete');
+
     // Customers
     Route::resource('customers', CustomerController::class);
     Route::post('customers/{customer}/guarantors', [GuarantorController::class, 'store'])->name('guarantors.store');

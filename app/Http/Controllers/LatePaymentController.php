@@ -15,7 +15,7 @@ class LatePaymentController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product')
+        $query = Installment::has('customer')->has('product')->with('customer', 'product')
             ->where('remaining_balance', '>', 0)
             ->where('status', 'active');
 
@@ -50,7 +50,7 @@ class LatePaymentController extends Controller
     {
         $today = Carbon::today()->toDateString();
 
-        $installments = Installment::with('customer')
+        $installments = Installment::has('customer')->with('customer')
             ->where('status', 'active')
             ->where('remaining_balance', '>', 0)
             ->whereNotNull('next_due_date')

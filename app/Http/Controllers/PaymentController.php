@@ -53,11 +53,12 @@ class PaymentController extends Controller
     public function create()
     {
         $user = auth()->user();
-        $installments = Installment::with('customer', 'product');
-
-
-
-        $installments = $installments->where('status', 'active')->get();
+        $installments = Installment::has('customer')
+            ->has('product')
+            ->with('customer', 'product', 'payments')
+            ->where('status', 'active')
+            ->get();
+            
         $paymentMethods = $this->getPaymentMethods();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
@@ -76,10 +77,20 @@ class PaymentController extends Controller
             'card_holder_name' => 'nullable|string|max:255',
             'card_number' => 'nullable|string|max:4',
             'card_brand' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
-        $qrPath = null;
+        $installment = Installment::findOrFail($request->installment_id);
+        
+        if ($installment->remaining_balance <= 0) {
+            return back()->withErrors(['amount' => 'This installment plan is already fully paid off.'])->withInput();
+        }
 
+        if ((float) $request->amount > (float) $installment->remaining_balance + 0.009) {
+            return back()->withErrors(['amount' => 'Payment amount ($' . number_format($request->amount, 2) . ') cannot exceed remaining balance ($' . number_format($installment->remaining_balance, 2) . ').'])->withInput();
+        }
+
+        $qrPath = null;
         if ($request->hasFile('qr_image')) {
             $qrPath = $request->file('qr_image')->store('qr_images', 'public');
         }
@@ -87,10 +98,10 @@ class PaymentController extends Controller
         $tempPayment = new Payment(['payment_method_id' => $request->payment_method_id]);
         $approveNow = $request->has('approve_now') && Gate::allows('approve-payment', $tempPayment);
 
-        // Capture Credit Card details into title field if Credit Card method
-        $title = null;
         $method = PaymentMethod::find($request->payment_method_id);
         $isCreditCard = $method && strtolower(str_replace(' ', '_', $method->name)) === 'credit_card';
+
+        $title = $request->notes ? trim($request->notes) : null;
 
         $feeRate = 0;
         if ($isCreditCard) {
@@ -98,18 +109,17 @@ class PaymentController extends Controller
             $cardNumber = $request->card_number ? trim($request->card_number) : 'N/A';
             $cardBrand = $request->card_brand ? trim($request->card_brand) : 'N/A';
             
-            // Standard fee calculation
             $feePercentage = (float) (\App\Models\Setting::where('key', 'card_processing_fee')->value('value') ?? 2);
             $feeRate = $feePercentage / 100;
             $principal = (float) $request->amount + (float) ($request->penalty_amount ?? 0);
-            $fee = $principal * $feeRate; // processing fee
+            $fee = $principal * $feeRate;
             $total = $principal + $fee;
             
-            $formattedPrincipal = number_format($principal, 2);
             $formattedFee = number_format($fee, 2);
             $formattedTotal = number_format($total, 2);
 
-            $title = "Cardholder: {$cardHolder} | Card: {$cardBrand} ****{$cardNumber} | Fee: \${$formattedFee} | Total: \${$formattedTotal}";
+            $cardTitle = "Cardholder: {$cardHolder} | Card: {$cardBrand} ****{$cardNumber} | Fee: \${$formattedFee} | Total: \${$formattedTotal}";
+            $title = $title ? "{$title} | {$cardTitle}" : $cardTitle;
         }
 
         $payment = Payment::create([
@@ -124,11 +134,10 @@ class PaymentController extends Controller
             'title' => $title,
         ]);
 
-        // If it is Credit Card and Wing Pay is configured, redirect to Wing Checkout URL
         if ($isCreditCard && $this->wingPayService->isConfigured()) {
             $checkoutUrl = $this->wingPayService->createCheckoutSession([
                 'payment_id' => $payment->id,
-                'amount' => ($payment->amount + $payment->penalty_amount) * (1 + $feeRate), // Include penalty & card fee
+                'amount' => ($payment->amount + $payment->penalty_amount) * (1 + $feeRate),
                 'currency' => 'USD',
                 'installment_id' => $payment->installment_id,
             ]);
@@ -138,7 +147,6 @@ class PaymentController extends Controller
             }
         }
 
-        // Standard Approval Flow if approve_now requested and allowed
         if ($approveNow) {
             $this->approvePaymentRecord($payment, auth()->id());
         } else {
@@ -151,6 +159,15 @@ class PaymentController extends Controller
         }
 
         $successMsg = ($approveNow) ? 'Payment recorded and approved successfully.' : 'Payment submitted successfully.';
+
+        if ($request->has('save_and_print')) {
+            $payment->load('invoice');
+            if ($payment->invoice) {
+                return redirect()->route('invoices.print', $payment->invoice->id)->with('success', $successMsg);
+            } else {
+                return redirect()->route('payments.show', $payment->id)->with('success', $successMsg)->with('auto_print', true);
+            }
+        }
 
         if ($request->filled('redirect_to')) {
             return redirect($request->redirect_to)->with('success', $successMsg);
@@ -353,14 +370,6 @@ class PaymentController extends Controller
             $installment->save();
         }
 
-        // Delete associated invoice if exists
-        $payment->invoice()?->delete();
-
-        // Delete payment QR code image from storage if exists
-        if ($payment->qr_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->qr_image)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($payment->qr_image);
-        }
-
         $payment->delete();
 
         return redirect()->route('payments.index')->with('success', 'Payment deleted successfully.');
@@ -378,11 +387,15 @@ class PaymentController extends Controller
     {
         $defaults = [
             ['name' => 'Cash', 'details' => 'សាច់ប្រាក់ - Cash payment.'],
-            ['name' => 'QR Code', 'details' => 'QR Code - Scan to pay.'],
+            ['name' => 'ABA Bank', 'details' => 'ធនាគារ ABA - ABA Pay / Mobile Banking.'],
+            ['name' => 'ACLEDA Bank', 'details' => 'ធនាគារ អេស៊ីលីដា - ACLEDA Mobile.'],
+            ['name' => 'Wing Bank', 'details' => 'ធនាគារ វីង - Wing Bank / Wing Money.'],
+            ['name' => 'TrueMoney', 'details' => 'ទ្រូម៉ានី - TrueMoney Agent / App.'],
+            ['name' => 'Bank Transfer', 'details' => 'ផ្ទេរតាមធនាគារ - Direct Bank Transfer.'],
+            ['name' => 'QR Code', 'details' => 'QR Code - Scan KHQR code to pay.'],
             ['name' => 'Credit Card', 'details' => 'កាតឥណទាន - Credit/Debit Card payment.'],
         ];
 
-        // Rename legacy name 'QR' to 'QR Code' if it exists in DB
         PaymentMethod::where('name', 'QR')->update(['name' => 'QR Code']);
 
         foreach ($defaults as $method) {
@@ -392,16 +405,50 @@ class PaymentController extends Controller
             );
         }
 
-        // Clean up unused other payment methods
-        $defaultNames = ['Cash', 'QR Code', 'Credit Card'];
-        $unused = PaymentMethod::whereNotIn('name', $defaultNames)->get();
-        foreach ($unused as $method) {
-            $hasPayments = Payment::where('payment_method_id', $method->id)->exists();
-            if (!$hasPayments) {
-                $method->delete();
+        return PaymentMethod::orderBy('id')->get();
+    }
+
+    public function restore($id)
+    {
+        Gate::authorize('delete-payment');
+        $payment = Payment::onlyTrashed()->findOrFail($id);
+        $payment->restore();
+
+        // Adjust installment remaining balance and status
+        $installment = $payment->installment;
+        if ($installment && $payment->status === 'approved') {
+            $installment->remaining_balance = max($installment->remaining_balance - $payment->amount, 0);
+            if ($installment->remaining_balance <= 0) {
+                $installment->status = 'completed';
             }
+            $installment->save();
+
+            // Recalculate due date
+            $schedule = $installment->getPaymentSchedule();
+            $nextUnpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+            if ($nextUnpaidRow) {
+                $installment->next_due_date = $nextUnpaidRow['due_date']->toDateString();
+            } else {
+                $installment->next_due_date = null;
+            }
+            $installment->save();
         }
 
-        return PaymentMethod::orderBy('name')->get();
+        return redirect()->route('customers.trash', ['tab' => 'payments'])->with('success', 'Payment restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        Gate::authorize('delete-payment');
+        $payment = Payment::onlyTrashed()->findOrFail($id);
+
+        // Delete invoice and QR image permanently
+        $payment->invoice()?->delete();
+        if ($payment->qr_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->qr_image)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($payment->qr_image);
+        }
+
+        $payment->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'payments'])->with('success', 'Payment permanently deleted.');
     }
 }

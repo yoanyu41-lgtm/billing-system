@@ -92,7 +92,7 @@ class SampleDataSeeder extends Seeder
                 'interest_rate' => 0.00,
                 'duration_months' => 6,
                 'monthly_payment' => 133.33,
-                'remaining_balance' => 400.01,
+                'remaining_balance' => 133.35,
                 'status' => 'active',
                 'next_due_date' => Carbon::create(2026, 8, 20),
                 'created_by' => $adminId,

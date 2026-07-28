@@ -992,10 +992,10 @@
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('customers.index', ['type' => 'installment']) }}" class="{{ request()->routeIs('customers.*') && $custType !== 'direct' ? 'active' : '' }}">
+                    <a href="{{ route('customers.index', ['type' => 'installment']) }}" class="{{ request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType !== 'direct' ? 'active' : '' }}">
                         <i class="fas fa-file-invoice-dollar"></i> {{ __('app.installment_customers') }}
                     </a>
-                    <a href="{{ route('customers.index', ['type' => 'direct']) }}" class="{{ request()->routeIs('customers.*') && $custType === 'direct' ? 'active' : '' }}">
+                    <a href="{{ route('customers.index', ['type' => 'direct']) }}" class="{{ request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType === 'direct' ? 'active' : '' }}">
                         <i class="fas fa-cash-register"></i> {{ __('app.direct_customers') }}
                     </a>
                 </div>
@@ -1206,10 +1206,9 @@
             </a>
             @endif
 
-            {{-- Settings Dropdown (Admin Only) --}}
             @if(auth()->user()->role === 'admin')
-            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cog"></i>
                     <span>{{ __('app.settings') }}</span>
                     <i class="fas fa-chevron-down"></i>
@@ -1226,6 +1225,9 @@
                     </a>
                     <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
+                    </a>
+                    <a href="{{ route('customers.trash') }}" class="{{ request()->routeIs('customers.trash') ? 'active' : '' }}">
+                        <i class="fas fa-trash-alt"></i> {{ __('app.trash') }}
                     </a>
                 </div>
             </div>

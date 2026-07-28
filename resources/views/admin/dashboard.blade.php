@@ -10,7 +10,7 @@
             <div class="sc-icon"><i class="fas fa-box-open"></i></div>
             <div class="sc-label">{{ __('app.total_products') }}</div>
             <div class="sc-value">{{ number_format($totalProducts) }}</div>
-            <div class="sc-trend">↑ 12% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $productTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,28 40,18 80,24 120,10 160,20 200,8" fill="none" stroke="#fff" stroke-width="2"/>
@@ -22,7 +22,7 @@
             <div class="sc-icon"><i class="fas fa-user-friends"></i></div>
             <div class="sc-label">{{ __('app.total_customers') }}</div>
             <div class="sc-value">{{ number_format($totalCustomers) }}</div>
-            <div class="sc-trend">↑ 8% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $customerTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,28 40,22 80,16 120,20 160,12 200,6" fill="none" stroke="#fff" stroke-width="2"/>
@@ -34,7 +34,7 @@
             <div class="sc-icon"><i class="fas fa-wallet"></i></div>
             <div class="sc-label">{{ __('app.total_revenue') }}</div>
             <div class="sc-value text-2xl font-bold">{{ format_currency($totalIncome, $exchangeRate) }}</div>
-            <div class="sc-trend">↑ 15% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $revenueTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,30 40,20 80,26 120,14 160,22 200,8" fill="none" stroke="#fff" stroke-width="2"/>
@@ -70,7 +70,7 @@
             <div class="sc-icon"><i class="fas fa-file-invoice"></i></div>
             <div class="sc-label">{{ __('app.active_installments') }}</div>
             <div class="sc-value">{{ number_format($activeInstallments ?? 0) }}</div>
-            <div class="sc-trend">↑ 10% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $activeTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,24 40,14 80,20 120,8 160,18 200,6" fill="none" stroke="#fff" stroke-width="2"/>
@@ -82,7 +82,7 @@
             <div class="sc-icon"><i class="fas fa-exclamation-circle"></i></div>
             <div class="sc-label">{{ __('app.overdue_amount') }}</div>
             <div class="sc-value text-2xl font-bold">{{ format_currency($overdueAmount ?? 0, $exchangeRate) }}</div>
-            <div class="sc-trend">↓ 5% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $overdueTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,10 40,20 80,14 120,26 160,18 200,28" fill="none" stroke="#fff" stroke-width="2"/>
@@ -94,7 +94,7 @@
             <div class="sc-icon"><i class="fas fa-receipt"></i></div>
             <div class="sc-label">{{ __('app.total_payments') }}</div>
             <div class="sc-value">{{ number_format($totalPayments ?? 0) }}</div>
-            <div class="sc-trend">↑ 18% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $paymentsTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,26 40,16 80,22 120,12 160,16 200,10" fill="none" stroke="#fff" stroke-width="2"/>
@@ -106,7 +106,7 @@
             <div class="sc-icon"><i class="fas fa-clock"></i></div>
             <div class="sc-label">{{ __('app.pending_payments') }}</div>
             <div class="sc-value">{{ number_format($pendingPayments ?? 0) }}</div>
-            <div class="sc-trend">↓ 3% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $pendingTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,20 40,24 80,18 120,22 160,14 200,12" fill="none" stroke="#fff" stroke-width="2"/>
@@ -118,7 +118,7 @@
             <div class="sc-icon"><i class="fas fa-check-circle"></i></div>
             <div class="sc-label">{{ __('app.completed_installments') }}</div>
             <div class="sc-value">{{ number_format($completedInstallments ?? 0) }}</div>
-            <div class="sc-trend">↑ 22% {{ __('app.from_last_month') }}</div>
+            <div class="sc-trend">{!! $completedTrend !!}</div>
         </div>
         <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
             <polyline points="0,22 40,18 80,24 120,10 160,14 200,8" fill="none" stroke="#fff" stroke-width="2"/>

@@ -280,13 +280,10 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         Gate::authorize('delete-product');
-
-        if ($product->installments()->exists()) {
-            return redirect()->route('admin.products.stock')->with('error', __('app.cannot_delete_product_has_installments'));
-        }
-
         $product->delete();
-        return redirect()->route('admin.products.stock')->with('success', 'Product deleted successfully.');
+        
+        $redirectRoute = request()->input('from') === 'stock' ? 'admin.products.stock' : 'admin.products.index';
+        return redirect()->route($redirectRoute)->with('success', 'Product deleted successfully.');
     }
 
     public function updateStock(Request $request, Product $product)
@@ -580,5 +577,27 @@ class ProductController extends Controller
             \Log::error('Product import error: ' . $e->getMessage());
             return back()->with('error', __('app.import_failed') . ' ' . $e->getMessage());
         }
+    }
+
+    public function restore($id)
+    {
+        Gate::authorize('delete-product');
+        $product = Product::onlyTrashed()->findOrFail($id);
+        $product->restore();
+        return redirect()->route('customers.trash', ['tab' => 'products'])->with('success', 'Product restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        Gate::authorize('delete-product');
+        $product = Product::onlyTrashed()->findOrFail($id);
+        
+        // Delete image if exists
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+        
+        $product->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'products'])->with('success', 'Product permanently deleted.');
     }
 }

@@ -14,21 +14,62 @@ use Illuminate\Support\Facades\Gate;
 
 class InstallmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $query = Installment::with('customer', 'product');
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
 
-
-        $installments = $query->paginate(10);
+        $installments = $query->latest('id')->paginate(10)->withQueryString();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
-        return view('installments.index', compact('installments', 'exchangeRate'));
+        $suggestions = [];
+        $installmentQuery = Installment::query();
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $installmentQuery->where('created_by', $user->id);
+        }
+
+        $customerIds = (clone $installmentQuery)->pluck('customer_id')->unique()->filter();
+        $productIds = (clone $installmentQuery)->pluck('product_id')->unique()->filter();
+
+        $customers = \App\Models\Customer::whereIn('id', $customerIds)->get(['name', 'phone']);
+        foreach ($customers as $c) {
+            $suggestions[] = [
+                'label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                'value' => $c->name
+            ];
+        }
+
+        $products = \App\Models\Product::whereIn('id', $productIds)->get(['name', 'code']);
+        foreach ($products as $p) {
+            $suggestions[] = [
+                'label' => $p->name . ($p->code ? ' (' . $p->code . ')' : ''),
+                'value' => $p->name
+            ];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('installments.index', compact('installments', 'exchangeRate', 'suggestions'));
     }
 
     public function create()
     {
-        $customers = Customer::where('type', 'installment')->orderBy('name')->get();
+        $customers = Customer::where('type', 'installment')
+            ->whereDoesntHave('installments')
+            ->orderBy('name')
+            ->get();
         $products = Product::where('is_active', true)->orderBy('name')->get();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
         return view('installments.create', compact('customers', 'products', 'exchangeRate'));
@@ -138,16 +179,47 @@ class InstallmentController extends Controller
         return view('installments.show', compact('installment', 'schedule', 'paymentMethods', 'exchangeRate'));
     }
 
-    public function payOffIndex()
+    public function payOffIndex(Request $request)
     {
+        // Remove debug.txt if it exists
+        if (file_exists(base_path('debug.txt'))) {
+            @unlink(base_path('debug.txt'));
+        }
+
         $user = auth()->user();
+
+        // Self-healing: Automatically complete any active installments that have been fully paid off
+        $activeInstallments = Installment::where('status', 'active')->get();
+        foreach ($activeInstallments as $inst) {
+            if ($inst->outstandingPrincipal() <= 0) {
+                $inst->update([
+                    'status'            => 'completed',
+                    'remaining_balance' => 0,
+                    'next_due_date'     => null,
+                ]);
+            }
+        }
+
         $query = Installment::with('customer', 'product')->where('status', 'active');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
         }
 
-        $installments = $query->latest()->paginate(10);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $installments = $query->latest('id')->paginate(10)->withQueryString();
 
         // Pre-compute payoff (outstanding principal) for each plan.
         $installments->getCollection()->transform(function ($installment) {
@@ -157,7 +229,34 @@ class InstallmentController extends Controller
 
         $paymentMethods = PaymentMethod::orderBy('name')->get();
 
-        return view('installments.pay-off-index', compact('installments', 'paymentMethods'));
+        // Load suggestions from active installments for autocomplete dropdown
+        $suggestions = [];
+        $installmentQuery = Installment::where('status', 'active');
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $installmentQuery->where('created_by', $user->id);
+        }
+
+        $customerIds = (clone $installmentQuery)->pluck('customer_id')->unique()->filter();
+        $productIds = (clone $installmentQuery)->pluck('product_id')->unique()->filter();
+
+        $customers = \App\Models\Customer::whereIn('id', $customerIds)->get(['name', 'phone']);
+        foreach ($customers as $c) {
+            $suggestions[] = [
+                'label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                'value' => $c->name
+            ];
+        }
+
+        $products = \App\Models\Product::whereIn('id', $productIds)->get(['name', 'code']);
+        foreach ($products as $p) {
+            $suggestions[] = [
+                'label' => $p->name . ($p->code ? ' (' . $p->code . ')' : ''),
+                'value' => $p->name
+            ];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('installments.pay-off-index', compact('installments', 'paymentMethods', 'suggestions'));
     }
 
     public function payOff(Request $request, Installment $installment)
@@ -304,19 +403,7 @@ class InstallmentController extends Controller
     public function destroy(Installment $installment)
     {
         Gate::authorize('delete-installment');
-
-        // Delete related records in correct order to avoid foreign key constraints
-        // 1. First delete invoices related to payments from this installment
-        \DB::table('invoices')
-            ->whereIn('payment_id', $installment->payments()->pluck('id'))
-            ->delete();
-        
-        // 2. Then delete all payments
-        $installment->payments()->delete();
-        
-        // 3. Finally delete the installment
         $installment->delete();
-        
         return redirect()->route('installments.index')->with('success', 'Installment deleted successfully.');
     }
 
@@ -599,7 +686,7 @@ class InstallmentController extends Controller
         ));
     }
 
-    public function clearanceIndex()
+    public function clearanceIndex(Request $request)
     {
         $user = auth()->user();
         $query = Installment::with('customer', 'product')
@@ -612,9 +699,75 @@ class InstallmentController extends Controller
             $query->where('created_by', $user->id);
         }
 
-        $installments = $query->latest()->paginate(10);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $installments = $query->latest('id')->paginate(10)->withQueryString();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('installments.clearance-index', compact('installments', 'exchangeRate'));
+        // Load suggestions from completed installments for autocomplete dropdown
+        $suggestions = [];
+        $installmentQuery = Installment::where(function($q) {
+                $q->where('status', 'completed')
+                  ->orWhere('remaining_balance', '<=', 0);
+            });
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $installmentQuery->where('created_by', $user->id);
+        }
+
+        $customerIds = (clone $installmentQuery)->pluck('customer_id')->unique()->filter();
+        $productIds = (clone $installmentQuery)->pluck('product_id')->unique()->filter();
+
+        $customers = \App\Models\Customer::whereIn('id', $customerIds)->get(['name', 'phone']);
+        foreach ($customers as $c) {
+            $suggestions[] = [
+                'label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                'value' => $c->name
+            ];
+        }
+
+        $products = \App\Models\Product::whereIn('id', $productIds)->get(['name', 'code']);
+        foreach ($products as $p) {
+            $suggestions[] = [
+                'label' => $p->name . ($p->code ? ' (' . $p->code . ')' : ''),
+                'value' => $p->name
+            ];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('installments.clearance-index', compact('installments', 'exchangeRate', 'suggestions'));
+    }
+
+    public function restore($id)
+    {
+        Gate::authorize('delete-installment');
+        $installment = Installment::onlyTrashed()->findOrFail($id);
+        $installment->restore();
+        return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        Gate::authorize('delete-installment');
+        $installment = Installment::onlyTrashed()->findOrFail($id);
+        
+        // Delete related payments and invoices permanently
+        \DB::table('invoices')
+            ->whereIn('payment_id', $installment->payments()->pluck('id'))
+            ->delete();
+        $installment->payments()->delete();
+        
+        $installment->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment permanently deleted.');
     }
 }

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'installment_id',
         'amount',
@@ -37,7 +39,7 @@ class Payment extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
     }
 
     public function invoice()

@@ -83,10 +83,6 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if ($user->profile_image) {
-            Storage::disk('public')->delete($user->profile_image);
-        }
-
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
     }
@@ -95,5 +91,22 @@ class UserController extends Controller
     {
         $user->update(['password' => Hash::make('password')]);
         return redirect()->route('admin.users.index')->with('success', 'Password reset to "password".');
+    }
+
+    public function restore($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        $user->restore();
+        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'User restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        if ($user->profile_image) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+        }
+        $user->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'User permanently deleted.');
     }
 }

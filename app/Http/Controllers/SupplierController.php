@@ -70,4 +70,18 @@ class SupplierController extends Controller
 
         return redirect()->route('admin.suppliers.index')->with('success','Supplier deleted successfully.');
     }
+
+    public function restore($id)
+    {
+        $supplier = Supplier::onlyTrashed()->findOrFail($id);
+        $supplier->restore();
+        return redirect()->route('customers.trash', ['tab' => 'suppliers'])->with('success', 'Supplier restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        $supplier = Supplier::onlyTrashed()->findOrFail($id);
+        $supplier->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'suppliers'])->with('success', 'Supplier permanently deleted.');
+    }
 }

@@ -1,12 +1,5 @@
 <x-guest-layout>
     <div class="auth-card">
-        <!-- Language Switcher -->
-        <div class="lang-switcher">
-            <div class="lang-switcher-pills">
-                <a href="{{ route('lang.switch', 'km') }}" class="{{ app()->getLocale() === 'km' ? 'active' : '' }}">ខ្មែរ</a>
-                <a href="{{ route('lang.switch', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
-            </div>
-        </div>
 
         <!-- Logo Section -->
         <div class="auth-logo-header">

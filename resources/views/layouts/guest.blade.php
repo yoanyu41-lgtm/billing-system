@@ -16,6 +16,7 @@
             background: var(--surface-muted);
             overflow-x: hidden;
             overflow-y: auto;
+            position: relative;
         }
 
         .wrapper { 
@@ -45,11 +46,19 @@
             box-shadow: var(--shadow-lg), 0 20px 40px -15px rgba(15, 23, 42, 0.12);
         }
 
-        /* Language switcher — top right of card */
-        .lang-switcher {
+        /* Language switcher — top right of viewport */
+        .lang-switcher-global {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 50;
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 24px;
+        }
+        @media (max-width: 640px) {
+            .lang-switcher-global {
+                top: 16px;
+                right: 16px;
+            }
         }
         .lang-switcher-pills {
             display: inline-flex;
@@ -206,6 +215,13 @@
     </style>
 </head>
 <body>
+    <div class="lang-switcher-global">
+        <div class="lang-switcher-pills">
+            <a href="{{ route('lang.switch', 'km') }}" class="{{ app()->getLocale() === 'km' ? 'active' : '' }}">ខ្មែរ</a>
+            <a href="{{ route('lang.switch', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'active' : '' }}">EN</a>
+        </div>
+    </div>
+
     <div class="wrapper">
         {{ $slot }}
     </div>

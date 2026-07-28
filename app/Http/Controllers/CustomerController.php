@@ -5,6 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Notification;
 use App\Models\Payment;
+use App\Models\Installment;
+use App\Models\Product;
+use App\Models\User;
+use App\Models\Supplier;
+use App\Models\Category;
+use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -219,5 +225,184 @@ class CustomerController extends Controller
         $type = $customer->type;
         $customer->delete();
         return redirect()->route('customers.index', ['type' => $type])->with('success', 'Customer deleted successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        Gate::authorize('delete-customer');
+        $tab = $request->get('tab', 'customers');
+        $customers = Customer::onlyTrashed()->latest()->paginate(10, ['*'], 'customers_page');
+        $installments = Installment::onlyTrashed()->with('customer', 'product')->latest()->paginate(10, ['*'], 'installments_page');
+        $products = Product::onlyTrashed()->latest()->paginate(10, ['*'], 'products_page');
+        $users = User::onlyTrashed()->latest()->paginate(10, ['*'], 'users_page');
+        $payments = Payment::onlyTrashed()->with('installment.customer', 'paymentMethod')->latest()->paginate(10, ['*'], 'payments_page');
+        $suppliers = Supplier::onlyTrashed()->latest()->paginate(10, ['*'], 'suppliers_page');
+        $categories = Category::onlyTrashed()->latest()->paginate(10, ['*'], 'categories_page');
+        $sales = Sale::onlyTrashed()->latest()->paginate(10, ['*'], 'sales_page');
+        
+        return view('customers.trash', compact(
+            'customers', 'installments', 'products', 'users', 'payments', 
+            'suppliers', 'categories', 'sales', 'tab'
+        ));
+    }
+
+    public function restore($id)
+    {
+        Gate::authorize('delete-customer');
+        $customer = Customer::onlyTrashed()->findOrFail($id);
+        $customer->restore();
+        return redirect()->route('customers.trash')->with('success', __('app.restore_success'));
+    }
+
+    public function forceDelete($id)
+    {
+        Gate::authorize('delete-customer');
+        $customer = Customer::onlyTrashed()->findOrFail($id);
+
+        if ($customer->photo) {
+            Storage::disk('public')->delete($customer->photo);
+        }
+
+        $customer->forceDelete();
+        return redirect()->route('customers.trash')->with('success', __('app.force_delete_success'));
+    }
+
+    public function restoreAll(Request $request)
+    {
+        Gate::authorize('delete-customer');
+        $tab = $request->get('tab', 'customers');
+
+        if ($tab === 'customers') {
+            Customer::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារអតិថិជនទាំងអស់ឡើងវិញរួចរាល់។' : 'All customers restored successfully.';
+        } elseif ($tab === 'installments') {
+            Installment::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារគម្រោងបង់រំលស់ទាំងអស់ឡើងវិញរួចរាល់។' : 'All installments restored successfully.';
+        } elseif ($tab === 'products') {
+            Product::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារផលិតផលទាំងអស់ឡើងវិញរួចរាល់។' : 'All products restored successfully.';
+        } elseif ($tab === 'users') {
+            User::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារបុគ្គលិកទាំងអស់ឡើងវិញរួចរាល់។' : 'All users restored successfully.';
+        } elseif ($tab === 'payments') {
+            $payments = Payment::onlyTrashed()->get();
+            foreach ($payments as $payment) {
+                $payment->restore();
+                $installment = $payment->installment;
+                if ($installment && $payment->status === 'approved') {
+                    $installment->remaining_balance = max($installment->remaining_balance - $payment->amount, 0);
+                    if ($installment->remaining_balance <= 0) {
+                        $installment->status = 'completed';
+                    }
+                    $installment->save();
+
+                    $schedule = $installment->getPaymentSchedule();
+                    $nextUnpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+                    if ($nextUnpaidRow) {
+                        $installment->next_due_date = $nextUnpaidRow['due_date']->toDateString();
+                    } else {
+                        $installment->next_due_date = null;
+                    }
+                    $installment->save();
+                }
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារការទូទាត់ប្រាក់ទាំងអស់ឡើងវិញរួចរាល់។' : 'All payments restored successfully.';
+        } elseif ($tab === 'suppliers') {
+            Supplier::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារអ្នកផ្គត់ផ្គង់ទាំងអស់ឡើងវិញរួចរាល់។' : 'All suppliers restored successfully.';
+        } elseif ($tab === 'categories') {
+            Category::onlyTrashed()->restore();
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារប្រភេទផលិតផលទាំងអស់ឡើងវិញរួចរាល់។' : 'All categories restored successfully.';
+        } elseif ($tab === 'sales') {
+            $sales = Sale::onlyTrashed()->with('items')->get();
+            foreach ($sales as $sale) {
+                foreach ($sale->items as $item) {
+                    Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
+                    \App\Models\StockMovement::create([
+                        'product_id' => $item->product_id,
+                        'type'       => 'out',
+                        'quantity'   => $item->quantity,
+                        'related_id' => $sale->id,
+                        'note'       => 'Restoration of sale ' . ($sale->invoice_no ?? ('#' . $sale->id)),
+                    ]);
+                }
+                $sale->restore();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានស្តារការលក់ទាំងអស់ឡើងវិញរួចរាល់។' : 'All sales restored successfully.';
+        }
+
+        return redirect()->route('customers.trash', ['tab' => $tab])->with('success', $msg ?? 'Restored successfully.');
+    }
+
+    public function emptyTrash(Request $request)
+    {
+        Gate::authorize('delete-customer');
+        $tab = $request->get('tab', 'customers');
+
+        if ($tab === 'customers') {
+            $customers = Customer::onlyTrashed()->get();
+            foreach ($customers as $customer) {
+                foreach (['photo', 'id_card_photo', 'family_photo', 'income_proof', 'guarantor_doc'] as $field) {
+                    if ($customer->$field) {
+                        Storage::disk('public')->delete($customer->$field);
+                    }
+                }
+                $customer->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមអតិថិជនរួចរាល់។' : 'Customer trash emptied successfully.';
+        } elseif ($tab === 'installments') {
+            $installments = Installment::onlyTrashed()->get();
+            foreach ($installments as $installment) {
+                \DB::table('invoices')
+                    ->whereIn('payment_id', $installment->payments()->pluck('id'))
+                    ->delete();
+                $installment->payments()->delete();
+                $installment->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមគម្រោងបង់រំលស់រួចរាល់។' : 'Installment trash emptied successfully.';
+        } elseif ($tab === 'products') {
+            $products = Product::onlyTrashed()->get();
+            foreach ($products as $product) {
+                if ($product->image) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $product->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមផលិតផលរួចរាល់។' : 'Product trash emptied successfully.';
+        } elseif ($tab === 'users') {
+            $users = User::onlyTrashed()->get();
+            foreach ($users as $user) {
+                if ($user->profile_image) {
+                    Storage::disk('public')->delete($user->profile_image);
+                }
+                $user->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមបុគ្គលិករួចរាល់។' : 'User trash emptied successfully.';
+        } elseif ($tab === 'payments') {
+            $payments = Payment::onlyTrashed()->get();
+            foreach ($payments as $payment) {
+                $payment->invoice()?->delete();
+                if ($payment->qr_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->qr_image)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($payment->qr_image);
+                }
+                $payment->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមការទូទាត់ប្រាក់រួចរាល់។' : 'Payment trash emptied successfully.';
+        } elseif ($tab === 'suppliers') {
+            Supplier::onlyTrashed()->get()->each->forceDelete();
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមអ្នកផ្គត់ផ្គង់រួចរាល់។' : 'Supplier trash emptied successfully.';
+        } elseif ($tab === 'categories') {
+            Category::onlyTrashed()->get()->each->forceDelete();
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមប្រភេទផលិតផលរួចរាល់។' : 'Category trash emptied successfully.';
+        } elseif ($tab === 'sales') {
+            $sales = Sale::onlyTrashed()->get();
+            foreach ($sales as $sale) {
+                $sale->items()->delete();
+                $sale->forceDelete();
+            }
+            $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមការលក់រួចរាល់។' : 'Sale trash emptied successfully.';
+        }
+
+        return redirect()->route('customers.trash', ['tab' => $tab])->with('success', $msg ?? 'Trash emptied successfully.');
     }
 }

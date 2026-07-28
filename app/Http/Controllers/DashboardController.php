@@ -48,6 +48,65 @@ class DashboardController extends Controller
                 ->where('remaining_balance', '>', 0)
                 ->count();
 
+            // ── Dynamic Trend Calculations (Current Month vs. Previous Month) ──
+            $calculateTrend = function ($current, $previous) {
+                $isKm = app()->getLocale() === 'km';
+                $fromLastMonthLabel = $isKm ? 'ពីខែមុន' : 'from last month';
+                
+                if ($previous == 0) {
+                    if ($current > 0) {
+                        return '<span style="color: #10b981; font-weight: 600;">↑ New</span>';
+                    }
+                    return '<span style="color: #64748b; font-weight: 500;">— 0% ' . $fromLastMonthLabel . '</span>';
+                }
+                
+                $diff = $current - $previous;
+                $pct = round(($diff / $previous) * 100);
+                
+                if ($pct > 0) {
+                    return '<span style="color: #10b981; font-weight: 600;">↑ ' . $pct . '%</span> ' . $fromLastMonthLabel;
+                } elseif ($pct < 0) {
+                    return '<span style="color: #f43f5e; font-weight: 600;">↓ ' . abs($pct) . '%</span> ' . $fromLastMonthLabel;
+                } else {
+                    return '<span style="color: #64748b; font-weight: 500;">— 0%</span> ' . $fromLastMonthLabel;
+                }
+            };
+
+            // 1. Products trend (Total products now vs. before start of current month)
+            $prevProducts = Product::where('created_at', '<', now()->startOfMonth())->count();
+            $productTrend = $calculateTrend($totalProducts, $prevProducts);
+
+            // 2. Customers trend (Total customers now vs. before start of current month)
+            $prevCustomers = Customer::where('created_at', '<', now()->startOfMonth())->count();
+            $customerTrend = $calculateTrend($totalCustomers, $prevCustomers);
+
+            // 3. Revenue trend (Installment Income this month vs. last month)
+            $thisMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
+            $lastMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->sum('amount');
+            $revenueTrend = $calculateTrend($thisMonthRevenue, $lastMonthRevenue);
+
+            // 4. Active Installments trend (Active installments now vs. before start of current month)
+            $prevActiveInstallments = Installment::where('status', 'active')->where('created_at', '<', now()->startOfMonth())->count();
+            $activeTrend = $calculateTrend($activeInstallments, $prevActiveInstallments);
+
+            // 5. Overdue Amount trend (Overdue amount now vs. at start of current month)
+            $prevOverdueAmount = Installment::where('status', 'active')->where('next_due_date', '<', now()->startOfMonth())->where('remaining_balance', '>', 0)->sum('remaining_balance');
+            $overdueTrend = $calculateTrend($overdueAmount, $prevOverdueAmount);
+
+            // 6. Total Payments trend (Total payments this month vs. last month)
+            $thisMonthPayments = Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->count();
+            $lastMonthPayments = Payment::whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->count();
+            $paymentsTrend = $calculateTrend($thisMonthPayments, $lastMonthPayments);
+
+            // 7. Pending Payments trend (Pending payments now vs. before start of current month)
+            $prevPendingPayments = Payment::where('status', 'pending')->where('created_at', '<', now()->startOfMonth())->count();
+            $pendingTrend = $calculateTrend($pendingPayments, $prevPendingPayments);
+
+            // 8. Completed Installments trend (Completed installments this month vs. last month)
+            $thisMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->month)->whereYear('updated_at', now()->year)->count();
+            $lastMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->subMonth()->month)->whereYear('updated_at', now()->subMonth()->year)->count();
+            $completedTrend = $calculateTrend($thisMonthCompleted, $lastMonthCompleted);
+
             // ── Low Stock Products ───────────────────────────────
             $lowStockProducts = Product::where('is_active', true)
                 ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
@@ -162,6 +221,14 @@ class DashboardController extends Controller
                 'directSalesCount',
                 'combinedIncome',
                 'exchangeRate',
+                'productTrend',
+                'customerTrend',
+                'revenueTrend',
+                'activeTrend',
+                'overdueTrend',
+                'paymentsTrend',
+                'pendingTrend',
+                'completedTrend',
             ));
 
         } else {

@@ -12,17 +12,26 @@
     /* Hide app chrome */
     #sidebar, .topbar, .no-print { display: none !important; }
     .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
-    body { background: #fff !important; padding: 15mm !important; }
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+    @page { size: A4 portrait; margin: 10mm 12mm 15mm 12mm; }
+    
     /* Remove card styling for clean print */
-    .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; }
-    .schedule-table th, .schedule-table td { border: 1px solid #000 !important; padding: 2px 4px !important; font-size: 10px !important; }
-    @page { size: A4 portrait; margin: 0; }
+    .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+    .schedule-table th, .schedule-table td { border: 1px solid #000 !important; padding: 1.5px 3px !important; font-size: 9px !important; }
+    
+    /* Reduce vertical spacing to fit single page */
+    .mt-6 { margin-top: 10px !important; }
+    .mt-10 { margin-top: 14px !important; }
+    .pt-6 { padding-top: 6px !important; }
+    .mb-8 { margin-bottom: 6px !important; }
+    .h-16 { height: 35px !important; }
+    
     .print-footer {
         display: block !important;
         position: fixed;
-        bottom: 10mm;
-        left: 15mm;
-        right: 15mm;
+        bottom: 0;
+        left: 0;
+        right: 0;
         font-size: 8pt;
         color: #94a3b8;
         border-top: 1px solid #e2e8f0;

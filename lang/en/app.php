@@ -741,6 +741,18 @@ return [
     'total_value'           => 'Total Value',
     'outstanding'           => 'Outstanding',
     'progress'              => 'Progress',
-    'no_phone'              => 'No Phone',
     'no_customers_found'    => 'No customers found',
+
+    // ── Trash ──
+    'trash'                 => 'Recycle Bin',
+    'deleted_customers'     => 'Deleted Customers',
+    'deleted_at'            => 'Deleted At',
+    'restore'               => 'Restore',
+    'force_delete'          => 'Delete Permanently',
+    'confirm_restore_customer' => 'Are you sure you want to restore this customer?',
+    'confirm_force_delete_customer' => 'Are you sure you want to permanently delete this customer? This action cannot be undone!',
+    'restore_success'       => 'Customer restored successfully.',
+    'force_delete_success'  => 'Customer permanently deleted.',
+    'trash_empty'           => 'Recycle bin is empty.',
+    'auto_delete_note'      => 'Note: Deleted items will be automatically permanently deleted after 30 days.',
 ];

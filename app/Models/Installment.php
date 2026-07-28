@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Installment extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'customer_id',
         'product_id',
@@ -36,17 +38,17 @@ class Installment extends Model
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
     }
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     public function payments()
@@ -91,6 +93,12 @@ class Installment extends Model
         $monthlyPrincipal = round($principalBase / $duration, 2);
         $monthlyInterest = round(($principalBase * $this->interest_rate / 100) / 12, 2);
 
+        // Find if there is a settlement (payoff) payment
+        $settlementPayment = $this->payments()
+            ->where('status', 'approved')
+            ->where('is_settlement', true)
+            ->first();
+
         // Total approved amount paid so far, allocated to schedule rows in order.
         $totalPaid = $this->payments()
             ->where('status', 'approved')
@@ -102,9 +110,45 @@ class Installment extends Model
         $outstandingPrincipal = $principalBase;   // remaining principal balance
         $accumulatedPrincipal = 0;                // principal repaid so far
 
+        // Determine which month the settlement happened
+        $settlementMonth = null;
+        if ($settlementPayment) {
+            $settlementDate = \Carbon\Carbon::parse($settlementPayment->payment_date)->startOfDay();
+            $start = \Carbon\Carbon::parse($this->created_at)->startOfDay();
+            
+            for ($i = 1; $i <= $duration; $i++) {
+                $nextDueDate = $start->copy()->addMonths($i + 1)->startOfDay();
+                if ($i === $duration || $settlementDate->lt($nextDueDate)) {
+                    $settlementMonth = $i;
+                    break;
+                }
+            }
+        }
+
         $schedule = [];
         for ($i = 1; $i <= $duration; $i++) {
             $dueDate = $startDate->copy()->addMonths($i);
+
+            // If this is the settlement month, overwrite with settlement details and break
+            if ($settlementMonth !== null && $i === $settlementMonth) {
+                $payoffAmount = (float) $settlementPayment->amount;
+                $principalPortion = $outstandingPrincipal;
+                $interestPortion = round(max($payoffAmount - $principalPortion, 0), 2);
+                
+                $schedule[] = [
+                    'month'                 => $i,
+                    'due_date'              => \Carbon\Carbon::parse($settlementPayment->payment_date),
+                    'day'                   => \Carbon\Carbon::parse($settlementPayment->payment_date)->format('D'),
+                    'principal'             => $principalPortion,
+                    'interest'              => $interestPortion,
+                    'amount'                => $payoffAmount,
+                    'outstanding_principal' => 0.00,
+                    'outstanding_debt'      => 0.00,
+                    'paid'                  => $payoffAmount,
+                    'status'                => 'paid',
+                ];
+                break; // Stop schedule generation here!
+            }
 
             // Last row absorbs any rounding remainder so totals match exactly.
             if ($i === $duration) {

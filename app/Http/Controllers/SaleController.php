@@ -279,11 +279,44 @@ class SaleController extends Controller
                 ]);
             }
 
-            $sale->items()->delete();
             $sale->delete();
         });
 
         return redirect()->route('admin.sales.index')
             ->with('success', __('app.sale_deleted_success'));
+    }
+
+    public function restore($id)
+    {
+        $sale = Sale::onlyTrashed()->with('items')->findOrFail($id);
+        
+        DB::transaction(function () use ($sale) {
+            foreach ($sale->items as $item) {
+                Product::where('id', $item->product_id)->decrement('stock', $item->quantity);
+
+                StockMovement::create([
+                    'product_id' => $item->product_id,
+                    'type'       => 'out',
+                    'quantity'   => $item->quantity,
+                    'related_id' => $sale->id,
+                    'note'       => 'Restoration of sale ' . ($sale->invoice_no ?? ('#' . $sale->id)),
+                ]);
+            }
+            $sale->restore();
+        });
+
+        return redirect()->route('customers.trash', ['tab' => 'sales'])->with('success', 'Sale restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        $sale = Sale::onlyTrashed()->findOrFail($id);
+        
+        DB::transaction(function () use ($sale) {
+            $sale->items()->delete();
+            $sale->forceDelete();
+        });
+
+        return redirect()->route('customers.trash', ['tab' => 'sales'])->with('success', 'Sale permanently deleted.');
     }
 }

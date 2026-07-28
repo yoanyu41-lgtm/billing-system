@@ -72,20 +72,20 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm">
-                                    {{ substr($installment->customer->name, 0, 2) }}
+                                    {{ substr($installment->customer?->name ?? 'N/A', 0, 2) }}
                                 </div>
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">
-                                        {{ $installment->customer->name }}
+                                        {{ $installment->customer?->name ?? 'N/A' }}
                                     </div>
                                     <div class="text-xs text-gray-500">
-                                        <i class="fas fa-phone-alt mr-1 text-slate-400"></i>{{ $installment->customer->phone ?? 'N/A' }}
+                                        <i class="fas fa-phone-alt mr-1 text-slate-400"></i>{{ $installment->customer?->phone ?? 'N/A' }}
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ $installment->product->name ?? 'N/A' }}
+                            {{ $installment->product?->name ?? 'N/A' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-bold text-rose-600">

@@ -84,4 +84,20 @@ class CategoryController extends Controller
 
         return redirect()->route('admin.categories.index')->with('success', 'Category deleted successfully.');
     }
+
+    public function restore($id)
+    {
+        Gate::authorize('delete-product');
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->restore();
+        return redirect()->route('customers.trash', ['tab' => 'categories'])->with('success', 'Category restored successfully.');
+    }
+
+    public function forceDelete($id)
+    {
+        Gate::authorize('delete-product');
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->forceDelete();
+        return redirect()->route('customers.trash', ['tab' => 'categories'])->with('success', 'Category permanently deleted.');
+    }
 }
