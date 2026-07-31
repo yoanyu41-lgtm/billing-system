@@ -184,6 +184,7 @@ Route::middleware('auth')->group(function () {
         Route::get('products/import/template', [ProductController::class, 'downloadTemplate'])->name('products.import-template');
         Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import-form');
         Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+        Route::post('products/clear-imported', [ProductController::class, 'clearImported'])->name('products.clear-imported');
         Route::get('products/stock', [ProductController::class, 'stockIndex'])->name('products.stock');
         Route::post('products/{product}/stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
         Route::resource('products', ProductController::class);

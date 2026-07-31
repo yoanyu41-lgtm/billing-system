@@ -10,12 +10,18 @@ class Product extends Model
     use SoftDeletes;
     protected $fillable = [
         'code',
+        'barcode',
         'name',
+        'name2',
+        'unit',
+        'attributes',
         'price',
         'cost_price',
         'stock',
         'low_stock_threshold',
+        'max_stock_qty',
         'category',
+        'location',
         'brand',
         'supplier_id',
         'model',
@@ -31,7 +37,13 @@ class Product extends Model
         'tax_rate',
         'tax_type',
         'image',
+        'stock_note',
+        'summary',
         'description',
+        'imei',
+        'exchange_unit',
+        'seo',
+        'last_stock_in_at',
     ];
 
     protected $casts = [

@@ -23,8 +23,21 @@
                 </li>
             </ol>
         </nav>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ __('app.import_products') }}</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ __('app.import_products_subtitle') }}</p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ __('app.import_products') }}</h1>
+                <p class="text-sm text-gray-500 mt-1">{{ __('app.import_products_subtitle') }}</p>
+            </div>
+            <div>
+                <form action="{{ route('admin.products.clear-imported') }}" method="POST" onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកពិតជាចង់លុបទិន្នន័យទំនិញដែលបាននាំចូលទាំងអស់មែនទេ?' : 'Are you sure you want to delete all imported products?' }}');">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-xs rounded-xl shadow-sm transition duration-150">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        {{ app()->getLocale() === 'km' ? 'លុបទិន្នន័យនាំចូលទាំងអស់' : 'Clear Imported Products' }}
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Error/Success Flash Alerts -->
@@ -44,11 +57,11 @@
             <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
                 @csrf
 
-                <!-- CSV File Upload -->
+                <!-- Excel / CSV File Upload -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('app.select_csv_file') }}</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">{{ app()->getLocale() === 'km' ? 'ជ្រើសរើសឯកសារ Excel ឬ CSV' : 'Select Excel or CSV File' }}</label>
                     <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-500 transition duration-150 ease-in-out cursor-pointer bg-gray-50/50">
-                        <input type="file" name="csv_file" id="csv_file" class="hidden" accept=".csv,text/csv,text/plain" required>
+                        <input type="file" name="csv_file" id="csv_file" class="hidden" accept=".xlsx,.xls,.csv,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" required>
                         <div class="flex flex-col items-center justify-center space-y-3">
                             <div class="p-3 bg-indigo-50 text-indigo-600 rounded-full">
                                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
@@ -56,7 +69,7 @@
                             <div class="text-sm font-medium text-gray-700">
                                 <span class="text-indigo-600 hover:text-indigo-700 underline font-semibold">{{ __('app.click_to_upload') }}</span> {{ __('app.or_drag_and_drop') }}
                             </div>
-                            <p class="text-xs text-gray-500">{{ __('app.csv_max_size_info') }}</p>
+                            <p class="text-xs text-gray-500">{{ app()->getLocale() === 'km' ? 'អនុញ្ញាតឯកសារប្រភេទ .xlsx, .xls, .csv ទំហំបំផុត 10MB' : 'Supports .xlsx, .xls, .csv up to 10MB' }}</p>
                             <div id="file-info" class="hidden text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-100 mt-2">
                                 <span id="file-name"></span>
                             </div>

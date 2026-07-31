@@ -34,59 +34,51 @@
         </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <!-- Item Code -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.item_code') }} <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.item_code') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="code" value="{{ old('code') }}" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('code') ? 'border-red-500' : 'border-gray-300' }}" placeholder="e.g., PROD-001">
                 @error('code')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
+            <!-- Barcode -->
+            <div>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.barcode') }}</label>
+                <input type="text" name="barcode" value="{{ old('barcode') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 880123456789">
+            </div>
+
             <!-- Name -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.name') }} <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.name') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="name" value="{{ old('name') }}" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('name') ? 'border-red-500' : 'border-gray-300' }}" placeholder="{{ __('app.product_name') }}">
                 @error('name')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+        </div>
 
             <!-- Category -->
             <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-gray-700 text-sm font-medium">{{ __('app.category') }}</label>
-                    <a href="{{ route('admin.categories.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition duration-150">+ {{ __('app.add_category') }}</a>
-                </div>
-                <select name="category" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }}">
-                    <option value="">{{ __('app.select_category') }}</option>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.category') }}</label>
+                <input type="text" name="category" value="{{ old('category') }}" list="categories-list" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }}" placeholder="e.g. Laptop, Keyboard, Monitor...">
+                <datalist id="categories-list">
                     @foreach($categories as $cat)
-                        <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        <option value="{{ $cat }}">
                     @endforeach
-                </select>
+                </datalist>
                 @error('category')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <!-- Brand -->
-            <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.brand') }}</label>
-                <select name="brand" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('brand') ? 'border-red-500' : 'border-gray-300' }}">
-                    <option value="">{{ __('app.select_brand') }}</option>
-                    @foreach($brands as $brand)
-                        <option value="{{ $brand }}" {{ old('brand') === $brand ? 'selected' : '' }}>{{ $brand }}</option>
-                    @endforeach
-                </select>
-                @error('brand')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+
 
             <!-- Stock -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.stock_quantity') }} <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.stock_quantity') }} <span class="text-red-500">*</span></label>
                 <input type="number" name="stock" value="{{ old('stock') }}" required class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('stock') ? 'border-red-500' : 'border-gray-300' }}" placeholder="0">
                 @error('stock')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -95,7 +87,7 @@
 
             <!-- Supplier -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.supplier') }}</label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.supplier') }}</label>
                 <select name="supplier_id" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('supplier_id') ? 'border-red-500' : 'border-gray-300' }}">
                     <option value="">{{ __('app.select_supplier') }}</option>
                     @foreach($suppliers as $supplier)
@@ -109,7 +101,7 @@
 
             <!-- Selling Price -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.selling_price') }} <span class="text-red-500">*</span></label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.selling_price') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span class="text-gray-500 sm:text-sm">$</span>
@@ -123,7 +115,7 @@
 
             <!-- Cost Price -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.cost_price') }}</label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.cost_price') }}</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span class="text-gray-500 sm:text-sm">$</span>
@@ -137,7 +129,7 @@
 
             <!-- Low Stock Threshold -->
             <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.low_stock_threshold') }}</label>
+                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.low_stock_threshold') }}</label>
                 <input type="number" name="low_stock_threshold" value="{{ old('low_stock_threshold', 5) }}" min="0" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('low_stock_threshold') ? 'border-red-500' : 'border-gray-300' }}" placeholder="5">
                 @error('low_stock_threshold')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -170,14 +162,14 @@
 
                 <!-- Tax Rate -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2" lang="km">{{ __('app.tax_rate') }} (%)</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]" lang="km">{{ __('app.tax_rate') }} (%)</label>
                     <input type="number" name="tax_rate" step="0.01" min="0" max="100" value="{{ old('tax_rate', $defaultTaxRate) }}" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 border-gray-300" placeholder="10.00">
                     <p class="text-xs text-gray-500 mt-1">ឧ. 10 សម្រាប់ 10%</p>
                 </div>
 
                 <!-- Tax Type -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2" lang="km">{{ __('app.tax_type') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]" lang="km">{{ __('app.tax_type') }}</label>
                     <select name="tax_type" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 border-gray-300">
                         <option value="exclusive" {{ old('tax_type', 'exclusive') === 'exclusive' ? 'selected' : '' }}>{{ __('app.tax_exclusive') }}</option>
                         <option value="inclusive" {{ old('tax_type') === 'inclusive' ? 'selected' : '' }}>{{ __('app.tax_inclusive') }}</option>
@@ -194,43 +186,43 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- CPU -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.cpu') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.cpu') }}</label>
                     <input type="text" name="cpu" value="{{ old('cpu') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Intel Core i5">
                 </div>
 
                 <!-- RAM -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.ram') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.ram') }}</label>
                     <input type="text" name="ram" value="{{ old('ram') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., 16GB DDR4">
                 </div>
 
                 <!-- Storage -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.storage') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.storage') }}</label>
                     <input type="text" name="storage" value="{{ old('storage') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., 512GB NVMe SSD">
                 </div>
 
                 <!-- Graphics Card -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.graphics_card') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.graphics_card') }}</label>
                     <input type="text" name="graphics_card" value="{{ old('graphics_card') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Intel Iris Xe / NVIDIA RTX 3050">
                 </div>
 
                 <!-- Color -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.color') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.color') }}</label>
                     <input type="text" name="color" value="{{ old('color') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g., Space Gray, Black, Silver">
                 </div>
 
                 <!-- Warranty -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.warranty') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.warranty') }}</label>
                     <input type="text" name="warranty" value="{{ old('warranty') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="{{ __('app.warranty_placeholder') }}">
                 </div>
 
                 <!-- Condition -->
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.condition') }}</label>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.condition') }}</label>
                     <select name="condition" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
                         <option value="new" {{ old('condition', 'new') === 'new' ? 'selected' : '' }}>{{ __('app.condition_new') }}</option>
                         <option value="demo" {{ old('condition') === 'demo' ? 'selected' : '' }}>{{ __('app.condition_demo') }}</option>
@@ -241,9 +233,81 @@
             </div>
         </div>
 
+        <!-- Extended Excel Information Section -->
+        <div class="mb-8 border-t border-gray-100 pt-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>📦</span>
+                <span>{{ app()->getLocale() === 'km' ? 'ព័ត៌មានបន្ថែមទំនិញ (Extended Fields)' : 'Extended Excel Fields' }}</span>
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Secondary Name (Name2) -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Name2 (Secondary Name)</label>
+                    <input type="text" name="name2" value="{{ old('name2') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Alternative / Local Name">
+                </div>
+
+                <!-- Unit -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.unit') }}</label>
+                    <input type="text" name="unit" value="{{ old('unit') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. Pcs, Set, Box">
+                </div>
+
+                <!-- Exchange Unit -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Exchange Unit</label>
+                    <input type="text" name="exchange_unit" value="{{ old('exchange_unit') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 1">
+                </div>
+
+                <!-- Max Stock Qty -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Max Stock Qty</label>
+                    <input type="number" name="max_stock_qty" value="{{ old('max_stock_qty') }}" min="0" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 100">
+                </div>
+
+                <!-- Location -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Stock Location</label>
+                    <input type="text" name="location" value="{{ old('location') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. Shelf A-01">
+                </div>
+
+                <!-- IMEI / Serial -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">IMEI / Serial No.</label>
+                    <input type="text" name="imei" value="{{ old('imei') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Enter IMEI or Serial">
+                </div>
+
+                <!-- Last Stock In Date -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Last Stock In Date</label>
+                    <input type="datetime-local" name="last_stock_in_at" value="{{ old('last_stock_in_at') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Summary -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Summary</label>
+                    <textarea name="summary" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Short summary...">{{ old('summary') }}</textarea>
+                </div>
+
+                <!-- Stock Note -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">Stock Note</label>
+                    <textarea name="stock_note" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Notes about stock...">{{ old('stock_note') }}</textarea>
+                </div>
+
+                <!-- SEO -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">SEO Info</label>
+                    <textarea name="seo" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="SEO keywords / description...">{{ old('seo') }}</textarea>
+                </div>
+            </div>
+        </div>
+
         <!-- Product Image -->
         <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.product_image') }}</label>
+            <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.product_image') }}</label>
             <input type="file" name="image" accept="image/*" class="w-full border border-gray-300 bg-gray-50 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 {{ $errors->has('image') ? 'border-red-500' : '' }}">
             @error('image')
                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -252,7 +316,7 @@
 
         <!-- Description -->
         <div class="mb-8">
-            <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.description') }}</label>
+            <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.description') }}</label>
             <textarea name="description" rows="4" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('description') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Enter product description here...">{{ old('description') }}</textarea>
             @error('description')
                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -261,7 +325,7 @@
 
         <!-- Status -->
         <div class="mb-8">
-            <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.status') }}</label>
+            <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.status') }}</label>
             <label class="inline-flex items-center gap-3 cursor-pointer">
                 <input type="hidden" name="is_active" value="0">
                 <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }} class="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">

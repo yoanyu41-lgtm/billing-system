@@ -1109,7 +1109,6 @@
                     <a href="{{ route('invoices.index', ['type' => 'direct']) }}" class="{{ $isDirectSaleInvoice ? 'active' : '' }}">
                         <i class="fas fa-cash-register"></i> {{ __('app.direct_sale_invoices') }}
                     </a>
-                    <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 16px;"></div>
                     <a href="{{ route('invoices.index', ['type' => 'completed']) }}" class="{{ $isCompletedInvoice ? 'active' : '' }}">
                         <i class="fas fa-check-circle"></i> {{ __('app.completed_invoices') }}
                     </a>
@@ -1159,9 +1158,6 @@
                     </a>
                     <a href="{{ route('admin.stock-movements.index') }}" class="{{ request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}">
                         <i class="fas fa-exchange-alt"></i> {{ __('app.stock_movements') }}
-                    </a>
-                    <a href="{{ route('admin.categories.index') }}" class="{{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                        <i class="fas fa-tags"></i> {{ __('app.categories') }}
                     </a>
                     <a href="{{ route('admin.suppliers.index') }}" class="{{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
                         <i class="fas fa-truck"></i> {{ __('app.suppliers') }}

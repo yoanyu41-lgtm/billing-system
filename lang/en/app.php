@@ -3,6 +3,7 @@
 return [
     // ── Navigation ──
     'dashboard'             => 'Dashboard',
+    'error'                 => 'Error',
     'customers'             => 'Customers',
     'installment_plans'     => 'Installment Management',
     'invoices'              => 'Invoices',
@@ -20,7 +21,7 @@ return [
     'stock_out'             => 'Stock Out',
     'purchase_history'      => 'Purchase History',
     'stock_movements'       => 'Stock History',
-    'categories'            => 'Categories',
+    'categories'            => 'Product Groups',
     'suppliers'             => 'Suppliers',
     'all_payments'          => 'All Payments',
     'new_payment'           => 'New Payment',
@@ -373,7 +374,7 @@ return [
     'profit'                => 'Profit',
     'selling_price'         => 'Selling Price',
     'stock'                 => 'Stock',
-    'category'              => 'Category',
+    'category'              => 'Product Group',
     'brand'                 => 'Brand',
     'model'                 => 'Model',
     'total_products'        => 'Total Products',
@@ -428,11 +429,11 @@ return [
     'installment_status'    => 'Installment Status',
 
     // ── Category ──
-    'category_management'   => 'Category Management',
-    'add_category'          => 'Add Category',
-    'edit_category'         => 'Edit Category',
-    'category_name'         => 'Category Name',
-    'no_categories'         => 'No categories found',
+    'category_management'   => 'Product Group Management',
+    'add_category'          => 'Add Product Group',
+    'edit_category'         => 'Edit Product Group',
+    'category_name'         => 'Product Group Name',
+    'no_categories'         => 'No product groups found',
 
     // ── Supplier ──
     'supplier_management'   => 'Supplier Management',
@@ -755,4 +756,8 @@ return [
     'force_delete_success'  => 'Customer permanently deleted.',
     'trash_empty'           => 'Recycle bin is empty.',
     'auto_delete_note'      => 'Note: Deleted items will be automatically permanently deleted after 30 days.',
+
+    // ── Products Extended ──
+    'barcode'               => 'Barcode',
+    'unit'                  => 'Unit',
 ];

@@ -106,35 +106,67 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.image') }}</th>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.name') }}</th>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.category') }}</th>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.price') }}</th>
-                    <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.stock') }}</th>
-                    <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.image') }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'កូដទំនិញ' : 'Item Code' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'បារកូដ' : 'Barcode' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.name') }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រភេទទំនិញ' : 'Product Group' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃដើម' : 'Supply Price' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃលក់' : 'Price' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ចំនួនស្តុក' : 'Stock Qty.' }}</th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃស្តុកសរុប' : 'Stock Value' }}</th>
+
+
+                    <th scope="col" class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse($products as $product)
                 <tr class="hover:bg-gray-50 transition duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        @if($product->image)
-                            <img src="{{ asset('storage/' . $product->image) }}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-sm">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        @php
+                            $hasValidImage = $product->image && !\Illuminate\Support\Str::contains(strtolower($product->image), 'undefined');
+                            $imgSrc = $hasValidImage ? (\Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://']) ? $product->image : asset('storage/' . $product->image)) : null;
+                        @endphp
+                        @if($imgSrc)
+                            <img src="{{ $imgSrc }}" 
+                                 class="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-sm" 
+                                 alt="{{ $product->name }}"
+                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($product->name) }}&color=4F46E5&background=EEF2FF&bold=true';">
                         @else
-                            <div class="w-12 h-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 text-xs">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <div class="w-12 h-12 bg-indigo-50/60 rounded-lg border border-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shadow-xs">
+                                {{ strtoupper(substr($product->name, 0, 2)) }}
                             </div>
                         @endif
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {{ $product->code }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        @if($product->barcode)
+                            <span class="inline-flex items-center gap-1 font-mono text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                <span>🏷️</span> {{ $product->barcode }}
+                            </span>
+                        @else
+                            <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
                         <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
-                        <div class="text-sm text-gray-500">{{ $product->code }}</div>
+                        @if($product->name2)
+                            <div class="text-xs text-gray-500">{{ $product->name2 }}</div>
+                        @endif
                         @php
                             $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
                         @endphp
-                        <div class="text-xs mt-1.5 flex flex-wrap gap-1.5 items-center">
+                        <div class="text-xs mt-1 flex flex-wrap gap-1 items-center">
                             @if($product->cpu)
                                 <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
+                            @endif
+                            @if($product->unit)
+                                <span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-medium">{{ $product->unit }}</span>
                             @endif
                             @if($taxEnabled == '1')
                                 @if($product->is_taxable)
@@ -149,18 +181,34 @@
                             @endif
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $product->category }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${{ number_format($product->price, 2) }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md font-medium text-xs">{{ $product->category ?: '-' }}</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                        {{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : '-' }}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">${{ number_format($product->price, 2) }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">
                         @if($product->stock <= 0)
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">{{ __('app.out_of_stock') }}</span>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">{{ __('app.out_of_stock') }}</span>
                         @elseif($product->stock <= ($product->low_stock_threshold ?? 5))
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">{{ $product->stock }} ({{ __('app.low_stock') }})</span>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">{{ $product->stock }} ({{ __('app.low_stock') }})</span>
                         @else
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">{{ $product->stock }} {{ __('app.in_stock') }}</span>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">{{ $product->stock }}</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-emerald-600">
+                        @php
+                            $unitCost = $product->cost_price ?? $product->price;
+                            $stockVal = (float)$unitCost * (int)$product->stock;
+                        @endphp
+                        ${{ number_format($stockVal, 2) }}
+                        @if($product->cost_price === null)
+                            <span class="text-gray-400 text-xs block leading-none">({{ app()->getLocale() === 'km' ? 'ប្រើតម្លៃលក់' : 'using price' }})</span>
+                        @endif
+                    </td>
+
+                    <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div class="flex justify-end gap-2">
                              <a href="{{ route('admin.products.show', [$product, 'from' => 'index']) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -170,7 +218,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">{{ __('app.no_products') }}</td>
+                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">{{ __('app.no_products') }}</td>
                 </tr>
                 @endforelse
             </tbody>

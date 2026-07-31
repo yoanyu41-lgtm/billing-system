@@ -23,7 +23,7 @@
     <form method="POST" action="{{ route('admin.products.update', [$product, 'from' => request('from')]) }}" enctype="multipart/form-data" class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
         @csrf @method('PUT')
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <!-- Item Code -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.item_code') }} <span class="text-red-500">*</span></label>
@@ -31,6 +31,12 @@
                 @error('code')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <!-- Barcode -->
+            <div>
+                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.barcode') }}</label>
+                <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 880123456789">
             </div>
 
             <!-- Name -->
@@ -41,37 +47,23 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+        </div>
 
             <!-- Category -->
             <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-gray-700 text-sm font-medium">{{ __('app.category') }}</label>
-                    <a href="{{ route('admin.categories.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition duration-150">+ {{ __('app.add_category') }}</a>
-                </div>
-                <select name="category" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }}">
-                    <option value="">{{ __('app.select_category') }}</option>
+                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.category') }}</label>
+                <input type="text" name="category" value="{{ old('category', $product->category) }}" list="categories-list" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }}" placeholder="e.g. Laptop, Keyboard, Monitor...">
+                <datalist id="categories-list">
                     @foreach($categories as $cat)
-                        <option value="{{ $cat }}" {{ old('category', $product->category) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                        <option value="{{ $cat }}">
                     @endforeach
-                </select>
+                </datalist>
                 @error('category')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <!-- Brand -->
-            <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.brand') }}</label>
-                <select name="brand" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('brand') ? 'border-red-500' : 'border-gray-300' }}">
-                    <option value="">{{ __('app.select_brand') }}</option>
-                    @foreach($brands as $brand)
-                        <option value="{{ $brand }}" {{ old('brand', $product->brand) === $brand ? 'selected' : '' }}>{{ $brand }}</option>
-                    @endforeach
-                </select>
-                @error('brand')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+
 
             <!-- Supplier -->
             <div>
@@ -235,6 +227,78 @@
                         <option value="used" {{ $cond === 'used' ? 'selected' : '' }}>{{ __('app.condition_used') }}</option>
                         <option value="refurbished" {{ $cond === 'refurbished' ? 'selected' : '' }}>{{ __('app.condition_refurbished') }}</option>
                     </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extended Excel Information Section -->
+        <div class="mb-8 border-t border-gray-100 pt-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span>📦</span>
+                <span>{{ app()->getLocale() === 'km' ? 'ព័ត៌មានបន្ថែមទំនិញ' : 'Extended Fields' }}</span>
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Secondary Name (Name2) -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'ឈ្មោះ២ (ឈ្មោះជំនួស)' : 'Name2 (Secondary Name)' }}</label>
+                    <input type="text" name="name2" value="{{ old('name2', $product->name2 ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Alternative / Local Name">
+                </div>
+
+                <!-- Unit -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.unit') }}</label>
+                    <input type="text" name="unit" value="{{ old('unit', $product->unit ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. Pcs, Set, Box">
+                </div>
+
+                <!-- Exchange Unit -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'ឯកតាប្ដូរ' : 'Exchange Unit' }}</label>
+                    <input type="text" name="exchange_unit" value="{{ old('exchange_unit', $product->exchange_unit ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 1">
+                </div>
+
+                <!-- Max Stock Qty -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'ចំនួនស្តុកអតិបរមា' : 'Max Stock Qty' }}</label>
+                    <input type="number" name="max_stock_qty" value="{{ old('max_stock_qty', $product->max_stock_qty ?? '') }}" min="0" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. 100">
+                </div>
+
+                <!-- Location -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'ទីតាំងស្តុក' : 'Stock Location' }}</label>
+                    <input type="text" name="location" value="{{ old('location', $product->location ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="e.g. Shelf A-01">
+                </div>
+
+                <!-- IMEI / Serial -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'IMEI / លេខស៊េរី' : 'IMEI / Serial No.' }}</label>
+                    <input type="text" name="imei" value="{{ old('imei', $product->imei ?? '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Enter IMEI or Serial">
+                </div>
+
+                <!-- Last Stock In Date -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទស្តុកចូលចុងក្រោយ' : 'Last Stock In Date' }}</label>
+                    <input type="datetime-local" name="last_stock_in_at" value="{{ old('last_stock_in_at', isset($product->last_stock_in_at) ? \Carbon\Carbon::parse($product->last_stock_in_at)->format('Y-m-d\TH:i') : '') }}" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Summary -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'សង្ខេប' : 'Summary' }}</label>
+                    <textarea name="summary" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Short summary...">{{ old('summary', $product->summary ?? '') }}</textarea>
+                </div>
+
+                <!-- Stock Note -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'កំណត់ចំណាំស្តុក' : 'Stock Note' }}</label>
+                    <textarea name="stock_note" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="Notes about stock...">{{ old('stock_note', $product->stock_note ?? '') }}</textarea>
+                </div>
+
+                <!-- SEO -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">{{ app()->getLocale() === 'km' ? 'ព័ត៌មាន SEO' : 'SEO Info' }}</label>
+                    <textarea name="seo" rows="3" class="w-full border border-gray-300 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150" placeholder="SEO keywords / description...">{{ old('seo', $product->seo ?? '') }}</textarea>
                 </div>
             </div>
         </div>

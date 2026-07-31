@@ -3,6 +3,7 @@
 return [
     // ── Navigation ──
     'dashboard'             => 'ផ្ទាំងគ្រប់គ្រង',
+    'error'                 => 'កំហុស',
     'customers'             => 'អតិថិជន',
     'installment_plans'     => 'គម្រោងបង់រំលស់',
     'invoices'              => 'វិក្កយបត្រ',
@@ -20,7 +21,7 @@ return [
     'stock_out'             => 'ស្តុកចេញ',
     'purchase_history'      => 'ប្រវត្តិការទិញ',
     'stock_movements'       => 'ប្រវត្តិស្តុក',
-    'categories'            => 'ប្រភេទ',
+    'categories'            => 'ប្រភេទទំនិញ',
     'suppliers'             => 'អ្នកផ្គត់ផ្គង់',
     'all_payments'          => 'ការទូទាត់ទាំងអស់',
     'new_payment'           => 'ការទូទាត់ថ្មី',
@@ -374,7 +375,7 @@ return [
     'profit'                => 'ប្រាក់ចំណេញ',
     'selling_price'         => 'តម្លៃលក់',
     'stock'                 => 'ស្តុក',
-    'category'              => 'ប្រភេទ',
+    'category'              => 'ប្រភេទទំនិញ',
     'brand'                 => 'ម៉ាក',
     'model'                 => 'គំរូ',
     'total_products'        => 'ផលិតផលសរុប',
@@ -432,11 +433,11 @@ return [
     'installment_status'    => 'ស្ថានភាពការបង់រំលស់',
 
     // ── Category ──
-    'category_management'   => 'គ្រប់គ្រងប្រភេទ',
-    'add_category'          => 'បន្ថែមប្រភេទ',
-    'edit_category'         => 'កែប្រែប្រភេទ',
-    'category_name'         => 'ឈ្មោះប្រភេទ',
-    'no_categories'         => 'រកមិនឃើញប្រភេទ',
+    'category_management'   => 'គ្រប់គ្រងប្រភេទទំនិញ',
+    'add_category'          => 'បន្ថែមប្រភេទទំនិញ',
+    'edit_category'         => 'កែប្រែប្រភេទទំនិញ',
+    'category_name'         => 'ឈ្មោះប្រភេទទំនិញ',
+    'no_categories'         => 'រកមិនឃើញប្រភេទទំនិញ',
 
     // ── Supplier ──
     'supplier_management'   => 'គ្រប់គ្រងអ្នកផ្គត់ផ្គង់',
@@ -764,4 +765,7 @@ return [
     'outstanding'           => 'ជំពាក់',
     'no_customers_found'    => 'រកមិនឃើញអតិថិជនទេ',
 
+    // ── Products Extended ──
+    'barcode'               => 'បារកូដ (Barcode)',
+    'unit'                  => 'ខ្នាត (Unit)',
 ];

@@ -111,7 +111,12 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
-                            <div class="text-sm text-gray-500">{{ $product->code }}</div>
+                            <div class="text-xs text-gray-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                                <span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100 font-medium">Code: {{ $product->code }}</span>
+                                @if($product->barcode)
+                                    <span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200 font-mono">Barcode: {{ $product->barcode }}</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $product->category ?? '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
