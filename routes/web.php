@@ -18,6 +18,7 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\SmartPaymentController;
 use App\Http\Controllers\TelegramLogController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,9 @@ Route::get('/', function () {
     }
     return redirect()->route('login');
 });
+
+// Smart Payment Page (Public - No Auth Required)
+Route::get('/payment/smart', [SmartPaymentController::class, 'show'])->name('payment.smart');
 
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'km'])) {
@@ -225,6 +229,10 @@ Route::middleware('auth')->group(function () {
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings/company', [SettingController::class, 'updateCompanySettings'])->name('settings.company.update');
+        Route::post('settings/qr/{key}', [SettingController::class, 'updateQrSetting'])->name('settings.qr.update');
+        Route::delete('settings/qr/{key}', [SettingController::class, 'deleteQrSetting'])->name('settings.qr.delete');
+        Route::post('settings/qr-custom', [SettingController::class, 'addCustomQr'])->name('settings.qr.custom.store');
+        Route::delete('settings/qr-custom/{key}', [SettingController::class, 'deleteCustomQr'])->name('settings.qr.custom.delete');
 
         // Contract Terms
         Route::resource('contract-terms', App\Http\Controllers\ContractTermController::class)->except(['show']);

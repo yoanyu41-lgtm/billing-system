@@ -391,12 +391,8 @@ class PaymentController extends Controller
             ['name' => 'ACLEDA Bank', 'details' => 'ធនាគារ អេស៊ីលីដា - ACLEDA Mobile.'],
             ['name' => 'Wing Bank', 'details' => 'ធនាគារ វីង - Wing Bank / Wing Money.'],
             ['name' => 'TrueMoney', 'details' => 'ទ្រូម៉ានី - TrueMoney Agent / App.'],
-            ['name' => 'Bank Transfer', 'details' => 'ផ្ទេរតាមធនាគារ - Direct Bank Transfer.'],
-            ['name' => 'QR Code', 'details' => 'QR Code - Scan KHQR code to pay.'],
             ['name' => 'Credit Card', 'details' => 'កាតឥណទាន - Credit/Debit Card payment.'],
         ];
-
-        PaymentMethod::where('name', 'QR')->update(['name' => 'QR Code']);
 
         foreach ($defaults as $method) {
             PaymentMethod::firstOrCreate(
@@ -405,7 +401,22 @@ class PaymentController extends Controller
             );
         }
 
-        return PaymentMethod::orderBy('id')->get();
+        // Clean up unused QR Code and Bank Transfer generic methods if no payments use them
+        $genericNames = ['QR Code', 'Bank Transfer', 'QR'];
+        $generics = PaymentMethod::whereIn('name', $genericNames)->get();
+        foreach ($generics as $gm) {
+            $hasPayments = \App\Models\Payment::where('payment_method_id', $gm->id)->exists();
+            if (!$hasPayments) {
+                $gm->delete();
+            }
+        }
+
+        return PaymentMethod::whereNotIn('name', ['QR Code', 'Bank Transfer', 'QR'])
+            ->get()
+            ->sortBy(function ($method) {
+                return (strtolower($method->name) === 'credit card') ? 9999 : $method->id;
+            })
+            ->values();
     }
 
     public function restore($id)

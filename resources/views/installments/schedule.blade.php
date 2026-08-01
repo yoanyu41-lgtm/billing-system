@@ -151,13 +151,13 @@
                                         <span>{{ __('app.send_qr_telegram') }}</span>
                                     </span>
                                 @else
-                                    <form method="POST" action="{{ route('installments.send-telegram-qr', [$installment, $row['month']]) }}" class="m-0">
-                                        @csrf
-                                        <button type="submit" class="px-2 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.send_qr_telegram') }}">
-                                            <i class="fab fa-telegram-plane"></i>
-                                            <span>{{ __('app.send_qr_telegram') }}</span>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                        onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
+                                        class="px-2 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" 
+                                        title="{{ __('app.send_qr_telegram') }}">
+                                        <i class="fab fa-telegram-plane"></i>
+                                        <span>{{ __('app.send_qr_telegram') }}</span>
+                                    </button>
                                 @endif
 
                                 {{-- Record Payment --}}
@@ -361,6 +361,142 @@
         </div>
     </div>
 </div>
+
+{{-- ===== Telegram QR Picker Modal ===== --}}
+@php
+    $tgSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+    $tgQrList = [];
+    $tgQrMap = [
+        'qr_aba'          => 'ABA Bank KHQR',
+        'qr_acleda'       => 'ACLEDA KHQR',
+        'qr_wing'         => 'Wing KHQR',
+        'qr_truemoney'    => 'TrueMoney KHQR',
+        'qr_bakong'       => 'Bakong KHQR',
+        'company_bank_qr' => 'QR Code ធនាគារ (Default)',
+    ];
+    foreach ($tgQrMap as $k => $lbl) {
+        if (!empty($tgSettings[$k])) $tgQrList[] = ['key' => $k, 'label' => $lbl, 'img' => $tgSettings[$k]];
+    }
+    $tgCustom = json_decode($tgSettings['custom_qr_list'] ?? '[]', true) ?: [];
+    foreach ($tgCustom as $ci) {
+        if (!empty($ci['key']) && !empty($ci['label']) && !empty($tgSettings[$ci['key']])) {
+            $tgQrList[] = ['key' => $ci['key'], 'label' => $ci['label'], 'img' => $tgSettings[$ci['key']]];
+        }
+    }
+@endphp
+
+<div id="telegramQrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <i class="fab fa-telegram-plane text-white text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-base">{{ app()->getLocale() === 'km' ? 'ផ្ញើ QR Code តាម Telegram' : 'Send QR Code via Telegram' }}</h3>
+                    <p id="tgModalSubtitle" class="text-blue-100 text-xs"></p>
+                </div>
+            </div>
+            <button onclick="closeTelegramQrModal()" class="text-white/70 hover:text-white border-0 bg-transparent cursor-pointer text-xl leading-none">&times;</button>
+        </div>
+
+        <form id="tgQrForm" method="POST" action="" class="p-6 space-y-5">
+            @csrf
+            <input type="hidden" name="qr_key" id="tgSelectedQrKey" value="{{ !empty($tgQrList) ? $tgQrList[0]['key'] : '' }}">
+
+            {{-- QR Code Selector Grid --}}
+            @if(!empty($tgQrList))
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                    <i class="fas fa-qrcode text-purple-500"></i>
+                    {{ app()->getLocale() === 'km' ? 'ជ្រើសរើស QR Code ដែលត្រូវផ្ញើ' : 'Select QR Code to Send' }}
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="tgQrGrid">
+                    @foreach($tgQrList as $idx => $qr)
+                    <div onclick="selectTgQr('{{ $qr['key'] }}', this)"
+                        class="tg-qr-card cursor-pointer rounded-xl border-2 p-3 flex flex-col items-center gap-2 transition-all duration-150 hover:shadow-md {{ $idx === 0 ? 'border-purple-500 bg-purple-50 shadow-sm ring-2 ring-purple-200' : 'border-slate-200 bg-white hover:border-purple-300 hover:bg-purple-50' }}"
+                        data-qr-key="{{ $qr['key'] }}">
+                        <div class="relative">
+                            <img src="{{ asset('storage/' . $qr['img']) }}"
+                                class="w-16 h-16 object-contain rounded-lg border border-slate-100 bg-white p-1"
+                                onerror="this.src='https://ui-avatars.com/api/?name=QR&background=EEF2FF&color=4F46E5'">
+                            @if($idx === 0)
+                            <div id="tgCheckBadge_{{ $idx }}" class="tg-check-badge absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs" style="font-size:9px"></i>
+                            </div>
+                            @else
+                            <div id="tgCheckBadge_{{ $idx }}" class="tg-check-badge hidden absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs" style="font-size:9px"></i>
+                            </div>
+                            @endif
+                        </div>
+                        <span class="text-xs font-semibold text-slate-700 text-center leading-tight">{{ $qr['label'] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @else
+            <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800 text-sm flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                <span>{{ app()->getLocale() === 'km' ? 'មិនមាន QR Code ណាមួយត្រូវបានកំណត់ក្នុង Settings ទេ។' : 'No QR codes are configured in Settings yet.' }}</span>
+            </div>
+            @endif
+
+            {{-- Footer Actions --}}
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeTelegramQrModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border-0 cursor-pointer transition">
+                    {{ app()->getLocale() === 'km' ? 'បោះបង់' : 'Cancel' }}
+                </button>
+                <button type="submit" id="tgSendBtn"
+                    class="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg border-0 cursor-pointer transition flex items-center gap-2 shadow-sm {{ empty($tgQrList) ? 'opacity-50 pointer-events-none' : '' }}">
+                    <i class="fab fa-telegram-plane"></i>
+                    {{ app()->getLocale() === 'km' ? 'ផ្ញើ QR Code' : 'Send QR Code' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const tgBaseUrl = "{{ route('installments.send-telegram-qr', [$installment, '__MONTH__']) }}";
+
+    function openTelegramQrModal(month, amount, dueDate) {
+        const url = tgBaseUrl.replace('__MONTH__', month);
+        document.getElementById('tgQrForm').action = url;
+        document.getElementById('tgModalSubtitle').textContent =
+            '{{ app()->getLocale() === "km" ? "ខែ" : "Month" }} ' + month +
+            ' · $' + amount + ' · ' + dueDate;
+        document.getElementById('telegramQrModal').classList.remove('hidden');
+    }
+
+    function closeTelegramQrModal() {
+        document.getElementById('telegramQrModal').classList.add('hidden');
+    }
+
+    function selectTgQr(key, el) {
+        document.querySelectorAll('.tg-qr-card').forEach(function(c) {
+            c.classList.remove('border-purple-500', 'bg-purple-50', 'shadow-sm', 'ring-2', 'ring-purple-200');
+            c.classList.add('border-slate-200', 'bg-white');
+        });
+        document.querySelectorAll('.tg-check-badge').forEach(function(b) {
+            b.classList.add('hidden');
+        });
+        el.classList.remove('border-slate-200', 'bg-white');
+        el.classList.add('border-purple-500', 'bg-purple-50', 'shadow-sm', 'ring-2', 'ring-purple-200');
+        const badge = el.querySelector('.tg-check-badge');
+        if (badge) badge.classList.remove('hidden');
+        document.getElementById('tgSelectedQrKey').value = key;
+    }
+
+    const modalBackdrop = document.getElementById('telegramQrModal');
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', function(e) {
+            if (e.target === this) closeTelegramQrModal();
+        });
+    }
+</script>
 
 <script>
     function openRecordPaymentModal(month, amount, dueDate) {

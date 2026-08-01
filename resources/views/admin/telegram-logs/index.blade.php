@@ -144,6 +144,38 @@
                                 placeholder="{{ $L('វាយសារនៅទីនេះ...', 'Type your message here...') }}"
                                 required>✅ នេះជាសារចេញពីប្រព័ន្ធបង់រំលស់ CityTech Billing System។</textarea>
                         </div>
+
+                        {{-- QR Code Selector for Individual Message --}}
+                        @if(!empty($allQrList))
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                                <i class="fas fa-qrcode text-purple-500"></i>
+                                {{ $L('ជ្រើស QR Code ភ្ជាប់ (ស្រេចចិត្ត)', 'Attach QR Code (Optional)') }}
+                            </label>
+                            <input type="hidden" name="qr_key" id="individual_qr_key" value="">
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <div onclick="selectIndividualQr('', this)"
+                                    class="qr-option-card individual-qr-card selected-qr cursor-pointer rounded-lg border-2 border-blue-400 bg-blue-50 p-1.5 flex flex-col items-center gap-1 transition-all duration-150"
+                                    data-qr-key="">
+                                    <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
+                                        <i class="fas fa-ban text-slate-400"></i>
+                                    </div>
+                                    <span class="text-xs font-medium text-slate-500 text-center leading-tight">{{ $L('គ្មាន', 'None') }}</span>
+                                </div>
+                                @foreach($allQrList as $qrItem)
+                                <div onclick="selectIndividualQr('{{ $qrItem['key'] }}', this)"
+                                    class="qr-option-card individual-qr-card cursor-pointer rounded-lg border-2 border-slate-200 bg-white p-1.5 flex flex-col items-center gap-1 transition-all duration-150 hover:border-purple-400 hover:bg-purple-50"
+                                    data-qr-key="{{ $qrItem['key'] }}">
+                                    <img src="{{ asset('storage/' . $qrItem['img']) }}"
+                                        class="w-10 h-10 object-contain rounded border border-slate-200"
+                                        onerror="this.style.display='none'">
+                                    <span class="text-xs font-medium text-slate-700 text-center leading-tight">{{ $qrItem['label'] }}</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
                         <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm border-0 cursor-pointer transition">
                             🚀 {{ $L('ផ្ញើសារផ្ទាល់ខ្លួន (Send Message)', 'Send Message') }}
                         </button>
@@ -218,6 +250,16 @@
     </div>
 </div>
 
+{{-- QR Selector JS & CSS --}}
+<style>
+.qr-option-card { user-select: none; }
+.qr-option-card.selected-qr {
+    border-color: #7c3aed !important;
+    background-color: #f5f3ff !important;
+    box-shadow: 0 0 0 2px #c4b5fd;
+}
+</style>
+
 {{-- Vanilla JS Tab Controller --}}
 <script>
 function switchTab(tabId) {
@@ -242,6 +284,20 @@ function switchTab(tabId) {
     
     // Store active tab in localStorage
     localStorage.setItem('activeTelegramTab', tabId);
+}
+
+// QR Selector for Broadcast
+function selectBroadcastQr(key, el) {
+    document.querySelectorAll('.broadcast-qr-card').forEach(c => c.classList.remove('selected-qr'));
+    el.classList.add('selected-qr');
+    document.getElementById('broadcast_qr_key').value = key;
+}
+
+// QR Selector for Individual Message
+function selectIndividualQr(key, el) {
+    document.querySelectorAll('.individual-qr-card').forEach(c => c.classList.remove('selected-qr'));
+    el.classList.add('selected-qr');
+    document.getElementById('individual_qr_key').value = key;
 }
 
 // Restore active tab on load (e.g. after form submit or pagination click)

@@ -57,15 +57,27 @@ class KhqrService
             return null;
         }
 
-
-
+        // Check if this is a merchant QR that supports dynamic amount
+        $isMerchantQr = isset($tags['26']) || isset($tags['27']) || isset($tags['28']) || isset($tags['29']);
+        $isPersonalQr = isset($tags['30']);
+        
         // If the base payload is a personal P2P QR code (Tag 30), it does not support dynamic amount pre-filling.
         // We return the original base payload exactly as it is to guarantee 100% scanning success.
-        if (isset($tags['30'])) {
+        if ($isPersonalQr || !$isMerchantQr) {
+            Log::warning('QR Code ប្រភេទនេះមិនគាំទ្រចំនួនទឹកប្រាក់ស្វ័យប្រវត្តិទេ។ កំពុងប្រើ QR Code ដើម។');
             return trim($basePayload);
         }
 
-        // Force initiation method to '12' (Dynamic QR) to allow pre-filled amounts.
+        // Check current initiation method
+        $currentInitiationMethod = $tags['01'] ?? '11';
+        
+        // Only force to dynamic if it's already '12' or if it's a merchant QR
+        if ($currentInitiationMethod === '11') {
+            // Static QR - some banks may not support dynamic conversion
+            Log::info('QR Code នេះជាប្រភេទ Static (01=11)។ ធនាគារខ្លះប្រហែលជាមិនទទួលយកការប្តូរទៅ Dynamic។');
+        }
+        
+        // Set to Dynamic QR
         $tags['01'] = '12';
 
         $currencyCode = (strtoupper($currency) === 'KHR') ? '116' : '840';
@@ -174,5 +186,104 @@ class KhqrService
         }
         
         return null;
+    }
+
+    /**
+     * Generate deep link for mobile banking apps with pre-filled amount.
+     * This works for Personal QR codes where dynamic QR is not supported.
+     *
+     * @param string $payload KHQR payload
+     * @param float $amount Amount in original currency
+     * @param string $currency Currency code (USD or KHR)
+     * @return array Array containing deep links for different banks
+     */
+    public function generateDeepLinks(string $payload, float $amount, string $currency = 'USD'): array
+    {
+        $tags = $this->parsePayload($payload);
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        
+        // Convert amount based on currency
+        $amountUSD = ($currency === 'KHR') ? round($amount / $exchangeRate, 2) : $amount;
+        $amountKHR = ($currency === 'USD') ? round($amount * $exchangeRate) : $amount;
+        
+        $deepLinks = [];
+        
+        // ABA Bank Deep Link
+        $deepLinks['aba'] = [
+            'name' => 'ABA Bank',
+            'url' => "aba://payment?qr=" . urlencode($payload) . "&amount=" . $amountUSD,
+            'app_url' => "https://www.ababank.com/download",
+            'supported' => true
+        ];
+        
+        // Wing Bank Deep Link
+        if (strpos($payload, 'wing') !== false || isset($tags['30'])) {
+            $deepLinks['wing'] = [
+                'name' => 'Wing Bank',
+                'url' => "wing://scan?qr=" . urlencode($payload) . "&amount=" . $amountKHR,
+                'app_url' => "https://www.wingmoney.com/download",
+                'supported' => true
+            ];
+        }
+        
+        // ACLEDA Bank Deep Link
+        $deepLinks['acleda'] = [
+            'name' => 'ACLEDA Bank',
+            'url' => "acledaunity://khqr?data=" . urlencode($payload) . "&amount=" . $amountUSD,
+            'app_url' => "https://www.acledabank.com.kh/mobile",
+            'supported' => true
+        ];
+        
+        // Sathapana Bank Deep Link
+        $deepLinks['sathapana'] = [
+            'name' => 'Sathapana Bank',
+            'url' => "sathapana://pay?qr=" . urlencode($payload) . "&amount=" . $amountKHR,
+            'app_url' => "https://www.sathapana.com.kh/mobile",
+            'supported' => true
+        ];
+        
+        // Phillip Bank Deep Link
+        $deepLinks['phillip'] = [
+            'name' => 'Phillip Bank',
+            'url' => "phillipbank://payment?qr=" . urlencode($payload) . "&amount=" . $amountUSD,
+            'app_url' => "https://www.phillipbank.com.kh/mobile",
+            'supported' => true
+        ];
+        
+        // Generic KHQR Deep Link (Universal - works with most KHQR-compatible apps)
+        $deepLinks['universal'] = [
+            'name' => 'Universal KHQR',
+            'url' => "khqr://pay?qr=" . urlencode($payload) . "&amount=" . $amountUSD . "&currency=" . $currency,
+            'app_url' => null,
+            'supported' => true
+        ];
+        
+        return $deepLinks;
+    }
+
+    /**
+     * Generate payment page URL with deep link support.
+     * This creates a smart payment page that shows QR code and deep link buttons.
+     *
+     * @param string $payload KHQR payload
+     * @param float $amount Amount
+     * @param string $currency Currency
+     * @param string $reference Payment reference/invoice number
+     * @return string URL to payment page
+     */
+    public function generateSmartPaymentUrl(string $payload, float $amount, string $currency, string $reference): string
+    {
+        $data = [
+            'payload' => $payload,
+            'amount' => $amount,
+            'currency' => $currency,
+            'reference' => $reference,
+            'expires_at' => now()->addHours(24)->timestamp
+        ];
+        
+        // Encode data for URL
+        $encodedData = base64_encode(json_encode($data));
+        
+        return route('payment.smart', ['data' => $encodedData]);
     }
 }

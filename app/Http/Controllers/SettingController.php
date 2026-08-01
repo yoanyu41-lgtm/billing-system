@@ -147,4 +147,149 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', __('app.company_settings_updated'));
     }
+
+    /**
+     * Update a single QR code image and KHQR payload text for a payment method.
+     * Key examples: qr_aba, qr_acleda, qr_wing, qr_truemoney, qr_bakong
+     */
+    public function updateQrSetting(Request $request, string $key)
+    {
+        if (!str_starts_with($key, 'qr_')) {
+            return redirect()->back()->with('error', 'Invalid QR key.');
+        }
+
+        $request->validate([
+            'qr_image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:4096',
+            'qr_payload' => 'nullable|string',
+        ]);
+
+        // Handle Image Upload if provided
+        if ($request->hasFile('qr_image')) {
+            // Delete old image if exists
+            $old = Setting::where('key', $key)->first();
+            if ($old && $old->value && Storage::disk('public')->exists($old->value)) {
+                Storage::disk('public')->delete($old->value);
+            }
+
+            // Store new image
+            $path = $request->file('qr_image')->store('qr', 'public');
+            Setting::updateOrCreate(['key' => $key], ['value' => $path]);
+
+            // If key is qr_bakong, keep legacy company_bank_qr in sync
+            if ($key === 'qr_bakong') {
+                Setting::updateOrCreate(['key' => 'company_bank_qr'], ['value' => $path]);
+            }
+        }
+
+        // Handle Payload Text
+        $payload = $request->input('qr_payload', '');
+        Setting::updateOrCreate(['key' => $key . '_payload'], ['value' => $payload]);
+
+        // If key is qr_bakong, keep legacy company_bank_qr_payload in sync
+        if ($key === 'qr_bakong') {
+            Setting::updateOrCreate(['key' => 'company_bank_qr_payload'], ['value' => $payload]);
+        }
+
+        return redirect()->back()->with('success', 'QR Code និង KHQR Payload បានរក្សាទុកដោយជោគជ័យ!')->with('qr_tab', true);
+    }
+
+    /**
+     * Delete a QR code image and its payload text for a payment method.
+     */
+    public function deleteQrSetting(string $key)
+    {
+        $allowedKeys = ['qr_aba', 'qr_acleda', 'qr_wing', 'qr_truemoney', 'qr_bakong'];
+
+        if (!in_array($key, $allowedKeys)) {
+            return redirect()->back()->with('error', 'Invalid QR key.');
+        }
+
+        $setting = Setting::where('key', $key)->first();
+        if ($setting && $setting->value && Storage::disk('public')->exists($setting->value)) {
+            Storage::disk('public')->delete($setting->value);
+        }
+
+        Setting::where('key', $key)->delete();
+        Setting::where('key', $key . '_payload')->delete();
+
+        if ($key === 'qr_bakong') {
+            $oldBakong = Setting::where('key', 'company_bank_qr')->first();
+            if ($oldBakong && $oldBakong->value && Storage::disk('public')->exists($oldBakong->value)) {
+                Storage::disk('public')->delete($oldBakong->value);
+            }
+            Setting::where('key', 'company_bank_qr')->delete();
+            Setting::where('key', 'company_bank_qr_payload')->delete();
+        }
+
+        return redirect()->back()->with('success', 'QR Code និង Payload បានលុបដោយជោគជ័យ!')->with('qr_tab', true);
+    }
+
+    /**
+     * Add a custom bank QR code.
+     */
+    public function addCustomQr(Request $request)
+    {
+        $request->validate([
+            'bank_name' => 'required|string|max:100',
+            'qr_image' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:4096',
+        ]);
+
+        $path = $request->file('qr_image')->store('qr', 'public');
+        $key = 'qr_custom_' . time() . '_' . rand(100, 999);
+
+        // Save image setting key
+        Setting::updateOrCreate(['key' => $key], ['value' => $path]);
+
+        $payload = $request->input('qr_payload', '');
+        if (!empty($payload)) {
+            Setting::updateOrCreate(['key' => $key . '_payload'], ['value' => $payload]);
+        }
+
+        // Save metadata into custom_qr_list JSON
+        $customListSetting = Setting::where('key', 'custom_qr_list')->first();
+        $customList = $customListSetting ? json_decode($customListSetting->value, true) : [];
+        if (!is_array($customList)) {
+            $customList = [];
+        }
+
+        $customList[] = [
+            'key' => $key,
+            'label' => trim($request->bank_name),
+            'icon' => '🏦',
+        ];
+
+        Setting::updateOrCreate(['key' => 'custom_qr_list'], ['value' => json_encode($customList)]);
+
+        // Also ensure PaymentMethod exists so it shows in checkout choices
+        \App\Models\PaymentMethod::firstOrCreate(['name' => trim($request->bank_name)]);
+
+        return redirect()->back()->with('success', 'បានបន្ថែម QR Code ធនាគារ ' . $request->bank_name . ' ដោយជោគជ័យ!')->with('qr_tab', true);
+    }
+
+    /**
+     * Delete a custom bank QR code.
+     */
+    public function deleteCustomQr(string $key)
+    {
+        $setting = Setting::where('key', $key)->first();
+        if ($setting && $setting->value && Storage::disk('public')->exists($setting->value)) {
+            Storage::disk('public')->delete($setting->value);
+        }
+        Setting::where('key', $key)->delete();
+
+        // Update custom_qr_list JSON
+        $customListSetting = Setting::where('key', 'custom_qr_list')->first();
+        if ($customListSetting && $customListSetting->value) {
+            $customList = json_decode($customListSetting->value, true);
+            if (is_array($customList)) {
+                $customList = array_values(array_filter($customList, function ($item) use ($key) {
+                    return isset($item['key']) && $item['key'] !== $key;
+                }));
+                Setting::updateOrCreate(['key' => 'custom_qr_list'], ['value' => json_encode($customList)]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'បានលុប QR Code ធនាគារដោយជោគជ័យ!')->with('qr_tab', true);
+    }
 }
+

@@ -47,6 +47,14 @@
         aria-selected="false">
         💾 Google Drive
     </button>
+    <button 
+        onclick="switchTab('qr')"
+        id="tab-qr"
+        class="tab-button flex-1 rounded-md px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+        role="tab"
+        aria-selected="false">
+        📱 QR Code
+    </button>
 </div>
 
 <!-- Company Settings Tab -->
@@ -231,47 +239,6 @@
                 </div>
             </div>
 
-            <!-- Bank QR Code Section -->
-            <div class="mb-6 border-t border-slate-100 pt-6">
-                <h3 class="mb-3 text-sm font-semibold text-slate-900">
-                    រូបភាពកូដធនាគារ Bakong KHQR / Bakong KHQR Image
-                </h3>
-                
-                @if(!empty($settings['company_bank_qr']))
-                <div class="mb-3">
-                    <img src="{{ asset('storage/' . $settings['company_bank_qr']) }}" alt="Bank QR Code" class="h-44 rounded-lg border border-slate-300 object-contain bg-white p-2">
-                    <p class="mt-1.5 text-xs text-slate-600">កូដ QR Code បច្ចុប្បន្ន / Current Bakong KHQR Image</p>
-                </div>
-                @endif
-                
-                <div class="mb-4">
-                    <label class="mb-1.5 block text-sm text-slate-700">
-                        បញ្ចូលរូបភាពកូដ Bakong KHQR ថ្មី / Upload New Bakong KHQR Image
-                    </label>
-                    <input 
-                        type="file" 
-                        id="bankQrFileInput"
-                        name="bank_qr" 
-                        accept="image/jpeg,image/jpg,image/png"
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 file:mr-3 file:rounded file:border-0 file:bg-blue-600 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700">
-                    <p class="mt-1 text-xs text-slate-600">{{ __('app.logo_requirements') }}</p>
-                    <div id="qrStatusBadge" class="mt-2 text-xs font-semibold hidden"></div>
-                </div>
-
-                <div class="mt-4">
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        អត្ថបទកូដធនាគារ Bakong KHQR (Bakong KHQR Payload Text)
-                    </label>
-                    <textarea 
-                        id="companyBankQrPayloadTextarea"
-                        name="company_bank_qr_payload" 
-                        rows="3"
-                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                        placeholder="ឧទាហរណ៍៖ 0002010102122930... (ប្រព័ន្ធនឹងទាញយកកូដនេះដោយស្វ័យប្រវត្តនៅពេលលោកអ្នកជ្រើសរើសរូបភាព QR Code ថ្មី)"
-                    >{{ old('company_bank_qr_payload', $settings['company_bank_qr_payload'] ?? '') }}</textarea>
-                    <p class="mt-1 text-xs text-slate-600">ប្រព័ន្ធនឹងប្រើប្រាស់អត្ថបទកូដនេះ ដើម្បីគណនា និងបង្កើត QR Code ស្វ័យប្រវត្តតាមចំនួនទឹកប្រាក់ដែលត្រូវទូទាត់។</p>
-                </div>
-            </div>
 
 
             
@@ -521,6 +488,187 @@
     </div>
 </div>
 
+<!-- QR Code Settings Tab -->
+<div id="content-qr" class="tab-content hidden">
+    <div class="mb-6">
+        <h2 class="text-base font-bold text-slate-900">📱 QR Code សម្រាប់ការទូទាត់</h2>
+        <p class="text-sm text-slate-500 mt-1">Upload រូបភាព QR Code សម្រាប់វិធីទូទាត់នីមួយៗ។ រូបភាពទាំងនេះនឹងត្រូវបង្ហាញនៅពេលអតិថិជនជ្រើសរើសការទូទាត់។</p>
+    </div>
+
+    @php
+        $defaultQrMethods = [
+            'qr_aba'       => ['label' => 'ABA Bank',    'color' => 'blue',   'icon' => '🏦', 'is_custom' => false],
+            'qr_acleda'    => ['label' => 'ACLEDA Bank', 'color' => 'green',  'icon' => '🏛️', 'is_custom' => false],
+            'qr_wing'      => ['label' => 'Wing Bank',   'color' => 'lime',   'icon' => '💚', 'is_custom' => false],
+            'qr_truemoney' => ['label' => 'TrueMoney',   'color' => 'orange', 'icon' => '📱', 'is_custom' => false],
+        ];
+
+        $customListSetting = $settings['custom_qr_list'] ?? '[]';
+        $customList = json_decode($customListSetting, true) ?: [];
+
+        $qrMethods = $defaultQrMethods;
+        foreach ($customList as $cItem) {
+            if (isset($cItem['key']) && isset($cItem['label'])) {
+                $qrMethods[$cItem['key']] = [
+                    'label' => $cItem['label'],
+                    'icon' => $cItem['icon'] ?? '🏦',
+                    'is_custom' => true,
+                ];
+            }
+        }
+    @endphp
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Card for Adding New Custom Bank QR -->
+        <div class="rounded-xl bg-indigo-50/40 border-2 border-dashed border-indigo-200 shadow-sm p-5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xl">➕</span>
+                    <h3 class="text-sm font-bold text-slate-900">បន្ថែម QR Code ធនាគារថ្មី</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">បន្ថែមរូបភាព QR Code សម្រាប់ធនាគារផ្សេងទៀតដូចជា Canadia Bank, Sathapana...</p>
+
+                <form method="POST" action="{{ route('admin.settings.qr.custom.store') }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="mb-1 block text-xs font-semibold text-slate-700">ឈ្មោះធនាគារ (Bank Name)</label>
+                        <input 
+                            type="text" 
+                            name="bank_name" 
+                            required 
+                            placeholder="ឧទាហរណ៍៖ Canadia Bank, Sathapana..."
+                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        >
+                    </div>
+                    <div class="mb-3">
+                        <label class="mb-1 block text-xs font-semibold text-slate-700">រូបភាព QR Code</label>
+                        <input 
+                            type="file" 
+                            id="qr_file_new_custom"
+                            name="qr_image" 
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            required
+                            class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-indigo-700"
+                        >
+                        <div id="qr_status_new_custom" class="mt-1 text-xs font-semibold hidden"></div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1 block text-xs font-semibold text-slate-700">អត្ថបទកូដធនាគារ (KHQR Payload Text)</label>
+                        <textarea 
+                            id="qr_payload_new_custom"
+                            name="qr_payload" 
+                            rows="2"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 font-mono"
+                            placeholder="000201010211... (ប្រព័ន្ធនឹងទាញយកកូដនេះដោយស្វ័យប្រវត្តពេលជ្រើសរើសរូបភាព)"
+                        ></textarea>
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition flex items-center justify-center gap-1 shadow-sm"
+                    >
+                        ➕ បន្ថែម QR Code ធនាគារនេះ
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        @foreach($qrMethods as $qrKey => $qrInfo)
+        <div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <!-- Card Header -->
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+                <span class="text-2xl">{{ $qrInfo['icon'] }}</span>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">{{ $qrInfo['label'] }}</h3>
+                    <p class="text-xs text-slate-400">{{ $qrKey }}</p>
+                </div>
+                @if(!empty($settings[$qrKey]))
+                    <span class="ml-auto inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">✓ មាន</span>
+                @else
+                    <span class="ml-auto inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">គ្មាន</span>
+                @endif
+            </div>
+
+            <!-- QR Preview -->
+            <div class="flex-1 flex items-center justify-center p-5 bg-slate-50 min-h-[180px]">
+                @if(!empty($settings[$qrKey]))
+                    <img 
+                        src="{{ asset('storage/' . $settings[$qrKey]) }}" 
+                        alt="{{ $qrInfo['label'] }} QR"
+                        class="max-h-40 max-w-full object-contain rounded-lg border border-slate-200 bg-white p-2 shadow-sm"
+                    >
+                @else
+                    <div class="text-center">
+                        <div class="w-20 h-20 mx-auto rounded-xl bg-slate-200 flex items-center justify-center text-3xl mb-2">📷</div>
+                        <p class="text-xs text-slate-400">មិនទាន់មានរូបភាព</p>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Upload Form -->
+            <div class="p-4 border-t border-slate-100">
+                <form 
+                    method="POST" 
+                    action="{{ route('admin.settings.qr.update', $qrKey) }}" 
+                    enctype="multipart/form-data"
+                >
+                    @csrf
+                    <div class="mb-3">
+                        <label class="mb-1.5 block text-xs font-medium text-slate-600">ជ្រើសរើសរូបភាព QR Code ថ្មី</label>
+                        <input 
+                            type="file" 
+                            id="qr_file_{{ $qrKey }}"
+                            name="qr_image" 
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 file:mr-2 file:rounded file:border-0 file:bg-indigo-600 file:px-2 file:py-1 file:text-xs file:font-semibold file:text-white hover:file:bg-indigo-700"
+                        >
+                        <div id="qr_status_{{ $qrKey }}" class="mt-1 text-xs font-semibold hidden"></div>
+                    </div>
+
+                    <!-- KHQR Payload Text Section -->
+                    <div class="mb-3">
+                        <label class="mb-1 block text-xs font-semibold text-slate-700">
+                            អត្ថបទកូដធនាគារ {{ $qrInfo['label'] }} (Payload Text)
+                        </label>
+                        <textarea 
+                            id="qr_payload_{{ $qrKey }}"
+                            name="qr_payload" 
+                            rows="2"
+                            class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 font-mono"
+                            placeholder="ឧទាហរណ៍៖ 0002010102112938... (ប្រព័ន្ធនឹងទាញយកកូដនេះដោយស្វ័យប្រវត្តពេលជ្រើសរើសរូបភាព)"
+                        >{{ old('qr_payload', $settings[$qrKey . '_payload'] ?? '') }}</textarea>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition flex items-center justify-center gap-1 shadow-sm"
+                    >
+                        💾 រក្សាទុក {{ $qrInfo['label'] }} QR Code
+                    </button>
+                </form>
+
+                @if(!empty($settings[$qrKey]) || !empty($settings[$qrKey . '_payload']))
+                <form 
+                    method="POST" 
+                    action="{{ ($qrInfo['is_custom'] ?? false) ? route('admin.settings.qr.custom.delete', $qrKey) : route('admin.settings.qr.delete', $qrKey) }}" 
+                    class="mt-2"
+                    onsubmit="return confirm('តើអ្នកពិតជាចង់លុប QR Code {{ $qrInfo['label'] }} ចោលមែនទេ?')"
+                >
+                    @csrf
+                    @method('DELETE')
+                    <button 
+                        type="submit" 
+                        class="w-full rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-100 transition flex items-center justify-center gap-1"
+                    >
+                        🗑️ លុប QR Code
+                    </button>
+                </form>
+                @endif
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+
 <!-- jsQR Library for instant client-side QR decoding -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
@@ -547,21 +695,24 @@ function switchTab(tabName) {
     activeButton.setAttribute('aria-selected', 'true');
 }
 
-// Check if there are validation errors and switch to company tab if needed
-switchTab('company');
+// Switch to correct tab on load
+@if(session('qr_tab'))
+    switchTab('qr');
+@else
+    switchTab('company');
+@endif
 
-// Instant Browser-Side QR Code Decoder
-document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('bankQrFileInput');
-    const textarea = document.getElementById('companyBankQrPayloadTextarea');
-    const badge = document.getElementById('qrStatusBadge');
+// Instant Browser-Side QR Code Decoder function
+function bindQrDecoder(fileInputId, textareaId, badgeId) {
+    const fileInput = document.getElementById(fileInputId);
+    const textarea = document.getElementById(textareaId);
+    const badge = document.getElementById(badgeId);
 
     if (fileInput && textarea) {
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Clear the old payload first to avoid saving mismatched configurations
             textarea.value = '';
 
             if (badge) {
@@ -569,7 +720,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 badge.classList.add('text-blue-600');
                 badge.innerText = '⏳ កំពុងអានអត្ថបទ KHQR ពីរូបភាព...';
             }
-
 
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -587,7 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     if (!code) {
-                        // Try with inversion
                         code = jsQR(imageData.data, imageData.width, imageData.height, {
                             inversionAttempts: "attemptBoth",
                         });
@@ -596,13 +745,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (code && code.data) {
                         textarea.value = code.data;
                         if (badge) {
-                            badge.className = 'mt-2 text-xs font-semibold text-emerald-600 flex items-center gap-1';
-                            badge.innerHTML = '✓ បានអានកូដ KHQR ជោគជ័យ និងទាញយកកូដដាក់ក្នុងប្រអប់ខាងក្រោមស្រាប់!';
+                            badge.className = 'mt-1 text-xs font-semibold text-emerald-600 flex items-center gap-1';
+                            badge.innerHTML = '✓ បានអានកូដ KHQR ជោគជ័យ!';
                         }
                     } else {
                         if (badge) {
-                            badge.className = 'mt-2 text-xs font-semibold text-amber-600 flex items-center gap-1';
-                            badge.innerHTML = '⚠️ ប្រព័ន្ធមិនអាចអានកូដស្វ័យប្រវត្តពីរូបភាពនេះបានទេ (ដោយសារមាន Logo បាំង)។ សូមចម្លង (Paste) អត្ថបទ KHQR ចូលក្នុងប្រអប់ខាងក្រោមដោយដៃ។';
+                            badge.className = 'mt-1 text-xs font-semibold text-amber-600 flex items-center gap-1';
+                            badge.innerHTML = '⚠️ មិនអាចអានកូដស្វ័យប្រវត្តិបានទេ។ សូមចម្លង (Paste) អត្ថបទ KHQR ចូលដោយដៃ។';
                         }
                     }
                 };
@@ -611,6 +760,17 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file);
         });
     }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Bind custom new bank form input
+    bindQrDecoder('qr_file_new_custom', 'qr_payload_new_custom', 'qr_status_new_custom');
+
+    // Bind all cards in QR Code tab
+    @json(array_keys($qrMethods)).forEach(function(key) {
+        bindQrDecoder('qr_file_' + key, 'qr_payload_' + key, 'qr_status_' + key);
+    });
 });
 </script>
+
 @endsection

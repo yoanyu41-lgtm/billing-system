@@ -85,19 +85,6 @@
                 @enderror
             </div>
 
-            <!-- Supplier -->
-            <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.supplier') }}</label>
-                <select name="supplier_id" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('supplier_id') ? 'border-red-500' : 'border-gray-300' }}">
-                    <option value="">{{ __('app.select_supplier') }}</option>
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>{{ $supplier->name }}</option>
-                    @endforeach
-                </select>
-                @error('supplier_id')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
 
             <!-- Selling Price -->
             <div>
@@ -306,22 +293,7 @@
         </div>
 
         <!-- Product Image -->
-        <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.product_image') }}</label>
-            <input type="file" name="image" accept="image/*" class="w-full border border-gray-300 bg-gray-50 px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 {{ $errors->has('image') ? 'border-red-500' : '' }}">
-            @error('image')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-
-        <!-- Description -->
-        <div class="mb-8">
-            <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.description') }}</label>
-            <textarea name="description" rows="4" class="w-full border px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150 {{ $errors->has('description') ? 'border-red-500' : 'border-gray-300' }}" placeholder="Enter product description here...">{{ old('description') }}</textarea>
-            @error('description')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-        </div>
+        @include('partials.product-image-picker')
 
         <!-- Status -->
         <div class="mb-8">

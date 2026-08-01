@@ -23,6 +23,11 @@ class TelegramController extends Controller
         $update = $request->all();
         Log::info('Telegram webhook received', ['update' => $update]);
 
+        // 0. Handle callback query (inline keyboard clicks)
+        if (isset($update['callback_query'])) {
+            return $this->handleCallbackQuery($update['callback_query']);
+        }
+
         // 1. Handle incoming message
         if (isset($update['message'])) {
             $chatId = data_get($update, 'message.chat.id');
@@ -222,7 +227,7 @@ class TelegramController extends Controller
                 if ($customer) {
                     $customer->update(['telegram_id' => null]);
                     $msg = "⚠️ <b>ផ្តាច់គណនីរួចរាល់!</b>\n\n";
-                    $msg .= "គណនីរបស់លោកអ្នកត្រូវបានផ្តាច់ពីប្រព័ន្ធ Telegram Bot នេះហើយ។ បើលោកអ្នកចង់ភ្ជាប់ឡើងវិញ សូមប្រើប្រាស់ប៊ូតុងខាងក្រោម。";
+                    $msg .= "គណនីរបស់លោកអ្នកត្រូវបានផ្តាច់ពីប្រព័ន្ធ Telegram Bot នេះហើយ។ បើលោកអ្នកចង់ភ្ជាប់ឡើងវិញ សូមប្រើប្រាស់ប៊ូតុងខាងក្រោម។";
                     $this->replyToChat($chatId, $msg, $this->getRegisterKeyboard());
                 } else {
                     $this->replyToChat($chatId, "❌ គណនី Telegram នេះមិនទាន់បានភ្ជាប់ជាមួយប្រព័ន្ធណាមួយឡើយ។", $this->getRegisterKeyboard());
@@ -359,82 +364,51 @@ class TelegramController extends Controller
                     break;
 
                 case '🏦 ព័ត៌មានបង់ប្រាក់ & QR':
+                    $availableQrs = $this->getAvailableQrList();
+
+                    if (empty($availableQrs)) {
+                        $this->replyToChat($chatId, "❌ មិនទាន់មាន QR Code ធនាគារណាមួយត្រូវបានរៀបចំក្នុងប្រព័ន្ធនៅឡើយទេ។", $this->getMainMenuKeyboard());
+                        break;
+                    }
+
+                    if (count($availableQrs) === 1) {
+                        // Only 1 QR code configured, send it directly
+                        $this->sendCustomerSelectedQr($chatId, $customer, $availableQrs[0]['key']);
+                        break;
+                    }
+
+                    // Multiple QR codes configured -> Show Inline Keyboard for customer to pick!
                     $shopName = Setting::where('key', 'company_name_km')->value('value')
                         ?: Setting::where('key', 'company_name')->value('value')
                         ?: 'CityTech Computer Shop';
 
-                    $bankQr = Setting::where('key', 'company_bank_qr')->value('value');
-                    $bankQrPayload = Setting::where('key', 'company_bank_qr_payload')->value('value');
+                    $msg = "🏦 <b>សូមជ្រើសរើស QR Code ធនាគារដែលលោកអ្នកចង់ទូទាត់ប្រាក់ (ហាង " . htmlspecialchars($shopName) . ") ៖</b>\n\n";
+                    $msg .= "ប្រព័ន្ធរបស់យើងមាន QR Code ធនាគារជាច្រើន។ សូមចុចលើប៊ូតុងធនាគារខាងក្រោមដើម្បីទទួលបាន QR Code និងព័ត៌មានគណនីទូទាត់ ៖";
 
-                    // Check if there is an active/overdue installment to generate a dynamic QR code
-                    $inst = $customer->installments()->whereIn('status', ['active', 'overdue'])->first();
-                    $dueAmount = 0;
-                    $productName = '';
-                    if ($inst) {
-                        $productName = $inst->product ? $inst->product->name : '';
-                        $schedule = $inst->getPaymentSchedule();
-                        $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
-                        if ($unpaidRow) {
-                            $dueAmount = $unpaidRow['amount'];
+                    $inlineKeyboard = [];
+                    $row = [];
+                    foreach ($availableQrs as $qr) {
+                        $row[] = [
+                            'text' => $qr['icon_label'],
+                            'callback_data' => 'select_qr:' . $qr['key']
+                        ];
+                        if (count($row) === 2) {
+                            $inlineKeyboard[] = $row;
+                            $row = [];
                         }
                     }
-
-                    // Parse bank details from the KHQR payload if available, otherwise fallback to defaults
-                    $bankName = 'ABA Bank';
-                    $accountName = 'CITYTECH COMPUTER';
-                    $accountNo = '000 111 222';
-
-                    if (!empty($bankQrPayload)) {
-                        $khqrService = new \App\Services\KhqrService();
-                        $parsed = $khqrService->parsePayload($bankQrPayload);
-                        if (isset($parsed['59'])) {
-                            $accountName = $parsed['59'];
-                        }
-                        if (isset($parsed['29'])) {
-                            $subParsed = $khqrService->parsePayload($parsed['29']);
-                            if (isset($subParsed['01'])) {
-                                $accountNo = $subParsed['01'];
-                            }
-                            if (isset($subParsed['02'])) {
-                                $bankName = $subParsed['02'];
-                            }
-                        }
+                    if (!empty($row)) {
+                        $inlineKeyboard[] = $row;
                     }
+                    
+                    // Add option to send all QRs
+                    $inlineKeyboard[] = [
+                        ['text' => '📸 ផ្ញើ QR Code ទាំងអស់ (All QRs)', 'callback_data' => 'select_qr:all']
+                    ];
 
-                    $msg = "🏦 <b>ព័ត៌មានបង់ប្រាក់របស់ហាង " . htmlspecialchars($shopName) . "</b>\n\n";
-                    if ($dueAmount > 0 && $productName) {
-                        $msg .= "👤 <b>អតិថិជន ៖ " . htmlspecialchars($customer->name) . "</b>\n";
-                        $msg .= "📦 <b>ទូទាត់សម្រាប់ ៖ " . htmlspecialchars($productName) . "</b>\n";
-                        $msg .= "💵 <b>ចំនួនត្រូវបង់ប្រចាំខែ ៖ " . $this->formatPrice($dueAmount) . "</b>\n\n";
-                    }
-                    $msg .= "លោកអ្នកអាចធ្វើការទូទាត់ប្រាក់ប្រចាំខែតាមរយៈគណនីធនាគាររបស់ហាងដូចខាងក្រោម៖\n\n";
-                    $msg .= "🏦 <b>ធនាគារ ៖ " . htmlspecialchars($bankName) . "</b>\n";
-                    $msg .= "👤 <b>ឈ្មោះគណនី ៖ " . htmlspecialchars($accountName) . "</b>\n";
-                    $msg .= "🔢 <b>លេខគណនី ៖ " . htmlspecialchars($accountNo) . "</b>\n\n";
-                    $msg .= "⚠️ <i>បញ្ជាក់៖ បន្ទាប់ពីផ្ទេរប្រាក់រួច សូមផ្ញើវិក្កយបត្រផ្ទេរប្រាក់មកកាន់ក្រុមការងារដើម្បីផ្ទៀងផ្ទាត់ និងអនុម័តការបង់ប្រាក់។</i>";
+                    $replyMarkup = ['inline_keyboard' => $inlineKeyboard];
 
-                    $dynamicQrPath = null;
-                    if ($dueAmount > 0 && !empty($bankQrPayload)) {
-                        $khqrService = new \App\Services\KhqrService();
-                        $currency = Setting::where('key', 'currency')->value('value') ?: 'USD';
-                        $dynamicPayload = $khqrService->generatePayload($bankQrPayload, $dueAmount, $currency);
-                        if ($dynamicPayload) {
-                            $dynamicQrPath = $khqrService->generateQrCodeImage($dynamicPayload);
-                        }
-                    }
-
-                    if ($dynamicQrPath) {
-                        $this->replyPhotoToChat($chatId, $dynamicQrPath, $msg, $this->getMainMenuKeyboard());
-                        // Clean up temporary dynamic QR file
-                        $fullPath = storage_path('app/public/' . $dynamicQrPath);
-                        if (file_exists($fullPath)) {
-                            @unlink($fullPath);
-                        }
-                    } elseif ($bankQr) {
-                        $this->replyPhotoToChat($chatId, $bankQr, $msg, $this->getMainMenuKeyboard());
-                    } else {
-                        $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
-                    }
+                    $this->replyToChat($chatId, $msg, $replyMarkup);
                     break;
 
                 case '📞 ទំនាក់ទំនងហាង':
@@ -577,6 +551,233 @@ class TelegramController extends Controller
             'resize_keyboard' => true,
             'one_time_keyboard' => false
         ];
+    }
+
+    private function handleCallbackQuery(array $callbackQuery)
+    {
+        $callbackId = $callbackQuery['id'] ?? null;
+        $chatId = data_get($callbackQuery, 'message.chat.id');
+        $data = $callbackQuery['data'] ?? '';
+
+        $this->answerCallbackQuery($callbackId);
+
+        if (! $chatId) {
+            return response('OK');
+        }
+
+        $customer = Customer::where('telegram_id', $chatId)->first();
+        if (! $customer) {
+            $msg = "⚠️ <b>គណនីមិនទាន់បានភ្ជាប់!</b>\n\nសូមភ្ជាប់គណនីរបស់លោកអ្នកជាមុនសិន ដោយចុចប៊ូតុងខាងក្រោម៖";
+            $this->replyToChat($chatId, $msg, $this->getRegisterKeyboard());
+            return response('OK');
+        }
+
+        if (str_starts_with($data, 'select_qr:')) {
+            $qrKey = substr($data, 10);
+            $this->sendCustomerSelectedQr($chatId, $customer, $qrKey);
+        }
+
+        return response('OK');
+    }
+
+    private function getAvailableQrList(): array
+    {
+        $settings = Setting::pluck('value', 'key')->toArray();
+        $qrMap = [
+            'qr_aba'          => ['label' => 'ABA Bank KHQR',     'icon_label' => '🏦 ABA Bank KHQR'],
+            'qr_acleda'       => ['label' => 'ACLEDA KHQR',       'icon_label' => '🏦 ACLEDA KHQR'],
+            'qr_wing'         => ['label' => 'Wing KHQR',         'icon_label' => '🏦 Wing KHQR'],
+            'qr_truemoney'    => ['label' => 'TrueMoney KHQR',    'icon_label' => '🏦 TrueMoney KHQR'],
+            'qr_bakong'       => ['label' => 'Bakong KHQR',       'icon_label' => '🏦 Bakong KHQR'],
+            'company_bank_qr' => ['label' => 'QR ធនាគារ (Default)', 'icon_label' => '🏦 QR ធនាគារ'],
+        ];
+
+        $list = [];
+        foreach ($qrMap as $key => $meta) {
+            $img = $settings[$key] ?? null;
+            if (!empty($img)) {
+                $list[] = [
+                    'key' => $key,
+                    'label' => $meta['label'],
+                    'icon_label' => $meta['icon_label'],
+                    'img' => $img,
+                    'payload' => $settings[$key . '_payload'] ?? ($key === 'company_bank_qr' ? ($settings['company_bank_qr_payload'] ?? null) : null),
+                ];
+            }
+        }
+
+        $customList = json_decode($settings['custom_qr_list'] ?? '[]', true) ?: [];
+        foreach ($customList as $cItem) {
+            if (!empty($cItem['key']) && !empty($cItem['label'])) {
+                $img = $settings[$cItem['key']] ?? null;
+                if (!empty($img)) {
+                    $list[] = [
+                        'key' => $cItem['key'],
+                        'label' => $cItem['label'],
+                        'icon_label' => '🏦 ' . $cItem['label'],
+                        'img' => $img,
+                        'payload' => $settings[$cItem['key'] . '_payload'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        return $list;
+    }
+
+    private function sendCustomerSelectedQr(string|int $chatId, Customer $customer, string $qrKey): void
+    {
+        $availableQrs = $this->getAvailableQrList();
+
+        if (empty($availableQrs)) {
+            $this->replyToChat($chatId, "❌ មិនទាន់មាន QR Code ធនាគារណាមួយត្រូវបានរៀបចំក្នុងប្រព័ន្ធនៅឡើយទេ។", $this->getMainMenuKeyboard());
+            return;
+        }
+
+        $shopName = Setting::where('key', 'company_name_km')->value('value')
+            ?: Setting::where('key', 'company_name')->value('value')
+            ?: 'CityTech Computer Shop';
+
+        $currency = Setting::where('key', 'currency')->value('value') ?: 'USD';
+
+        $inst = $customer->installments()->whereIn('status', ['active', 'overdue'])->first();
+        $dueAmount = 0.0;
+        $productName = '';
+        if ($inst) {
+            $productName = $inst->product ? $inst->product->name : '';
+            $schedule = $inst->getPaymentSchedule();
+            $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+            if ($unpaidRow) {
+                $dueAmount = (float) $unpaidRow['amount'];
+            }
+        }
+
+        if ($qrKey === 'all') {
+            $this->replyToChat($chatId, "📸 <b>បញ្ជី QR Code ទូទាត់ប្រាក់ទាំងអស់របស់ហាង " . htmlspecialchars($shopName) . " ៖</b>");
+            foreach ($availableQrs as $qrItem) {
+                $this->sendSingleQrPhoto($chatId, $customer, $qrItem, $dueAmount, $productName, $shopName, $currency);
+            }
+            return;
+        }
+
+        $selectedItem = collect($availableQrs)->firstWhere('key', $qrKey) ?? $availableQrs[0];
+        $this->sendSingleQrPhoto($chatId, $customer, $selectedItem, $dueAmount, $productName, $shopName, $currency);
+    }
+
+    private function sendSingleQrPhoto(string|int $chatId, Customer $customer, array $qrItem, float $dueAmount, string $productName, string $shopName, string $currency): void
+    {
+        $qrLabel = $qrItem['label'];
+        $qrImage = $qrItem['img'];
+        $qrPayload = $qrItem['payload'];
+
+        $bankName = $qrLabel;
+        $accountName = 'CITYTECH COMPUTER';
+        $accountNo = '-';
+
+        if (!empty($qrPayload)) {
+            $khqrService = new \App\Services\KhqrService();
+            $parsed = $khqrService->parsePayload($qrPayload);
+            if (isset($parsed['59'])) {
+                $accountName = $parsed['59'];
+            }
+            if (isset($parsed['29'])) {
+                $subParsed = $khqrService->parsePayload($parsed['29']);
+                if (isset($subParsed['01'])) {
+                    $accountNo = $subParsed['01'];
+                }
+                if (isset($subParsed['02'])) {
+                    $bankName = $subParsed['02'];
+                }
+            }
+        }
+
+        $msg = "🏦 <b>QR CODE សម្រាប់ទូទាត់ប្រាក់ ៖ " . htmlspecialchars($qrLabel) . "</b>\n";
+        $msg .= "🏢 <b>ហាង ៖ " . htmlspecialchars($shopName) . "</b>\n\n";
+
+        if ($dueAmount > 0 && $productName) {
+            $msg .= "👤 <b>អតិថិជន ៖ " . htmlspecialchars($customer->name) . "</b>\n";
+            $msg .= "📦 <b>ទូទាត់សម្រាប់ ៖ " . htmlspecialchars($productName) . "</b>\n";
+            $msg .= "💵 <b>ចំនួនត្រូវបង់ប្រចាំខែ ៖ " . $this->formatPrice($dueAmount) . "</b>\n\n";
+        }
+
+        $msg .= "🏦 <b>ធនាគារ ៖ " . htmlspecialchars($bankName) . "</b>\n";
+        $msg .= "👤 <b>ឈ្មោះគណនី ៖ " . htmlspecialchars($accountName) . "</b>\n";
+        if ($accountNo !== '-') {
+            $msg .= "🔢 <b>លេខគណនី ៖ " . htmlspecialchars($accountNo) . "</b>\n";
+        }
+        $msg .= "\n⚠️ <i>បញ្ជាក់៖ បន្ទាប់ពីផ្ទេរប្រាក់រួច សូមផ្ញើវិក្កយបត្រ (Payment Slip) ត្រឡប់មកទីនេះដើម្បីផ្ទៀងផ្ទាត់ និងអនុម័តការបង់ប្រាក់។</i>";
+
+        $dynamicQrPath = null;
+        $smartPaymentUrl = null;
+        
+        if ($dueAmount > 0 && !empty($qrPayload)) {
+            $khqrService = new \App\Services\KhqrService();
+            $dynamicPayload = $khqrService->generatePayload($qrPayload, $dueAmount, $currency);
+            
+            if ($dynamicPayload) {
+                $dynamicQrPath = $khqrService->generateQrCodeImage($dynamicPayload);
+                
+                // Generate smart payment URL with deep links
+                $reference = 'INS-' . $installment->id . '-' . str_pad($targetMonth, 2, '0', STR_PAD_LEFT);
+                $smartPaymentUrl = $khqrService->generateSmartPaymentUrl(
+                    $dynamicPayload,
+                    $dueAmount,
+                    $currency,
+                    $reference
+                );
+            }
+        }
+
+        // Add smart payment link button if available
+        if ($smartPaymentUrl) {
+            $msg .= "\n\n💳 <b>ចុចប៊ូតុងខាងក្រោមដើម្បីទូទាត់ដោយឆាប់រហ័ស</b>";
+        }
+
+        if ($dynamicQrPath) {
+            // Create inline keyboard with smart payment button
+            $keyboard = $smartPaymentUrl ? [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '💳 ទូទាត់តាមអនឡាញ', 'url' => $smartPaymentUrl]
+                    ]
+                ]
+            ] : $this->getMainMenuKeyboard();
+            
+            $this->replyPhotoToChat($chatId, $dynamicQrPath, $msg, $keyboard);
+            $fullPath = storage_path('app/public/' . $dynamicQrPath);
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+        } elseif (!empty($qrImage)) {
+            $keyboard = $smartPaymentUrl ? [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '💳 ទូទាត់តាមអនឡាញ', 'url' => $smartPaymentUrl]
+                    ]
+                ]
+            ] : $this->getMainMenuKeyboard();
+            
+            $this->replyPhotoToChat($chatId, $qrImage, $msg, $keyboard);
+        } else {
+            $this->replyToChat($chatId, $msg, $this->getMainMenuKeyboard());
+        }
+    }
+
+    private function answerCallbackQuery(?string $callbackId, ?string $text = null): void
+    {
+        $token = config('services.telegram.bot_token') ?: Setting::where('key', 'telegram_token')->value('value');
+        if (blank($token) || blank($callbackId)) {
+            return;
+        }
+
+        $params = [
+            'callback_query_id' => $callbackId,
+        ];
+        if ($text) {
+            $params['text'] = $text;
+        }
+
+        Http::asForm()->timeout(10)->post("https://api.telegram.org/bot{$token}/answerCallbackQuery", $params);
     }
 
     private function replyToChat($chatId, string $message, ?array $replyMarkup = null): void

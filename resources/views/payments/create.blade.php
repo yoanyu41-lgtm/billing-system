@@ -222,6 +222,14 @@
                 <i class="fas fa-wallet text-blue-600 mr-1"></i> {{ __('app.payment_method') }} <span class="text-red-500">*</span>
             </label>
 
+            @php
+                $paymentMethods = collect($paymentMethods)->reject(function($m) {
+                    return in_array($m->name, ['QR Code', 'Bank Transfer', 'QR']);
+                })->sortBy(function($m) {
+                    return (strtolower($m->name) === 'credit card') ? 9999 : $m->id;
+                })->values();
+            @endphp
+
             <!-- Branded Payment Method Radio Tiles -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3" id="methodTilesContainer">
                 @foreach($paymentMethods as $method)
@@ -296,16 +304,50 @@
 
         <!-- Dynamic Bank QR Code Display Container (Hidden by default) -->
         @php
-            $bankQr = \App\Models\Setting::where('key', 'company_bank_qr')->value('value');
-            $bankQrPayload = \App\Models\Setting::where('key', 'company_bank_qr_payload')->value('value');
+            $customListSetting = \App\Models\Setting::where('key', 'custom_qr_list')->value('value');
+            $customList = json_decode($customListSetting ?? '[]', true) ?: [];
+
+            $allQrSettings = [
+                'aba'       => [
+                    'img' => \App\Models\Setting::where('key', 'qr_aba')->value('value'), 
+                    'payload' => \App\Models\Setting::where('key', 'qr_aba_payload')->value('value')
+                ],
+                'acleda'    => [
+                    'img' => \App\Models\Setting::where('key', 'qr_acleda')->value('value'), 
+                    'payload' => \App\Models\Setting::where('key', 'qr_acleda_payload')->value('value')
+                ],
+                'wing'      => [
+                    'img' => \App\Models\Setting::where('key', 'qr_wing')->value('value'), 
+                    'payload' => \App\Models\Setting::where('key', 'qr_wing_payload')->value('value')
+                ],
+                'truemoney' => [
+                    'img' => \App\Models\Setting::where('key', 'qr_truemoney')->value('value'), 
+                    'payload' => \App\Models\Setting::where('key', 'qr_truemoney_payload')->value('value')
+                ],
+                'bakong'    => [
+                    'img' => \App\Models\Setting::where('key', 'qr_bakong')->value('value') ?: \App\Models\Setting::where('key', 'company_bank_qr')->value('value'), 
+                    'payload' => \App\Models\Setting::where('key', 'qr_bakong_payload')->value('value') ?: \App\Models\Setting::where('key', 'company_bank_qr_payload')->value('value')
+                ],
+            ];
+
+            foreach ($customList as $cItem) {
+                if (isset($cItem['key']) && isset($cItem['label'])) {
+                    $slug = strtolower(str_replace(' ', '_', $cItem['label']));
+                    $allQrSettings[$slug] = [
+                        'img' => \App\Models\Setting::where('key', $cItem['key'])->value('value'),
+                        'payload' => '',
+                    ];
+                }
+            }
+
+            $defaultQrImg = $allQrSettings['bakong']['img'] ?: ($allQrSettings['aba']['img'] ?: '');
         @endphp
-        @if($bankQr)
         <div id="bankQrContainer" class="hidden rounded-2xl border-2 border-dashed border-purple-200 bg-purple-50/30 p-5 flex flex-col items-center justify-center text-center space-y-3">
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold" id="bankQrBadgeTitle">
                 <i class="fas fa-qrcode"></i>
-                {{ app()->getLocale() === 'km' ? 'ស្កេន KHQR ដើម្បីទូទាត់ប្រាក់' : 'Scan KHQR Code to Pay' }}
+                <span id="qrBadgeLabel">{{ app()->getLocale() === 'km' ? 'ស្កេន KHQR ដើម្បីទូទាត់ប្រាក់' : 'Scan KHQR Code to Pay' }}</span>
             </div>
-            <img id="bankQrImage" src="{{ asset('storage/' . $bankQr) }}" data-static-src="{{ asset('storage/' . $bankQr) }}" alt="Shop Bank QR Code" class="w-48 h-48 rounded-xl border border-slate-200 shadow-md object-contain bg-white p-2">
+            <img id="bankQrImage" src="{{ $defaultQrImg ? asset('storage/' . $defaultQrImg) : '' }}" data-static-src="{{ $defaultQrImg ? asset('storage/' . $defaultQrImg) : '' }}" alt="Bank QR Code" class="w-48 h-48 rounded-xl border border-slate-200 shadow-md object-contain bg-white p-2">
             <p id="qrInstructionMessage" class="text-xs font-bold text-purple-700"></p>
             <p class="text-xs text-slate-500">
                 {{ app()->getLocale() === 'km' 
@@ -313,7 +355,6 @@
                     : 'After scanning, please upload transfer receipt slip below.' }}
             </p>
         </div>
-        @endif
 
         <!-- Credit Card Fields Display Container (Hidden by default) -->
         <div id="creditCardContainer" class="hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 space-y-6">
@@ -548,7 +589,8 @@
         const saveAndPrintBtn = id('saveAndPrintBtn');
 
         const exchangeRate = {{ $exchangeRate }};
-        const baseQrPayload = @json($bankQrPayload);
+        const allQrData = @json($allQrSettings);
+        let activeQrPayload = '';
         let qrCurrencyMode = '{{ session('display_currency', 'USD') }}';
         let currentRemainingBalance = 0;
         let currentMonthlyDue = 0;
@@ -597,10 +639,43 @@
             const type = getSelectedMethodType();
             const qrBox = id('bankQrContainer');
             const ccBox = id('creditCardContainer');
+            const qrImg = id('bankQrImage');
+            const qrBadgeLabel = id('qrBadgeLabel');
+
+            let qrConfig = null;
+            let bankName = 'KHQR';
+
+            if (type.includes('aba') && (allQrData.aba.img || allQrData.aba.payload)) {
+                qrConfig = allQrData.aba; bankName = 'ABA Bank KHQR';
+            } else if (type.includes('acleda') && (allQrData.acleda.img || allQrData.acleda.payload)) {
+                qrConfig = allQrData.acleda; bankName = 'ACLEDA Bank KHQR';
+            } else if (type.includes('wing') && (allQrData.wing.img || allQrData.wing.payload)) {
+                qrConfig = allQrData.wing; bankName = 'Wing Bank KHQR';
+            } else if (type.includes('truemoney') && (allQrData.truemoney.img || allQrData.truemoney.payload)) {
+                qrConfig = allQrData.truemoney; bankName = 'TrueMoney KHQR';
+            } else if ((type.includes('qr') || type.includes('bank') || type.includes('transfer')) && (allQrData.bakong.img || allQrData.bakong.payload || allQrData.aba.img || allQrData.aba.payload)) {
+                qrConfig = (allQrData.bakong.img || allQrData.bakong.payload) ? allQrData.bakong : allQrData.aba;
+                bankName = 'Bakong KHQR';
+            }
 
             if (qrBox) {
-                if (type === 'qr_code') qrBox.classList.remove('hidden');
-                else qrBox.classList.add('hidden');
+                if (qrConfig) {
+                    qrBox.classList.remove('hidden');
+                    if (qrBadgeLabel) qrBadgeLabel.innerText = `ស្កេន ${bankName} ដើម្បីទូទាត់ប្រាក់`;
+                    activeQrPayload = qrConfig.payload || '';
+                    if (qrImg) {
+                        const staticPath = qrConfig.img ? `{{ asset('storage') }}/${qrConfig.img}` : '';
+                        qrImg.setAttribute('data-static-src', staticPath);
+                        qrImg.src = staticPath;
+                    }
+                    updateDynamicQr();
+                } else if (type === 'qr_code') {
+                    qrBox.classList.remove('hidden');
+                    activeQrPayload = allQrData.bakong.payload || '';
+                    updateDynamicQr();
+                } else {
+                    qrBox.classList.add('hidden');
+                }
             }
 
             if (ccBox) {
@@ -845,14 +920,132 @@
             if (id('otpTotalAmount')) id('otpTotalAmount').innerHTML = `$${totalUSD.toFixed(2)} (${totalKHR.toLocaleString('en-US')} ៛)`;
         }
 
+        function calcCrc16(str) {
+            const bytes = new TextEncoder().encode(str);
+            let crc = 0xFFFF;
+            for (let i = 0; i < bytes.length; i++) {
+                crc ^= (bytes[i] << 8);
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) !== 0) {
+                        crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                    } else {
+                        crc = (crc << 1) & 0xFFFF;
+                    }
+                }
+            }
+            return crc.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        function buildDynamicKhqr(staticPayload, amountVal, currencyMode) {
+            if (!staticPayload || !staticPayload.startsWith('000201')) {
+                return staticPayload;
+            }
+
+            try {
+                let cleanPayload = staticPayload;
+
+                // Remove original CRC tag 6304XXXX at end if present
+                const crcMatch = cleanPayload.match(/6304[0-9A-Fa-f]{4}$/);
+                if (crcMatch) {
+                    cleanPayload = cleanPayload.substring(0, cleanPayload.length - 8);
+                }
+
+                // Parse TLV tags accurately
+                const tlvMap = new Map();
+                let i = 0;
+                while (i < cleanPayload.length) {
+                    if (i + 4 > cleanPayload.length) break;
+                    const tag = cleanPayload.substr(i, 2);
+                    const len = parseInt(cleanPayload.substr(i + 2, 2), 10);
+                    if (isNaN(len) || i + 4 + len > cleanPayload.length) break;
+                    const val = cleanPayload.substr(i + 4, len);
+                    tlvMap.set(tag, val);
+                    i += 4 + len;
+                }
+
+                // 1. Tag 01: Point of Initiation Method -> '12' (Dynamic QR)
+                tlvMap.set('01', '12');
+
+                // 2. Tag 53: Currency (840 = USD, 116 = KHR)
+                const isKhr = (currencyMode === 'KHR');
+                const currencyCode = isKhr ? '116' : '840';
+                tlvMap.set('53', currencyCode);
+
+                // 3. Tag 54: Amount (e.g. '84.00' or '344400')
+                let amtStr = isKhr ? Math.round(amountVal).toString() : amountVal.toFixed(2);
+                tlvMap.set('54', amtStr);
+
+                // 4. Convert ABA P2P Tag 29 to Bakong Tag 30 format so ABA Mobile parses as Bakong Dynamic Merchant QR with auto-amount!
+                const tag29Val = tlvMap.get('29') || '';
+                if (tag29Val.includes('abaakhppxxx@abaa')) {
+                    const accMatch = tag29Val.match(/01(\d{2})(\d+)/);
+                    const accountNo = accMatch ? accMatch[2] : '007798110';
+                    
+                    const sub00 = '0013bakongkhppxxx';
+                    const bakongAccId = accountNo + '@abaa';
+                    const sub01 = '01' + bakongAccId.length.toString().padStart(2, '0') + bakongAccId;
+                    const sub02 = '0208ABA Bank';
+                    const tag30Val = sub00 + sub01 + sub02;
+
+                    tlvMap.delete('29');
+                    tlvMap.set('30', tag30Val);
+                }
+
+                // 5. Remove proprietary Tag 40
+                tlvMap.delete('40');
+
+                // 6. Remove Tag 63 if present in map
+                tlvMap.delete('63');
+
+                // Reconstruct TLV string in standard EMVCo tag order
+                const sortedTags = Array.from(tlvMap.keys()).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+                let payloadWithoutCrc = '';
+                for (const tag of sortedTags) {
+                    const val = tlvMap.get(tag);
+                    const lenStr = val.length.toString().padStart(2, '0');
+                    payloadWithoutCrc += tag + lenStr + val;
+                }
+
+                payloadWithoutCrc += '6304';
+                const crcHex = calcCrc16(payloadWithoutCrc);
+                return payloadWithoutCrc + crcHex;
+            } catch (e) {
+                console.error('Dynamic KHQR generation error:', e);
+                return staticPayload;
+            }
+        }
+
         function updateDynamicQr() {
             const img = id('bankQrImage');
+            const msg = id('qrInstructionMessage');
             if (!img) return;
             const staticSrc = img.getAttribute('data-static-src');
-            if (!baseQrPayload || !baseQrPayload.trim()) { img.src = staticSrc; return; }
-            const usd = qrCurrencyMode === 'KHR' ? ((parseFloat(amountInput.value) || 0) / exchangeRate) : (parseFloat(amountInput.value) || 0);
-            if (usd <= 0) { img.src = staticSrc; return; }
-            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(baseQrPayload.trim())}`;
+            const val = parseFloat(amountInput.value) || 0;
+
+            if (activeQrPayload && activeQrPayload.trim()) {
+                if (val > 0) {
+                    // Generate dynamic KHQR code with auto-calculated amount
+                    const dynamicPayload = buildDynamicKhqr(activeQrPayload.trim(), val, qrCurrencyMode);
+                    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(dynamicPayload)}`;
+                } else {
+                    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activeQrPayload.trim())}`;
+                }
+            } else if (staticSrc) {
+                img.src = staticSrc;
+            }
+
+            if (msg) {
+                if (val > 0) {
+                    const usd = qrCurrencyMode === 'KHR' ? (val / exchangeRate) : val;
+                    const khr = qrCurrencyMode === 'KHR' ? val : Math.round(val * exchangeRate);
+                    msg.innerText = qrCurrencyMode === 'KHR' 
+                        ? `ទូទាត់ប្រាក់៖ ${Math.round(khr).toLocaleString()} ៛ ($${usd.toFixed(2)})`
+                        : `ទូទាត់ប្រាក់៖ $${usd.toFixed(2)} (${Math.round(khr).toLocaleString()} ៛)`;
+                } else {
+                    msg.innerText = '';
+                }
+            }
         }
 
         // Drag & Drop File Upload Preview

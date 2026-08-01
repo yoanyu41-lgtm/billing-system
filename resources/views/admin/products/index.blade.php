@@ -25,10 +25,10 @@
 
     <!-- Filter and Search Form -->
     <form method="GET" action="{{ route('admin.products.index') }}" class="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             <!-- Search -->
-            <div>
+            <div class="md:col-span-2">
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.search') }}</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('app.search_product') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
             </div>
@@ -46,18 +46,6 @@
                 </select>
             </div>
 
-            <!-- Supplier Filter -->
-            <div>
-                <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.supplier') }}</label>
-                <select name="supplier_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                    <option value="">{{ __('app.all') }} {{ __('app.suppliers') }}</option>
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                            {{ $supplier->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
 
             <!-- Sort -->
             <div class="flex space-x-2">

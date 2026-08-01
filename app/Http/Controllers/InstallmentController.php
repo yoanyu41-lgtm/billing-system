@@ -565,7 +565,15 @@ class InstallmentController extends Controller
             return redirect()->back()->with('error', __('app.telegram_id_missing'));
         }
 
-        $bankQr = \App\Models\Setting::where('key', 'company_bank_qr')->value('value');
+        // Determine which QR image to send (from request qr_key or fallback to default)
+        $qrKey  = request()->input('qr_key', 'company_bank_qr');
+        $bankQr = \App\Models\Setting::where('key', $qrKey)->value('value');
+
+        // Fallback to default company QR if the selected one is missing
+        if (empty($bankQr)) {
+            $bankQr = \App\Models\Setting::where('key', 'company_bank_qr')->value('value');
+        }
+
         if (empty($bankQr)) {
             return redirect()->back()->with('error', __('app.shop_qr_missing'));
         }
@@ -616,6 +624,7 @@ class InstallmentController extends Controller
             return redirect()->back()->with('error', 'Telegram error: ' . $telegramResult['reason']);
         }
     }
+
 
     public function publicDownloadContract(Installment $installment)
     {

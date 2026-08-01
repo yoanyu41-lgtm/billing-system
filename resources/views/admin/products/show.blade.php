@@ -49,11 +49,16 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
         <div class="flex flex-col md:flex-row">
             {{-- Image --}}
-            <div class="md:w-64 lg:w-72 shrink-0 bg-gradient-to-br from-indigo-50 to-slate-50 flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-gray-100">
+            <div class="md:w-64 lg:w-72 shrink-0 bg-gradient-to-br from-indigo-50 to-slate-50 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-gray-100">
                 @if($imgSrc)
-                    <img src="{{ $imgSrc }}" alt="{{ $product->name }}"
+                    <img id="detail_prod_img" src="{{ $imgSrc }}" alt="{{ $product->name }}"
                          class="w-52 h-52 object-cover rounded-xl shadow-md border border-gray-100"
                          onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($product->name) }}&color=4F46E5&background=EEF2FF&bold=true&size=200'">
+                    <button type="button" onclick="copyDetailImageToClipboard('{{ $imgSrc }}')" 
+                            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-2 rounded-lg transition shadow-2xs cursor-pointer">
+                        <i class="fas fa-copy"></i>
+                        <span>{{ app()->getLocale() === 'km' ? 'Copy រូបភាព' : 'Copy Image' }}</span>
+                    </button>
                 @else
                     <div class="w-52 h-52 bg-indigo-50 rounded-xl border border-dashed border-indigo-200 flex flex-col items-center justify-center text-indigo-300">
                         <svg class="w-14 h-14 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -477,4 +482,69 @@
         </div>{{-- end right col --}}
     </div>{{-- end main grid --}}
 </div>
+
+<div id="detail_toast_notification" class="fixed bottom-5 right-5 z-50 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2 bg-slate-900/90 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-2xl backdrop-blur-sm border border-slate-700">
+    <i class="fas fa-info-circle text-indigo-400"></i>
+    <span id="detail_toast_message"></span>
+</div>
+
+<script>
+    async function copyDetailImageToClipboard(imgSrc) {
+        if (!imgSrc) return;
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = imgSrc;
+            await new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width || 300;
+            canvas.height = img.naturalHeight || img.height || 300;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    await fallbackDetailCopyLink(imgSrc);
+                    return;
+                }
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ [blob.type || 'image/png']: blob })
+                    ]);
+                    showDetailToast("📋 {{ app()->getLocale() === 'km' ? 'បាន Copy រូបភាពទៅ Clipboard! អាចយកទៅ Paste ក្នុង Telegram/Facebook បាន' : 'Image copied to clipboard!' }}");
+                } catch (err) {
+                    await fallbackDetailCopyLink(imgSrc);
+                }
+            }, 'image/png');
+        } catch (e) {
+            await fallbackDetailCopyLink(imgSrc);
+        }
+    }
+
+    async function fallbackDetailCopyLink(url) {
+        try {
+            await navigator.clipboard.writeText(url.startsWith('http') ? url : window.location.origin + url);
+            showDetailToast("🔗 {{ app()->getLocale() === 'km' ? 'បាន Copy តំណភ្ជាប់រូបភាពទៅ Clipboard!' : 'Image link copied to clipboard!' }}");
+        } catch (err) {
+            showDetailToast("❌ {{ app()->getLocale() === 'km' ? 'មិនអាច Copy បានទេ' : 'Could not copy image' }}");
+        }
+    }
+
+    function showDetailToast(message) {
+        const toast = document.getElementById('detail_toast_notification');
+        const msg = document.getElementById('detail_toast_message');
+        if (!toast || !msg) return;
+        msg.textContent = message;
+        toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+        }, 3500);
+    }
+</script>
 @endsection
