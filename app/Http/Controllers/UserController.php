@@ -11,6 +11,9 @@ class UserController extends Controller
 {
     public function index()
     {
+        // Auto-update any legacy 'user' or non-admin roles to 'staff'
+        User::whereNotIn('role', ['admin', 'staff'])->update(['role' => 'staff']);
+
         $users = User::all();
         return view('admin.users.index', compact('users'));
     }

@@ -224,7 +224,14 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1">
                                 {{ __('app.company_name') }} (ភាសាខ្មែរ) <span class="text-rose-500">*</span>
                             </label>
-                            <input type="text" name="company_name_km" value="{{ $settings['company_name_km'] ?? 'ហាងខ្ញុំ' }}" required class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                            <input type="text" name="company_name_km" value="{{ $settings['company_name_km'] ?? 'ហាងកុំព្យូទ័រ' }}" required class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                ចំណងជើងរងរបស់ប្រព័ន្ធ (System Subtitle Sidebar)
+                            </label>
+                            <input type="text" name="company_subtitle" value="{{ $settings['company_subtitle'] ?? 'Installment System' }}" placeholder="ឧ. Installment System" class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
                         </div>
 
                         <div>
@@ -526,6 +533,17 @@
                             </div>
                             <p class="text-xs text-slate-500 font-medium">
                                 {{ $item['desc'] }}
+                                @if($item['key'] === 'pm_card' && !empty($settings['card_gateway_merchant_id']))
+                                    <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            API Configured ({{ strtoupper($settings['card_gateway_mode'] ?? 'LIVE') }})
+                                        </span>
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                            Fee: {{ $settings['card_gateway_fee_percent'] ?? '3.00' }}%
+                                        </span>
+                                    </div>
+                                @endif
                             </p>
                         @endif
 
@@ -559,11 +577,15 @@
                         <div class="flex items-center space-x-1">
                             @if($item['is_qr'])
                                 <button type="button" onclick="openTestQrModal('{{ $item['name'] }}', '{{ $item['image'] ? asset('storage/'.$item['image']) : '' }}', '{{ addslashes($item['payload'] ?? '') }}')" class="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium transition-all" title="Test QR Scan">
-                                    🧪 {{ __('app.test_payment') }}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
                                 </button>
-
                                 <button type="button" onclick="openEditModal('{{ $item['key'] }}', '{{ $item['name'] }}', '{{ $item['image'] ? asset('storage/'.$item['image']) : '' }}', '{{ addslashes($item['payload'] ?? '') }}')" class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium transition-all" title="Edit">
-                                    ✏️ {{ __('app.edit') }}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                            @elseif($item['key'] === 'pm_card')
+                                <button type="button" onclick="openCreditCardApiModal()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-95 cursor-pointer" title="Configure Bank API">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <span>⚙️ កែប្រែ API</span>
                                 </button>
                             @endif
 
@@ -979,5 +1001,113 @@
 
         filterPaymentCards();
     }
+    function openCreditCardApiModal() {
+        document.getElementById('creditCardApiModal').classList.remove('hidden');
+    }
+    function closeCreditCardApiModal() {
+        document.getElementById('creditCardApiModal').classList.add('hidden');
+    }
+    function toggleCustomProviderInput(val) {
+        const container = document.getElementById('customProviderContainer');
+        if (container) {
+            if (val === 'Generic Bank API') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    }
 </script>
+
+<!-- Credit Card Bank API / Payment Gateway Modal -->
+<div id="creditCardApiModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl transition-all border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold shadow-2xs">
+                    💳
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">កំណត់ប្រព័ន្ធ Bank API / Gateway (កាតឥណទាន)</h3>
+                    <p class="text-xs text-slate-500">កំណត់ Merchant ID, API Keys និង Processing Fee សម្រាប់កាត់លុយតាមកាត</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCreditCardApiModal()" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="{{ route('admin.settings.card-gateway.update') }}" class="space-y-4">
+            @csrf
+            
+            <!-- Gateway Provider -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ធនាគារ / អ្នកផ្តល់សេវា Gateway</label>
+                <select name="card_gateway_provider" onchange="toggleCustomProviderInput(this.value)" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 font-medium">
+                    <option value="ABA PayWay" {{ ($settings['card_gateway_provider'] ?? '') === 'ABA PayWay' ? 'selected' : '' }}>ABA Bank (PayWay API / Credit Card)</option>
+                    <option value="Mastercard MPGS" {{ ($settings['card_gateway_provider'] ?? '') === 'Mastercard MPGS' ? 'selected' : '' }}>Mastercard Payment Gateway Services (MPGS)</option>
+                    <option value="Visa CyberSource" {{ ($settings['card_gateway_provider'] ?? '') === 'Visa CyberSource' ? 'selected' : '' }}>Visa CyberSource Gateway</option>
+                    <option value="Stripe" {{ ($settings['card_gateway_provider'] ?? '') === 'Stripe' ? 'selected' : '' }}>Stripe Gateway</option>
+                    <option value="Generic Bank API" {{ ($settings['card_gateway_provider'] ?? '') === 'Generic Bank API' ? 'selected' : '' }}>Generic Bank API Gateway (ធនាគារផ្សេងៗ...)</option>
+                </select>
+            </div>
+
+            <!-- Custom Provider Name (Shown when Generic Bank API is selected) -->
+            <div id="customProviderContainer" class="{{ ($settings['card_gateway_provider'] ?? '') === 'Generic Bank API' ? '' : 'hidden' }}">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ឈ្មោះធនាគារផ្ទាល់ខ្លួន (Custom Bank / Gateway Name)</label>
+                <input type="text" name="card_gateway_custom_name" value="{{ old('card_gateway_custom_name', $settings['card_gateway_custom_name'] ?? '') }}" placeholder="Canadia Bank, Prince Bank, Sathapana..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 font-medium">
+            </div>
+
+            <!-- Merchant / Account ID -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">លេខសម្គាល់អាជីវកម្ម (Merchant ID / Account ID)</label>
+                <input type="text" name="card_gateway_merchant_id" value="{{ old('card_gateway_merchant_id', $settings['card_gateway_merchant_id'] ?? '') }}" placeholder="aba_merchant_98765" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+            </div>
+
+            <!-- API Public Key -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">កូដ API Key (Public Key)</label>
+                <input type="text" name="card_gateway_api_key" value="{{ old('card_gateway_api_key', $settings['card_gateway_api_key'] ?? '') }}" placeholder="pk_live_xxxxxxxxxxxxxxxxxxxx" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+            </div>
+
+            <!-- Secret Key -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">កូដសម្ងាត់ (Secret Key / Hash Secret)</label>
+                <input type="password" name="card_gateway_secret_key" value="{{ old('card_gateway_secret_key', $settings['card_gateway_secret_key'] ?? '') }}" placeholder="sk_live_xxxxxxxxxxxxxxxxxxxx" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+            </div>
+
+            <!-- Fee & Environment Row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">កម្រៃសេវាកាត់ (%) Processing Fee</label>
+                    <div class="relative">
+                        <input type="number" step="0.01" min="0" max="100" name="card_gateway_fee_percent" value="{{ old('card_gateway_fee_percent', $settings['card_gateway_fee_percent'] ?? '3.00') }}" class="w-full rounded-xl border border-slate-300 pl-3 pr-8 py-2 text-sm font-bold text-indigo-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+                        <span class="absolute right-3 top-2 text-sm font-bold text-slate-400">%</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">ម៉ូដដំណើរការ (Environment Mode)</label>
+                    <select name="card_gateway_mode" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200">
+                        <option value="sandbox" {{ ($settings['card_gateway_mode'] ?? 'sandbox') === 'sandbox' ? 'selected' : '' }}>🧪 Sandbox (សាកល្បង / Test Mode)</option>
+                        <option value="live" {{ ($settings['card_gateway_mode'] ?? '') === 'live' ? 'selected' : '' }}>🚀 Live (ដំណើរការពិត / Production Mode)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-5">
+                <button type="button" onclick="closeCreditCardApiModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer">
+                    បោះបង់ (Cancel)
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>រក្សាទុក API Settings</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @endsection

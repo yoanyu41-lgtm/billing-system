@@ -963,8 +963,8 @@
         <div class="sb-logo">
             <div class="sb-logo-icon"><img src="{{ $companyLogo }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
             <div>
-                <h1>COMPUTER SHOP</h1>
-                <p>Installment System</p>
+                <h1>{{ $companyName ?? 'COMPUTER SHOP' }}</h1>
+                <p>{{ $companySubtitle ?? 'Installment System' }}</p>
             </div>
         </div>
 

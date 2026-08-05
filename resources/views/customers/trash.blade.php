@@ -1,6 +1,666 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="container-fluid px-4 py-6 max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold shadow-2xs">
+                    🗑️
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">
+                        {{ app()->getLocale() === 'km' ? 'ធុងសំរាមរួម' : 'Recycle Bin' }}
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        {{ app()->getLocale() === 'km' ? 'សម្គាល់៖ ទិន្នន័យដែលបានលុបនឹងត្រូវលុបចោលទាំងស្រុងដោយស្វ័យប្រវត្តិនៅពេលក្រោយរយៈពេល ៣០ ថ្ងៃ។' : 'Note: Deleted items will be automatically permanently deleted after 30 days.' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $expiringCount = 0;
+        $allCollections = [
+            $customers ?? [],
+            $installments ?? [],
+            $products ?? [],
+            $payments ?? [],
+            $sales ?? [],
+            $users ?? [],
+            $suppliers ?? [],
+            $categories ?? []
+        ];
+        foreach ($allCollections as $col) {
+            if ($col instanceof \Illuminate\Pagination\LengthAwarePaginator || is_iterable($col)) {
+                foreach ($col as $item) {
+                    if (isset($item->deleted_at)) {
+                        $daysLeft = 30 - (int) $item->deleted_at->diffInDays(now());
+                        if ($daysLeft <= 3 && $daysLeft >= 0) {
+                            $expiringCount++;
+                        }
+                    }
+                }
+            }
+        }
+    @endphp
+
+    @if($expiringCount > 0)
+        <div class="mb-6 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 border border-rose-200/80 p-4 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                    ⚠️
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-rose-900">
+                        {{ app()->getLocale() === 'km' ? 'មានទិន្នន័យចំនួន ' . $expiringCount . ' ជិតដល់ថ្ងៃផុតកំណត់លុបចោលរហូត (នៅសល់ ≤ ៣ ថ្ងៃ)' : $expiringCount . ' item(s) expiring within 3 days!' }}
+                    </h4>
+                    <p class="text-xs text-rose-700 mt-0.5">
+                        {{ app()->getLocale() === 'km' ? 'ទិន្នន័យទាំងនេះនឹងត្រូវលុបបាត់ពីប្រព័ន្ធរហូតដោយស្វ័យប្រវត្តិ ក្នុងពេលឆាប់ៗនេះ ប្រសិនបើអ្នកមិនបានចុច «ស្ដារឡើងវិញ» ទេ!' : 'These items will be permanently erased soon unless restored.' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="mb-6 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold shadow-xs flex items-center gap-2">
+            <span>✅</span>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+
+    <!-- Pill Tabs Bar -->
+    <div class="mb-6 overflow-x-auto pb-2 scrollbar-none">
+        <div class="flex items-center gap-2 border-b border-slate-200/80 pb-3 min-w-max">
+            @php
+                $tabsConfig = [
+                    'customers'    => ['name' => 'អតិថិជន',          'icon' => '👥', 'count' => $customers->total()],
+                    'installments' => ['name' => 'គម្រោងបង់រំលស់',     'icon' => '📄', 'count' => $installments->total()],
+                    'products'     => ['name' => 'ផលិតផល',          'icon' => '📦', 'count' => $products->total()],
+                    'payments'     => ['name' => 'ការទូទាត់ប្រាក់',       'icon' => '💰', 'count' => $payments->total()],
+                    'sales'        => ['name' => 'ការលក់ដាច់',         'icon' => '🛒', 'count' => $sales->total()],
+                    'users'        => ['name' => 'បុគ្គលិក',           'icon' => '👨‍💼', 'count' => $users->total()],
+                    'suppliers'    => ['name' => 'អ្នកផ្គត់ផ្គង់',       'icon' => '🚚', 'count' => $suppliers->total()],
+                    'categories'   => ['name' => 'ប្រភេទផលិតផល',     'icon' => '🏷️', 'count' => $categories->total()],
+                ];
+            @endphp
+
+            @foreach($tabsConfig as $key => $cfg)
+                @php $isActive = ($tab === $key); @endphp
+                <a href="{{ route('customers.trash', ['tab' => $key]) }}"
+                   class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 no-underline {{ $isActive ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80' }}">
+                    <span>{{ $cfg['icon'] }}</span>
+                    <span>{{ $cfg['name'] }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold {{ $isActive ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600' }}">
+                        {{ $cfg['count'] }}
+                    </span>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    @php
+        $hasItems = false;
+        if ($tab === 'customers' && $customers->total() > 0) $hasItems = true;
+        if ($tab === 'installments' && $installments->total() > 0) $hasItems = true;
+        if ($tab === 'products' && $products->total() > 0) $hasItems = true;
+        if ($tab === 'users' && $users->total() > 0) $hasItems = true;
+        if ($tab === 'payments' && $payments->total() > 0) $hasItems = true;
+        if ($tab === 'suppliers' && $suppliers->total() > 0) $hasItems = true;
+        if ($tab === 'categories' && $categories->total() > 0) $hasItems = true;
+        if ($tab === 'sales' && $sales->total() > 0) $hasItems = true;
+    @endphp
+
+    @if($hasItems)
+    <!-- Action Bar: Real-Time Search & Bulk Buttons -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div class="relative w-full sm:w-80">
+            <input type="text" id="trashSearchInput" onkeyup="filterTrashTable()" placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកទិន្នន័យក្នុងធុងសំរាម...' : 'Search trash items...' }}" class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+            <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <form action="{{ route('trash.restore-all', ['tab' => $tab]) }}" method="POST"
+                  onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ស្តារទិន្នន័យទាំងអស់ក្នុងផ្នែកនេះឡើងវិញមែនទេ?' : 'Are you sure you want to restore all items in this section?' }}')">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>{{ app()->getLocale() === 'km' ? 'ស្ដារឡើងវិញទាំងអស់' : 'Restore All' }}</span>
+                </button>
+            </form>
+
+            <form action="{{ route('trash.empty', ['tab' => $tab]) }}" method="POST"
+                  onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបចោលទាំងអស់មែនទេ? ទិន្នន័យមិនអាចស្ដារវិញបានឡើយ!' : 'Are you sure you want to permanently delete all items in this section?' }}')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>{{ app()->getLocale() === 'km' ? 'សម្អាតធុងសំរាម' : 'Empty Trash' }}</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    <!-- Content Table Container -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+    @if($tab === 'customers')
+        @if($customers->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យអតិថិជនក្នុងធុងសំរាមទេ' : 'No deleted customers in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">ឈ្មោះអតិថិជន</th>
+                            <th class="px-5 py-3.5">លេខទូរស័ព្ទ</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($customers as $customer)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $customer->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center text-xs">
+                                            {{ mb_substr($customer->name, 0, 1) }}
+                                        </div>
+                                        <span>{{ $customer->name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-slate-600 font-medium">{{ $customer->phone ?? '—' }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">
+                                    {{ $customer->deleted_at->format('Y-m-d H:i') }}
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $customer->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('customers.restore', $customer->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('customers.force-delete', $customer->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបអតិថិជននេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $customers->appends(['tab' => 'customers'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'installments')
+        @if($installments->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យគម្រោងបង់រំលស់ក្នុងធុងសំរាមទេ' : 'No deleted installments in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">អតិថិជន</th>
+                            <th class="px-5 py-3.5">ផលិតផល</th>
+                            <th class="px-5 py-3.5">តម្លៃសរុប</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($installments as $installment)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $installment->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $installment->customer?->name ?? 'N/A' }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-medium">{{ $installment->product?->name ?? 'N/A' }}</td>
+                                <td class="px-5 py-3 text-indigo-600 font-bold font-mono">{{ format_currency($installment->total_price) }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $installment->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $installment->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('installments.restore', $installment->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('installments.force-delete', $installment->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបគម្រោងបង់រំលស់នេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $installments->appends(['tab' => 'installments'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'products')
+        @if($products->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យផលិតផលក្នុងធុងសំរាមទេ' : 'No deleted products in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">ឈ្មោះផលិតផល</th>
+                            <th class="px-5 py-3.5">តម្លៃ</th>
+                            <th class="px-5 py-3.5">ស្តុក</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($products as $product)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $product->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $product->name }}</td>
+                                <td class="px-5 py-3 text-emerald-600 font-bold font-mono">{{ format_currency($product->price) }}</td>
+                                <td class="px-5 py-3 font-bold text-slate-700">{{ $product->stock }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $product->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $product->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('products.restore', $product->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('products.force-delete', $product->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបផលិតផលនេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $products->appends(['tab' => 'products'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'payments')
+        @if($payments->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យការទូទាត់ក្នុងធុងសំរាមទេ' : 'No deleted payments in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">អតិថិជន</th>
+                            <th class="px-5 py-3.5">ចំនួនទឹកប្រាក់</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($payments as $payment)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $payment->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $payment->installment?->customer?->name ?? 'N/A' }}</td>
+                                <td class="px-5 py-3 font-bold text-indigo-600 font-mono">{{ format_currency($payment->amount) }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $payment->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $payment->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('payments.restore', $payment->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('payments.force-delete', $payment->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបការទូទាត់នេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $payments->appends(['tab' => 'payments'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'sales')
+        @if($sales->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យការលក់ក្នុងធុងសំរាមទេ' : 'No deleted sales in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">អតិថិជន</th>
+                            <th class="px-5 py-3.5">សរុប</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($sales as $sale)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $sale->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $sale->customer?->name ?? 'N/A' }}</td>
+                                <td class="px-5 py-3 font-bold text-indigo-600 font-mono">{{ format_currency($sale->total) }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $sale->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $sale->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('sales.restore', $sale->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('sales.force-delete', $sale->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបការលក់នេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $sales->appends(['tab' => 'sales'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'users')
+        @if($users->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យបុគ្គលិកក្នុងធុងសំរាមទេ' : 'No deleted users in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">ឈ្មោះបុគ្គលិក</th>
+                            <th class="px-5 py-3.5">អ៉ីមែល</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($users as $user)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $user->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $user->name }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-medium">{{ $user->email }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $user->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $user->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('users.restore', $user->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('users.force-delete', $user->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបបុគ្គលិកនេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $users->appends(['tab' => 'users'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'suppliers')
+        @if($suppliers->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យអ្នកផ្គត់ផ្គង់ក្នុងធុងសំរាមទេ' : 'No deleted suppliers in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">ឈ្មោះអ្នកផ្គត់ផ្គង់</th>
+                            <th class="px-5 py-3.5">លេខទូរស័ព្ទ</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($suppliers as $supplier)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $supplier->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $supplier->name }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-medium">{{ $supplier->phone ?? '—' }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $supplier->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $supplier->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('suppliers.restore', $supplier->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('suppliers.force-delete', $supplier->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបអ្នកផ្គត់ផ្គង់នេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $suppliers->appends(['tab' => 'suppliers'])->links() }}
+            </div>
+        @endif
+
+    @elseif($tab === 'categories')
+        @if($categories->isEmpty())
+            <div class="p-12 text-center text-slate-400 font-medium text-sm">
+                {{ app()->getLocale() === 'km' ? 'គ្មានទិន្នន័យប្រភេទផលិតផលក្នុងធុងសំរាមទេ' : 'No deleted categories in trash.' }}
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">#</th>
+                            <th class="px-5 py-3.5">ឈ្មោះប្រភេទ</th>
+                            <th class="px-5 py-3.5">ម៉ាក (Brand)</th>
+                            <th class="px-5 py-3.5">កាលបរិច្ឆេទលុប</th>
+                            <th class="px-5 py-3.5 text-center">ថ្ងៃនៅសល់</th>
+                            <th class="px-5 py-3.5 text-center">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($categories as $category)
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="px-5 py-3 text-slate-400 font-mono text-xs font-bold">{{ $category->id }}</td>
+                                <td class="px-5 py-3 font-semibold text-slate-800">{{ $category->name }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-medium">{{ $category->brand ?? '—' }}</td>
+                                <td class="px-5 py-3 text-slate-600 font-mono text-xs whitespace-nowrap">{{ $category->deleted_at->format('Y-m-d H:i') }}</td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    @php $daysLeft = max(0, 30 - (int) $category->deleted_at->diffInDays(now())); @endphp
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }}">
+                                        ⏱️ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form action="{{ route('categories.restore', $category->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>ស្ដារវិញ</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('categories.force-delete', $category->id) }}" method="POST" onsubmit="return confirm('តើអ្នកប្រាកដជាចង់លុបប្រភេទនេះជាស្ថាពរមែនទេ?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>លុបរហូត</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+                {{ $categories->appends(['tab' => 'categories'])->links() }}
+            </div>
+        @endif
+    @endif
+    </div>
+</div>
+
+<script>
+function filterTrashTable() {
+    const query = document.getElementById('trashSearchInput')?.value.toLowerCase().trim() || '';
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (query === '' || text.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+@endsection
+
+@section('content')
 <div class="space-y-6">
 
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -11,6 +671,50 @@
             <p class="text-sm text-gray-500 mt-1">{{ __('app.auto_delete_note') }}</p>
         </div>
     </div>
+
+    @php
+        $expiringCount = 0;
+        $allCollections = [
+            $customers ?? [],
+            $installments ?? [],
+            $products ?? [],
+            $payments ?? [],
+            $sales ?? [],
+            $users ?? [],
+            $suppliers ?? [],
+            $categories ?? []
+        ];
+        foreach ($allCollections as $col) {
+            if ($col instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+                foreach ($col->items() as $item) {
+                    if (isset($item->deleted_at)) {
+                        $daysLeft = 30 - (int) $item->deleted_at->diffInDays(now());
+                        if ($daysLeft <= 3 && $daysLeft >= 0) {
+                            $expiringCount++;
+                        }
+                    }
+                }
+            }
+        }
+    @endphp
+
+    @if($expiringCount > 0)
+        <div class="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-amber-50 border border-red-200 p-4 flex items-center justify-between shadow-xs animate-in fade-in duration-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                    ⚠️
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-red-900">
+                        {{ app()->getLocale() === 'km' ? 'មានទិន្នន័យចំនួន ' . $expiringCount . ' ជិតដល់ថ្ងៃផុតកំណត់លុបចោលរហូត (នៅសល់ ≤ ៣ ថ្ងៃ)' : $expiringCount . ' item(s) expiring within 3 days!' }}
+                    </h4>
+                    <p class="text-xs text-red-700">
+                        {{ app()->getLocale() === 'km' ? 'ទិន្នន័យទាំងនេះនឹងត្រូវលុបបាត់ពីប្រព័ន្ធរហូតដោយស្វ័យប្រវត្តិ ក្នុងពេលឆាប់ៗនេះ ប្រសិនបើអ្នកមិនបានចុច «ស្ដារឡើងវិញ» ទេ!' : 'These items will be permanently erased soon unless restored.' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow-sm">{{ session('success') }}</div>
@@ -76,22 +780,28 @@
     @endphp
 
     @if($hasItems)
-        <div class="flex items-center justify-end gap-3 mb-4">
+    <!-- Action Bar: Real-Time Search & Bulk Buttons -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <!-- Real-Time Trash Search Bar -->
+        <div class="relative w-full sm:w-80">
+            <input type="text" id="trashSearchInput" onkeyup="filterTrashTable()" placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកទិន្នន័យក្នុងធុងសំរាម...' : 'Search trash items...' }}" class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+            <svg class="w-4 h-4 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
             <form action="{{ route('trash.restore-all', ['tab' => $tab]) }}" method="POST"
                   onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ស្តារទិន្នន័យទាំងអស់ក្នុងផ្នែកនេះឡើងវិញមែនទេ?' : 'Are you sure you want to restore all items in this section?' }}')">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-sm">
-                    <i class="fas fa-undo"></i>
-                    {{ app()->getLocale() === 'km' ? 'ស្តារឡើងវិញទាំងអស់' : 'Restore All' }}
+                <button type="submit" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span>{{ app()->getLocale() === 'km' ? 'ស្ដារឡើងវិញទាំងអស់' : 'Restore All' }}</span>
                 </button>
             </form>
+
             <form action="{{ route('trash.empty', ['tab' => $tab]) }}" method="POST"
-                  onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបចោលទិន្នន័យទាំងអស់ក្នុងផ្នែកនេះជាស្ថាពរមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានឡើយ!' : 'Are you sure you want to empty the trash for this section? This action is permanent and cannot be undone!' }}')">
+                  onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបចោលទាំងអស់មែនទេ? ទិន្នន័យមិនអាចស្ដារវិញបានឡើយ!' : 'Are you sure you want to permanently delete all items in this section?' }}')">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-sm">
-                    <i class="fas fa-trash-alt"></i>
-                    {{ app()->getLocale() === 'km' ? 'សម្អាតធុងសំរាម' : 'Empty Trash' }}
                 </button>
             </form>
         </div>
@@ -134,7 +844,15 @@
                                 </div>
                             </td>
                             <td class="px-5 py-2.5 text-gray-600">{{ $customer->phone ?? '—' }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $customer->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $customer->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $customer->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('customers.restore', $customer->id) }}" method="POST"
@@ -204,7 +922,15 @@
                             </td>
                             <td class="px-5 py-2.5 text-gray-600">{{ $installment->product?->name ?? 'N/A' }}</td>
                             <td class="px-5 py-2.5 text-gray-900 font-bold">{{ format_currency($installment->total_price) }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $installment->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $installment->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $installment->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('installments.restore', $installment->id) }}" method="POST"
@@ -274,7 +1000,15 @@
                             </td>
                             <td class="px-5 py-2.5 text-gray-900 font-bold">{{ format_currency($product->price) }}</td>
                             <td class="px-5 py-2.5 text-gray-600 font-semibold">{{ $product->stock }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $product->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $product->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $product->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('products.restore', $product->id) }}" method="POST"
@@ -350,7 +1084,15 @@
                                 <div class="text-xs text-gray-700 font-medium">{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : '—' }}</div>
                                 <div class="text-xs text-gray-400 font-medium">{{ $payment->paymentMethod?->name ?? '—' }}</div>
                             </td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $payment->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $payment->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $payment->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('payments.restore', $payment->id) }}" method="POST"
@@ -420,7 +1162,15 @@
                             </td>
                             <td class="px-5 py-2.5 text-gray-900 font-bold">{{ format_currency($sale->total) }}</td>
                             <td class="px-5 py-2.5 text-gray-600 text-xs font-medium">{{ $sale->sale_date ? \Carbon\Carbon::parse($sale->sale_date)->format('Y-m-d') : '—' }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $sale->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $sale->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $sale->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('sales.restore', $sale->id) }}" method="POST"
@@ -502,7 +1252,15 @@
                                     {{ ucfirst($user->role) }}
                                 </span>
                             </td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $user->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $user->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $user->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('users.restore', $user->id) }}" method="POST"
@@ -572,7 +1330,15 @@
                             </td>
                             <td class="px-5 py-2.5 text-gray-600 font-medium">{{ $supplier->phone ?? '—' }}</td>
                             <td class="px-5 py-2.5 text-gray-600 font-medium">{{ $supplier->email ?? '—' }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $supplier->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $supplier->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $supplier->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('suppliers.restore', $supplier->id) }}" method="POST"
@@ -635,7 +1401,15 @@
                             <td class="px-5 py-2.5 text-xs text-gray-400 font-mono">{{ $category->id }}</td>
                             <td class="px-5 py-2.5 text-gray-800 font-semibold">{{ $category->name }}</td>
                             <td class="px-5 py-2.5 text-gray-600 font-medium">{{ $category->brand ?? '—' }}</td>
-                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $category->deleted_at->format('Y-m-d H:i') }}</td>
+                            <td class="px-5 py-2.5 text-gray-600 font-mono text-xs whitespace-nowrap">
+                                <div class="font-semibold text-slate-700">{{ $category->deleted_at->format('Y-m-d H:i') }}</div>
+                                @php $daysLeft = max(0, 30 - (int) $category->deleted_at->diffInDays(now())); @endphp
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold {{ $daysLeft <= 5 ? 'text-rose-700 bg-rose-50 border-rose-200' : ($daysLeft <= 15 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200') }} border px-2 py-0.5 rounded-full shadow-2xs">
+                                        ⏱️ នៅសល់ {{ $daysLeft }} ថ្ងៃ
+                                    </span>
+                                </div>
+                            </td>
                             <td class="px-5 py-2.5 text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <form action="{{ route('categories.restore', $category->id) }}" method="POST"
@@ -680,4 +1454,19 @@
     @endif
 
 </div>
+<script>
+function filterTrashTable() {
+    const query = document.getElementById('trashSearchInput')?.value.toLowerCase().trim() || '';
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (query === '' || text.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
 @endsection

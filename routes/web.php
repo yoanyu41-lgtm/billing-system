@@ -242,6 +242,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('settings/qr-custom/{key}', [SettingController::class, 'deleteCustomQr'])->name('settings.qr.custom.delete');
         Route::post('settings/payment-method/set-default', [SettingController::class, 'setDefaultPaymentMethod'])->name('settings.payment-method.set-default');
         Route::post('settings/payment-method/toggle/{key}', [SettingController::class, 'togglePaymentMethod'])->name('settings.payment-method.toggle');
+        Route::post('settings/card-gateway', [SettingController::class, 'updateCardGatewaySettings'])->name('settings.card-gateway.update');
 
         // Contract Terms
         Route::resource('contract-terms', App\Http\Controllers\ContractTermController::class)->except(['show']);

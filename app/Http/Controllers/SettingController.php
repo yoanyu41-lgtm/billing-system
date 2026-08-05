@@ -53,6 +53,7 @@ class SettingController extends Controller
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
             'company_name_km' => 'required|string|max:255',
+            'company_subtitle' => 'nullable|string|max:255',
             'address' => 'required|string|max:500',
             'address_km' => 'required|string|max:500',
             'phone' => 'required|string|max:50',
@@ -133,6 +134,7 @@ class SettingController extends Controller
         $settingsData = [
             'company_name' => $validated['company_name'],
             'company_name_km' => $validated['company_name_km'],
+            'company_subtitle' => $validated['company_subtitle'] ?? 'Installment System',
             'company_address' => $validated['address'],
             'company_address_km' => $validated['address_km'],
             'company_phone' => $validated['phone'],

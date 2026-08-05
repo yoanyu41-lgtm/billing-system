@@ -26,9 +26,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Share the company logo URL with every view (auth pages, sidebar, etc.)
+        // Share the company logo, name, and subtitle with every view (auth pages, sidebar, etc.)
         View::composer('*', function ($view) {
             $logoUrl = asset('logo-ct.svg'); // default fallback
+            $companyName = 'COMPUTER SHOP';
+            $companySubtitle = 'Installment System';
 
             try {
                 if (Schema::hasTable('settings')) {
@@ -36,12 +38,29 @@ class AppServiceProvider extends ServiceProvider
                     if (!empty($logoPath)) {
                         $logoUrl = asset('storage/' . $logoPath);
                     }
+
+                    $locale = app()->getLocale();
+                    if ($locale === 'km') {
+                        $nameKm = Setting::where('key', 'company_name_km')->value('value');
+                        $nameEn = Setting::where('key', 'company_name')->value('value');
+                        $companyName = !empty($nameKm) ? $nameKm : (!empty($nameEn) ? $nameEn : 'COMPUTER SHOP');
+                    } else {
+                        $nameEn = Setting::where('key', 'company_name')->value('value');
+                        $companyName = !empty($nameEn) ? $nameEn : 'COMPUTER SHOP';
+                    }
+
+                    $sub = Setting::where('key', 'company_subtitle')->value('value');
+                    if (!empty($sub)) {
+                        $companySubtitle = $sub;
+                    }
                 }
             } catch (\Throwable $e) {
                 // Database not ready (e.g. during migrations) — keep default
             }
 
             $view->with('companyLogo', $logoUrl);
+            $view->with('companyName', $companyName);
+            $view->with('companySubtitle', $companySubtitle);
         });
 
         // Staff + admin can view/edit any customer

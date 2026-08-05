@@ -1,376 +1,141 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="container-fluid px-4 py-6 max-w-3xl mx-auto">
+    <!-- Back Link -->
+    <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 mb-5 transition-all no-underline">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        <span>{{ app()->getLocale() === 'km' ? 'ត្រឡប់ទៅកាន់បញ្ជីអ្នកប្រើប្រាស់' : 'Back to User List' }}</span>
+    </a>
 
-<style>
-.edit-user-container {
-    max-width: 700px;
-    margin: 0 auto;
-    padding: 0 16px;
-}
-
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #6366f1;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    transition: all 0.2s;
-}
-
-.back-link:hover {
-    color: #4f46e5;
-    transform: translateX(-4px);
-}
-
-.page-header {
-    margin-bottom: 28px;
-}
-
-.page-title {
-    font-size: 32px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 6px;
-    letter-spacing: -0.5px;
-}
-
-.page-subtitle {
-    font-size: 15px;
-    color: #64748b;
-}
-
-.form-card {
-    background: white;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 10px 40px rgba(0,0,0,0.03);
-}
-
-.profile-section {
-    padding-bottom: 28px;
-    border-bottom: 2px solid #f1f5f9;
-    margin-bottom: 28px;
-}
-
-.section-label {
-    display: block;
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 16px;
-}
-
-.profile-upload-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.profile-preview {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    font-weight: 800;
-    overflow: hidden;
-    flex-shrink: 0;
-    box-shadow: 0 8px 24px rgba(99,102,241,0.25);
-    border: 4px solid white;
-}
-
-.profile-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.upload-input-wrapper {
-    flex: 1;
-}
-
-.file-input {
-    font-size: 14px;
-    padding: 10px 14px;
-    border: 2px dashed #e2e8f0;
-    border-radius: 10px;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #f8fafc;
-}
-
-.file-input:hover {
-    border-color: #6366f1;
-    background: #f1f5f9;
-}
-
-.file-hint {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 8px;
-}
-
-.form-group {
-    margin-bottom: 24px;
-}
-
-.form-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 10px;
-}
-
-.form-label i {
-    color: #6366f1;
-    margin-right: 8px;
-    width: 16px;
-    text-align: center;
-}
-
-.form-input {
-    width: 100%;
-    padding: 13px 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 15px;
-    transition: all 0.2s;
-    background: white;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
-}
-
-.form-input:hover {
-    border-color: #cbd5e1;
-}
-
-.form-select {
-    width: 100%;
-    padding: 13px 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-size: 15px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.form-select:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
-}
-
-.form-select:hover {
-    border-color: #cbd5e1;
-}
-
-.button-group {
-    display: flex;
-    gap: 12px;
-    padding-top: 28px;
-    border-top: 2px solid #f1f5f9;
-}
-
-.btn-primary {
-    flex: 1;
-    padding: 14px 28px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.3s;
-    box-shadow: 0 4px 14px rgba(99,102,241,0.4);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99,102,241,0.5);
-}
-
-.btn-primary:active {
-    transform: translateY(0);
-}
-
-.btn-secondary {
-    flex: 1;
-    padding: 14px 28px;
-    background: #f1f5f9;
-    color: #64748b;
-    border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.btn-secondary:hover {
-    background: #e2e8f0;
-    color: #475569;
-}
-
-@media (max-width: 640px) {
-    .form-card {
-        padding: 24px 20px;
-    }
-    
-    .profile-upload-wrapper {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .button-group {
-        flex-direction: column;
-    }
-}
-</style>
-
-<div class="edit-user-container">
-    {{-- Header --}}
-    <div class="page-header">
-        <a href="{{ route('admin.users.index') }}" class="back-link">
-            <i class="fas fa-arrow-left"></i> Back to Users
-        </a>
-        <h1 class="page-title">Edit User</h1>
-        <p class="page-subtitle">Update user information and profile picture</p>
+    <!-- Page Header -->
+    <div class="mb-6 flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl font-bold shadow-2xs border border-indigo-100">
+            ✏️
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'កែប្រែព័ត៌មានអ្នកប្រើប្រាស់' : 'Edit User' }}
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">
+                {{ app()->getLocale() === 'km' ? 'កែប្រែឈ្មោះ អ៉ីមែល តួនាទី ឬពាក្យសម្ងាត់របស់អ្នកប្រើប្រាស់ ៖ ' . $user->name : 'Update profile details for ' . $user->name }}
+            </p>
+        </div>
     </div>
 
-    {{-- Form Card --}}
-    <div class="form-card">
-        <form method="POST" action="{{ route('admin.users.update', $user) }}" enctype="multipart/form-data">
-            @csrf 
+    <!-- Validation Errors -->
+    @if ($errors->any())
+        <div class="mb-6 px-4 py-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold shadow-2xs">
+            <div class="flex items-center gap-2 font-bold mb-1.5 text-rose-900">
+                <span>⚠️</span>
+                <span>{{ app()->getLocale() === 'km' ? 'សូមពិនិត្យមើលព័ត៌មានដែលបានបញ្ចូល ៖' : 'Please check the input errors:' }}</span>
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-rose-700">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Form Container Card -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 md:p-8">
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" enctype="multipart/form-data" class="space-y-6">
+            @csrf
             @method('PUT')
-            
-            {{-- Profile Picture Section --}}
-            <div class="profile-section">
-                <label class="section-label">Profile Picture</label>
-                <div class="profile-upload-wrapper">
-                    <div id="user-preview" class="profile-preview">
-                        @if($user->profile_image)
-                            <img src="{{ asset('storage/' . $user->profile_image) }}" alt="{{ $user->name }}" id="preview-img">
+
+            <!-- Profile Picture Section -->
+            <div class="pb-6 border-b border-slate-100">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+                    {{ app()->getLocale() === 'km' ? 'រូបថតប្រវត្តិរូប (Profile Picture)' : 'Profile Picture' }}
+                </label>
+                <div class="flex items-center gap-5">
+                    <div class="w-20 h-20 rounded-full bg-indigo-50 text-indigo-600 font-extrabold text-2xl flex items-center justify-center border-2 border-indigo-100 shadow-2xs overflow-hidden flex-shrink-0" id="avatarPreview">
+                        @if($user->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_image))
+                            <img src="{{ asset('storage/' . $user->profile_image) }}" class="w-full h-full object-cover">
                         @else
-                            <span id="preview-initial">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                            <span>{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                         @endif
                     </div>
-                    <div class="upload-input-wrapper">
-                        <div style="display:flex;gap:12px;margin-bottom:12px;">
-                            <label for="user_profile_image" style="flex:1;padding:10px 20px;background:#6366f1;color:white;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;text-align:center;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
-                                <i class="fas fa-upload"></i> Upload New
-                            </label>
-                            <input type="file" name="profile_image" id="user_profile_image" accept="image/*" onchange="previewUserImage(event)" style="display:none;">
-                            
-                            @if($user->profile_image)
-                            <button type="button" onclick="removeProfileImage()" style="flex:1;padding:10px 20px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
-                            <input type="hidden" name="remove_image" id="remove_image" value="0">
-                            @endif
-                        </div>
-                        <p class="file-hint">Allowed: JPG, PNG, WEBP. Max size: 2MB</p>
+                    <div class="flex-1">
+                        <label for="profile_image" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer border border-slate-200/80">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>{{ app()->getLocale() === 'km' ? 'ផ្លាស់ប្តូររូបថត' : 'Change Photo' }}</span>
+                        </label>
+                        <input type="file" name="profile_image" id="profile_image" accept="image/png,image/jpeg,image/jpg,image/webp" class="hidden" onchange="previewImage(this)">
+                        <p class="text-[11px] text-slate-400 mt-2">
+                            {{ app()->getLocale() === 'km' ? 'អនុញ្ញាត ៖ JPG, PNG, WEBP (ទំហំអតិបរមា 2MB)' : 'Allowed: JPG, PNG, WEBP (Max 2MB)' }}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {{-- Name Field --}}
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-user"></i> Full Name
-                </label>
-                <input type="text" name="name" value="{{ $user->name }}" required class="form-input" placeholder="Enter full name">
+            <!-- Form Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Full Name -->
+                <div>
+                    <label for="name" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-indigo-600">👤</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'ឈ្មោះពេញ' : 'Full Name' }} <span class="text-rose-500">*</span></span>
+                    </label>
+                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required placeholder="{{ app()->getLocale() === 'km' ? 'បញ្ចូលឈ្មោះពេញ...' : 'Enter full name...' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+                </div>
+
+                <!-- Email Address -->
+                <div>
+                    <label for="email" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-indigo-600">✉️</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'អាសយដ្ឋានអ៉ីមែល' : 'Email Address' }} <span class="text-rose-500">*</span></span>
+                    </label>
+                    <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required placeholder="example@domain.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs font-mono">
+                </div>
+
+                <!-- Password (Optional on edit) -->
+                <div>
+                    <label for="password" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-indigo-600">🔒</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'ពាក្យសម្ងាត់ថ្មី (បើចង់ផ្លាស់ប្ដូរ)' : 'New Password (Optional)' }}</span>
+                    </label>
+                    <input type="password" name="password" id="password" placeholder="{{ app()->getLocale() === 'km' ? 'ទុកទំនេរ បើមិនចង់ផ្លាស់ប្ដូរ' : 'Leave empty to keep current password' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+                </div>
+
+                <!-- Role Selection -->
+                <div>
+                    <label for="role" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-indigo-600">🛡️</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'តួនាទីក្នុងប្រព័ន្ធ' : 'User Role' }} <span class="text-rose-500">*</span></span>
+                    </label>
+                    <select name="role" id="role" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs cursor-pointer">
+                        <option value="staff" {{ old('role', $user->role) === 'staff' ? 'selected' : '' }}>👤 បុគ្គលិក (Staff)</option>
+                        <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>🛡️ អ្នកគ្រប់គ្រង (Admin)</option>
+                    </select>
+                </div>
             </div>
 
-            {{-- Email Field --}}
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-envelope"></i> Email Address
-                </label>
-                <input type="email" name="email" value="{{ $user->email }}" required class="form-input" placeholder="Enter email address">
-            </div>
-
-            {{-- Role Field --}}
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-shield-alt"></i> User Role
-                </label>
-                <select name="role" required class="form-select">
-                    <option value="staff" {{ $user->role == 'staff' ? 'selected' : '' }}>{{ __('app.staff') }}</option>
-                    <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>{{ __('app.admin') }}</option>
-                </select>
-            </div>
-
-            {{-- Buttons --}}
-            <div class="button-group">
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-save"></i> Update User
-                </button>
-                <a href="{{ route('admin.users.index') }}" class="btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
+            <!-- Form Actions -->
+            <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                <a href="{{ route('admin.users.index') }}" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all no-underline">
+                    {{ app()->getLocale() === 'km' ? 'បោះបង់' : 'Cancel' }}
                 </a>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>{{ app()->getLocale() === 'km' ? 'ធ្វើបច្ចុប្បន្នភាព' : 'Update User' }}</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-function previewUserImage(event) {
-    const file = event.target.files[0];
-    const preview = document.getElementById('user-preview');
-    
-    if (file) {
+function previewImage(input) {
+    const previewContainer = document.getElementById('avatarPreview');
+    if (input.files && input.files[0]) {
         const reader = new FileReader();
-        
         reader.onload = function(e) {
-            preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview" id="preview-img" style="width:100%;height:100%;object-fit:cover;">';
+            previewContainer.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
         }
-        
-        reader.readAsDataURL(file);
-        
-        // Reset remove flag when new image is selected
-        document.getElementById('remove_image').value = '0';
+        reader.readAsDataURL(input.files[0]);
     }
 }
-
-function removeProfileImage() {
-    const preview = document.getElementById('user-preview');
-    const userName = '{{ $user->name }}';
-    const initial = userName.charAt(0).toUpperCase();
-    
-    // Show initial instead of image
-    preview.innerHTML = '<span id="preview-initial" style="font-size:36px;font-weight:800;">' + initial + '</span>';
-    
-    // Clear file input
-    document.getElementById('user_profile_image').value = '';
-    
-    // Set remove flag
-    document.getElementById('remove_image').value = '1';
-}
 </script>
-
 @endsection
