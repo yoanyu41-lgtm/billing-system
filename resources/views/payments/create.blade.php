@@ -223,7 +223,9 @@
             </label>
 
             @php
-                $paymentMethods = collect($paymentMethods)->reject(function($m) {
+                $paymentMethods = collect($paymentMethods)->filter(function($m) {
+                    return (bool) ($m->is_active ?? true);
+                })->reject(function($m) {
                     return in_array($m->name, ['QR Code', 'Bank Transfer', 'QR']);
                 })->sortBy(function($m) {
                     return (strtolower($m->name) === 'credit card') ? 9999 : $m->id;
@@ -267,7 +269,7 @@
                         }
                     @endphp
                     <label class="relative flex flex-col items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-blue-500 method-tile group text-center select-none" data-id="{{ $method->id }}">
-                        <input type="radio" name="payment_method_id" value="{{ $method->id }}" data-type="{{ $methodKey }}" class="sr-only method-radio" {{ old('payment_method_id', $paymentMethods->first()?->id) == $method->id ? 'checked' : '' }}>
+                        <input type="radio" name="payment_method_id" value="{{ $method->id }}" data-type="{{ $methodKey }}" class="sr-only method-radio" {{ old('payment_method_id', $defaultPaymentMethodId) == $method->id ? 'checked' : '' }}>
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg mb-1.5 transition {{ $colorClass }}">
                             <i class="fas {{ $iconClass }}"></i>
                         </div>
@@ -653,6 +655,8 @@
                 qrConfig = allQrData.wing; bankName = 'Wing Bank KHQR';
             } else if (type.includes('truemoney') && (allQrData.truemoney.img || allQrData.truemoney.payload)) {
                 qrConfig = allQrData.truemoney; bankName = 'TrueMoney KHQR';
+            } else if ((type.includes('creditcard') || type.includes('card')) && allQrData.creditcard && (allQrData.creditcard.img || allQrData.creditcard.payload)) {
+                qrConfig = allQrData.creditcard; bankName = 'Credit Card';
             } else if ((type.includes('qr') || type.includes('bank') || type.includes('transfer')) && (allQrData.bakong.img || allQrData.bakong.payload || allQrData.aba.img || allQrData.aba.payload)) {
                 qrConfig = (allQrData.bakong.img || allQrData.bakong.payload) ? allQrData.bakong : allQrData.aba;
                 bankName = 'Bakong KHQR';

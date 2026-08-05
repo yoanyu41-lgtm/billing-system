@@ -36,6 +36,7 @@ class TelegramLogController extends Controller
             'qr_acleda'    => ['label' => 'ACLEDA KHQR',       'icon' => 'acleda'],
             'qr_wing'      => ['label' => 'Wing KHQR',         'icon' => 'wing'],
             'qr_truemoney' => ['label' => 'TrueMoney KHQR',    'icon' => 'truemoney'],
+            'qr_creditcard' => ['label' => 'Credit Card',      'icon' => 'card'],
             'qr_bakong'    => ['label' => 'Bakong KHQR',       'icon' => 'bakong'],
             'company_bank_qr' => ['label' => 'QR Code ធនាគារ (Default)', 'icon' => 'default'],
         ];

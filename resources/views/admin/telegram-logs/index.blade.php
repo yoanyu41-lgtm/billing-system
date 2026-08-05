@@ -44,6 +44,12 @@
                 <i class="fas fa-history text-base"></i>
                 <span>{{ $L('ប្រវត្តិផ្ញើសារ (Message Logs)', 'Message Logs') }}</span>
             </button>
+
+            {{-- Tab 3 Button --}}
+            <button onclick="switchTab('settings-tab')" id="btn-settings-tab" class="tab-btn pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-slate-800 flex items-center gap-2 border-0 bg-transparent cursor-pointer transition">
+                <i class="fas fa-cog text-base"></i>
+                <span>{{ $L('ការកំណត់ Bot & Webhook', 'Bot Settings & Webhook') }}</span>
+            </button>
         </nav>
     </div>
 
@@ -245,6 +251,83 @@
 
             <div class="mt-4">
                 {{ $telegramLogs->links() }}
+            </div>
+        </div>
+    </div>
+
+    {{-- Tab 3: Bot Settings & Webhook Content --}}
+    <div id="content-settings-tab" class="tab-content hidden space-y-6">
+        <div class="grid gap-6 md:grid-cols-2 items-start">
+            <!-- Webhook Configuration Card -->
+            <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-100 space-y-4">
+                <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-link text-indigo-500"></i>
+                    <span>{{ $L('កំណត់ Telegram Webhook (Set Webhook)', 'Set Telegram Webhook') }}</span>
+                </h2>
+                
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    {{ $L('បញ្ចូល Webhook URL ដើម្បីទទួលដំណឹងទូទាត់ប្រាក់ពីអតិថិជនតាម Telegram Bot ដោយស្វ័យប្រវត្តិ។', 'Set the Webhook URL to automatically receive customer payment receipts via Telegram Bot.') }}
+                </p>
+
+                <form method="POST" action="{{ route('telegram-logs.set-webhook') }}" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-600 uppercase tracking-wider">Webhook Endpoint URL</label>
+                        <input type="url" name="webhook_url" value="{{ $actualWebhookUrl ?? url('/api/telegram/webhook') }}" required class="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-mono text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+
+                    <div class="rounded-lg bg-slate-50 p-3 text-xs space-y-1">
+                        <span class="font-bold text-slate-700 block">{{ $L('ស្ថានភាព Webhook បច្ចុប្បន្ន (Current Webhook Status):', 'Current Webhook Status:') }}</span>
+                        @if($actualWebhookUrl)
+                            <span class="text-emerald-600 font-mono font-bold flex items-center gap-1 break-all">
+                                <i class="fas fa-check-circle"></i> {{ $actualWebhookUrl }}
+                            </span>
+                        @else
+                            <span class="text-rose-500 font-bold flex items-center gap-1">
+                                <i class="fas fa-exclamation-triangle"></i> {{ $L('មិនទាន់បានកំណត់ Webhook ទេ (Not Configured)', 'Webhook Not Set') }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-sm border-0 cursor-pointer transition flex items-center justify-center gap-2">
+                        <i class="fas fa-plug"></i>
+                        <span>{{ $L('រក្សាទុក & កំណត់ Webhook (Set Webhook)', 'Set Webhook URL') }}</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Bot Token & Instructions Card -->
+            <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-100 space-y-4">
+                <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-robot text-purple-500"></i>
+                    <span>{{ $L('ព័ត៌មាន Bot API Token (Bot Token Info)', 'Bot Token Information') }}</span>
+                </h2>
+
+                <div class="rounded-lg bg-slate-50 p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-600">Telegram Bot Token:</span>
+                        @if($tokenConfigured)
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold border border-emerald-300">
+                                🟢 {{ $L('បានភ្ជាប់', 'Configured') }}
+                            </span>
+                        @else
+                            <span class="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold border border-rose-300">
+                                🔴 {{ $L('មិនទាន់ភ្ជាប់', 'Not Configured') }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        {{ $L('លោកអ្នកអាចកំណត់ ឬប្តូរ Telegram Bot API Token នៅក្នុងទំព័រ ការកំណត់ (General Settings)។', 'You can configure or change the Telegram Bot API Token in General Settings.') }}
+                    </p>
+
+                    <div class="pt-1">
+                        <a href="{{ route('admin.settings.index') }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition">
+                            <i class="fas fa-cog"></i>
+                            <span>{{ $L('ទៅកាន់ទំព័រ Settings (Go to Settings)', 'Go to Settings') }}</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

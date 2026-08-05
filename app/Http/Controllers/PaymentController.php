@@ -62,7 +62,22 @@ class PaymentController extends Controller
         $paymentMethods = $this->getPaymentMethods();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('payments.create', compact('installments', 'paymentMethods', 'exchangeRate'));
+        // Resolve default payment method ID from settings
+        $defaultPmKey = \App\Models\Setting::where('key', 'default_payment_method')->value('value');
+        $defaultMethodName = match($defaultPmKey) {
+            'pm_cash'    => 'Cash',
+            'pm_card'    => 'Credit Card',
+            'qr_aba'     => 'ABA Bank',
+            'qr_acleda'  => 'ACLEDA Bank',
+            'qr_wing'    => 'Wing Bank',
+            'qr_truemoney' => 'TrueMoney',
+            default      => null,
+        };
+        $defaultPaymentMethodId = $defaultMethodName
+            ? ($paymentMethods->firstWhere('name', $defaultMethodName)?->id ?? $paymentMethods->first()?->id)
+            : $paymentMethods->first()?->id;
+
+        return view('payments.create', compact('installments', 'paymentMethods', 'exchangeRate', 'defaultPaymentMethodId'));
     }
 
     public function store(Request $request)
@@ -411,8 +426,24 @@ class PaymentController extends Controller
             }
         }
 
+        $hiddenSetting = \App\Models\Setting::where('key', 'hidden_payment_methods')->value('value');
+        $hiddenList = $hiddenSetting ? json_decode($hiddenSetting, true) : [];
+        if (!is_array($hiddenList)) {
+            $hiddenList = [];
+        }
+
         return PaymentMethod::whereNotIn('name', ['QR Code', 'Bank Transfer', 'QR'])
             ->get()
+            ->reject(function ($method) use ($hiddenList) {
+                $name = strtolower($method->name);
+                if ($name === 'cash' && in_array('pm_cash', $hiddenList)) return true;
+                if ($name === 'credit card' && in_array('pm_card', $hiddenList)) return true;
+                if (str_contains($name, 'aba') && (in_array('aba_qr', $hiddenList) || in_array('qr_aba', $hiddenList))) return true;
+                if (str_contains($name, 'acleda') && (in_array('acleda_qr', $hiddenList) || in_array('qr_acleda', $hiddenList))) return true;
+                if (str_contains($name, 'wing') && (in_array('wing_qr', $hiddenList) || in_array('qr_wing', $hiddenList))) return true;
+                if (str_contains($name, 'truemoney') && (in_array('truemoney_qr', $hiddenList) || in_array('qr_truemoney', $hiddenList))) return true;
+                return false;
+            })
             ->sortBy(function ($method) {
                 return (strtolower($method->name) === 'credit card') ? 9999 : $method->id;
             })

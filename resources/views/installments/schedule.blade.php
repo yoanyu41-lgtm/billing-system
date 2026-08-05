@@ -371,6 +371,7 @@
         'qr_acleda'       => 'ACLEDA KHQR',
         'qr_wing'         => 'Wing KHQR',
         'qr_truemoney'    => 'TrueMoney KHQR',
+        'qr_creditcard'   => 'Credit Card',
         'qr_bakong'       => 'Bakong KHQR',
         'company_bank_qr' => 'QR Code ធនាគារ (Default)',
     ];

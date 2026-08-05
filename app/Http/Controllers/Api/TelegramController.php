@@ -588,6 +588,7 @@ class TelegramController extends Controller
             'qr_acleda'       => ['label' => 'ACLEDA KHQR',       'icon_label' => '🏦 ACLEDA KHQR'],
             'qr_wing'         => ['label' => 'Wing KHQR',         'icon_label' => '🏦 Wing KHQR'],
             'qr_truemoney'    => ['label' => 'TrueMoney KHQR',    'icon_label' => '🏦 TrueMoney KHQR'],
+            'qr_creditcard'   => ['label' => 'Credit Card',       'icon_label' => '💳 Credit Card'],
             'qr_bakong'       => ['label' => 'Bakong KHQR',       'icon_label' => '🏦 Bakong KHQR'],
             'company_bank_qr' => ['label' => 'QR ធនាគារ (Default)', 'icon_label' => '🏦 QR ធនាគារ'],
         ];

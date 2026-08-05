@@ -24,6 +24,10 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 
+
+
+
+
 Route::get('/', function () {
     // Redirect to dashboard if authenticated, otherwise to login
     if (auth()->check()) {
@@ -197,6 +201,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('categories', CategoryController::class)->except(['show']);
 
         // Payment Methods
+        Route::post('payment-methods/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggleStatus'])->name('payment-methods.toggle');
         Route::resource('payment-methods', PaymentMethodController::class)->except(['create', 'show', 'edit']);
 
         // Reports
@@ -231,8 +236,12 @@ Route::middleware('auth')->group(function () {
         Route::post('settings/company', [SettingController::class, 'updateCompanySettings'])->name('settings.company.update');
         Route::post('settings/qr/{key}', [SettingController::class, 'updateQrSetting'])->name('settings.qr.update');
         Route::delete('settings/qr/{key}', [SettingController::class, 'deleteQrSetting'])->name('settings.qr.delete');
+        Route::delete('settings/qr-force-delete/{key}', [SettingController::class, 'forceDeleteQrSetting'])->name('settings.qr.force-delete');
+        Route::post('settings/qr-restore/{key}', [SettingController::class, 'restoreQrSetting'])->name('settings.qr.restore');
         Route::post('settings/qr-custom', [SettingController::class, 'addCustomQr'])->name('settings.qr.custom.store');
         Route::delete('settings/qr-custom/{key}', [SettingController::class, 'deleteCustomQr'])->name('settings.qr.custom.delete');
+        Route::post('settings/payment-method/set-default', [SettingController::class, 'setDefaultPaymentMethod'])->name('settings.payment-method.set-default');
+        Route::post('settings/payment-method/toggle/{key}', [SettingController::class, 'togglePaymentMethod'])->name('settings.payment-method.toggle');
 
         // Contract Terms
         Route::resource('contract-terms', App\Http\Controllers\ContractTermController::class)->except(['show']);
