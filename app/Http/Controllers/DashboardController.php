@@ -29,10 +29,19 @@ class DashboardController extends Controller
             $directSalesMonth    = \App\Models\Sale::whereYear('sale_date', now()->year)
                                         ->whereMonth('sale_date', now()->month)->sum('total');
             $directSalesCount    = \App\Models\Sale::count();
-            // Combined revenue = installment payments + direct sales
-            $combinedIncome      = $totalIncome + $directSalesTotal;
+            
+            // Combined revenue = installment payments + penalties + direct sales
+            $totalPenaltiesPaid  = Payment::where('status', 'approved')->sum('penalty_amount');
+            $combinedIncome      = $totalIncome + $totalPenaltiesPaid + $directSalesTotal;
+
+            // Expenses & Profit
+            $totalExpense        = \Illuminate\Support\Facades\Schema::hasTable('expenses') 
+                                    ? \App\Models\Expense::sum('amount') 
+                                    : 0.00;
+            $netProfit           = max($combinedIncome - $totalExpense, 0);
 
             $activeInstallments = Installment::where('status', 'active')->count();
+            $installmentDue     = Installment::where('status', 'active')->sum('remaining_balance');
             $overdueAmount      = Installment::where('status', 'active')
                 ->where('next_due_date', '<', today())
                 ->where('remaining_balance', '>', 0)
@@ -220,6 +229,9 @@ class DashboardController extends Controller
                 'directSalesMonth',
                 'directSalesCount',
                 'combinedIncome',
+                'totalExpense',
+                'netProfit',
+                'installmentDue',
                 'exchangeRate',
                 'productTrend',
                 'customerTrend',

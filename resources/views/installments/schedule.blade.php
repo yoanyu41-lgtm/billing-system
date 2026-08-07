@@ -298,10 +298,7 @@
                             @foreach($paymentMethods as $method)
                                 @php
                                     $methodKey = strtolower(str_replace(' ', '_', $method->name));
-                                    $translatedName = __('app.' . $methodKey);
-                                    if ($translatedName === 'app.' . $methodKey) {
-                                        $translatedName = $method->name;
-                                    }
+                                    $translatedName = trans()->has('app.' . $methodKey) ? __('app.' . $methodKey) : $method->name;
                                 @endphp
                                 <option value="{{ $method->id }}" {{ $methodKey === 'qr_code' ? 'selected' : '' }}>
                                     {{ $translatedName }}

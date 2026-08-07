@@ -35,11 +35,35 @@
     $cfg = $statusConfig[$pstatus] ?? $statusConfig['pending'];
     
     $methodKey = strtolower(str_replace(' ', '_', $payment->paymentMethod->name ?? ''));
-    $methodIcon = [
-        'cash' => 'fa-money-bill-wave text-emerald-500',
-        'qr_code' => 'fa-qrcode text-blue-500',
-        'credit_card' => 'fa-credit-card text-indigo-500'
-    ][$methodKey] ?? 'fa-credit-card text-gray-500';
+    
+    $methodIcon = 'fa-money-bill-wave';
+    $methodStyle = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+
+    if (str_contains($methodKey, 'aba')) {
+        $methodIcon = 'fa-university';
+        $methodStyle = 'bg-sky-50 text-sky-600 border-sky-200';
+    } elseif (str_contains($methodKey, 'acleda')) {
+        $methodIcon = 'fa-building-columns';
+        $methodStyle = 'bg-indigo-50 text-indigo-600 border-indigo-200';
+    } elseif (str_contains($methodKey, 'wing')) {
+        $methodIcon = 'fa-wallet';
+        $methodStyle = 'bg-lime-50 text-lime-700 border-lime-200';
+    } elseif (str_contains($methodKey, 'truemoney')) {
+        $methodIcon = 'fa-mobile-screen';
+        $methodStyle = 'bg-orange-50 text-orange-600 border-orange-200';
+    } elseif (str_contains($methodKey, 'bank') || str_contains($methodKey, 'transfer')) {
+        $methodIcon = 'fa-money-check-dollar';
+        $methodStyle = 'bg-blue-50 text-blue-600 border-blue-200';
+    } elseif (str_contains($methodKey, 'qr')) {
+        $methodIcon = 'fa-qrcode';
+        $methodStyle = 'bg-purple-50 text-purple-600 border-purple-200';
+    } elseif (str_contains($methodKey, 'credit') || str_contains($methodKey, 'card')) {
+        $methodIcon = 'fa-credit-card';
+        $methodStyle = 'bg-slate-100 text-slate-700 border-slate-300';
+    } elseif (str_contains($methodKey, 'cash')) {
+        $methodIcon = 'fa-money-bill-wave';
+        $methodStyle = 'bg-emerald-50 text-emerald-600 border-emerald-200';
+    }
 @endphp
 
 <div class="container mx-auto px-4 py-8 max-w-5xl">
@@ -191,38 +215,38 @@
                         <span>{{ $L('ព័ត៌មានប្រតិបត្តិការ', 'Transaction Details') }}</span>
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex items-start gap-3">
-                            <span class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                                <i class="fas {{ $methodIcon }} text-base"></i>
+                        <div class="flex items-center gap-3.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-100">
+                            <span class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border text-base shadow-xs {{ $methodStyle }}">
+                                <i class="fas {{ $methodIcon }}"></i>
                             </span>
                             <div>
                                 <span class="text-xs text-slate-400 font-medium block">{{ __('app.payment_method') }}</span>
-                                <span class="text-base font-bold text-slate-800">
-                                    {{ __('app.' . $methodKey) ?: ($payment->paymentMethod->name ?? 'N/A') }}
+                                <span class="text-base font-bold text-slate-900">
+                                    {{ trans()->has('app.' . $methodKey) ? __('app.' . $methodKey) : ($payment->paymentMethod->name ?? 'N/A') }}
                                 </span>
                             </div>
                         </div>
 
-                        <div class="flex items-start gap-3">
-                            <span class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                                <i class="fas fa-calendar-alt text-blue-500 text-base"></i>
+                        <div class="flex items-center gap-3.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-100">
+                            <span class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center shrink-0 text-base shadow-xs">
+                                <i class="fas fa-calendar-alt"></i>
                             </span>
                             <div>
                                 <span class="text-xs text-slate-400 font-medium block">{{ __('app.date') }}</span>
-                                <span class="text-base font-bold text-slate-800">
+                                <span class="text-base font-bold text-slate-900">
                                     {{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}
                                 </span>
                             </div>
                         </div>
 
                         @if($payment->approved_by)
-                        <div class="flex items-start gap-3">
-                            <span class="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                                <i class="fas fa-user-check text-emerald-500 text-base"></i>
+                        <div class="flex items-center gap-3.5 p-3.5 bg-slate-50/80 rounded-xl border border-slate-100">
+                            <span class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0 text-base shadow-xs">
+                                <i class="fas fa-user-check"></i>
                             </span>
                             <div>
                                 <span class="text-xs text-slate-400 font-medium block">{{ $L('អនុម័តដោយ', 'Approved By') }}</span>
-                                <span class="text-base font-bold text-slate-800">
+                                <span class="text-base font-bold text-slate-900">
                                     {{ $payment->user?->name ?? 'N/A' }}
                                 </span>
                             </div>

@@ -109,17 +109,38 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @php
                                 $methodKey = strtolower(str_replace(' ', '_', $payment->paymentMethod->name ?? ''));
-                                $badgeColor = 'bg-gray-50 text-gray-700 border-gray-100';
-                                if ($methodKey === 'cash') {
-                                    $badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                                } elseif ($methodKey === 'qr_code') {
-                                    $badgeColor = 'bg-blue-50 text-blue-700 border-blue-100';
-                                } elseif ($methodKey === 'credit_card') {
-                                    $badgeColor = 'bg-purple-50 text-purple-700 border-purple-100';
+                                $badgeColor = 'bg-slate-50 text-slate-700 border-slate-200';
+                                $mIcon = 'fa-money-bill-wave';
+
+                                if (str_contains($methodKey, 'aba')) {
+                                    $badgeColor = 'bg-sky-50 text-sky-700 border-sky-200';
+                                    $mIcon = 'fa-university';
+                                } elseif (str_contains($methodKey, 'acleda')) {
+                                    $badgeColor = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                                    $mIcon = 'fa-building-columns';
+                                } elseif (str_contains($methodKey, 'wing')) {
+                                    $badgeColor = 'bg-lime-50 text-lime-800 border-lime-200';
+                                    $mIcon = 'fa-wallet';
+                                } elseif (str_contains($methodKey, 'truemoney')) {
+                                    $badgeColor = 'bg-orange-50 text-orange-700 border-orange-200';
+                                    $mIcon = 'fa-mobile-screen';
+                                } elseif (str_contains($methodKey, 'bank') || str_contains($methodKey, 'transfer')) {
+                                    $badgeColor = 'bg-blue-50 text-blue-700 border-blue-200';
+                                    $mIcon = 'fa-money-check-dollar';
+                                } elseif (str_contains($methodKey, 'qr')) {
+                                    $badgeColor = 'bg-purple-50 text-purple-700 border-purple-200';
+                                    $mIcon = 'fa-qrcode';
+                                } elseif (str_contains($methodKey, 'credit') || str_contains($methodKey, 'card')) {
+                                    $badgeColor = 'bg-slate-100 text-slate-700 border-slate-300';
+                                    $mIcon = 'fa-credit-card';
+                                } elseif (str_contains($methodKey, 'cash')) {
+                                    $badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                    $mIcon = 'fa-money-bill-wave';
                                 }
                             @endphp
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold border {{ $badgeColor }}">
-                                {{ __('app.' . $methodKey) ?: ($payment->paymentMethod->name ?? 'N/A') }}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border {{ $badgeColor }}">
+                                <i class="fas {{ $mIcon }}"></i>
+                                <span>{{ trans()->has('app.' . $methodKey) ? __('app.' . $methodKey) : ($payment->paymentMethod->name ?? 'N/A') }}</span>
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">

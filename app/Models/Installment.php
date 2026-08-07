@@ -195,14 +195,29 @@ class Installment extends Model
 
     public function daysLate(): int
     {
-        if (!$this->next_due_date) {
-            return 0;
+        if ($this->next_due_date) {
+            $dueDate = \Carbon\Carbon::parse($this->next_due_date)->startOfDay();
+            $today = \Carbon\Carbon::today();
+            if ($dueDate->gte($today)) {
+                return 0;
+            }
+            return (int) $dueDate->diffInDays($today);
         }
-        $dueDate = \Carbon\Carbon::parse($this->next_due_date);
-        if ($dueDate->isFuture()) {
-            return 0;
+
+        // Fallback: check payment schedule if next_due_date is missing
+        $schedule = $this->getPaymentSchedule();
+        $today = \Carbon\Carbon::today();
+        foreach ($schedule as $row) {
+            if ($row['status'] !== 'paid') {
+                $dueDate = \Carbon\Carbon::parse($row['due_date'])->startOfDay();
+                if ($dueDate->lt($today)) {
+                    return (int) $dueDate->diffInDays($today);
+                }
+                break;
+            }
         }
-        return (int) $dueDate->diffInDays(\Carbon\Carbon::today());
+
+        return 0;
     }
 
     public function calculatePenalty(): float

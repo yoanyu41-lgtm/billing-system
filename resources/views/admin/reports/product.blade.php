@@ -7,10 +7,10 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
-                <i class="fas fa-users"></i> {{ __('app.reports') }}
+                <i class="fas fa-boxes-stacked"></i> {{ __('app.reports') }}
             </div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">
-                {{ __('app.customer_report') }}
+                {{ __('app.product_report') }}
             </h1>
         </div>
         @include('admin.reports._nav')
@@ -30,13 +30,13 @@
         <!-- Filter Bar (Image 1 Standard Component) -->
         <div class="flex flex-wrap items-center gap-3 pt-2">
             <div class="inline-flex items-center p-1 bg-slate-100/90 rounded-2xl text-sm font-semibold border border-slate-200/50">
-                <a href="{{ route('admin.reports.customer', ['filter' => 'today']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'today' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.today') }}</a>
-                <a href="{{ route('admin.reports.customer', ['filter' => 'this_week']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_week' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.this_week') }}</a>
-                <a href="{{ route('admin.reports.customer', ['filter' => 'this_month']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_month' || empty($filter) ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.this_month') }}</a>
+                <a href="{{ route('admin.reports.product', ['filter' => 'today']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'today' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.today') }}</a>
+                <a href="{{ route('admin.reports.product', ['filter' => 'this_week']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_week' ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.this_week') }}</a>
+                <a href="{{ route('admin.reports.product', ['filter' => 'this_month']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_month' || empty($filter) ? 'bg-white text-blue-600 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ __('app.this_month') }}</a>
             </div>
 
-            <form method="GET" action="{{ route('admin.reports.customer') }}" class="flex flex-wrap items-center gap-2">
-                <input type="text" name="search" value="{{ $search }}" placeholder="{{ __('app.search') }}..." class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 w-56 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <form method="GET" action="{{ route('admin.reports.product') }}" class="flex flex-wrap items-center gap-2">
+                <input type="text" name="category" value="{{ $category }}" placeholder="{{ __('app.category') ?? 'ប្រភេទ' }}..." class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 w-44 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <input type="hidden" name="filter" value="custom">
                 <input type="date" name="start_date" value="{{ $startDate }}" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <span class="text-sm font-medium text-slate-400 px-1">to</span>
@@ -52,41 +52,41 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 border border-blue-100">
-                <i class="fas fa-users"></i>
+                <i class="fas fa-box"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.total_customers') }}</span>
-                <span class="text-2xl font-black text-slate-900">{{ number_format($totalCustomers) }}</span>
+                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.total_catalog_items') }}</span>
+                <span class="text-2xl font-black text-slate-900">{{ number_format($totalProducts) }}</span>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 border border-emerald-100">
-                <i class="fas fa-user-plus"></i>
+                <i class="fas fa-shopping-bag"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.new_customers') }}</span>
-                <span class="text-2xl font-black text-slate-900">{{ number_format($newCustomers) }}</span>
+                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.total_sold_units') }}</span>
+                <span class="text-2xl font-black text-slate-900">{{ number_format($totalSoldQty) }}</span>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 border border-amber-100">
-                <i class="fas fa-user-check"></i>
+                <i class="fas fa-boxes-packing"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.active_borrowers') }}</span>
-                <span class="text-2xl font-black text-slate-900">{{ number_format($activeCustomers) }}</span>
+                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.available_stock') }}</span>
+                <span class="text-2xl font-black text-slate-900">{{ number_format($inStock) }}</span>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl shrink-0 border border-slate-200">
-                <i class="fas fa-user-clock"></i>
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0 border border-rose-100">
+                <i class="fas fa-triangle-exclamation"></i>
             </div>
             <div>
-                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.completed') }}</span>
-                <span class="text-2xl font-black text-slate-900">{{ number_format($inactiveCustomers) }}</span>
+                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">{{ __('app.low_stock_warning') }}</span>
+                <span class="text-2xl font-black text-slate-900">{{ number_format($lowStock) }}</span>
             </div>
         </div>
     </div>
@@ -97,56 +97,53 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="py-3.5 px-6">{{ __('app.customer') }}</th>
-                        <th class="py-3.5 px-6">{{ __('app.phone') ?? 'លេខទូរស័ព្ទ' }}</th>
-                        <th class="py-3.5 px-6 text-center">{{ __('app.installment') ?? 'កុងត្រា' }}</th>
-                        <th class="py-3.5 px-6 text-right">{{ __('app.amount') }}</th>
-                        <th class="py-3.5 px-6 text-right">{{ __('app.remaining_balance') }}</th>
-                        <th class="py-3.5 px-6">{{ __('app.status') }}</th>
+                        <th class="py-3.5 px-6">{{ __('app.product_name') }}</th>
+                        <th class="py-3.5 px-6">{{ __('app.category') ?? 'ប្រភេទ' }}</th>
+                        <th class="py-3.5 px-6 text-center">{{ __('app.total_sold_units') }}</th>
+                        <th class="py-3.5 px-6 text-center">{{ __('app.available_stock') }}</th>
+                        <th class="py-3.5 px-6 text-right">{{ __('app.revenue_generated') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($customers as $c)
-                    @php
-                        $contractCount = $c->installments->count();
-                        $totalVal = $c->installments->sum('total_price');
-                        $paid = 0;
-                        foreach($c->installments as $inst) {
-                            $paid += $inst->payments->where('status', 'approved')->sum('amount');
-                        }
-                        $remaining = max($totalVal - $paid, 0);
-                    @endphp
+                    @forelse($products as $p)
                     <tr class="hover:bg-slate-50/50 transition">
-                        <td class="py-4 px-6 font-bold text-slate-900">
-                            {{ $c->name }}
+                        <td class="py-4 px-6 font-bold text-slate-900 flex items-center gap-3">
+                            @if($p->image)
+                                <img src="{{ asset('storage/' . $p->image) }}" class="w-9 h-9 rounded-lg object-cover border border-slate-100">
+                            @else
+                                <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center text-xs">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            @endif
+                            <div>
+                                <span>{{ $p->name }}</span>
+                                <span class="text-xs text-slate-400 block font-normal">Code: {{ $p->code ?? '-' }}</span>
+                            </div>
                         </td>
                         <td class="py-4 px-6 font-medium text-slate-600">
-                            {{ $c->phone ?? '-' }}
+                            {{ $p->category ?: (__('app.uncategorized') ?? 'គ្មានប្រភេទ') }}
                         </td>
                         <td class="py-4 px-6 text-center font-bold text-slate-800">
-                            {{ $contractCount }}
+                            {{ $p->sold_qty }}
                         </td>
-                        <td class="py-4 px-6 text-right font-semibold text-emerald-600">
-                            ${{ number_format($paid, 2) }}
-                        </td>
-                        <td class="py-4 px-6 text-right font-black text-rose-600">
-                            ${{ number_format($remaining, 2) }}
-                        </td>
-                        <td class="py-4 px-6">
-                            @if($remaining > 0)
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
-                                    {{ __('app.active_borrowers') }}
+                        <td class="py-4 px-6 text-center">
+                            @if($p->stock <= 5)
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">
+                                    {{ $p->stock }}
                                 </span>
                             @else
                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                    {{ __('app.completed') }}
+                                    {{ $p->stock }}
                                 </span>
                             @endif
+                        </td>
+                        <td class="py-4 px-6 text-right font-black text-slate-900">
+                            ${{ number_format($p->total_revenue, 2) }}
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="py-12 text-center text-slate-400">
+                        <td colspan="5" class="py-12 text-center text-slate-400">
                             <i class="fas fa-inbox text-3xl mb-2 block"></i>
                             {{ __('app.no_data') ?? 'គ្មានទិន្នន័យ' }}
                         </td>

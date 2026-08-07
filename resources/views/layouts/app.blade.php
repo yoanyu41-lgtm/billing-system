@@ -225,7 +225,7 @@
             padding-left: 34px;
         }
         .sb-dropdown.open .sb-dropdown-menu {
-            max-height: 500px;
+            max-height: 1000px;
         }
         .sb-dropdown-menu a {
             padding: 10px 16px;
@@ -1167,29 +1167,24 @@
             </div>
 
 
-            {{-- Reports Dropdown (Admin & Staff for Daily Report) --}}
+            {{-- Reports Dropdown (Admin & Staff - 3 Main Sub-items) --}}
             @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-chart-pie"></i>
                     <span>{{ __('app.reports') }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.reports.daily') }}" class="{{ request()->routeIs('admin.reports.daily') ? 'active' : '' }}">
-                        <i class="fas fa-calendar-day"></i> {{ __('app.daily_report') }}
+                    <a href="{{ route('admin.reports.sales') }}" class="{{ request()->routeIs('admin.reports.sales') || request()->routeIs('admin.reports.daily') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
+                        <i class="fas fa-receipt"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់' : 'Sales Report' }}
                     </a>
-                    @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.reports.monthly') }}" class="{{ request()->routeIs('admin.reports.monthly') ? 'active' : '' }}">
-                        <i class="fas fa-calendar-alt"></i> {{ __('app.monthly_report') }}
+                    <a href="{{ route('admin.reports.payment') }}" class="{{ request()->routeIs('admin.reports.payment') ? 'active' : '' }}">
+                        <i class="fas fa-wallet"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការទូទាត់' : 'Payment Report' }}
                     </a>
-                    <a href="{{ route('admin.reports.customer') }}" class="{{ request()->routeIs('admin.reports.customer') ? 'active' : '' }}">
-                        <i class="fas fa-users"></i> {{ __('app.customer_report') }}
+                    <a href="{{ route('admin.reports.installment') }}" class="{{ request()->routeIs('admin.reports.installment') ? 'active' : '' }}">
+                        <i class="fas fa-file-invoice-dollar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់រំលស់' : 'Installment Report' }}
                     </a>
-                    <a href="{{ route('admin.reports.income') }}" class="{{ request()->routeIs('admin.reports.income') ? 'active' : '' }}">
-                        <i class="fas fa-dollar-sign"></i> {{ __('app.income_report') }}
-                    </a>
-                    @endif
                 </div>
             </div>
             @endif

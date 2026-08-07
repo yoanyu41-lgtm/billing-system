@@ -204,12 +204,20 @@ Route::middleware('auth')->group(function () {
         Route::post('payment-methods/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggleStatus'])->name('payment-methods.toggle');
         Route::resource('payment-methods', PaymentMethodController::class)->except(['create', 'show', 'edit']);
 
-        // Reports
+        // Reports (Standard 9 Reports)
         Route::get('reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
         Route::get('reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
+        Route::get('reports/yearly', [ReportController::class, 'yearly'])->name('reports.yearly');
+        Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+        Route::get('reports/payment', [ReportController::class, 'payment'])->name('reports.payment');
+        Route::get('reports/installment', [ReportController::class, 'installment'])->name('reports.installment');
         Route::get('reports/customer', [ReportController::class, 'customer'])->name('reports.customer');
+        Route::get('reports/product', [ReportController::class, 'product'])->name('reports.product');
+        Route::get('reports/expense', [ReportController::class, 'expense'])->name('reports.expense');
+        Route::post('expenses', [ReportController::class, 'storeExpense'])->name('expenses.store');
         Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');
         Route::get('reports/{type}/export', [ReportController::class, 'exportPdf'])->name('reports.export');
+        Route::get('reports/excel/export', [ReportController::class, 'exportExcel'])->name('reports.excel');
 
         // Suppliers, Purchases, Sales
         Route::resource('suppliers', App\Http\Controllers\SupplierController::class)->except(['show']);

@@ -23,9 +23,11 @@ class LatePaymentController extends Controller
             $query->where('created_by', $user->id);
         }
 
-        $lateInstallments = $query->whereDoesntHave('payments', function ($q) {
-            $q->where('payment_date', '>=', now()->subDays(30));
-        })->get();
+        $allActive = $query->get();
+
+        $lateInstallments = $allActive->filter(function ($installment) {
+            return $installment->daysLate() > 0;
+        })->values();
 
         return view('late-payments.index', compact('lateInstallments'));
     }

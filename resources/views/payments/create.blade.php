@@ -237,10 +237,7 @@
                 @foreach($paymentMethods as $method)
                     @php
                         $methodKey = strtolower(str_replace(' ', '_', $method->name));
-                        $translatedName = __('app.' . $methodKey);
-                        if ($translatedName === 'app.' . $methodKey) {
-                            $translatedName = $method->name;
-                        }
+                        $translatedName = trans()->has('app.' . $methodKey) ? __('app.' . $methodKey) : $method->name;
 
                         $iconClass = 'fa-money-bill-wave';
                         $colorClass = 'text-emerald-600 bg-emerald-50 border-emerald-200';

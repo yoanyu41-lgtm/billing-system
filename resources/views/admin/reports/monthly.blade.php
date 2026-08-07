@@ -1,419 +1,161 @@
 @extends('layouts.app')
 
 @section('content')
-<style>
-    /* Styling for browser printing */
-    @media print {
-        @page {
-            size: portrait;
-            margin: 15mm 10mm 15mm 10mm;
-        }
-        body {
-            background: #ffffff !important;
-            color: #000000 !important;
-        }
-        #sidebar, .topbar, header, nav, .no-print, button, form, a, .btn {
-            display: none !important;
-        }
-        .main-wrapper, .content, main {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            left: 0 !important;
-            margin-left: 0 !important;
-        }
-        #reportContent {
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            width: 100% !important;
-        }
-        .overflow-x-auto {
-            overflow: visible !important;
-            overflow-x: visible !important;
-            white-space: normal !important;
-            width: 100% !important;
-        }
-        table {
-            width: 100% !important;
-            table-layout: auto !important;
-            page-break-inside: auto;
-            font-size: 12px !important; /* Standard text size for A4 portrait print */
-        }
-        th, td {
-            padding: 8px 6px !important; /* Reclaim width with compact padding while keeping text legible */
-        }
-        tr {
-            page-break-inside: avoid !important;
-            page-break-after: auto;
-        }
-        thead {
-            display: table-header-group !important;
-        }
-        tfoot {
-            display: table-row-group !important;
-        }
-    }
-</style>
+<div class="container mx-auto px-4 py-8 max-w-7xl space-y-8">
 
-<div class="space-y-6" id="reportContent" style="background: #ffffff; padding: 20px; border-radius: 12px;">
-    {{-- Company Header for Print/PDF --}}
-    @php
-        $companyName    = \App\Models\Setting::where('key','company_name')->value('value') ?? 'CityTech';
-        $companyNameKm  = \App\Models\Setting::where('key','company_name_km')->value('value') ?? $companyName;
-        $companyPhone   = \App\Models\Setting::where('key','company_phone')->value('value');
-        $companyAddress = \App\Models\Setting::where('key','company_address')->value('value');
-        $companyAddressKm = \App\Models\Setting::where('key','company_address_km')->value('value') ?? $companyAddress;
-        $companyEmail   = \App\Models\Setting::where('key','company_email')->value('value');
-        $companyLogoRaw = \App\Models\Setting::where('key','company_logo')->value('value');
-        $companyLogo    = $companyLogoRaw ? asset('storage/' . $companyLogoRaw) : asset('logo-ct.svg');
-        $isKm = app()->getLocale() === 'km';
-        $L = fn($km, $en) => $isKm ? $km : $en;
-        $companyNameShow    = $isKm ? $companyNameKm : $companyName;
-        $companyAddressShow = $isKm ? $companyAddressKm : $companyAddress;
-    @endphp
-    <div class="hidden print:flex flex-row items-center justify-between border-b-2 border-blue-600 pb-5 mb-6" id="pdfCompanyHeader">
-        <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-full border-2 border-blue-600 flex items-center justify-center p-2 shrink-0">
-                <img src="{{ $companyLogo }}" alt="logo" class="w-full h-full object-contain">
-            </div>
-            <div>
-                <div class="text-xl font-extrabold text-blue-800 leading-tight">{{ $companyNameShow }}</div>
-                @if($companyAddressShow)
-                    <div class="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                        <i class="fas fa-location-dot text-blue-600"></i><span>{{ $companyAddressShow }}</span>
-                    </div>
-                @endif
-                @if($companyPhone)
-                    <div class="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
-                        <i class="fas fa-phone text-blue-600"></i><span>{{ $companyPhone }}</span>
-                    </div>
-                @endif
-            </div>
-        </div>
-        <div class="text-right flex flex-col justify-end">
-            <div class="text-lg font-bold text-blue-800">{{ $L('របាយការណ៍ហិរញ្ញវត្ថុ', 'FINANCIAL REPORT') }}</div>
-            <div class="text-xs text-gray-500 mt-1">{{ $L('កាលបរិច្ឆេទបោះពុម្ព៖', 'Generated on:') }} {{ now()->format('d-m-Y H:i') }}</div>
-        </div>
-    </div>
-
-    {{-- Header --}}
+    <!-- Reports Section Title -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">{{ __('app.monthly_report') ?? 'Monthly Report' }}</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ date('F', mktime(0,0,0,$month,1)) }} {{ $year }}</p>
+            <div class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-1 flex items-center gap-2">
+                <i class="fas fa-calendar-alt"></i> {{ __('app.reports') }}
+            </div>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់ប្រចាំខែ' : 'Monthly Sales Report' }}
+            </h1>
+            <p class="text-sm font-semibold text-slate-500 mt-1 font-mono">
+                {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+            </p>
         </div>
-        <form method="GET" class="flex items-center gap-2 no-print" data-html2canvas-ignore="true">
-            <select name="month" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @for($m=1; $m<=12; $m++)
-                    <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
-                @endfor
-            </select>
-            <input type="number" name="year" value="{{ $year }}"
-                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg border-0 cursor-pointer">{{ __('app.search') }}</button>
-            <button type="button" onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer">
-                <i class="fas fa-print"></i> {{ __('app.print') ?? 'បោះពុម្ព' }}
-            </button>
-            <button type="button" onclick="saveReportPDF(event)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 border-0 cursor-pointer">
-                <i class="fas fa-file-pdf"></i> PDF
+
+        @include('admin.reports._nav')
+    </div>
+
+    <!-- Filter & Action Controls Box -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            
+            <!-- Quick Filter Pills: Today, Week, Month, Year -->
+            <div class="inline-flex items-center p-1 bg-slate-100 rounded-2xl text-xs font-bold border border-slate-200/60">
+                <a href="{{ route('admin.reports.monthly', ['filter' => 'today']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'today' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">Today</a>
+                <a href="{{ route('admin.reports.monthly', ['filter' => 'this_week']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_week' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">This Week</a>
+                <a href="{{ route('admin.reports.monthly', ['filter' => 'this_month']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_month' || empty($filter) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">This Month</a>
+                <a href="{{ route('admin.reports.monthly', ['filter' => 'this_year']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_year' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">This Year</a>
+            </div>
+
+            <!-- Export Buttons: Print, Excel, PDF -->
+            <div class="flex items-center gap-2">
+                <button onclick="window.print()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border-0 cursor-pointer flex items-center gap-1.5">
+                    <i class="fas fa-print text-slate-500"></i> Print
+                </button>
+                <a href="{{ route('admin.reports.excel', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition border border-emerald-200/60 no-underline flex items-center gap-1.5">
+                    <i class="fas fa-file-excel text-emerald-600"></i> Excel
+                </a>
+                <a href="{{ route('admin.reports.export', ['type' => 'monthly', 'month' => $month, 'year' => $year]) }}" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition border border-rose-200/60 no-underline flex items-center gap-1.5">
+                    <i class="fas fa-file-pdf text-rose-600"></i> PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Custom Date Inputs + Search -->
+        <form method="GET" action="{{ route('admin.reports.monthly') }}" class="flex flex-wrap items-center gap-3 pt-1 border-t border-slate-100">
+            <input type="hidden" name="filter" value="custom">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
+                <span>Date From</span>
+                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
+                <span>Date To</span>
+                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+            <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-xs border-0 cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-search"></i> Search
             </button>
         </form>
     </div>
 
-    {{-- Summary cards --}}
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.installment') }}</p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">${{ number_format($total, 2) }}</p>
+    <!-- 4 Summary Cards (🟦 Sales, 🟩 Profit, 🟥 Expense, 🟧 Net Income) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- 🟦 Sales (Blue) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 border border-blue-100">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Total Sales</span>
+                <span class="text-2xl font-black text-blue-600">${{ number_format($monthlyRevenue, 2) }}</span>
+            </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }}</p>
-            <p class="text-2xl font-bold text-rose-600 mt-1">${{ number_format($penaltyTotal, 2) }}</p>
+
+        <!-- 🟩 Profit (Green) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 border border-emerald-100">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Profit</span>
+                <span class="text-2xl font-black text-emerald-600">${{ number_format($monthlyProfit, 2) }}</span>
+            </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.direct_sale') }}</p>
-            <p class="text-2xl font-bold text-emerald-600 mt-1">${{ number_format($salesTotal, 2) }}</p>
+
+        <!-- 🟥 Expense (Red) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0 border border-rose-100">
+                <i class="fas fa-hand-holding-dollar"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Expense</span>
+                <span class="text-2xl font-black text-rose-600">${{ number_format($monthlyExpense, 2) }}</span>
+            </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm border border-blue-100 bg-blue-50 p-5">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('app.grand_total') }}</p>
-            <p class="text-2xl font-extrabold text-blue-700 mt-1">${{ number_format($grandTotal, 2) }}</p>
+
+        <!-- 🟧 Net Income (Orange) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 border border-amber-100">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Net Income</span>
+                <span class="text-2xl font-black text-amber-600">${{ number_format($monthlyProfit - $monthlyExpense, 2) }}</span>
+            </div>
         </div>
     </div>
 
-    {{-- Installment payments --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-700">{{ __('app.payments') }}</div>
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.amount') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.status') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($payments as $payment)
-                @php
-                    $payTotal = $payment->amount + $payment->penalty_amount;
-                @endphp
-                <tr>
-                    <td class="px-5 py-3 text-gray-900 whitespace-nowrap">{{ $payment->installment->customer->name ?? '—' }}</td>
-                    <td class="px-5 py-3 text-right font-semibold text-gray-600">${{ number_format($payment->amount, 2) }}</td>
-                    <td class="px-5 py-3 text-right text-rose-600 font-medium">${{ number_format($payment->penalty_amount, 2) }}</td>
-                    <td class="px-5 py-3 text-right font-bold text-blue-700">${{ number_format($payTotal, 2) }}</td>
-                    <td class="px-5 py-3"><span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">{{ __('app.'.$payment->status) }}</span></td>
-                </tr>
-                @empty
-                <tr><td colspan="3" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_payments') }}</td></tr>
-                @endforelse
-            </tbody>
-            <tfoot class="bg-slate-50 border-t border-slate-200 font-bold text-sm">
-                <tr>
-                    <td class="px-5 py-3 text-right text-gray-900">{{ $L('សរុប', 'Total') }}:</td>
-                    <td class="px-5 py-3 text-right text-gray-600">${{ number_format($payments->sum('amount'), 2) }}</td>
-                    <td class="px-5 py-3 text-right text-rose-600">${{ number_format($payments->sum('penalty_amount'), 2) }}</td>
-                    <td class="px-5 py-3 text-right text-blue-700">${{ number_format($payments->sum(fn($p) => $p->amount + $p->penalty_amount), 2) }}</td>
-                    <td class="px-5 py-3"></td>
-                </tr>
-            </tfoot>
-        </table>
+    <!-- Chart: Sales Chart -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h3 class="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <i class="fas fa-chart-area text-blue-500"></i> Sales Chart
+        </h3>
+        <div class="h-80 w-full">
+            <canvas id="monthlyChart"></canvas>
+        </div>
     </div>
 
-    {{-- Direct sales --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-700">{{ __('app.direct_sales') }}</div>
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.invoice_no') }}</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.subtotal') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.tax') }}</th>
-                    <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @php $totalTax = 0; @endphp
-                @forelse($sales as $sale)
-                <tr>
-                    <td class="px-5 py-3 font-semibold text-blue-600">{{ $sale->invoice_no ?? ('#'.$sale->id) }}</td>
-                    <td class="px-5 py-3 text-gray-900 whitespace-nowrap">{{ $sale->customer_name ?: __('app.walk_in_customer') }}</td>
-                    <td class="px-5 py-3 text-right text-gray-700">${{ number_format($sale->subtotal, 2) }}</td>
-                    <td class="px-5 py-3 text-right text-gray-600">${{ number_format($sale->tax_amount ?? 0, 2) }}</td>
-                    <td class="px-5 py-3 text-right font-semibold">${{ number_format($sale->total, 2) }}</td>
-                </tr>
-                @php $totalTax += ($sale->tax_amount ?? 0); @endphp
-                @empty
-                <tr><td colspan="5" class="px-5 py-6 text-center text-gray-400">{{ __('app.no_sales_yet') }}</td></tr>
-                @endforelse
-                @if($sales->count() > 0)
-                <tr class="bg-blue-50 font-bold">
-                    <td colspan="2" class="px-5 py-3 text-right">{{ __('app.total') }}:</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('subtotal'), 2) }}</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($totalTax, 2) }}</td>
-                    <td class="px-5 py-3 text-right">${{ number_format($sales->sum('total'), 2) }}</td>
-                </tr>
-                @endif
-            </tbody>
-        </table>
-    </div>
 </div>
 
-{{-- jsPDF and html2canvas libraries --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-async function saveReportPDF(event) {
-    const element = document.getElementById('reportContent');
-    const filename = 'monthly-report-{{ $month }}-{{ $year }}.pdf';
-    
-    const btn = event.target.closest('button');
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-    btn.disabled = true;
-    
-    // Create a clone to render offline (prevent responsive width clipping)
-    let clone = element.cloneNode(true);
-    
-    try {
-        const pageWidth = 210; // A4 portrait width
-        const pageHeight = 297; // A4 portrait height
-        
-        // Remove no-print and filter form elements from clone
-        const noPrint = clone.querySelectorAll('.no-print, [data-html2canvas-ignore]');
-        noPrint.forEach(el => el.remove());
-        
-        // Ensure PDF company header is visible in clone
-        const pdfHeader = clone.querySelector('#pdfCompanyHeader');
-        if (pdfHeader) {
-            pdfHeader.classList.remove('hidden');
-            pdfHeader.classList.add('flex');
-        }
-        
-        // Apply offline print styling
-        clone.style.position = 'absolute';
-        clone.style.left = '-9999px';
-        clone.style.top = '-9999px';
-        clone.style.width = '1024px'; // Expanded width to fit columns with breathing room in portrait (scaled down in PDF)
-        clone.style.background = '#ffffff';
-        clone.style.padding = '30px';
-        clone.style.boxSizing = 'border-box';
-        
-        // Remove horizontal scrolling from container inside clone
-        const scrollContainers = clone.querySelectorAll('.overflow-x-auto');
-        scrollContainers.forEach(container => {
-            container.style.overflow = 'visible';
-            container.style.width = '100%';
-        });
-        
-        const tables = clone.querySelectorAll('table');
-        tables.forEach(table => {
-            table.style.width = '100%';
-            table.style.tableLayout = 'auto';
-        });
-        
-        document.body.appendChild(clone);
-        
-        // Adjust table rows to prevent page-break slicing
-        adjustPageBreaks(clone, pageWidth, pageHeight);
-        
-        // Ensure web fonts are fully loaded before rendering
-        if (document.fonts && document.fonts.ready) {
-            await document.fonts.ready;
-        }
-        
-        const canvas = await html2canvas(clone, {
-            scale: 2, // High DPI rendering
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false
-        });
-        
-        document.body.removeChild(clone);
-        clone = null;
-        
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        
-        // Calculate the height of one page in canvas pixels
-        const pageHeightInCanvasPixels = (canvasWidth * pageHeight) / pageWidth;
-        
-        let position = 0;
-        let isFirstPage = true;
-        
-        while (position < canvasHeight) {
-            if (!isFirstPage) {
-                pdf.addPage();
-            }
-            
-            // Create a temp canvas for the current page slice
-            const pageCanvas = document.createElement('canvas');
-            pageCanvas.width = canvasWidth;
-            const sliceHeight = Math.min(pageHeightInCanvasPixels, canvasHeight - position);
-            pageCanvas.height = sliceHeight;
-            
-            const ctx = pageCanvas.getContext('2d');
-            ctx.drawImage(
-                canvas,
-                0, position, canvasWidth, sliceHeight, // Source rect
-                0, 0, canvasWidth, sliceHeight        // Dest rect
-            );
-            
-            const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-            
-            // Proportional height in PDF mm
-            const imgHeightInPdf = (sliceHeight * pageWidth) / canvasWidth;
-            pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, imgHeightInPdf);
-            
-            position += pageHeightInCanvasPixels;
-            isFirstPage = false;
-        }
-        
-        pdf.save(filename);
-        
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF. Please try again.');
-        if (clone && clone.parentNode) {
-            clone.parentNode.removeChild(clone);
-        }
-    } finally {
-        btn.innerHTML = originalHTML;
-        btn.disabled = false;
-    }
-}
-
-// Adjusts the positions of table rows inside the clone DOM to prevent them from being cut in half horizontally
-function adjustPageBreaks(clone, pageWidth, pageHeight) {
-    const cloneWidth = clone.offsetWidth;
-    const pageHeightInDOM = cloneWidth * (pageHeight / pageWidth);
-    const cloneTop = clone.getBoundingClientRect().top;
-    
-    const tables = clone.querySelectorAll('table');
-    tables.forEach(table => {
-        const thead = table.querySelector('thead');
-        const headerRow = thead ? thead.querySelector('tr') : null;
-        const trs = table.querySelectorAll('tbody tr');
-        
-        trs.forEach(tr => {
-            // Skip spacer rows and cloned header rows that we inserted
-            if (tr.classList.contains('pdf-page-spacer') || tr.classList.contains('pdf-cloned-header')) {
-                return;
-            }
-            
-            const rect = tr.getBoundingClientRect();
-            const relativeTop = rect.top - cloneTop;
-            const relativeBottom = rect.bottom - cloneTop;
-            
-            const pageStart = Math.floor(relativeTop / pageHeightInDOM);
-            const pageEnd = Math.floor(relativeBottom / pageHeightInDOM);
-            
-            // If the row crosses a page boundary
-            if (pageStart !== pageEnd) {
-                const nextPageStartTop = pageEnd * pageHeightInDOM;
-                const gap = nextPageStartTop - relativeTop;
-                
-                if (gap > 0) {
-                    // Create spacer row to push the row to the start of the next page
-                    const spacer = document.createElement('tr');
-                    spacer.className = 'pdf-page-spacer no-print';
-                    spacer.style.height = gap + 'px';
-                    spacer.style.background = 'transparent';
-                    spacer.style.border = 'none';
-                    
-                    const cellCount = tr.cells.length;
-                    for (let i = 0; i < cellCount; i++) {
-                        const td = document.createElement('td');
-                        td.style.border = 'none';
-                        td.style.padding = '0';
-                        spacer.appendChild(td);
-                    }
-                    
-                    tr.parentNode.insertBefore(spacer, tr);
-                    
-                    // Insert a cloned header row right after the spacer so the new page starts with column headers
-                    if (headerRow) {
-                        const clonedHeader = headerRow.cloneNode(true);
-                        clonedHeader.classList.add('pdf-cloned-header');
-                        clonedHeader.style.background = '#f9fafb'; // Match background color of original header
-                        clonedHeader.style.borderBottom = '1px solid #e5e7eb'; // Match borders
-                        tr.parentNode.insertBefore(clonedHeader, tr);
-                    }
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {!! json_encode($chartLabels) !!},
+            datasets: [
+                {
+                    label: 'Sales ($)',
+                    data: {!! json_encode($chartRevenue) !!},
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Expense ($)',
+                    data: {!! json_encode($chartExpenses) !!},
+                    backgroundColor: '#f43f5e',
+                    borderRadius: 6
                 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: true }
             }
-        });
+        }
     });
-}
+});
 </script>
 @endsection
