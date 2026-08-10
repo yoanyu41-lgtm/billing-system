@@ -1,6 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+    $companyName = $settings['company_name'] ?? 'CityTech Computer';
+    $companyNameKm = $settings['company_name_km'] ?? 'ស៊ីធីធិច កុំព្យូទ័រ';
+    $companyPhone = $settings['company_phone'] ?? '';
+    $companyAddress = $settings['company_address'] ?? '';
+    $companyAddressKm = $settings['company_address_km'] ?? $companyAddress;
+    $companyEmail = $settings['company_email'] ?? '';
+    $companyLogo = !empty($settings['company_logo']) ? asset('storage/' . $settings['company_logo']) : null;
+@endphp
 <style>
 .schedule-table th, .schedule-table td {
     padding: 4px 6px !important;
@@ -9,35 +19,39 @@
 }
 .schedule-table th { font-size: 10px !important; }
 @media print {
-    /* Hide app chrome */
-    #sidebar, .topbar, .no-print { display: none !important; }
+    /* Main print resets */
     .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
     body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
-    @page { size: A4 portrait; margin: 10mm 12mm 15mm 12mm; }
+    @page { size: A4 portrait; margin: 6mm 8mm 6mm 8mm; }
     
     /* Remove card styling for clean print */
     .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-    .schedule-table th, .schedule-table td { border: 1px solid #000 !important; padding: 1.5px 3px !important; font-size: 9px !important; }
+    .print-header { border-bottom: 2px solid #1e1b4b !important; padding-bottom: 6px !important; margin-bottom: 8px !important; }
+    .schedule-table th, .schedule-table td { border: 1px solid #334155 !important; padding: 1.5px 3px !important; font-size: 8pt !important; line-height: 1.15 !important; }
     
-    /* Reduce vertical spacing to fit single page */
-    .mt-6 { margin-top: 10px !important; }
-    .mt-10 { margin-top: 14px !important; }
-    .pt-6 { padding-top: 6px !important; }
-    .mb-8 { margin-bottom: 6px !important; }
-    .h-16 { height: 35px !important; }
-    
-    .print-footer {
-        display: block !important;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        font-size: 8pt;
-        color: #94a3b8;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 4px;
-        text-align: left;
-    }
+    /* Force grid elements inside print-area to remain side-by-side in print */
+    .print-area .grid { display: grid !important; }
+    .print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .print-area .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+
+    /* Hide app chrome & no-print sections */
+    #sidebar, .topbar, .no-print, .no-print * { display: none !important; height: 0 !important; visibility: hidden !important; }
+}
+
+/* PDF Export mode styles */
+.pdf-export-mode .schedule-table th, 
+.pdf-export-mode .schedule-table td { 
+    border: 1px solid #334155 !important; 
+    padding: 1.5px 3px !important; 
+    font-size: 7.8pt !important; 
+    line-height: 1.15 !important;
+}
+.pdf-export-mode .no-print,
+.pdf-export-mode .no-print * {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    visibility: hidden !important;
 }
 </style>
 <div class="container mx-auto px-4 py-8 max-w-5xl">
@@ -57,14 +71,14 @@
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 {{ __('app.back') }}
             </a>
-            <button onclick="window.print()" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
+            <button type="button" onclick="window.print()" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150 cursor-pointer">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                 {{ __('app.print') }}
             </button>
         </div>
     </div>
 
-    <!-- Customer / Product summary -->
+    <!-- Customer / Product summary (Screen dashboard) -->
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-print">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -102,11 +116,69 @@
         </div>
     </div>
 
-    <!-- Schedule table -->
+    <!-- Schedule table & Official Print Container -->
     <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 print-area">
-        <div class="text-center mb-6">
-            <h3 class="text-xl font-bold text-gray-800" lang="km">កាលវិភាគបង់ប្រាក់ / Payment Schedule</h3>
+        <!-- ══════════ OFFICIAL PRINT/PDF HEADER (Visible only in Print / PDF) ══════════ -->
+        <div class="hidden print:block print-only-element border-b-2 border-indigo-900 pb-4 mb-5 print-header">
+            <div class="flex flex-row items-center justify-between gap-4">
+                <!-- Shop Logo & Details -->
+                <div class="flex items-center gap-3.5">
+                    @if($companyLogo)
+                        <img src="{{ $companyLogo }}" alt="Logo" class="w-16 h-16 object-contain rounded-xl border border-gray-200 p-1 bg-white shrink-0">
+                    @else
+                        <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-700 to-blue-600 text-white flex items-center justify-center text-xl font-black shrink-0 shadow-sm">
+                            {{ mb_substr($companyNameKm ?: $companyName, 0, 1, 'UTF-8') }}
+                        </div>
+                    @endif
+                    <div>
+                        <h1 class="text-xl font-extrabold text-gray-900 leading-tight" lang="km">
+                            {{ $companyNameKm ?: $companyName }}
+                        </h1>
+                        <p class="text-xs font-bold text-indigo-700 uppercase tracking-wide">
+                            {{ $companyName ?: 'CityTech Computer' }}
+                        </p>
+                        <div class="text-[11px] text-gray-600 mt-1 space-y-0.5">
+                            @if($companyAddressKm || $companyAddress)
+                                <p class="flex items-center gap-1">
+                                    <i class="fas fa-location-dot text-indigo-500 text-[10px]"></i>
+                                    <span>{{ app()->getLocale() === 'km' ? ($companyAddressKm ?: $companyAddress) : ($companyAddress ?: $companyAddressKm) }}</span>
+                                </p>
+                            @endif
+                            <p class="flex items-center gap-3">
+                                @if($companyPhone)
+                                    <span><i class="fas fa-phone text-indigo-500 text-[10px]"></i> {{ $companyPhone }}</span>
+                                @endif
+                                @if($companyEmail)
+                                    <span><i class="fas fa-envelope text-indigo-500 text-[10px]"></i> {{ $companyEmail }}</span>
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Metadata -->
+                <div class="text-right">
+                    <h2 class="text-lg font-bold text-indigo-900 uppercase tracking-wide" lang="km">
+                        កាលវិភាគបង់ប្រាក់
+                    </h2>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        PAYMENT SCHEDULE
+                    </p>
+                    <div class="mt-2 inline-block bg-indigo-50/70 border border-indigo-100 rounded-lg px-3 py-1.5 text-xs text-left">
+                        <div class="flex justify-between gap-3">
+                            <span class="text-gray-500 font-medium">លេខកិច្ចសន្យា:</span>
+                            <span class="font-bold text-indigo-950">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</span>
+                        </div>
+                        <div class="flex justify-between gap-3">
+                            <span class="text-gray-500 font-medium">កាលបរិច្ឆេទ:</span>
+                            <span class="font-bold text-gray-800">{{ $installment->created_at?->format('d/m/Y') ?? date('d/m/Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
         <div class="overflow-x-auto rounded-xl border border-gray-200">
             <table class="min-w-full border-collapse text-sm schedule-table">
                 <thead class="bg-gray-50">
@@ -362,6 +434,12 @@
 {{-- ===== Telegram QR Picker Modal ===== --}}
 @php
     $tgSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+    $hiddenSetting = $tgSettings['hidden_payment_methods'] ?? '[]';
+    $hiddenList = json_decode($hiddenSetting, true) ?: [];
+    $deletedSetting = $tgSettings['deleted_default_qr'] ?? '[]';
+    $deletedList = json_decode($deletedSetting, true) ?: [];
+    $allHiddenTg = array_unique(array_merge($hiddenList, $deletedList));
+
     $tgQrList = [];
     $tgQrMap = [
         'qr_aba'          => 'ABA Bank KHQR',
@@ -373,11 +451,14 @@
         'company_bank_qr' => 'QR Code ធនាគារ (Default)',
     ];
     foreach ($tgQrMap as $k => $lbl) {
+        $variant = str_replace('qr_', '', $k) . '_qr';
+        if (in_array($k, $allHiddenTg) || in_array($variant, $allHiddenTg)) continue;
         if (!empty($tgSettings[$k])) $tgQrList[] = ['key' => $k, 'label' => $lbl, 'img' => $tgSettings[$k]];
     }
     $tgCustom = json_decode($tgSettings['custom_qr_list'] ?? '[]', true) ?: [];
     foreach ($tgCustom as $ci) {
         if (!empty($ci['key']) && !empty($ci['label']) && !empty($tgSettings[$ci['key']])) {
+            if (in_array($ci['key'], $allHiddenTg)) continue;
             $tgQrList[] = ['key' => $ci['key'], 'label' => $ci['label'], 'img' => $tgSettings[$ci['key']]];
         }
     }
@@ -509,6 +590,13 @@
     function closeRecordPaymentModal() {
         const modal = document.getElementById('recordPaymentModal');
         modal.classList.add('hidden');
+    }
+</script>
+
+<!-- PDF & Print Execution Script -->
+<script>
+    function saveSchedulePDF() {
+        window.print();
     }
 </script>
 @endsection

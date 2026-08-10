@@ -30,7 +30,21 @@
             <!-- Search -->
             <div class="md:col-span-2">
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.search') }}</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('app.search_product') }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                <div class="relative">
+                    <input type="text" name="search" id="search-input" value="{{ request('search') }}" autocomplete="off"
+                           placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកតាមឈ្មោះ, លេខកូដ, ម៉ាក...' : 'Search by name, code, brand...' }}"
+                           class="w-full border border-gray-300 rounded-lg pl-4 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+
+                    @if(request('search'))
+                    <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    @endif
+
+                    <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+                </div>
             </div>
 
             <!-- Category Filter -->
@@ -96,10 +110,8 @@
                 <tr>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.image') }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'កូដទំនិញ' : 'Item Code' }}</th>
-                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'បារកូដ' : 'Barcode' }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.name') }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រភេទទំនិញ' : 'Product Group' }}</th>
-                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃដើម' : 'Supply Price' }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃលក់' : 'Price' }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ចំនួនស្តុក' : 'Stock Qty.' }}</th>
                     <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃស្តុកសរុប' : 'Stock Value' }}</th>
@@ -117,12 +129,14 @@
                             $imgSrc = $hasValidImage ? (\Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://']) ? $product->image : asset('storage/' . $product->image)) : null;
                         @endphp
                         @if($imgSrc)
-                            <img src="{{ $imgSrc }}" 
-                                 class="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-sm" 
-                                 alt="{{ $product->name }}"
-                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($product->name) }}&color=4F46E5&background=EEF2FF&bold=true';">
+                            <div class="relative group">
+                                <img src="{{ $imgSrc }}" 
+                                     class="w-20 h-20 object-contain p-1 bg-white rounded-xl border border-slate-200/90 shadow-md group-hover:scale-110 group-hover:border-blue-400 group-hover:shadow-lg transition duration-200" 
+                                     alt="{{ $product->name }}"
+                                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($product->name) }}&color=4F46E5&background=EEF2FF&bold=true';">
+                            </div>
                         @else
-                            <div class="w-12 h-12 bg-indigo-50/60 rounded-lg border border-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-xs shadow-xs">
+                            <div class="w-20 h-20 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-500 font-black text-sm shadow-xs">
                                 {{ strtoupper(substr($product->name, 0, 2)) }}
                             </div>
                         @endif
@@ -131,15 +145,6 @@
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                             {{ $product->code }}
                         </span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        @if($product->barcode)
-                            <span class="inline-flex items-center gap-1 font-mono text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                                <span>🏷️</span> {{ $product->barcode }}
-                            </span>
-                        @else
-                            <span class="text-xs text-gray-400">—</span>
-                        @endif
                     </td>
                     <td class="px-4 py-3">
                         <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
@@ -150,6 +155,9 @@
                             $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
                         @endphp
                         <div class="text-xs mt-1 flex flex-wrap gap-1 items-center">
+                            @if($product->barcode)
+                                <span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200 font-mono font-medium">🏷️ {{ $product->barcode }}</span>
+                            @endif
                             @if($product->cpu)
                                 <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: {{ $product->cpu }}</span>
                             @endif
@@ -171,9 +179,6 @@
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                         <span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md font-medium text-xs">{{ $product->category ?: '-' }}</span>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        {{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : '-' }}
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">${{ number_format($product->price, 2) }}</td>
                     <td class="px-4 py-3 whitespace-nowrap">
@@ -219,4 +224,88 @@
         {{ $products->links() }}
     </div>
 </div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = @json($suggestions ?? []);
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
 @endsection

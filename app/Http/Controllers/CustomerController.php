@@ -40,7 +40,18 @@ class CustomerController extends Controller
         }
 
         $customers = $query->latest()->paginate(10)->withQueryString();
-        return view('customers.index', compact('customers', 'type'));
+
+        $suggestions = [];
+        $allCustomers = Customer::where('type', $type)->get(['name', 'phone']);
+        foreach ($allCustomers as $c) {
+            $suggestions[] = [
+                'label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                'value' => $c->name
+            ];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('customers.index', compact('customers', 'type', 'suggestions'));
     }
 
     public function create(Request $request)

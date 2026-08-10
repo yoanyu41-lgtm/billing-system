@@ -3,15 +3,37 @@
 @section('content')
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">{{ __('app.installment_plans') }}</h1>
+            <h1 class="text-3xl font-bold text-gray-800" lang="km">{{ __('app.installment_plans') }}</h1>
             <p class="text-sm text-gray-500 mt-1">Monitor all customer installment contracts, monthly payments, and balances.</p>
         </div>
-        <a href="{{ route('installments.create') }}" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150 ease-in-out">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            {{ __('app.create_installment') }}
-        </a>
+        
+        <div class="flex flex-wrap items-center gap-2">
+            {{-- 1. កាលវិភាគបង់ប្រាក់ --}}
+            <a href="{{ route('installments.schedule-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+                <i class="fas fa-calendar-alt text-indigo-600"></i>
+                <span lang="km">កាលវិភាគបង់ប្រាក់</span>
+            </a>
+
+            {{-- 2. បោះពុម្ពកិច្ចសន្យា --}}
+            <a href="{{ route('installments.contract-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+                <i class="fas fa-file-signature text-purple-600"></i>
+                <span lang="km">បោះពុម្ពកិច្ចសន្យា</span>
+            </a>
+
+            {{-- 3. បង់ផ្ដាច់ --}}
+            <a href="{{ route('installments.pay-off-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+                <i class="fas fa-hand-holding-usd text-emerald-600"></i>
+                <span lang="km">បង់ផ្ដាច់</span>
+            </a>
+
+            {{-- 4. លិខិតបញ្ជាក់ការបង់ដាច់ --}}
+            <a href="{{ route('installments.clearance-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+                <i class="fas fa-certificate text-amber-600"></i>
+                <span lang="km">លិខិតបញ្ជាក់ការបង់ដាច់</span>
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -26,29 +48,43 @@
         </div>
     @endif
 
-    {{-- Search --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-        <form method="GET" action="{{ route('installments.index') }}" class="flex flex-col sm:flex-row gap-3">
+    {{-- Search & Create Action Row --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <form method="GET" action="{{ route('installments.index') }}" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 max-w-xl">
             <div class="relative flex-1">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input type="text" name="search" id="search-input" value="{{ request('search') }}" autocomplete="off"
-                       placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកគម្រោងបង់រំលស់ (ឈ្មោះអតិថិជន លេខទូរស័ព្ទ ឬផលិតផល)...' : 'Search installments (customer, phone, product)...' }}"
-                       class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                       placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកគម្រោងបង់រំលស់ (ឈ្មោះអតិថិជន ឬ ទំនិញ)...' : 'Search installments (customer or product)...' }}"
+                       class="w-full pl-10 pr-9 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                @if(request('search'))
+                <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                @endif
                 
                 <!-- Suggestions box -->
                 <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
             </div>
-            <button type="submit" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition-colors">
+            <button type="submit" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
                 {{ __('app.search') }}
             </button>
             @if(request('search'))
-            <a href="{{ route('installments.index') }}" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center flex items-center justify-center" style="text-decoration: none;">
+            <a href="{{ route('installments.index') }}" class="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center shrink-0">
                 {{ __('app.clear') }}
             </a>
             @endif
         </form>
+
+        {{-- Add Installment Button (Right side of Search) --}}
+        <a href="{{ route('installments.create') }}" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition shrink-0 whitespace-nowrap">
+            <i class="fas fa-plus"></i>
+            <span lang="km">{{ __('app.create_installment') }}</span>
+        </a>
     </div>
 
     <!-- Installments Table Card -->
@@ -165,6 +201,14 @@
 </div>
 
 <script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById('search-input');
         const box = document.getElementById('suggestions-box');
@@ -211,6 +255,10 @@
 
         input.addEventListener('input', function() {
             filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
         });
 
         input.addEventListener('focus', function() {

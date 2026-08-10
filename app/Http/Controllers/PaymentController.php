@@ -426,28 +426,7 @@ class PaymentController extends Controller
             }
         }
 
-        $hiddenSetting = \App\Models\Setting::where('key', 'hidden_payment_methods')->value('value');
-        $hiddenList = $hiddenSetting ? json_decode($hiddenSetting, true) : [];
-        if (!is_array($hiddenList)) {
-            $hiddenList = [];
-        }
-
-        return PaymentMethod::whereNotIn('name', ['QR Code', 'Bank Transfer', 'QR'])
-            ->get()
-            ->reject(function ($method) use ($hiddenList) {
-                $name = strtolower($method->name);
-                if ($name === 'cash' && in_array('pm_cash', $hiddenList)) return true;
-                if ($name === 'credit card' && in_array('pm_card', $hiddenList)) return true;
-                if (str_contains($name, 'aba') && (in_array('aba_qr', $hiddenList) || in_array('qr_aba', $hiddenList))) return true;
-                if (str_contains($name, 'acleda') && (in_array('acleda_qr', $hiddenList) || in_array('qr_acleda', $hiddenList))) return true;
-                if (str_contains($name, 'wing') && (in_array('wing_qr', $hiddenList) || in_array('qr_wing', $hiddenList))) return true;
-                if (str_contains($name, 'truemoney') && (in_array('truemoney_qr', $hiddenList) || in_array('qr_truemoney', $hiddenList))) return true;
-                return false;
-            })
-            ->sortBy(function ($method) {
-                return (strtolower($method->name) === 'credit card') ? 9999 : $method->id;
-            })
-            ->values();
+        return PaymentMethod::getAvailable();
     }
 
     public function restore($id)

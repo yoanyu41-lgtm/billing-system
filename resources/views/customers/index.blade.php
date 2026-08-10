@@ -24,12 +24,22 @@
         <form method="GET" class="flex flex-col sm:flex-row gap-3">
             <input type="hidden" name="type" value="{{ $type ?? 'installment' }}">
             <div class="relative flex-1">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="{{ ($type ?? 'installment') === 'direct' ? __('app.search_customer_direct') : __('app.search_customer') }}"
-                       class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <input type="text" name="search" id="search-input" value="{{ request('search') }}" autocomplete="off"
+                       placeholder="{{ app()->getLocale() === 'km' ? 'ស្វែងរកតាមឈ្មោះ ឬ លេខអត្តសញ្ញាណប័ណ្ណ...' : 'Search customer name or ID card...' }}"
+                       class="w-full pl-10 pr-9 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                @if(request('search'))
+                <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                @endif
+
+                <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
             </div>
             <button type="submit" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition-colors">
                 {{ __('app.search') }}
@@ -64,7 +74,6 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-gray-100 bg-gray-50">
-                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.id') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.customers') }}</th>
                         <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{{ __('app.phone') }}</th>
                         @if(($type ?? 'installment') !== 'direct')
@@ -78,7 +87,6 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($customers as $customer)
                     <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
-                        <td class="px-5 py-2.5 text-xs text-gray-400 font-mono">{{ $customer->id }}</td>
                         <td class="px-5 py-2.5">
                             <div class="flex items-center gap-3">
                                 @if($customer->photo)
@@ -166,7 +174,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ ($type ?? 'installment') !== 'direct' ? 7 : 4 }}" class="px-5 py-16 text-center">
+                        <td colspan="{{ ($type ?? 'installment') !== 'direct' ? 6 : 3 }}" class="px-5 py-16 text-center">
                             <div class="flex flex-col items-center gap-3">
                                 <svg class="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -187,4 +195,88 @@
     </div>
 
 </div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = @json($suggestions ?? []);
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
 @endsection

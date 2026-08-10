@@ -23,7 +23,17 @@ class SupplierController extends Controller
         }
         
         $suppliers = $query->paginate(15)->withQueryString();
-        return view('admin.suppliers.index', compact('suppliers'));
+
+        $suggestions = [];
+        $allSuppliers = Supplier::select('name', 'email', 'address')->get();
+        foreach ($allSuppliers as $s) {
+            if ($s->name) $suggestions[] = ['label' => $s->name, 'value' => $s->name];
+            if ($s->email) $suggestions[] = ['label' => $s->email, 'value' => $s->email];
+            if ($s->address) $suggestions[] = ['label' => $s->address, 'value' => $s->address];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.suppliers.index', compact('suppliers', 'suggestions'));
     }
 
     public function create()

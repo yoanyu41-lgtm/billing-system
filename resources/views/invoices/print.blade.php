@@ -64,9 +64,6 @@
             color-adjust: exact !important;
         }
         @media print {
-            .no-print {
-                display: none !important;
-            }
             body {
                 padding: 0;
                 margin: 0;
@@ -79,10 +76,16 @@
                 width: 100% !important;
                 max-width: 100% !important;
             }
-            /* Force multi-column layouts to stay side-by-side when printing */
-            .grid { display: grid !important; }
-            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+            /* Force multi-column layouts inside receipt to stay side-by-side when printing */
+            #receipt .grid { display: grid !important; }
+            #receipt .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            #receipt .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+
+            .no-print, .no-print * {
+                display: none !important;
+                height: 0 !important;
+                visibility: hidden !important;
+            }
         }
     </style>
 </head>
@@ -146,7 +149,7 @@
                 @else
                     <div class="text-xl font-extrabold text-blue-800 tracking-wide text-center">
                         @if($isSettlement)
-                            PAYOFF INVOICE
+                            INSTALLMENT PAYOFF INVOICE
                         @elseif($isFinalPayment)
                             {{ strtoupper(__('app.final_installment_invoice')) }}
                         @else

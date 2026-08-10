@@ -107,6 +107,21 @@
             color: #94a3b8 !important;
         }
 
+        /* Custom Dropdown Scrollbar */
+        .product-dropdown-menu::-webkit-scrollbar,
+        .customer-dropdown-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        .product-dropdown-menu::-webkit-scrollbar-thumb,
+        .customer-dropdown-menu::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .product-dropdown-menu::-webkit-scrollbar-thumb:hover,
+        .customer-dropdown-menu::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
         /* Font: Poppins for English, Battambang for Khmer */
         * { 
             font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
@@ -690,8 +705,8 @@
         .stat-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
-            gap: 14px; 
-            margin-bottom: 20px; 
+            gap: 16px; 
+            margin-bottom: 24px; 
         }
         
         @media (max-width: 1400px) {
@@ -711,52 +726,101 @@
                 grid-template-columns: 1fr; 
             }
         }
+
+        /* ── Premium Stat Card Design ── */
         .stat-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: var(--radius); padding: 18px 16px 14px;
-            color: #0f172a; position: relative; overflow: hidden;
-            min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;
-            box-shadow: var(--shadow-sm);
-            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; overflow: hidden;
+            min-height: 130px; display: flex; flex-direction: column; justify-content: space-between;
+            border-radius: 16px;
+            padding: 20px 22px 14px;
+            background: #fff;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 8px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        /* Colored top-accent line */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        /* Faint decorative circle top-right */
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -24px; right: -24px;
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            opacity: 0.06;
         }
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.06);
         }
         .stat-card .sc-icon {
-            width: 44px; height: 44px; border-radius: 12px;
+            width: 46px; height: 46px; border-radius: 13px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; margin-bottom: 10px;
+            font-size: 20px; margin-bottom: 14px;
+            flex-shrink: 0;
         }
-        .stat-card .sc-label { font-size: 12px; font-weight: 600; color: #64748b; }
-        .stat-card .sc-value { font-size: 28px; font-weight: 800; line-height: 1; margin-top: 4px; color: #0f172a; }
-        .stat-card .sc-trend { font-size: 11px; color: #64748b; margin-top: 6px; font-weight: 500; }
+        .stat-card .sc-label { 
+            font-size: 11.5px; font-weight: 600; 
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 2px;
+        }
+        .stat-card .sc-value { 
+            font-size: 28px; font-weight: 800; line-height: 1.1; margin-top: 2px; 
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+        .stat-card .sc-trend { 
+            font-size: 11px; margin-top: 8px; font-weight: 500;
+            color: #94a3b8;
+        }
         .stat-card .sc-wave {
-            position: absolute; bottom: 0; left: 0; right: 0; height: 36px;
-            pointer-events: none;
+            position: absolute; bottom: 0; left: 0; right: 0; height: 38px;
+            pointer-events: none; opacity: 0.07;
         }
 
-        /* ── Brand Color System for Stat Cards ── */
-        /* Blue - Information/General */
-        .sc-blue .sc-icon { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
-        .sc-blue .sc-wave polyline { stroke: #2563eb !important; stroke-opacity: 0.15; }
+        /* ── Clean Color Accent System for Stat Cards ── */
+        /* Blue */
+        .sc-blue::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+        .sc-blue::after  { background: #3b82f6; }
+        .sc-blue .sc-icon { background: #eff6ff; color: #2563eb; }
+        .sc-blue .sc-value { color: #1e3a5f; }
+        .sc-blue .sc-wave polyline { stroke: #3b82f6 !important; }
 
-        /* Green - Success/Paid */
-        .sc-green .sc-icon { background: rgba(5, 150, 105, 0.1); color: #059669; }
-        .sc-green .sc-wave polyline { stroke: #059669 !important; stroke-opacity: 0.15; }
+        /* Green */
+        .sc-green::before { background: linear-gradient(90deg, #10b981, #06b6d4); }
+        .sc-green::after  { background: #10b981; }
+        .sc-green .sc-icon { background: #ecfdf5; color: #059669; }
+        .sc-green .sc-value { color: #064e3b; }
+        .sc-green .sc-wave polyline { stroke: #10b981 !important; }
 
-        /* Yellow/Orange - Pending/Warning */
-        .sc-amber .sc-icon { background: rgba(217, 119, 6, 0.1); color: #d97706; }
-        .sc-amber .sc-wave polyline { stroke: #d97706 !important; stroke-opacity: 0.15; }
+        /* Amber */
+        .sc-amber::before { background: linear-gradient(90deg, #f59e0b, #fb923c); }
+        .sc-amber::after  { background: #f59e0b; }
+        .sc-amber .sc-icon { background: #fffbeb; color: #d97706; }
+        .sc-amber .sc-value { color: #451a03; }
+        .sc-amber .sc-wave polyline { stroke: #f59e0b !important; }
 
-        /* Red - Overdue/Error */
-        .sc-red .sc-icon { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
-        .sc-red .sc-wave polyline { stroke: #dc2626 !important; stroke-opacity: 0.15; }
+        /* Red */
+        .sc-red::before { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+        .sc-red::after  { background: #ef4444; }
+        .sc-red .sc-icon { background: #fef2f2; color: #dc2626; }
+        .sc-red .sc-value { color: #450a0a; }
+        .sc-red .sc-wave polyline { stroke: #ef4444 !important; }
 
-        /* Gray - Inactive/Disabled */
-        .sc-gray .sc-icon { background: rgba(100, 116, 139, 0.1); color: #64748b; }
-        .sc-gray .sc-wave polyline { stroke: #64748b !important; stroke-opacity: 0.15; }
+        /* Gray */
+        .sc-gray::before { background: linear-gradient(90deg, #64748b, #94a3b8); }
+        .sc-gray::after  { background: #64748b; }
+        .sc-gray .sc-icon { background: #f8fafc; color: #64748b; }
+        .sc-gray .sc-value { color: #1e293b; }
+        .sc-gray .sc-wave polyline { stroke: #64748b !important; }
 
         /* ── Cards ── */
         .card {
@@ -895,7 +959,7 @@
                 display: none;
             }
             .stat-card .sc-value {
-                font-size: 22px;
+                font-size: 24px;
             }
             .card {
                 padding: 14px 16px;
@@ -936,7 +1000,11 @@
 
         /* Print styling for clean browser printing */
         @media print {
-            #sidebar, .topbar, header, button, form, .no-print, a.bg-emerald-600, a.bg-blue-600, .bg-blue-600, .bg-emerald-600 {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            #sidebar, .topbar, header, nav, form, button, .no-print, .sb-nav, .sb-dropdown, .topbar-hamburger, .topbar-title, .topbar-right, .shortcut-btn, .btn, a.bg-emerald-600, a.bg-blue-600, .bg-blue-600, .bg-emerald-600 {
                 display: none !important;
             }
             body, .main-wrapper, .content, main {
@@ -951,6 +1019,19 @@
                 color: #000000 !important;
                 box-shadow: none !important;
             }
+            #receipt {
+                border: 2px solid #1d4ed8 !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
+                padding: 24px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                background: #ffffff !important;
+                page-break-inside: avoid !important;
+            }
+            .grid { display: grid !important; }
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
         }
     </style>
 </head>
@@ -1012,19 +1093,15 @@
                     <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_plans') }}
                     </a>
-                    @if(auth()->user()->role !== 'admin')
                     <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
                         <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
                     </a>
-                    @endif
+                    <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') || request()->routeIs('installments.contract') ? 'active' : '' }}">
+                        <i class="fas fa-file-signature"></i> {{ __('app.contracts') ?? 'បោះពុម្ពកិច្ចសន្យា' }}
+                    </a>
                     <a href="{{ route('installments.pay-off-index') }}" class="{{ request()->routeIs('installments.pay-off-index') ? 'active' : '' }}">
                         <i class="fas fa-hand-holding-usd"></i> {{ __('app.pay_off') }}
                     </a>
-                    @if(auth()->user()->role !== 'admin')
-                    <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') ? 'active' : '' }}">
-                        <i class="fas fa-file-signature"></i> {{ __('app.contracts') }}
-                    </a>
-                    @endif
                     <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
                         <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
                     </a>
@@ -1167,7 +1244,7 @@
             </div>
 
 
-            {{-- Reports Dropdown (Admin & Staff - 3 Main Sub-items) --}}
+            {{-- Reports Dropdown (Admin & Staff - 7 Main Reports) --}}
             @if(in_array(auth()->user()->role, ['admin', 'staff']))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
@@ -1176,14 +1253,26 @@
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.reports.sales') }}" class="{{ request()->routeIs('admin.reports.sales') || request()->routeIs('admin.reports.daily') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
-                        <i class="fas fa-receipt"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់' : 'Sales Report' }}
+                    <a href="{{ route('admin.reports.sales') }}" class="{{ request()->routeIs('admin.reports.sales') || request()->routeIs('admin.reports.daily') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់' : 'Sales Report' }}
                     </a>
                     <a href="{{ route('admin.reports.payment') }}" class="{{ request()->routeIs('admin.reports.payment') ? 'active' : '' }}">
                         <i class="fas fa-wallet"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការទូទាត់' : 'Payment Report' }}
                     </a>
                     <a href="{{ route('admin.reports.installment') }}" class="{{ request()->routeIs('admin.reports.installment') ? 'active' : '' }}">
                         <i class="fas fa-file-invoice-dollar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់រំលស់' : 'Installment Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.customer') }}" class="{{ request()->routeIs('admin.reports.customer') ? 'active' : '' }}">
+                        <i class="fas fa-users"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍អតិថិជន' : 'Customer Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.product') }}" class="{{ request()->routeIs('admin.reports.product') ? 'active' : '' }}">
+                        <i class="fas fa-boxes-stacked"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ផលិតផល' : 'Product Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.expense') }}" class="{{ request()->routeIs('admin.reports.expense') ? 'active' : '' }}">
+                        <i class="fas fa-hand-holding-dollar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ចំណាយ' : 'Expense Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.profit') }}" class="{{ request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
+                        <i class="fas fa-chart-line"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ' : 'Profit Report' }}
                     </a>
                 </div>
             </div>

@@ -534,6 +534,12 @@
 {{-- ===== Telegram QR Picker Modal ===== --}}
 @php
     $tgSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+    $hiddenSetting = $tgSettings['hidden_payment_methods'] ?? '[]';
+    $hiddenList = json_decode($hiddenSetting, true) ?: [];
+    $deletedSetting = $tgSettings['deleted_default_qr'] ?? '[]';
+    $deletedList = json_decode($deletedSetting, true) ?: [];
+    $allHiddenTg = array_unique(array_merge($hiddenList, $deletedList));
+
     $tgQrList = [];
     $tgQrMap = [
         'qr_aba'          => 'ABA Bank KHQR',
@@ -545,11 +551,14 @@
         'company_bank_qr' => 'QR Code ធនាគារ (Default)',
     ];
     foreach ($tgQrMap as $k => $lbl) {
+        $variant = str_replace('qr_', '', $k) . '_qr';
+        if (in_array($k, $allHiddenTg) || in_array($variant, $allHiddenTg)) continue;
         if (!empty($tgSettings[$k])) $tgQrList[] = ['key' => $k, 'label' => $lbl, 'img' => $tgSettings[$k]];
     }
     $tgCustom = json_decode($tgSettings['custom_qr_list'] ?? '[]', true) ?: [];
     foreach ($tgCustom as $ci) {
         if (!empty($ci['key']) && !empty($ci['label']) && !empty($tgSettings[$ci['key']])) {
+            if (in_array($ci['key'], $allHiddenTg)) continue;
             $tgQrList[] = ['key' => $ci['key'], 'label' => $ci['label'], 'img' => $tgSettings[$ci['key']]];
         }
     }

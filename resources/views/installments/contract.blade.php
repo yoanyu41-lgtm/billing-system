@@ -355,6 +355,16 @@
         
         <!-- Header -->
         <div class="header">
+            @php
+                $companyLogoPath = \App\Models\Setting::where('key', 'company_logo')->value('value');
+                $companyLogo = !empty($companyLogoPath) ? asset('storage/' . $companyLogoPath) : null;
+            @endphp
+            @if($companyLogo)
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 65px; object-fit: contain;">
+                </div>
+            @endif
+
             @if($isKm)
                 <h1 lang="km">កិច្ចសន្យាបង់រំលោះផលិតផល</h1>
             @else

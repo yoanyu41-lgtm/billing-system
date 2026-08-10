@@ -174,7 +174,7 @@ class InstallmentController extends Controller
         Gate::authorize('manage-installment', $installment);
         $installment->load('customer', 'product');
         $schedule = $installment->getPaymentSchedule();
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::getAvailable();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
         return view('installments.show', compact('installment', 'schedule', 'paymentMethods', 'exchangeRate'));
     }
@@ -227,7 +227,7 @@ class InstallmentController extends Controller
             return $installment;
         });
 
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::getAvailable();
 
         // Load suggestions from active installments for autocomplete dropdown
         $suggestions = [];
@@ -339,52 +339,55 @@ class InstallmentController extends Controller
         Gate::authorize('manage-installment', $installment);
 
         $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
+            'product_id' => 'nullable|exists:products,id',
             'total_price' => 'required|numeric|min:0',
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
             'duration_months' => 'required|integer|min:1',
             'status' => 'required|in:active,cancelled,completed,paid',
+            'first_payment_date' => 'nullable|date',
         ]);
 
         // Get tax settings
         $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
         $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
         
-        $product = $installment->product;
+        $product = $request->product_id ? Product::find($request->product_id) : $installment->product;
         
         // Calculate tax on total price if applicable
-        $subtotalBeforeTax = $request->total_price;
+        $subtotalBeforeTax = (float) $request->total_price;
         $taxAmount = 0;
         $taxRate = 0;
         
-        if ($taxEnabled && $product->is_taxable) {
-            // Use product-specific tax rate if set, otherwise use default
+        if ($taxEnabled && $product && $product->is_taxable) {
             $taxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
             
-            // Calculate tax based on tax type
             if ($product->tax_type === 'inclusive') {
-                // Tax is already included in price, extract it
                 $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
                 $subtotalBeforeTax = $request->total_price - $taxAmount;
-                $totalPrice = $request->total_price;
+                $totalPrice = (float) $request->total_price;
             } else {
-                // Tax is exclusive (default), add it on top
                 $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
                 $totalPrice = $subtotalBeforeTax + $taxAmount;
             }
         } else {
             $totalPrice = $subtotalBeforeTax;
         }
-        $downPayment = $request->down_payment;
-        $interestRate = $request->interest_rate ?? 0;
-        $duration = $request->duration_months;
+        $downPayment = (float) $request->down_payment;
+        $interestRate = (float) ($request->interest_rate ?? 0);
+        $duration = (int) $request->duration_months;
 
         $principal = $totalPrice - $downPayment;
         $monthlyInterest = ($principal * $interestRate / 100) / 12;
         $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
-        $remainingBalance = in_array($request->status, ['cancelled', 'completed', 'paid']) ? 0 : round($monthlyPayment * $duration, 2);
+        
+        // Calculate remaining balance based on actual payments recorded or contract terms
+        $totalPaid = $installment->payments()->where('status', 'approved')->sum('amount');
+        $totalContractValue = round($downPayment + ($monthlyPayment * $duration), 2);
+        $remainingBalance = in_array($request->status, ['cancelled', 'completed', 'paid']) ? 0 : max(0, round($totalContractValue - $downPayment - $totalPaid, 2));
 
-        $installment->update([
+        $updateData = [
             'total_price' => $totalPrice,
             'subtotal_before_tax' => $subtotalBeforeTax,
             'tax_rate' => $taxRate,
@@ -395,9 +398,22 @@ class InstallmentController extends Controller
             'monthly_payment' => $monthlyPayment,
             'remaining_balance' => $remainingBalance,
             'status' => $request->status,
-        ]);
+        ];
 
-        return redirect()->route('installments.index')->with('success', 'Installment updated successfully.');
+        if ($request->customer_id) {
+            $updateData['customer_id'] = $request->customer_id;
+        }
+        if ($request->product_id) {
+            $updateData['product_id'] = $request->product_id;
+        }
+        if ($request->first_payment_date) {
+            $updateData['first_payment_date'] = $request->first_payment_date;
+            $updateData['next_due_date'] = $request->first_payment_date;
+        }
+
+        $installment->update($updateData);
+
+        return redirect()->route('installments.index')->with('success', __('app.updated_successfully') ?? 'Installment updated successfully.');
     }
 
     public function destroy(Installment $installment)
@@ -407,21 +423,36 @@ class InstallmentController extends Controller
         return redirect()->route('installments.index')->with('success', 'Installment deleted successfully.');
     }
 
-    public function scheduleIndex()
+    private function getInstallmentSuggestions($user)
     {
-        $user = auth()->user();
-        $query = Installment::with('customer', 'product');
-
+        $suggestions = [];
+        $query = Installment::query();
         if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
         }
 
-        $installments = $query->latest()->paginate(10);
+        $customerIds = (clone $query)->pluck('customer_id')->unique()->filter();
+        $productIds = (clone $query)->pluck('product_id')->unique()->filter();
 
-        return view('installments.schedule-index', compact('installments'));
+        $customers = \App\Models\Customer::whereIn('id', $customerIds)->get(['name', 'phone']);
+        foreach ($customers as $c) {
+            $suggestions[] = [
+                'label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''),
+                'value' => $c->name
+            ];
+        }
+
+        $products = \App\Models\Product::whereIn('id', $productIds)->get(['name', 'code']);
+        foreach ($products as $p) {
+            $suggestions[] = [
+                'label' => $p->name . ($p->code ? ' (' . $p->code . ')' : ''),
+                'value' => $p->name
+            ];
+        }
+        return collect($suggestions)->unique('label')->values()->all();
     }
 
-    public function contractIndex()
+    public function scheduleIndex(Request $request)
     {
         $user = auth()->user();
         $query = Installment::with('customer', 'product');
@@ -430,9 +461,53 @@ class InstallmentController extends Controller
             $query->where('created_by', $user->id);
         }
 
-        $installments = $query->latest()->paginate(10);
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function($q) use ($search) {
+                $q->whereHas('customer', function($cq) use ($search) {
+                    $cq->where('name', 'like', "%{$search}%")
+                       ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function($pq) use ($search) {
+                    $pq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%" . ltrim($search, '#INS-') . "%");
+            });
+        }
 
-        return view('installments.contract-index', compact('installments'));
+        $installments = $query->latest('id')->paginate(10)->withQueryString();
+        $suggestions = $this->getInstallmentSuggestions($user);
+
+        return view('installments.schedule-index', compact('installments', 'suggestions'));
+    }
+
+    public function contractIndex(Request $request)
+    {
+        $user = auth()->user();
+        $query = Installment::with('customer', 'product');
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function($q) use ($search) {
+                $q->whereHas('customer', function($cq) use ($search) {
+                    $cq->where('name', 'like', "%{$search}%")
+                       ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function($pq) use ($search) {
+                    $pq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%" . ltrim($search, '#INS-') . "%");
+            });
+        }
+
+        $installments = $query->latest('id')->paginate(10)->withQueryString();
+        $suggestions = $this->getInstallmentSuggestions($user);
+
+        return view('installments.contract-index', compact('installments', 'suggestions'));
     }
 
     public function paymentSchedule(Installment $installment)
@@ -441,7 +516,7 @@ class InstallmentController extends Controller
 
         $installment->load('customer', 'product');
         $schedule = $installment->getPaymentSchedule();
-        $paymentMethods = PaymentMethod::orderBy('name')->get();
+        $paymentMethods = PaymentMethod::getAvailable();
 
         $totalPaid = $installment->payments()
             ->where('status', 'approved')

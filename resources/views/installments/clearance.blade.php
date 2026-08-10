@@ -359,6 +359,15 @@
             
             <!-- Header -->
             <div class="header">
+                @php
+                    $companyLogoPath = $settings['company_logo'] ?? null;
+                    $companyLogo = !empty($companyLogoPath) ? asset('storage/' . $companyLogoPath) : null;
+                @endphp
+                @if($companyLogo)
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 65px; object-fit: contain;">
+                    </div>
+                @endif
                 @if($isKm)
                     <h1 lang="km">លិខិតបញ្ជាក់ការបញ្ចប់ការបង់រំលស់</h1>
                     <h2>CERTIFICATE OF INSTALLMENT COMPLETION</h2>

@@ -15,12 +15,6 @@
                     : 'Select installment plan, payment method, and input amount to record payment.' }}
             </p>
         </div>
-        <div>
-            <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold">
-                <i class="fas fa-circle-info"></i>
-                {{ app()->getLocale() === 'km' ? 'ប្រព័ន្ធត្រួតពិនិត្យសមតុល្យស្វ័យប្រវត្តិ' : 'Auto Balance Control Active' }}
-            </span>
-        </div>
     </div>
 
     <!-- Dynamic Customer Info Header Card (Appears when contract selected) -->
@@ -57,7 +51,7 @@
     </div>
 
     <!-- Dynamic Dashboard Summary Cards (KPI Grid) -->
-    <div id="summaryCardsGrid" class="hidden grid grid-cols-2 md:grid-cols-4 gap-3.5 transition-all duration-300">
+    <div id="summaryCardsGrid" class="hidden grid grid-cols-1 md:grid-cols-3 gap-3.5 transition-all duration-300">
         <div class="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
             <span class="text-xs text-slate-500 font-medium uppercase tracking-wider block">{{ app()->getLocale() === 'km' ? 'សរុបកុងត្រា' : 'Total Contract' }}</span>
             <p id="kpiTotalContract" class="text-lg sm:text-xl font-bold text-slate-800 mt-1 font-mono">$0.00</p>
@@ -72,16 +66,6 @@
             <span class="text-xs text-amber-700 font-medium uppercase tracking-wider block">{{ app()->getLocale() === 'km' ? 'នៅខ្វះ' : 'Remaining' }}</span>
             <p id="kpiRemaining" class="text-lg sm:text-xl font-bold text-amber-600 mt-1 font-mono">$0.00</p>
             <span class="text-[11px] text-amber-600/80 mt-0.5 block">{{ app()->getLocale() === 'km' ? 'សមតុល្យត្រូវបង់' : 'Balance due' }}</span>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm">
-            <div class="flex justify-between items-center">
-                <span class="text-xs text-slate-500 font-medium uppercase tracking-wider block">{{ app()->getLocale() === 'km' ? 'វឌ្ឍនភាព' : 'Progress' }}</span>
-                <span id="kpiProgressText" class="text-xs font-bold text-blue-600">0%</span>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
-                <div id="kpiProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-            <span class="text-[11px] text-slate-400 mt-1.5 block">{{ app()->getLocale() === 'km' ? 'ភាគរយបង់រួច' : 'Percentage cleared' }}</span>
         </div>
     </div>
 
@@ -109,7 +93,8 @@
                 <span><i class="fas fa-file-contract text-blue-600 mr-1"></i> {{ __('app.installment_plans') }} <span class="text-red-500">*</span></span>
                 <span class="text-[11px] font-normal text-slate-400">{{ app()->getLocale() === 'km' ? 'ជ្រើសរើសដើម្បីបង្ហាញព័ត៌មានអតិថិជន' : 'Select plan to load customer details' }}</span>
             </label>
-            <select name="installment_id" required id="installmentSelect" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-slate-50/30 transition">
+            <!-- Hidden Real Select for form submission and JS compatibility -->
+            <select name="installment_id" required id="installmentSelect" class="hidden">
                 <option value="">{{ app()->getLocale() === 'km' ? '--- ជ្រើសរើសកុងត្រាបង់រំលស់អតិថិជន ---' : '--- Select Customer Contract Plan ---' }}</option>
                 @foreach($installments as $installment)
                     @php
@@ -141,6 +126,24 @@
                     </option>
                 @endforeach
             </select>
+
+            <!-- Custom Searchable Select Dropdown UI (Direct Top Input) -->
+            <div class="relative" id="customSearchableSelectWrapper">
+                <div class="relative">
+                    <input type="text" id="customSelectSearchInput" autocomplete="off"
+                           placeholder="{{ app()->getLocale() === 'km' ? '🔍 ស្វែងរកតាមឈ្មោះ, លេខកុងត្រា, ឬ ទំនិញ...' : '🔍 Search customer, contract #, or product...' }}"
+                           class="w-full pl-4 pr-9 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white transition shadow-sm font-medium text-slate-800">
+                    <button type="button" id="customSelectArrowBtn" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs transition-transform duration-200">
+                        <i class="fas fa-chevron-down" id="customSelectArrow"></i>
+                    </button>
+                </div>
+
+                <div id="customSelectDropdown" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden transition-all">
+                    <div id="customSelectOptionsList" class="max-h-64 overflow-y-auto divide-y divide-slate-50">
+                        <!-- Options populated dynamically -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- 2. Payment Amount & Quick Buttons --}}
@@ -734,8 +737,8 @@
             id('kpiTotalContract').innerText = '$' + totalPrice.toFixed(2);
             id('kpiTotalPaid').innerText = '$' + totalPaid.toFixed(2);
             id('kpiRemaining').innerText = '$' + remaining.toFixed(2);
-            id('kpiProgressText').innerText = progress + '%';
-            id('kpiProgressBar').style.width = progress + '%';
+            if (id('kpiProgressText')) id('kpiProgressText').innerText = progress + '%';
+            if (id('kpiProgressBar')) id('kpiProgressBar').style.width = progress + '%';
 
             // Show Cards
             if (infoCard) infoCard.classList.remove('hidden');
@@ -778,6 +781,164 @@
         }
 
         installmentSelect.addEventListener('change', handleInstallmentChange);
+
+        // Custom Searchable Select Dropdown Logic (Direct Top Input)
+        (function initCustomSearchableSelect() {
+            const realSelect = installmentSelect;
+            const arrow = id('customSelectArrow');
+            const arrowBtn = id('customSelectArrowBtn');
+            const dropdown = id('customSelectDropdown');
+            const searchInput = id('customSelectSearchInput');
+            const optionsList = id('customSelectOptionsList');
+
+            if (!realSelect || !dropdown || !optionsList || !searchInput) return;
+
+            const items = [];
+            Array.from(realSelect.options).forEach((opt) => {
+                items.push({
+                    value: opt.value,
+                    text: opt.text,
+                    custName: opt.getAttribute('data-customer-name') || '',
+                    custPhone: opt.getAttribute('data-customer-phone') || '',
+                    contractNo: opt.getAttribute('data-contract-no') || '',
+                    prodName: opt.getAttribute('data-product-name') || '',
+                    remaining: opt.getAttribute('data-remaining-balance') || '',
+                    monthly: opt.getAttribute('data-monthly-amount') || ''
+                });
+            });
+
+            let lastSelectedText = '';
+
+            function syncFromSelect() {
+                const selectedOpt = realSelect.options[realSelect.selectedIndex];
+                if (selectedOpt && selectedOpt.value) {
+                    const cNo = selectedOpt.getAttribute('data-contract-no');
+                    const cName = selectedOpt.getAttribute('data-customer-name');
+                    const pName = selectedOpt.getAttribute('data-product-name');
+                    lastSelectedText = `${cNo} | ${cName} | ${pName}`;
+                    searchInput.value = lastSelectedText;
+                } else {
+                    lastSelectedText = '';
+                    searchInput.value = '';
+                }
+            }
+
+            function renderOptions(query = '') {
+                const q = query.toLowerCase().trim();
+                const filtered = items.filter(item => {
+                    if (!item.value) return true;
+                    if (!q) return true;
+                    return item.text.toLowerCase().includes(q) ||
+                           item.custName.toLowerCase().includes(q) ||
+                           item.custPhone.toLowerCase().includes(q) ||
+                           item.contractNo.toLowerCase().includes(q) ||
+                           item.prodName.toLowerCase().includes(q);
+                });
+
+                if (filtered.length === 0) {
+                    optionsList.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 font-medium">មិនមានទិន្នន័យត្រូវគ្នានឹងការស្វែងរកទេ (No matching plan found)</div>`;
+                    return;
+                }
+
+                optionsList.innerHTML = filtered.map(item => {
+                    if (!item.value) {
+                        return `
+                            <div class="custom-option px-4 py-2.5 hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-400 border-b border-slate-100" data-value="">
+                                ${item.text}
+                            </div>
+                        `;
+                    }
+
+                    const isSel = realSelect.value === item.value;
+                    const activeClass = isSel ? 'bg-blue-50/70 border-l-4 border-blue-600 font-semibold' : 'hover:bg-slate-50';
+                    const checkIcon = isSel ? '<i class="fas fa-check text-blue-600 text-xs ml-2"></i>' : '';
+                    return `
+                        <div class="custom-option px-4 py-3 cursor-pointer text-xs transition duration-150 ${activeClass}" data-value="${item.value}">
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <span class="font-bold text-blue-600 font-mono">${item.contractNo}</span>
+                                <div class="flex items-center">
+                                    <span class="font-bold text-slate-800 text-sm">${item.custName}</span>
+                                    ${checkIcon}
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-slate-500">
+                                <span><i class="fas fa-box text-slate-400 mr-1"></i>${item.prodName}</span>
+                                <div class="space-x-2 font-mono">
+                                    <span class="text-amber-600 font-bold">Remaining: $${parseFloat(item.remaining || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                    <span class="text-emerald-600 font-bold">Monthly: $${parseFloat(item.monthly || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            function openDropdown() {
+                dropdown.classList.remove('hidden');
+                if (arrow) arrow.classList.add('rotate-180');
+                renderOptions(searchInput.value === lastSelectedText ? '' : searchInput.value);
+            }
+
+            function closeDropdown() {
+                dropdown.classList.add('hidden');
+                if (arrow) arrow.classList.remove('rotate-180');
+            }
+
+            searchInput.addEventListener('focus', function() {
+                this.select();
+                openDropdown();
+            });
+
+            searchInput.addEventListener('click', function() {
+                openDropdown();
+            });
+
+            if (arrowBtn) {
+                arrowBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (dropdown.classList.contains('hidden')) {
+                        searchInput.focus();
+                        openDropdown();
+                    } else {
+                        closeDropdown();
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                openDropdown();
+                renderOptions(this.value);
+            });
+
+            optionsList.addEventListener('click', function(e) {
+                const optionEl = e.target.closest('.custom-option');
+                if (optionEl) {
+                    const val = optionEl.getAttribute('data-value');
+                    realSelect.value = val;
+                    realSelect.dispatchEvent(new Event('change'));
+                    syncFromSelect();
+                    closeDropdown();
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!id('customSearchableSelectWrapper').contains(e.target)) {
+                    if (dropdown.classList.contains('hidden')) return;
+                    closeDropdown();
+                    if (!realSelect.value) {
+                        searchInput.value = '';
+                    } else {
+                        syncFromSelect();
+                    }
+                }
+            });
+
+            // Initial trigger setup
+            syncFromSelect();
+            if (realSelect.value) {
+                handleInstallmentChange();
+            }
+        })();
 
         // Quick Amount Action Buttons
         id('btnPayMonthly').addEventListener('click', function() {

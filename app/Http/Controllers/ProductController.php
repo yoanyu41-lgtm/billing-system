@@ -75,7 +75,16 @@ class ProductController extends Controller
         $categories = Category::orderBy('name')->pluck('name');
         $suppliers = Supplier::orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'categories', 'suppliers'));
+        $suggestions = [];
+        $prods = Product::get(['name', 'code', 'brand', 'model']);
+        foreach ($prods as $p) {
+            if ($p->name) $suggestions[] = ['label' => $p->name, 'value' => $p->name];
+            if ($p->code) $suggestions[] = ['label' => $p->code . ($p->name ? ' - ' . $p->name : ''), 'value' => $p->code];
+            if ($p->brand) $suggestions[] = ['label' => $p->brand, 'value' => $p->brand];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.products.index', compact('products', 'categories', 'suppliers', 'suggestions'));
     }
 
     private function exportCsv($query)
@@ -186,14 +195,25 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                  ->orWhere('code', 'like', "%$search%");
+                  ->orWhere('code', 'like', "%$search%")
+                  ->orWhere('brand', 'like', "%$search%")
+                  ->orWhere('model', 'like', "%$search%");
             });
         }
 
         $products = $query->paginate(15)->withQueryString();
         $suppliers = Supplier::orderBy('name')->get();
 
-        return view('admin.products.stock', compact('products', 'suppliers'));
+        $suggestions = [];
+        $prods = Product::get(['name', 'code', 'brand']);
+        foreach ($prods as $p) {
+            if ($p->name) $suggestions[] = ['label' => $p->name, 'value' => $p->name];
+            if ($p->code) $suggestions[] = ['label' => $p->code . ($p->name ? ' - ' . $p->name : ''), 'value' => $p->code];
+            if ($p->brand) $suggestions[] = ['label' => $p->brand, 'value' => $p->brand];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.products.stock', compact('products', 'suppliers', 'suggestions'));
     }
 
     public function create()

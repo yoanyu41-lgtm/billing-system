@@ -201,6 +201,7 @@ return [
     'personal_information'  => 'ព័ត៌មានផ្ទាល់ខ្លួន',
     'in_stock'              => 'មានស្តុក',
     'out_of_stock'          => 'អស់ស្តុក',
+    'select_customer'       => 'ជ្រើសរើសអតិថិជន',
     'search_customer'       => 'ស្វែងរកតាមឈ្មោះ, ទូរស័ព្ទ, ឬអត្តសញ្ញាណប័ណ្ណ...',
     'search_customer_direct' => 'ស្វែងរកតាមឈ្មោះ...',
     'no_customers'          => 'រកមិនឃើញអតិថិជន',

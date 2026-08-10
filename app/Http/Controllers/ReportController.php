@@ -21,26 +21,29 @@ class ReportController extends Controller
      */
     protected function resolveDateRange(Request $request)
     {
-        $filter = $request->filter ?? 'this_month';
+        $filter = $request->filter ?? 'monthly';
         $startDate = $request->start_date;
         $endDate = $request->end_date;
 
-        if ($filter === 'today') {
+        if ($filter === 'today' || $filter === 'daily') {
+            $filter = 'daily';
             $startDate = today()->toDateString();
             $endDate = today()->toDateString();
         } elseif ($filter === 'this_week') {
             $startDate = now()->startOfWeek()->toDateString();
             $endDate = now()->endOfWeek()->toDateString();
-        } elseif ($filter === 'this_month') {
+        } elseif ($filter === 'this_month' || $filter === 'monthly') {
+            $filter = 'monthly';
             $startDate = now()->startOfMonth()->toDateString();
             $endDate = now()->endOfMonth()->toDateString();
-        } elseif ($filter === 'this_year') {
+        } elseif ($filter === 'this_year' || $filter === 'yearly') {
+            $filter = 'yearly';
             $startDate = now()->startOfYear()->toDateString();
             $endDate = now()->endOfYear()->toDateString();
         } elseif ($filter === 'custom' && $startDate && $endDate) {
             // Keep custom start & end
         } else {
-            $filter = 'this_month';
+            $filter = 'monthly';
             $startDate = now()->startOfMonth()->toDateString();
             $endDate = now()->endOfMonth()->toDateString();
         }
@@ -281,20 +284,68 @@ class ReportController extends Controller
     {
         [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
 
-        $sales = Sale::with(['customer', 'items.product'])
+        $sales = Sale::with(['customer', 'items.product', 'creator'])
             ->whereBetween('sale_date', [$startDate, $endDate])
             ->latest('sale_date')
             ->get();
 
-        $totalSalesCount = $sales->count();
-        $totalSubtotal = $sales->sum('subtotal_before_tax');
-        $totalTax = $sales->sum('tax_amount');
-        $totalDiscount = $sales->sum('discount');
-        $grandTotal = $sales->sum('total');
+        $installments = Installment::with(['customer', 'product', 'user'])
+            ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
+            ->latest()
+            ->get();
+
+        // Build combined table rows for Sales Report
+        $salesList = collect();
+
+        foreach ($sales as $s) {
+            $productNames = $s->items->map(fn($item) => ($item->product->name ?? 'N/A') . ($item->quantity > 1 ? " (x{$item->quantity})" : ''))->implode(', ');
+            $totalQty = $s->items->sum('quantity') ?: 1;
+            $unitPrice = $totalQty > 0 ? ($s->subtotal_before_tax / $totalQty) : $s->total;
+
+            $salesList->push((object)[
+                'invoice_no'   => $s->invoice_no ?? ('#SALE-' . $s->id),
+                'date'         => $s->sale_date ? Carbon::parse($s->sale_date)->format('d/m/Y') : '-',
+                'customer'     => $s->customer_name ?: ($s->customer->name ?? 'Walk-in Customer'),
+                'product'      => $productNames ?: 'N/A',
+                'quantity'     => $totalQty,
+                'unit_price'   => $unitPrice,
+                'discount'     => $s->discount ?? 0,
+                'total'        => $s->total,
+                'sale_type'    => 'Direct',
+                'cashier'      => $s->creator->name ?? 'Admin',
+                'status'       => 'Completed',
+                'created_at'   => $s->created_at,
+            ]);
+        }
+
+        foreach ($installments as $inst) {
+            $salesList->push((object)[
+                'invoice_no'   => 'INS-' . str_pad($inst->id, 4, '0', STR_PAD_LEFT),
+                'date'         => $inst->created_at ? $inst->created_at->format('d/m/Y') : '-',
+                'customer'     => $inst->customer->name ?? 'N/A',
+                'product'      => $inst->product->name ?? 'N/A',
+                'quantity'     => 1,
+                'unit_price'   => $inst->total_price,
+                'discount'     => 0,
+                'total'        => $inst->total_price,
+                'sale_type'    => 'Installment',
+                'cashier'      => $inst->user->name ?? 'Admin',
+                'status'       => ucfirst($inst->status),
+                'created_at'   => $inst->created_at,
+            ]);
+        }
+
+        $salesList = $salesList->sortByDesc('created_at')->values();
+
+        $totalSales = $salesList->sum('total');
+        $numberOfInvoices = $salesList->count();
+        $totalDiscount = $salesList->sum('discount');
+        $directSalesTotal = $salesList->where('sale_type', 'Direct')->sum('total');
+        $installmentSalesTotal = $salesList->where('sale_type', 'Installment')->sum('total');
 
         return view('admin.reports.sales', compact(
-            'sales', 'filter', 'startDate', 'endDate',
-            'totalSalesCount', 'totalSubtotal', 'totalTax', 'totalDiscount', 'grandTotal'
+            'salesList', 'filter', 'startDate', 'endDate',
+            'totalSales', 'numberOfInvoices', 'totalDiscount', 'directSalesTotal', 'installmentSalesTotal'
         ));
     }
 
@@ -305,19 +356,20 @@ class ReportController extends Controller
     {
         [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
 
-        $payments = Payment::with(['installment.customer', 'paymentMethod', 'user'])
+        $payments = Payment::with(['installment.customer', 'installment.product', 'paymentMethod', 'user'])
             ->whereBetween('payment_date', [$startDate, $endDate])
             ->where('status', 'approved')
             ->latest('payment_date')
             ->get();
 
         $byMethod = [
-            'cash' => 0.00,
-            'aba' => 0.00,
-            'acleda' => 0.00,
-            'wing' => 0.00,
+            'cash'  => 0.00,
+            'khqr'  => 0.00,
+            'bank'  => 0.00,
             'other' => 0.00,
         ];
+
+        $paymentList = collect();
 
         foreach ($payments as $p) {
             $mKey = strtolower($p->paymentMethod->name ?? '');
@@ -325,21 +377,41 @@ class ReportController extends Controller
 
             if (str_contains($mKey, 'cash')) {
                 $byMethod['cash'] += $amt;
-            } elseif (str_contains($mKey, 'aba')) {
-                $byMethod['aba'] += $amt;
-            } elseif (str_contains($mKey, 'acleda')) {
-                $byMethod['acleda'] += $amt;
-            } elseif (str_contains($mKey, 'wing')) {
-                $byMethod['wing'] += $amt;
+            } elseif (str_contains($mKey, 'khqr') || str_contains($mKey, 'aba') || str_contains($mKey, 'qr')) {
+                $byMethod['khqr'] += $amt;
+            } elseif (str_contains($mKey, 'acleda') || str_contains($mKey, 'bank') || str_contains($mKey, 'wing') || str_contains($mKey, 'transfer')) {
+                $byMethod['bank'] += $amt;
             } else {
                 $byMethod['other'] += $amt;
             }
+
+            // Calculate installment month / number
+            $installmentNo = '-';
+            if ($p->installment_id) {
+                $previousCount = Payment::where('installment_id', $p->installment_id)
+                    ->where('status', 'approved')
+                    ->where('id', '<=', $p->id)
+                    ->count();
+                $installmentNo = 'Month ' . $previousCount;
+            }
+
+            $paymentList->push((object)[
+                'payment_id'     => 'PAY-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                'invoice_no'     => $p->installment_id ? ('INS-' . str_pad($p->installment_id, 4, '0', STR_PAD_LEFT)) : 'N/A',
+                'customer'       => $p->installment->customer->name ?? 'N/A',
+                'amount'         => $amt,
+                'method'         => $p->paymentMethod->name ?? 'Cash',
+                'date'           => Carbon::parse($p->payment_date)->format('d/m/Y'),
+                'installment_no' => $installmentNo,
+                'received_by'    => $p->user->name ?? 'Admin',
+                'status'         => 'Paid',
+            ]);
         }
 
-        $totalAmount = $payments->sum('amount') + $payments->sum('penalty_amount');
+        $totalPaymentReceived = $payments->sum('amount') + $payments->sum('penalty_amount');
 
         return view('admin.reports.payment', compact(
-            'payments', 'startDate', 'endDate', 'filter', 'byMethod', 'totalAmount'
+            'payments', 'paymentList', 'startDate', 'endDate', 'filter', 'byMethod', 'totalPaymentReceived'
         ));
     }
 
@@ -362,16 +434,47 @@ class ReportController extends Controller
         $activeCount = Installment::where('status', 'active')->count();
         $completedCount = Installment::where('status', 'completed')->count();
         $overdueCount = Installment::where('status', 'active')->where('next_due_date', '<', today())->count();
-        $pendingCount = Installment::where('status', 'pending')->count();
 
-        $totalContractValue = $installments->sum('total_price');
-        $totalRemaining = $installments->sum('remaining_balance');
-        $totalPaid = $totalContractValue - $totalRemaining;
+        $totalOutstanding = Installment::whereIn('status', ['active', 'pending'])->sum('remaining_balance');
+        $totalCollected = Payment::where('status', 'approved')->sum(DB::raw('amount + penalty_amount'));
+
+        $installmentList = collect();
+
+        foreach ($installments as $inst) {
+            $totalVal = (float)$inst->total_price;
+            $remaining = (float)$inst->remaining_balance;
+            $duration = (int)($inst->duration_months ?: 1);
+
+            $paidAmount = Payment::where('installment_id', $inst->id)->where('status', 'approved')->sum('amount');
+            $monthlyPay = (float)($inst->monthly_payment ?: ($totalVal / $duration));
+            $paidMonths = $monthlyPay > 0 ? min(floor($paidAmount / $monthlyPay), $duration) : 0;
+            $remainingMonths = max($duration - $paidMonths, 0);
+
+            $statusStr = ucfirst($inst->status);
+            if ($inst->status === 'active' && $inst->next_due_date && Carbon::parse($inst->next_due_date)->lt(today())) {
+                $statusStr = 'Overdue';
+            }
+
+            $installmentList->push((object)[
+                'contract_no'      => 'INS-' . str_pad($inst->id, 4, '0', STR_PAD_LEFT),
+                'customer'         => $inst->customer->name ?? 'N/A',
+                'product'          => $inst->product->name ?? 'N/A',
+                'total_amount'     => $totalVal,
+                'down_payment'     => (float)$inst->down_payment,
+                'remaining'        => $remaining,
+                'duration'         => $duration . ' Months',
+                'monthly_payment'  => $monthlyPay,
+                'paid_months'      => (int)$paidMonths,
+                'remaining_months' => (int)$remainingMonths,
+                'next_due_date'    => $inst->next_due_date ? Carbon::parse($inst->next_due_date)->format('d/m/Y') : '-',
+                'status'           => $statusStr,
+            ]);
+        }
 
         return view('admin.reports.installment', compact(
-            'installments', 'statusFilter', 'startDate', 'endDate', 'filter',
-            'activeCount', 'completedCount', 'overdueCount', 'pendingCount',
-            'totalContractValue', 'totalRemaining', 'totalPaid'
+            'installments', 'installmentList', 'statusFilter', 'startDate', 'endDate', 'filter',
+            'activeCount', 'completedCount', 'overdueCount',
+            'totalOutstanding', 'totalCollected'
         ));
     }
 
@@ -381,25 +484,58 @@ class ReportController extends Controller
     public function customer(Request $request)
     {
         [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
-        $search = $request->search;
+        $search = trim($request->search);
 
-        $query = Customer::with(['installments.payments']);
+        $query = Customer::with(['installments.payments', 'installments.product']);
 
         if ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhereHas('installments', function($iq) use ($search) {
+                      $iq->where('id', 'like', "%{$search}%");
+                  });
+            });
         }
 
         $customers = $query->get();
 
         $totalCustomers = Customer::count();
         $newCustomers = Customer::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count();
-        $activeCustomers = Customer::has('installments')->count();
-        $inactiveCustomers = max($totalCustomers - $activeCustomers, 0);
+        $activeCustomers = Customer::whereHas('installments', function($q) {
+            $q->where('remaining_balance', '>', 0);
+        })->count();
+        $completedCustomers = max($totalCustomers - $activeCustomers, 0);
+
+        $customerList = collect();
+
+        foreach ($customers as $c) {
+            $contractCount = $c->installments->count();
+            $totalPurchase = $c->installments->sum('total_price');
+            $directSalesVal = Sale::where('customer_id', $c->id)->sum('total');
+            $grandPurchase = $totalPurchase + $directSalesVal;
+
+            $paid = $directSalesVal;
+            foreach ($c->installments as $inst) {
+                $paid += $inst->payments->where('status', 'approved')->sum('amount');
+            }
+            $outstanding = max($grandPurchase - $paid, 0);
+            $statusStr = ($outstanding > 0 || $c->installments->where('status', 'active')->count() > 0) ? 'Active' : 'Completed';
+
+            $customerList->push((object)[
+                'name'          => $c->name,
+                'phone'         => $c->phone ?? '-',
+                'contracts'     => $contractCount,
+                'total_purchase'=> $grandPurchase,
+                'paid'          => $paid,
+                'outstanding'   => $outstanding,
+                'status'        => $statusStr,
+            ]);
+        }
 
         return view('admin.reports.customer', compact(
-            'customers', 'search', 'startDate', 'endDate', 'filter',
-            'totalCustomers', 'newCustomers', 'activeCustomers', 'inactiveCustomers'
+            'customers', 'customerList', 'search', 'startDate', 'endDate', 'filter',
+            'totalCustomers', 'newCustomers', 'activeCustomers', 'completedCustomers'
         ));
     }
 
@@ -420,7 +556,7 @@ class ReportController extends Controller
         $products = $query->get();
 
         $totalProducts = Product::count();
-        $inStock = Product::where('stock', '>', 0)->count();
+        $inStock = Product::sum('stock');
         $lowStock = Product::where('stock', '<=', 5)->count();
 
         foreach ($products as $prod) {
@@ -453,7 +589,7 @@ class ReportController extends Controller
         [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
         $categoryFilter = $request->category;
 
-        $query = Expense::whereBetween('expense_date', [$startDate, $endDate]);
+        $query = Expense::with('user')->whereBetween('expense_date', [$startDate, $endDate]);
 
         if ($categoryFilter) {
             $query->where('category', $categoryFilter);
@@ -500,11 +636,109 @@ class ReportController extends Controller
     }
 
     /**
+     * Profit / Income Report Method
+     */
+    public function profit(Request $request)
+    {
+        $this->ensureExpensesTableExists();
+        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+
+        $sales = Sale::with(['customer', 'items.product'])
+            ->whereBetween('sale_date', [$startDate, $endDate])
+            ->get();
+
+        $payments = Payment::with(['installment.customer', 'installment.product'])
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->where('status', 'approved')
+            ->get();
+
+        $totalExpenses = Expense::whereBetween('expense_date', [$startDate, $endDate])->sum('amount');
+
+        $ledger = collect();
+        $totalSelling = 0;
+        $totalCost = 0;
+        $totalDiscount = 0;
+
+        foreach ($sales as $s) {
+            $sellingPrice = (float)$s->subtotal_before_tax;
+            $discount = (float)($s->discount ?? 0);
+            $cost = 0;
+            foreach ($s->items as $item) {
+                $cost += (float)($item->product->cost_price ?? 0) * $item->quantity;
+            }
+
+            $netSales = $sellingPrice - $discount;
+            $grossProfit = $netSales - $cost;
+
+            $totalSelling += $sellingPrice;
+            $totalCost += $cost;
+            $totalDiscount += $discount;
+
+            $ledger->push((object)[
+                'date'          => Carbon::parse($s->sale_date),
+                'ref_no'        => $s->invoice_no ?? ('#SALE-' . $s->id),
+                'type'          => 'Direct Sale',
+                'customer'      => $s->customer_name ?: 'Walk-in Customer',
+                'selling_price' => $sellingPrice,
+                'cost_price'    => $cost,
+                'discount'      => $discount,
+                'net_sales'     => $netSales,
+                'gross_profit'  => $grossProfit,
+            ]);
+        }
+
+        foreach ($payments as $p) {
+            $amount = (float)($p->amount + $p->penalty_amount);
+            $sellingPrice = $amount;
+            $discount = 0;
+
+            $cost = 0;
+            if ($p->installment && $p->installment->product) {
+                $productCost = (float)($p->installment->product->cost_price ?? 0);
+                $contractPrice = (float)($p->installment->subtotal_before_tax ?: ($p->installment->total_price ?: 1));
+                if ($contractPrice > 0 && $productCost > 0) {
+                    $costRatio = min($productCost / $contractPrice, 1.0);
+                    $cost = round($amount * $costRatio, 2);
+                }
+            }
+
+            $netSales = $sellingPrice - $discount;
+            $grossProfit = $netSales - $cost;
+
+            $totalSelling += $sellingPrice;
+            $totalCost += $cost;
+
+            $ledger->push((object)[
+                'date'          => Carbon::parse($p->payment_date),
+                'ref_no'        => 'PAY-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                'type'          => 'Installment',
+                'customer'      => $p->installment->customer->name ?? 'N/A',
+                'selling_price' => $sellingPrice,
+                'cost_price'    => $cost,
+                'discount'      => $discount,
+                'net_sales'     => $netSales,
+                'gross_profit'  => $grossProfit,
+            ]);
+        }
+
+        $ledger = $ledger->sortByDesc('date')->values();
+
+        $netSales = $totalSelling - $totalDiscount;
+        $grossProfit = max($netSales - $totalCost, 0);
+        $netIncome = $grossProfit - $totalExpenses;
+
+        return view('admin.reports.profit', compact(
+            'ledger', 'startDate', 'endDate', 'filter',
+            'totalSelling', 'totalCost', 'totalDiscount', 'netSales', 'grossProfit', 'totalExpenses', 'netIncome'
+        ));
+    }
+
+    /**
      * Backward-compatible Income report
      */
     public function income(Request $request)
     {
-        return $this->monthly($request);
+        return $this->profit($request);
     }
 
     /**
@@ -519,7 +753,10 @@ class ReportController extends Controller
             $data['date'] = $date;
             $data['payments'] = Payment::with('installment.customer')->whereDate('payment_date', $date)->where('status', 'approved')->get();
             $data['sales'] = Sale::whereDate('sale_date', $date)->get();
-            $data['total'] = $data['payments']->sum('amount') + $data['sales']->sum('total');
+            $data['total'] = $data['payments']->sum('amount');
+            $data['penaltyTotal'] = $data['payments']->sum('penalty_amount');
+            $data['salesTotal'] = $data['sales']->sum('total');
+            $data['grandTotal'] = $data['total'] + $data['penaltyTotal'] + $data['salesTotal'];
             $view = 'admin.reports.pdf.daily';
         } else {
             $month = $request->month ?? now()->month;
@@ -528,7 +765,10 @@ class ReportController extends Controller
             $data['year'] = $year;
             $data['payments'] = Payment::with('installment.customer')->whereYear('payment_date', $year)->whereMonth('payment_date', $month)->where('status', 'approved')->get();
             $data['sales'] = Sale::whereYear('sale_date', $year)->whereMonth('sale_date', $month)->get();
-            $data['total'] = $data['payments']->sum('amount') + $data['sales']->sum('total');
+            $data['total'] = $data['payments']->sum('amount');
+            $data['penaltyTotal'] = $data['payments']->sum('penalty_amount');
+            $data['salesTotal'] = $data['sales']->sum('total');
+            $data['grandTotal'] = $data['total'] + $data['penaltyTotal'] + $data['salesTotal'];
             $view = 'admin.reports.pdf.monthly';
         }
 

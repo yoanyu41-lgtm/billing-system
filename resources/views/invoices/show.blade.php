@@ -108,7 +108,7 @@
                 @else
                     <div class="text-xl font-extrabold text-blue-800 tracking-wide text-center">
                         @if($isSettlement)
-                            PAYOFF INVOICE
+                            INSTALLMENT PAYOFF INVOICE
                         @elseif($isFinalPayment)
                             {{ strtoupper(__('app.final_installment_invoice')) }}
                         @else

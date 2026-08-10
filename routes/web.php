@@ -216,6 +216,7 @@ Route::middleware('auth')->group(function () {
         Route::get('reports/expense', [ReportController::class, 'expense'])->name('reports.expense');
         Route::post('expenses', [ReportController::class, 'storeExpense'])->name('expenses.store');
         Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');
+        Route::get('reports/profit', [ReportController::class, 'profit'])->name('reports.profit');
         Route::get('reports/{type}/export', [ReportController::class, 'exportPdf'])->name('reports.export');
         Route::get('reports/excel/export', [ReportController::class, 'exportExcel'])->name('reports.excel');
 

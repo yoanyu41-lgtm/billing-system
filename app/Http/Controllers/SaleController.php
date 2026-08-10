@@ -30,7 +30,27 @@ class SaleController extends Controller
         $sales = $query->latest()->paginate(15)->withQueryString();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
 
-        return view('admin.sales.index', compact('sales', 'exchangeRate'));
+        // Suggestions for autocomplete
+        $suggestions = [];
+        $saleCustomers = Sale::whereNotNull('customer_name')->get(['customer_name', 'customer_phone']);
+        foreach ($saleCustomers as $sc) {
+            if ($sc->customer_name) {
+                $suggestions[] = [
+                    'label' => $sc->customer_name . ($sc->customer_phone ? ' (' . $sc->customer_phone . ')' : ''),
+                    'value' => $sc->customer_name
+                ];
+            }
+        }
+        $saleInvoices = Sale::whereNotNull('invoice_no')->pluck('invoice_no');
+        foreach ($saleInvoices as $inv) {
+            $suggestions[] = [
+                'label' => $inv,
+                'value' => $inv
+            ];
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.sales.index', compact('sales', 'exchangeRate', 'suggestions'));
     }
 
     /**
@@ -42,25 +62,8 @@ class SaleController extends Controller
             ->where('stock', '>', 0)
             ->orderBy('name')
             ->get();
-        $hiddenSetting = \App\Models\Setting::where('key', 'hidden_payment_methods')->value('value');
-        $hiddenList = $hiddenSetting ? json_decode($hiddenSetting, true) : [];
-        if (!is_array($hiddenList)) {
-            $hiddenList = [];
-        }
-
-        $paymentMethods = \App\Models\PaymentMethod::all()
-            ->reject(function ($method) use ($hiddenList) {
-                $name = strtolower($method->name);
-                if ($name === 'cash' && in_array('pm_cash', $hiddenList)) return true;
-                if ($name === 'credit card' && in_array('pm_card', $hiddenList)) return true;
-                if (str_contains($name, 'aba') && (in_array('aba_qr', $hiddenList) || in_array('qr_aba', $hiddenList))) return true;
-                if (str_contains($name, 'acleda') && (in_array('acleda_qr', $hiddenList) || in_array('qr_acleda', $hiddenList))) return true;
-                if (str_contains($name, 'wing') && (in_array('wing_qr', $hiddenList) || in_array('qr_wing', $hiddenList))) return true;
-                if (str_contains($name, 'truemoney') && (in_array('truemoney_qr', $hiddenList) || in_array('qr_truemoney', $hiddenList))) return true;
-                return false;
-            })
-            ->sortBy('name')
-            ->values();
+        $customers = Customer::orderBy('name')->get();
+        $paymentMethods = \App\Models\PaymentMethod::getAvailable();
 
         return view('admin.sales.create', compact('products', 'customers', 'paymentMethods'));
     }

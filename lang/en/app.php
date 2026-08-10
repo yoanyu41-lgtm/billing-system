@@ -201,6 +201,7 @@ return [
     'personal_information'  => 'Personal Information',
     'in_stock'              => 'In Stock',
     'out_of_stock'          => 'Out of Stock',
+    'select_customer'       => 'Select Customer',
     'search_customer'       => 'Search by name, phone, or ID card...',
     'search_customer_direct' => 'Search by name...',
     'no_customers'          => 'No customers found',

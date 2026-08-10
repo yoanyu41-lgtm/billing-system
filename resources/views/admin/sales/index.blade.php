@@ -26,12 +26,29 @@
     {{-- Search --}}
     <form method="GET" class="mb-4">
         <div class="flex items-center gap-2 max-w-md">
-            <input type="text" name="q" value="{{ request('q') }}"
-                   placeholder="{{ __('app.invoice_no') }} / {{ __('app.customer_name') }} / {{ __('app.customer_phone') }}"
-                   class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button class="px-4 py-2.5 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition">
+            <div class="relative flex-1">
+                <input type="text" name="q" id="search-input" value="{{ request('q') }}" autocomplete="off"
+                       placeholder="{{ __('app.invoice_no') }} / {{ __('app.customer_name') }} / {{ __('app.customer_phone') }}"
+                       class="w-full pl-3 pr-8 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                @if(request('q'))
+                <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                @endif
+
+                <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+            </div>
+            <button type="submit" class="px-4 py-2.5 text-sm bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition">
                 <i class="fas fa-search"></i>
             </button>
+            @if(request('q'))
+            <a href="{{ route('admin.sales.index') }}" class="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center shrink-0">
+                {{ __('app.clear') }}
+            </a>
+            @endif
         </div>
     </form>
 
@@ -44,8 +61,6 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.customer') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.sale_date') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.product') }}</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.subtotal') }}</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.tax') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.total') }}</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.payment_method') }}</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
@@ -68,16 +83,6 @@
                                     </div>
                                 @endforeach
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">
-                                {{ format_currency($sale->subtotal, $exchangeRate) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600">
-                                @if($sale->tax_amount > 0)
-                                    {{ format_currency($sale->tax_amount, $exchangeRate) }}
-                                @else
-                                    <span class="text-gray-400">—</span>
-                                @endif
-                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <span class="font-bold text-gray-900">{{ format_currency($sale->total, $exchangeRate) }}</span>
                             </td>
@@ -86,14 +91,19 @@
                                     {{ \Illuminate\Support\Facades\Lang::has('app.'.$sale->payment_method) ? __('app.'.$sale->payment_method) : $sale->payment_method }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('admin.sales.show', [$sale, 'from' => request('from')]) }}" class="text-blue-600 hover:text-blue-800 mr-3">
-                                    <i class="fas fa-eye"></i> {{ __('app.view_receipt') }}
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
+                                <a href="{{ route('admin.sales.show', [$sale, 'from' => request('from')]) }}" 
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition" 
+                                   title="{{ __('app.view_receipt') }}">
+                                    <i class="fas fa-eye text-base"></i>
                                 </a>
                                 <form action="{{ route('admin.sales.destroy', $sale) }}" method="POST" class="inline"
                                       onsubmit="return confirm('{{ __('app.confirm_delete_sale') }}')">
                                     @csrf @method('DELETE')
-                                    <button class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                    <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-800 transition"
+                                            title="{{ __('app.delete') ?? 'Delete' }}">
+                                        <i class="fas fa-trash-alt text-base"></i>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -114,4 +124,88 @@
         {{ $sales->links() }}
     </div>
 </div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = @json($suggestions ?? []);
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('q') && urlParams.get('q') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
 @endsection

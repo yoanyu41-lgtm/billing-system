@@ -2,23 +2,32 @@
 <html>
 <head>
     <meta charset="utf-8">
+    @php
+        $date = $date ?? today()->toDateString();
+        $total = $total ?? 0;
+        $penaltyTotal = $penaltyTotal ?? 0;
+        $salesTotal = $salesTotal ?? 0;
+        $grandTotal = $grandTotal ?? ($total + $penaltyTotal + $salesTotal);
+        $payments = $payments ?? collect();
+        $sales = $sales ?? collect();
+    @endphp
     <title>របាយការណ៍ប្រចាំថ្ងៃ - {{ $date }}</title>
     <style>
-        * { font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif; }
-        body { margin: 0; padding: 20px; font-size: 11px; color: #1f2937; }
-        .header { text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px; }
-        .title { font-size: 18px; font-weight: bold; color: #1e40af; }
-        .date { font-size: 12px; color: #6b7280; margin-top: 5px; }
+        * { font-family: 'Khmer UI', 'khmeros', 'Battambang', 'DejaVu Sans', sans-serif; }
+        body { margin: 0; padding: 24px; font-size: 11px; color: #1f2937; line-height: 1.4; }
+        .header { text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 20px; }
+        .title { font-size: 20px; font-weight: bold; color: #1e40af; }
+        .date { font-size: 12px; color: #6b7280; margin-top: 6px; font-weight: 500; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #1d4ed8; color: #fff; padding: 8px; font-size: 10px; text-align: left; }
-        td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
+        th { background: #1d4ed8; color: #ffffff; padding: 8px; font-size: 10px; text-align: left; font-weight: bold; }
+        td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
         .right { text-align: right; }
-        .total { background: #dbeafe; font-weight: bold; padding: 10px; margin-top: 20px; font-size: 12px; }
+        .total { background: #eff6ff; font-weight: bold; padding: 12px; margin-top: 24px; font-size: 12px; border: 1px solid #bfdbfe; border-radius: 6px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="title">របាយការណ៍ហិរញ្ញវត្ថុប្រចាំថ្ងៃ</div>
+        <div class="title">របាយការណ៍ហិរញ្ញវត្ថុប្រចាំថ្ងៃ (Daily Financial Report)</div>
         <div class="date">{{ \Carbon\Carbon::parse($date)->format('d F Y') }}</div>
     </div>
 
@@ -77,7 +86,7 @@
         </tbody>
     </table>
     @else
-    <div style="text-align: center; padding: 20px; color: #9ca3af; border: 1px solid #e5e7eb; margin-top: 5px;">
+    <div style="text-align: center; padding: 18px; color: #9ca3af; border: 1px solid #e5e7eb; margin-top: 5px; border-radius: 4px;">
         គ្មានការទូទាត់បង់រំលស់នៅថ្ងៃនេះទេ។
     </div>
     @endif
@@ -110,7 +119,7 @@
         </tbody>
     </table>
     @else
-    <div style="text-align: center; padding: 20px; color: #9ca3af; border: 1px solid #e5e7eb; margin-top: 5px;">
+    <div style="text-align: center; padding: 18px; color: #9ca3af; border: 1px solid #e5e7eb; margin-top: 5px; border-radius: 4px;">
         គ្មានការលក់ផ្ទាល់នៅថ្ងៃនេះទេ។
     </div>
     @endif

@@ -31,7 +31,23 @@ class PurchaseController extends Controller
         }
         
         $purchases = $query->latest()->paginate(15)->withQueryString();
-        return view('admin.purchases.index', compact('purchases'));
+
+        $suggestions = [];
+        $allPurchases = Purchase::with(['supplier', 'items.product'])->get();
+        foreach ($allPurchases as $p) {
+            $suggestions[] = ['label' => '#' . $p->id, 'value' => (string)$p->id];
+            if ($p->supplier && $p->supplier->name) {
+                $suggestions[] = ['label' => $p->supplier->name, 'value' => $p->supplier->name];
+            }
+            foreach ($p->items as $item) {
+                if ($item->product && $item->product->name) {
+                    $suggestions[] = ['label' => $item->product->name, 'value' => $item->product->name];
+                }
+            }
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.purchases.index', compact('purchases', 'suggestions'));
     }
 
     public function create(\Illuminate\Http\Request $request)

@@ -65,7 +65,8 @@ class InvoiceController extends Controller
             $totalInvoices = $statsQuery->count();
             $totalAmount = $statsQuery->sum('total');
 
-            return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type'));
+            $suggestions = $this->getInvoiceSuggestions();
+            return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type', 'suggestions'));
         }
 
         if (empty($type)) {
@@ -209,7 +210,8 @@ class InvoiceController extends Controller
                 ['path' => $request->url(), 'query' => $request->query()]
             );
 
-            return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type'));
+            $suggestions = $this->getInvoiceSuggestions();
+            return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type', 'suggestions'));
         }
 
         $query = Invoice::with('payment.installment.customer');
@@ -322,7 +324,35 @@ class InvoiceController extends Controller
         $totalInvoices = $statsQuery->count();
         $totalAmount = $statsQuery->with('payment')->get()->sum(fn ($inv) => $inv->payment?->amount ?? 0);
 
-        return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type'));
+        $suggestions = $this->getInvoiceSuggestions();
+        return view('invoices.index', compact('invoices', 'totalInvoices', 'totalAmount', 'exchangeRate', 'type', 'suggestions'));
+    }
+
+    private function getInvoiceSuggestions()
+    {
+        $suggestions = [
+            ['label' => 'ទិញដាច់ (Direct Sale)', 'value' => 'ទិញដាច់'],
+            ['label' => 'បង់រំលស់ (Installment)', 'value' => 'បង់រំលស់'],
+            ['label' => 'បង់ផ្តាច់ (Pay Off)', 'value' => 'បង់ផ្តាច់'],
+            ['label' => 'ទូទាត់បញ្ចប់ (Completed)', 'value' => 'ទូទាត់បញ្ចប់'],
+        ];
+
+        $invNumbers = Invoice::whereNotNull('invoice_number')->pluck('invoice_number');
+        foreach ($invNumbers as $inv) {
+            $suggestions[] = ['label' => $inv, 'value' => $inv];
+        }
+
+        $saleInvoices = \App\Models\Sale::whereNotNull('invoice_no')->pluck('invoice_no');
+        foreach ($saleInvoices as $sinv) {
+            $suggestions[] = ['label' => $sinv, 'value' => $sinv];
+        }
+
+        $custs = \App\Models\Customer::get(['name', 'phone']);
+        foreach ($custs as $c) {
+            $suggestions[] = ['label' => $c->name . ($c->phone ? ' (' . $c->phone . ')' : ''), 'value' => $c->name];
+        }
+
+        return collect($suggestions)->unique('label')->values()->all();
     }
 
     public function show($id)

@@ -35,6 +35,20 @@ class StockMovementController extends Controller
         }
         
         $movements = $query->orderBy('created_at','desc')->paginate(25)->withQueryString();
-        return view('admin.stock_movements.index', compact('movements'));
+
+        $suggestions = [];
+        $movementsAll = StockMovement::with(['product', 'supplier'])->get();
+        foreach ($movementsAll as $m) {
+            if ($m->product) {
+                if ($m->product->name) $suggestions[] = ['label' => $m->product->name, 'value' => $m->product->name];
+                if ($m->product->code) $suggestions[] = ['label' => $m->product->code . ' - ' . $m->product->name, 'value' => $m->product->code];
+            }
+            if ($m->supplier && $m->supplier->name) {
+                $suggestions[] = ['label' => $m->supplier->name, 'value' => $m->supplier->name];
+            }
+        }
+        $suggestions = collect($suggestions)->unique('label')->values()->all();
+
+        return view('admin.stock_movements.index', compact('movements', 'suggestions'));
     }
 }

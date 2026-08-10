@@ -163,6 +163,10 @@ document.getElementById('addItem').addEventListener('click', () => {
         </div>
     `;
     container.appendChild(div);
+
+    const newSelect = div.querySelector('select[name$="[product_id]"]');
+    if (newSelect) initSearchableSelect(newSelect);
+
     idx++;
     updateRemoveButtons();
     calculateTotals();
@@ -290,6 +294,154 @@ document.getElementById('items-container').addEventListener('change', (e) => {
     if (e.target.matches('select[name$="[product_id]"]')) {
         calculateTotals();
     }
+});
+
+// Direct Top-Input Searchable Select Function
+function initSearchableSelect(selectEl) {
+    if (!selectEl || selectEl.dataset.searchableInited) return;
+    selectEl.dataset.searchableInited = "true";
+    selectEl.classList.add('hidden');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative custom-searchable-select-wrapper';
+
+    const inputContainer = document.createElement('div');
+    inputContainer.className = 'relative';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.autocomplete = 'off';
+    input.className = 'w-full pl-4 pr-9 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white transition shadow-sm font-medium text-gray-800';
+    
+    const arrowBtn = document.createElement('button');
+    arrowBtn.type = 'button';
+    arrowBtn.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs transition-transform duration-200 pointer-events-auto';
+    arrowBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+
+    inputContainer.appendChild(input);
+    inputContainer.appendChild(arrowBtn);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'hidden absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden transition-all';
+    
+    const optionsList = document.createElement('div');
+    optionsList.className = 'max-h-56 overflow-y-auto divide-y divide-gray-50';
+
+    dropdown.appendChild(optionsList);
+    wrapper.appendChild(inputContainer);
+    wrapper.appendChild(dropdown);
+
+    selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+
+    let lastSelectedText = '';
+
+    function syncFromSelect() {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            lastSelectedText = opt.text;
+            input.value = opt.text;
+            input.placeholder = opt.text;
+        } else {
+            lastSelectedText = '';
+            input.value = '';
+            input.placeholder = selectEl.options[0]?.text || '-- Select --';
+        }
+    }
+
+    function renderOptions(query = '') {
+        const q = query.toLowerCase().trim();
+        const opts = Array.from(selectEl.options);
+        const filtered = opts.filter(opt => {
+            if (!opt.value) return true;
+            return opt.text.toLowerCase().includes(q);
+        });
+
+        if (filtered.length === 0) {
+            optionsList.innerHTML = `<div class="p-3 text-center text-xs text-gray-400">មិនមានទិន្នន័យត្រូវគ្នានឹងការស្វែងរកទេ</div>`;
+            return;
+        }
+
+        optionsList.innerHTML = filtered.map(opt => {
+            if (!opt.value) {
+                return `<div class="custom-opt p-2.5 hover:bg-gray-50 cursor-pointer text-xs text-gray-400 border-b border-gray-50" data-value="">${escapeHtml(opt.text)}</div>`;
+            }
+            const isSel = selectEl.value === opt.value;
+            const bgClass = isSel ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'hover:bg-gray-50 text-gray-700';
+            return `<div class="custom-opt p-2.5 cursor-pointer text-xs transition duration-150 ${bgClass}" data-value="${escapeHtml(opt.value)}">${escapeHtml(opt.text)}</div>`;
+        }).join('');
+    }
+
+    function escapeHtml(text) {
+        return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function openDropdown() {
+        dropdown.classList.remove('hidden');
+        arrowBtn.classList.add('rotate-180');
+        renderOptions(input.value === lastSelectedText ? '' : input.value);
+    }
+
+    function closeDropdown() {
+        dropdown.classList.add('hidden');
+        arrowBtn.classList.remove('rotate-180');
+    }
+
+    input.addEventListener('focus', function() {
+        this.select();
+        openDropdown();
+    });
+
+    input.addEventListener('click', function() {
+        openDropdown();
+    });
+
+    arrowBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (dropdown.classList.contains('hidden')) {
+            input.focus();
+            openDropdown();
+        } else {
+            closeDropdown();
+        }
+    });
+
+    input.addEventListener('input', function() {
+        openDropdown();
+        renderOptions(this.value);
+    });
+
+    optionsList.addEventListener('click', (e) => {
+        const item = e.target.closest('.custom-opt');
+        if (item) {
+            const val = item.getAttribute('data-value');
+            selectEl.value = val;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            syncFromSelect();
+            closeDropdown();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            if (dropdown.classList.contains('hidden')) return;
+            closeDropdown();
+            if (!selectEl.value) {
+                input.value = '';
+            } else {
+                syncFromSelect();
+            }
+        }
+    });
+
+    syncFromSelect();
+}
+
+// Init searchable selects
+const supplierSelect = document.querySelector('select[name="supplier_id"]');
+if (supplierSelect) initSearchableSelect(supplierSelect);
+
+document.querySelectorAll('select[name$="[product_id]"]').forEach(select => {
+    initSearchableSelect(select);
 });
 
 updateRemoveButtons();

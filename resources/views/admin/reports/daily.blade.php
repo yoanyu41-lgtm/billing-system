@@ -25,7 +25,7 @@
     </div>
 
     <!-- Filter & Action Controls Box -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5 no-print">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             
             <!-- Quick Filter Pills: Today, Week, Month, Year -->
@@ -70,9 +70,9 @@
         </form>
     </div>
 
-    <!-- 4 Summary KPI Cards (🟦 Total Sales, 🟩 Profit, 🟥 Expense, 🟧 Net Income) -->
+    <!-- 4 Summary KPI Cards Focused on Daily Sales & Collections -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <!-- 🟦 Total Sales (Blue) -->
+        <!-- 🟦 Total Daily Sales -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0 border border-blue-100">
                 <i class="fas fa-shopping-cart"></i>
@@ -83,38 +83,39 @@
             </div>
         </div>
 
-        <!-- 🟩 Profit (Green) -->
+        <!-- 🟩 Transactions Count -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0 border border-emerald-100">
-                <i class="fas fa-chart-line"></i>
+                <i class="fas fa-receipt"></i>
             </div>
             <div>
-                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Profit</span>
-                <span class="text-2xl font-black text-emerald-600">{{ format_currency($totalProfit, $exchangeRate ?? 4100) }}</span>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Transactions</span>
+                <span class="text-2xl font-black text-slate-900">{{ count($transactions) }} Items</span>
             </div>
         </div>
 
-        <!-- 🟥 Expense (Red) -->
+        <!-- 🟪 Installment Collection -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0 border border-rose-100">
-                <i class="fas fa-hand-holding-dollar"></i>
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl shrink-0 border border-purple-100">
+                <i class="fas fa-wallet"></i>
             </div>
             <div>
-                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Expense</span>
-                <span class="text-2xl font-black text-rose-600">{{ format_currency($totalExpenses, $exchangeRate ?? 4100) }}</span>
+                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Installments</span>
+                <span class="text-2xl font-black text-purple-600">{{ format_currency($kpiInstallments, $exchangeRate ?? 4100) }}</span>
             </div>
         </div>
 
-        <!-- 🟧 Net Income (Orange) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0 border border-amber-100">
-                <i class="fas fa-coins"></i>
+        <!-- 🟧 Detailed Profit & Income Report Link -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-5 rounded-2xl shadow-sm text-white flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Profit Breakdown</span>
+                <i class="fas fa-chart-line text-emerald-400"></i>
             </div>
-            <div>
-                <span class="text-xs font-bold text-slate-400 block uppercase tracking-wider">Net Income</span>
-                <span class="text-2xl font-black {{ $netIncome >= 0 ? 'text-amber-600' : 'text-rose-600' }}">
-                    {{ format_currency($netIncome, $exchangeRate ?? 4100) }}
-                </span>
+            <div class="mt-2">
+                <div class="text-xs text-slate-300">Net Income: <strong class="text-white">{{ format_currency($netIncome, $exchangeRate ?? 4100) }}</strong></div>
+                <a href="{{ route('admin.reports.profit') }}" class="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 mt-1 no-underline">
+                    View Profit Report <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
             </div>
         </div>
     </div>

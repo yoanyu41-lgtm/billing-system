@@ -56,7 +56,27 @@
                         <h2 class="text-base font-bold text-slate-800">{{ __('app.customer_information') }}</h2>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="relative customer-select-container">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                                {{ __('app.select_customer') ?? 'Select Existing Customer' }}
+                            </label>
+                            <input type="hidden" name="customer_id" id="customerId">
+                            <div class="relative">
+                                <input type="text" id="customerSelectSearch"
+                                       class="w-full px-3.5 py-2.5 text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition placeholder:text-slate-400 truncate"
+                                       placeholder="{{ __('app.search_customer') ?? 'Search existing customer...' }}"
+                                       autocomplete="off"
+                                       onfocus="openCustomerDropdown(this)"
+                                       oninput="filterCustomerDropdown(this)">
+                                <button type="button" tabindex="-1" onclick="toggleCustomerDropdown(this)" 
+                                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none">
+                                    <i class="fas fa-chevron-down text-xs transition-transform duration-200 customer-dropdown-arrow"></i>
+                                </button>
+                            </div>
+                            <div class="customer-dropdown-menu absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-56 overflow-y-auto hidden divide-y divide-slate-100 text-xs sm:text-sm">
+                            </div>
+                        </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                                 {{ __('app.customer_name') }} <span class="text-slate-400 normal-case font-normal">({{ __('app.optional') }})</span>
@@ -217,6 +237,14 @@
         ];
     })) !!};
 
+    const customersData = {!! json_encode(($customers ?? collect())->map(function($c) {
+        return [
+            'id' => $c->id,
+            'name' => $c->name,
+            'phone' => $c->phone ?? ''
+        ];
+    })) !!};
+
     const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
     const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
     const taxLabel = '{{ \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT' }}';
@@ -234,10 +262,6 @@
     let idx = 0;
 
     function itemRow(index) {
-        let options = `<option value="">${T.selectProduct}</option>`;
-        productsData.forEach(p => {
-            options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock}" data-taxable="${p.is_taxable}" data-tax-rate="${p.tax_rate}" data-tax-type="${p.tax_type}">${p.name} (${T.stock}: ${p.stock})</option>`;
-        });
         const div = document.createElement('div');
         div.className = 'item bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 sm:p-4 transition hover:border-slate-300 relative';
         const num = document.querySelectorAll('.item').length + 1;
@@ -251,12 +275,23 @@
                 </button>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                <div class="sm:col-span-5">
+                <div class="sm:col-span-6 relative product-select-container">
                     <label class="block text-xs font-medium text-slate-500 mb-1">${T.product}</label>
-                    <select name="items[${index}][product_id]" required onchange="onProductChange(this)"
-                            class="w-full px-3 py-2 text-xs sm:text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 item-product">
-                        ${options}
-                    </select>
+                    <input type="hidden" name="items[${index}][product_id]" class="item-product-id" required>
+                    <div class="relative">
+                        <input type="text" 
+                               class="w-full px-3 py-2 pr-8 text-xs sm:text-sm text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 item-product-search truncate" 
+                               placeholder="${T.selectProduct}"
+                               autocomplete="off"
+                               onfocus="openProductDropdown(this)"
+                               oninput="filterProductDropdown(this)">
+                        <button type="button" tabindex="-1" onclick="toggleProductDropdown(this)" 
+                                class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-1">
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200 dropdown-arrow"></i>
+                        </button>
+                    </div>
+                    <div class="product-dropdown-menu absolute z-50 left-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl max-h-80 overflow-y-auto hidden divide-y divide-slate-100 text-xs sm:text-sm min-w-full sm:min-w-[520px] max-w-2xl border-slate-300">
+                    </div>
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 mb-1">${T.quantity}</label>
@@ -270,7 +305,7 @@
                            class="w-full px-3 py-2 text-xs sm:text-sm text-slate-800 bg-white border border-slate-300 rounded-lg text-right focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 item-price"
                            placeholder="0.00" oninput="calculateTotal()">
                 </div>
-                <div class="sm:col-span-3">
+                <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 mb-1">${T.subtotal} ($)</label>
                     <input type="text" readonly value="0.00"
                            class="w-full px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-lg text-right item-subtotal">
@@ -279,20 +314,247 @@
         return div;
     }
 
+    function escapeHtml(str) {
+        return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function renderProductOptions(container, searchKeyword = '') {
+        const menu = container.querySelector('.product-dropdown-menu');
+        const hiddenInput = container.querySelector('.item-product-id');
+        const selectedId = hiddenInput ? hiddenInput.value : '';
+
+        const keyword = searchKeyword.trim().toLowerCase();
+        const filtered = productsData.filter(p => {
+            return p.name.toLowerCase().includes(keyword);
+        });
+
+        if (filtered.length === 0) {
+            menu.innerHTML = `<div class="p-3.5 text-slate-400 text-center italic text-xs">No matching products found</div>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(p => {
+            const isSelected = String(p.id) === String(selectedId);
+            const stockBadge = p.stock > 5 
+                ? `<span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${T.stock}: ${p.stock}</span>`
+                : `<span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">${T.stock}: ${p.stock}</span>`;
+            
+            html += `
+                <div class="product-option px-3.5 py-2.5 hover:bg-blue-50/90 ${isSelected ? 'bg-blue-50 font-semibold text-blue-700' : ''} cursor-pointer flex items-center justify-between gap-3 transition"
+                     data-id="${p.id}"
+                     data-name="${escapeHtml(p.name)}"
+                     data-price="${p.price}"
+                     data-stock="${p.stock}"
+                     data-taxable="${p.is_taxable ? '1' : '0'}"
+                     data-tax-rate="${p.tax_rate || 0}"
+                     data-tax-type="${p.tax_type || 'exclusive'}"
+                     onclick="selectProductOption(this)">
+                    <span class="font-medium text-slate-800 text-xs sm:text-sm whitespace-normal leading-snug">${escapeHtml(p.name)}</span>
+                    ${stockBadge}
+                </div>
+            `;
+        });
+
+        menu.innerHTML = html;
+    }
+
+    function openProductDropdown(input) {
+        const container = input.closest('.product-select-container');
+        closeAllProductDropdowns();
+        closeAllCustomerDropdowns();
+        const menu = container.querySelector('.product-dropdown-menu');
+        const arrow = container.querySelector('.dropdown-arrow');
+        renderProductOptions(container, input.value);
+        menu.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+    }
+
+    function filterProductDropdown(input) {
+        const container = input.closest('.product-select-container');
+        const hiddenInput = container.querySelector('.item-product-id');
+        const menu = container.querySelector('.product-dropdown-menu');
+        
+        if (hiddenInput.value) {
+            hiddenInput.value = '';
+            hiddenInput.removeAttribute('data-taxable');
+            hiddenInput.removeAttribute('data-tax-rate');
+            hiddenInput.removeAttribute('data-tax-type');
+            const row = container.closest('.item');
+            const priceInput = row.querySelector('.item-price');
+            if (priceInput) priceInput.value = '';
+            calculateTotal();
+        }
+        
+        renderProductOptions(container, input.value);
+        menu.classList.remove('hidden');
+    }
+
+    function toggleProductDropdown(button) {
+        const container = button.closest('.product-select-container');
+        const input = container.querySelector('.item-product-search');
+        const menu = container.querySelector('.product-dropdown-menu');
+        if (menu.classList.contains('hidden')) {
+            openProductDropdown(input);
+            input.focus();
+        } else {
+            menu.classList.add('hidden');
+            const arrow = container.querySelector('.dropdown-arrow');
+            if (arrow) arrow.classList.remove('rotate-180');
+        }
+    }
+
+    function selectProductOption(optElement) {
+        const container = optElement.closest('.product-select-container');
+        const hiddenInput = container.querySelector('.item-product-id');
+        const searchInput = container.querySelector('.item-product-search');
+        const menu = container.querySelector('.product-dropdown-menu');
+        const arrow = container.querySelector('.dropdown-arrow');
+
+        const id = optElement.getAttribute('data-id');
+        const name = optElement.getAttribute('data-name');
+        const price = optElement.getAttribute('data-price');
+        const taxable = optElement.getAttribute('data-taxable');
+        const taxRate = optElement.getAttribute('data-tax-rate');
+        const taxType = optElement.getAttribute('data-tax-type');
+
+        hiddenInput.value = id;
+        hiddenInput.setAttribute('data-taxable', taxable);
+        hiddenInput.setAttribute('data-tax-rate', taxRate);
+        hiddenInput.setAttribute('data-tax-type', taxType);
+        
+        searchInput.value = name;
+        searchInput.title = name;
+
+        const row = container.closest('.item');
+        const priceInput = row.querySelector('.item-price');
+        if (priceInput) {
+            priceInput.value = parseFloat(price).toFixed(2);
+        }
+
+        menu.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+
+        calculateTotal();
+    }
+
+    function closeAllProductDropdowns() {
+        document.querySelectorAll('.product-dropdown-menu').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+        document.querySelectorAll('.dropdown-arrow').forEach(arrow => {
+            arrow.classList.remove('rotate-180');
+        });
+    }
+
+    // Customer Dropdown logic
+    function renderCustomerOptions(container, searchKeyword = '') {
+        const menu = container.querySelector('.customer-dropdown-menu');
+        const selectedId = document.getElementById('customerId')?.value || '';
+        const keyword = searchKeyword.trim().toLowerCase();
+
+        const filtered = customersData.filter(c => {
+            return c.name.toLowerCase().includes(keyword) || (c.phone && c.phone.includes(keyword));
+        });
+
+        if (filtered.length === 0) {
+            menu.innerHTML = `<div class="p-3 text-slate-400 text-center italic text-xs">No matching customers found</div>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(c => {
+            const isSelected = String(c.id) === String(selectedId);
+            html += `
+                <div class="customer-option px-3 py-2 hover:bg-blue-50/80 ${isSelected ? 'bg-blue-50 font-semibold' : ''} cursor-pointer flex items-center justify-between gap-2 transition"
+                     data-id="${c.id}"
+                     data-name="${escapeHtml(c.name)}"
+                     data-phone="${escapeHtml(c.phone)}"
+                     onclick="selectCustomerOption(this)">
+                    <span class="font-medium text-slate-800 truncate">${escapeHtml(c.name)}</span>
+                    <span class="shrink-0 text-[11px] text-slate-500">${escapeHtml(c.phone)}</span>
+                </div>
+            `;
+        });
+
+        menu.innerHTML = html;
+    }
+
+    function openCustomerDropdown(input) {
+        const container = input.closest('.customer-select-container');
+        closeAllProductDropdowns();
+        closeAllCustomerDropdowns();
+        const menu = container.querySelector('.customer-dropdown-menu');
+        const arrow = container.querySelector('.customer-dropdown-arrow');
+        renderCustomerOptions(container, input.value);
+        menu.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+    }
+
+    function filterCustomerDropdown(input) {
+        const container = input.closest('.customer-select-container');
+        const menu = container.querySelector('.customer-dropdown-menu');
+        document.getElementById('customerId').value = '';
+        renderCustomerOptions(container, input.value);
+        menu.classList.remove('hidden');
+    }
+
+    function toggleCustomerDropdown(button) {
+        const container = button.closest('.customer-select-container');
+        const input = container.querySelector('#customerSelectSearch');
+        const menu = container.querySelector('.customer-dropdown-menu');
+        if (menu.classList.contains('hidden')) {
+            openCustomerDropdown(input);
+            input.focus();
+        } else {
+            menu.classList.add('hidden');
+            const arrow = container.querySelector('.customer-dropdown-arrow');
+            if (arrow) arrow.classList.remove('rotate-180');
+        }
+    }
+
+    function selectCustomerOption(optElement) {
+        const container = optElement.closest('.customer-select-container');
+        const searchInput = container.querySelector('#customerSelectSearch');
+        const menu = container.querySelector('.customer-dropdown-menu');
+        const arrow = container.querySelector('.customer-dropdown-arrow');
+
+        const id = optElement.getAttribute('data-id');
+        const name = optElement.getAttribute('data-name');
+        const phone = optElement.getAttribute('data-phone');
+
+        document.getElementById('customerId').value = id;
+        searchInput.value = name;
+        document.getElementById('customerName').value = name;
+        document.getElementById('customerPhone').value = phone;
+
+        menu.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+    }
+
+    function closeAllCustomerDropdowns() {
+        document.querySelectorAll('.customer-dropdown-menu').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+        document.querySelectorAll('.customer-dropdown-arrow').forEach(arrow => {
+            arrow.classList.remove('rotate-180');
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.product-select-container')) {
+            closeAllProductDropdowns();
+        }
+        if (!e.target.closest('.customer-select-container')) {
+            closeAllCustomerDropdowns();
+        }
+    });
+
     function addItem() {
         document.getElementById('items').appendChild(itemRow(idx));
         idx++;
         updateNumbers();
         updateRemoveButtons();
-        calculateTotal();
-    }
-
-    function onProductChange(select) {
-        const opt = select.options[select.selectedIndex];
-        const price = opt.getAttribute('data-price');
-        const row = select.closest('.item');
-        const priceInput = row.querySelector('.item-price');
-        if (price) priceInput.value = parseFloat(price).toFixed(2);
         calculateTotal();
     }
 
@@ -328,18 +590,17 @@
         document.querySelectorAll('.item').forEach(item => {
             const qty = parseFloat(item.querySelector('.item-qty')?.value || 0);
             const price = parseFloat(item.querySelector('.item-price')?.value || 0);
-            const productSelect = item.querySelector('.item-product');
-            const opt = productSelect ? productSelect.options[productSelect.selectedIndex] : null;
+            const hiddenInput = item.querySelector('.item-product-id');
 
             const line = qty * price;
             const subInput = item.querySelector('.item-subtotal');
             if (subInput) subInput.value = line.toFixed(2);
             originalSubtotal += line;
 
-            if (taxEnabled && opt) {
-                const isTaxable = opt.getAttribute('data-taxable') === '1' || opt.getAttribute('data-taxable') === 'true';
-                const taxRate = parseFloat(opt.getAttribute('data-tax-rate') || 0);
-                const taxType = opt.getAttribute('data-tax-type') || 'exclusive';
+            if (taxEnabled && hiddenInput && hiddenInput.value) {
+                const isTaxable = hiddenInput.getAttribute('data-taxable') === '1' || hiddenInput.getAttribute('data-taxable') === 'true';
+                const taxRate = parseFloat(hiddenInput.getAttribute('data-tax-rate') || 0);
+                const taxType = hiddenInput.getAttribute('data-tax-type') || 'exclusive';
 
                 if (isTaxable) {
                     hasTaxableItem = true;
