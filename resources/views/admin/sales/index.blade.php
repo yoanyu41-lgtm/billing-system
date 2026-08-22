@@ -11,10 +11,12 @@
             </h1>
             <p class="text-sm text-gray-600 mt-1">{{ __('app.sales_list_subtitle') }}</p>
         </div>
+        @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.create'))
         <a href="{{ route('admin.sales.create') }}"
            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition">
             <i class="fas fa-plus"></i> {{ __('app.new_direct_sale') }}
         </a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -97,6 +99,7 @@
                                    title="{{ __('app.view_receipt') }}">
                                     <i class="fas fa-eye text-base"></i>
                                 </a>
+                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.delete'))
                                 <form action="{{ route('admin.sales.destroy', $sale) }}" method="POST" class="inline"
                                       onsubmit="return confirm('{{ __('app.confirm_delete_sale') }}')">
                                     @csrf @method('DELETE')
@@ -105,6 +108,7 @@
                                         <i class="fas fa-trash-alt text-base"></i>
                                     </button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

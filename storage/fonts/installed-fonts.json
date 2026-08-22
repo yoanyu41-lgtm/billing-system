@@ -5,5 +5,9 @@
     },
     "khmeros": {
         "normal": "khmeros_normal_56da52e3e71a4dd22d6ac63756dcdc1f"
+    },
+    "khmerui": {
+        "normal": "E:\\billing-system\\storage\\fonts\/\/khmerui_normal_413e44ae2a95391ebe71085d3c71630f",
+        "bold": "khmerui_bold_e7578801890fe19e61d87f372d778dbd"
     }
 }

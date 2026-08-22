@@ -32,16 +32,13 @@
                 <a href="{{ route('admin.reports.monthly', ['filter' => 'this_year']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_year' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">This Year</a>
             </div>
 
-            <!-- Export Buttons: Print, Excel, PDF -->
+            <!-- Export Buttons: Print, Excel -->
             <div class="flex items-center gap-2">
-                <button onclick="window.print()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border-0 cursor-pointer flex items-center gap-1.5">
-                    <i class="fas fa-print text-slate-500"></i> Print
+                <button type="button" onclick="printReportDirect('{{ route('admin.reports.print', ['type' => 'monthly', 'start_date' => $startDate, 'end_date' => $endDate]) }}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border-0 cursor-pointer flex items-center gap-1.5">
+                    <i class="fas fa-print text-slate-500"></i> {{ app()->getLocale() === 'km' ? 'បោះពុម្ព' : 'Print' }}
                 </button>
                 <a href="{{ route('admin.reports.excel', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition border border-emerald-200/60 no-underline flex items-center gap-1.5">
                     <i class="fas fa-file-excel text-emerald-600"></i> Excel
-                </a>
-                <a href="{{ route('admin.reports.export', ['type' => 'monthly', 'month' => $month, 'year' => $year]) }}" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition border border-rose-200/60 no-underline flex items-center gap-1.5">
-                    <i class="fas fa-file-pdf text-rose-600"></i> PDF
                 </a>
             </div>
         </div>

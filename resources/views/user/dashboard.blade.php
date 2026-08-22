@@ -3,7 +3,12 @@
 @section('content')
 <div class="mb-8 flex justify-between items-end">
     <div>
-        <h1 class="text-3xl font-bold text-gray-800">{{ __('app.staff_dashboard') }}</h1>
+        <h1 class="text-3xl font-bold text-gray-800">
+            @php
+                $roleTitle = auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role);
+            @endphp
+            {{ $roleTitle }} {{ app()->getLocale() === 'km' ? 'ផ្ទាំងគ្រប់គ្រង (Dashboard)' : 'Dashboard' }}
+        </h1>
         <p class="text-gray-500 mt-1">{{ __('app.overview_subtitle') }}</p>
     </div>
     <div class="text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm">
@@ -11,59 +16,159 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-    <!-- Stat Card 1 -->
-    <a href="{{ route('customers.index') }}" class="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition hover:shadow-md hover:border-blue-200 group">
-        <div class="flex items-center">
-            <div class="p-3 rounded-full bg-blue-50 text-blue-600 mr-4 group-hover:bg-blue-100 transition">
-                <i class="fas fa-users text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500 group-hover:text-blue-600 transition">{{ __('app.total_customers') }}</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $customers }}</p>
+    <!-- ── TOP SECTION (Stat Cards Grid on Left 2 cols, Quick Actions on Right 1 col) ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        <!-- ── Left: Stat Cards Grid (3 Boxes Per Row) ── -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="stat-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+                {{-- Card 1: Total Customers --}}
+                <div class="stat-card sc-blue">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-users"></i></div>
+                        <div class="sc-label">{{ __('app.total_customers') }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($customers ?? 0) }}</div>
+                        <div class="sc-trend" style="color:#059669;">&uarr; {{ app()->getLocale() === 'km' ? 'អតិថិជនសរុប' : 'Total Registered' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,28 40,20 80,24 120,15 160,18 200,10" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                {{-- Card 2: Payments Today --}}
+                <div class="stat-card sc-green">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-credit-card"></i></div>
+                        <div class="sc-label">{{ __('app.payments_today') }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($paymentsToday ?? 0) }}</div>
+                        <div class="sc-trend">{{ app()->getLocale() === 'km' ? 'ប្រតិបត្តិការថ្ងៃនេះ' : 'Transactions Today' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,28 40,20 80,22 120,12 160,18 200,8" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                {{-- Card 3: Pending Payments --}}
+                <div class="stat-card sc-amber">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-clock"></i></div>
+                        <div class="sc-label">{{ __('app.pending_payments') }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($pendingPayments ?? 0) }}</div>
+                        <div class="sc-trend" style="color:#d97706;">{{ app()->getLocale() === 'km' ? 'រង់ចាំពិនិត្យ' : 'Awaiting Review' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,15 40,22 80,18 120,26 160,20 200,28" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                {{-- Card 4: Direct Sales Today --}}
+                <div class="stat-card sc-green">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-cash-register"></i></div>
+                        <div class="sc-label">{{ app()->getLocale() === 'km' ? 'ការលក់ដាច់ថ្ងៃនេះ' : 'Direct Sales Today' }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($directSalesToday ?? 0) }}</div>
+                        <div class="sc-trend">{{ app()->getLocale() === 'km' ? 'វិក្កយបត្រថ្ងៃនេះ' : 'Receipts Today' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,28 40,20 80,22 120,12 160,18 200,8" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                {{-- Card 5: Active Installments --}}
+                <div class="stat-card sc-blue">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-file-contract"></i></div>
+                        <div class="sc-label">{{ __('app.active_installments') }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($activeInstallments ?? 0) }}</div>
+                        <div class="sc-trend">{{ app()->getLocale() === 'km' ? 'កិច្ចសន្យាកំពុងដំណើរការ' : 'Active Contracts' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,28 40,18 80,24 120,10 160,20 200,8" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
+                {{-- Card 6: Late Payments --}}
+                <div class="stat-card sc-red">
+                    <div>
+                        <div class="sc-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="sc-label">{{ __('app.late_payments') }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($lateCustomers ?? 0) }}</div>
+                        <div class="sc-trend" style="color:#dc2626;">{{ app()->getLocale() === 'km' ? 'អតិថិជនយឺតពេល' : 'Overdue Customers' }}</div>
+                    </div>
+                    <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
+                        <polyline points="0,20 40,28 80,24 120,30 160,26 200,32" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                </div>
+
             </div>
         </div>
-    </a>
-    
-    <!-- Stat Card 2 -->
-    <a href="{{ route('payments.index') }}" class="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition hover:shadow-md hover:border-green-200 group">
-        <div class="flex items-center">
-            <div class="p-3 rounded-full bg-green-50 text-green-600 mr-4 group-hover:bg-green-100 transition">
-                <i class="fas fa-credit-card text-2xl"></i>
+
+        <!-- ── Right: Quick Actions & Status ── -->
+        <div class="space-y-6">
+            
+            {{-- Quick Actions --}}
+            <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs">
+                <div class="flex items-center justify-between mb-3.5">
+                    <span class="text-xs font-extrabold uppercase text-slate-800 tracking-wider">
+                        {{ __('app.quick_actions') }}
+                    </span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                </div>
+                <div class="space-y-2">
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.create'))
+                    <a href="{{ route('customers.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-100/80 hover:border-indigo-100 transition-all text-slate-700 hover:text-indigo-600 no-underline group shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-user-plus text-xs"></i>
+                            </span>
+                            <span class="text-xs font-bold">{{ __('app.add_customer') }}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+                    </a>
+                    @endif
+
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.create'))
+                    <a href="{{ route('admin.sales.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-100/80 hover:border-emerald-100 transition-all text-slate-700 hover:text-emerald-600 no-underline group shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-cash-register text-xs"></i>
+                            </span>
+                            <span class="text-xs font-bold">{{ __('app.new_direct_sale') }}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                    </a>
+                    @endif
+
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create'))
+                    <a href="{{ route('payments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-100/80 hover:border-amber-100 transition-all text-slate-700 hover:text-amber-600 no-underline group shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-credit-card text-xs"></i>
+                            </span>
+                            <span class="text-xs font-bold">{{ __('app.new_payment') }}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-amber-600 transition-colors"></i>
+                    </a>
+                    @endif
+
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.create'))
+                    <a href="{{ route('installments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-purple-50/60 border border-slate-100/80 hover:border-purple-100 transition-all text-slate-700 hover:text-purple-600 no-underline group shadow-2xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-file-contract text-xs"></i>
+                            </span>
+                            <span class="text-xs font-bold">{{ __('app.new_installment') }}</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-purple-600 transition-colors"></i>
+                    </a>
+                    @endif
+                </div>
             </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500 group-hover:text-green-600 transition">{{ __('app.payments_today') }}</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $paymentsToday }}</p>
-            </div>
+
         </div>
-    </a>
-    
-    <!-- Stat Card 3 -->
-    <a href="{{ route('payments.index') }}" class="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition hover:shadow-md hover:border-yellow-200 group">
-        <div class="flex items-center">
-            <div class="p-3 rounded-full bg-yellow-50 text-yellow-600 mr-4 group-hover:bg-yellow-100 transition">
-                <i class="fas fa-clock text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500 group-hover:text-yellow-600 transition">{{ __('app.pending_payments') }}</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $pendingPayments }}</p>
-            </div>
-        </div>
-    </a>
-    
-    <!-- Stat Card 4 -->
-    <a href="{{ route('late-payments.index') }}" class="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition hover:shadow-md hover:border-red-200 group">
-        <div class="flex items-center">
-            <div class="p-3 rounded-full bg-red-50 text-red-600 mr-4 group-hover:bg-red-100 transition">
-                <i class="fas fa-exclamation-triangle text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500 group-hover:text-red-600 transition">{{ __('app.late_payments') }}</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $lateCustomers }}</p>
-            </div>
-        </div>
-    </a>
-</div>
+
+    </div>
 
 <!-- Charts Section -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -112,49 +217,9 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Quick Actions -->
-    <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-bolt text-yellow-500 mr-2"></i> {{ __('app.quick_actions') }}
-        </h2>
-        <div class="space-y-3">
-            <a href="{{ route('customers.create') }}" class="group flex items-center p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-100">
-                <div class="bg-white p-2 rounded shadow-sm text-blue-600 group-hover:text-blue-700">
-                    <i class="fas fa-user-plus w-5 text-center"></i>
-                </div>
-                <span class="ml-3 font-medium text-gray-700 group-hover:text-blue-700">{{ __('app.add_customer') }}</span>
-                <i class="fas fa-chevron-right ml-auto text-gray-400 text-xs"></i>
-            </a>
-            
-            <a href="{{ route('payments.create') }}" class="group flex items-center p-3 bg-gray-50 hover:bg-green-50 rounded-lg transition border border-transparent hover:border-green-100">
-                <div class="bg-white p-2 rounded shadow-sm text-green-600 group-hover:text-green-700">
-                    <i class="fas fa-money-bill-wave w-5 text-center"></i>
-                </div>
-                <span class="ml-3 font-medium text-gray-700 group-hover:text-green-700">{{ __('app.new_payment') }}</span>
-                <i class="fas fa-chevron-right ml-auto text-gray-400 text-xs"></i>
-            </a>
-            
-            <a href="{{ route('installments.create') }}" class="group flex items-center p-3 bg-gray-50 hover:bg-purple-50 rounded-lg transition border border-transparent hover:border-purple-100">
-                <div class="bg-white p-2 rounded shadow-sm text-purple-600 group-hover:text-purple-700">
-                    <i class="fas fa-file-contract w-5 text-center"></i>
-                </div>
-                <span class="ml-3 font-medium text-gray-700 group-hover:text-purple-700">{{ __('app.new_installment') }}</span>
-                <i class="fas fa-chevron-right ml-auto text-gray-400 text-xs"></i>
-            </a>
-            
-            <a href="{{ route('late-payments.index') }}" class="group flex items-center p-3 bg-gray-50 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-100">
-                <div class="bg-white p-2 rounded shadow-sm text-red-600 group-hover:text-red-700">
-                    <i class="fas fa-bell w-5 text-center"></i>
-                </div>
-                <span class="ml-3 font-medium text-gray-700 group-hover:text-red-700">{{ __('app.late_payments') }}</span>
-                <i class="fas fa-chevron-right ml-auto text-gray-400 text-xs"></i>
-            </a>
-        </div>
-    </div>
-
+<div class="space-y-6">
     <!-- Recent Payments & Tasks -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="space-y-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-tasks text-blue-500 mr-2"></i> {{ __('app.priority_tasks') }}

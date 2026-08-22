@@ -9,10 +9,6 @@
             <i class="fas fa-image text-indigo-600"></i>
             <span>{{ __('app.product_image') }}</span>
         </label>
-        <span class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full font-semibold flex items-center gap-1.5 shadow-2xs">
-            <i class="fas fa-paste text-indigo-500"></i>
-            <span>{{ app()->getLocale() === 'km' ? 'អាចអូសទម្លាក់ ឬ ចុច' : 'Drag & drop or press' }} <kbd class="px-1.5 py-0.5 bg-white border border-indigo-200 rounded text-[11px] font-mono text-indigo-800 shadow-2xs">Ctrl + V</kbd> {{ app()->getLocale() === 'km' ? 'ដើម្បី Paste រូបភាព' : 'to paste image' }}</span>
-        </span>
     </div>
 
     <!-- Dropzone Area -->

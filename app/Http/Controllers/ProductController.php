@@ -36,7 +36,6 @@ class ProductController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
                   ->orWhere('code', 'like', "%$search%")
-                  ->orWhere('brand', 'like', "%$search%")
                   ->orWhere('model', 'like', "%$search%");
             });
         }
@@ -72,19 +71,30 @@ class ProductController extends Controller
 
         // 5. Pagination (បែងទំព័រ)
         $products = $query->paginate(15)->withQueryString();
-        $categories = Category::orderBy('name')->pluck('name');
+        $categories = $this->getCategoryList();
         $suppliers = Supplier::orderBy('name')->get();
 
         $suggestions = [];
-        $prods = Product::get(['name', 'code', 'brand', 'model']);
+        $prods = Product::get(['name', 'code', 'model']);
         foreach ($prods as $p) {
             if ($p->name) $suggestions[] = ['label' => $p->name, 'value' => $p->name];
             if ($p->code) $suggestions[] = ['label' => $p->code . ($p->name ? ' - ' . $p->name : ''), 'value' => $p->code];
-            if ($p->brand) $suggestions[] = ['label' => $p->brand, 'value' => $p->brand];
         }
         $suggestions = collect($suggestions)->unique('label')->values()->all();
 
         return view('admin.products.index', compact('products', 'categories', 'suppliers', 'suggestions'));
+    }
+
+    private function getCategoryList()
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable('categories')) {
+            try {
+                return Category::orderBy('name')->pluck('name');
+            } catch (\Exception $e) {
+                // Ignore fallback
+            }
+        }
+        return Product::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
     }
 
     private function exportCsv($query)
@@ -196,7 +206,6 @@ class ProductController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
                   ->orWhere('code', 'like', "%$search%")
-                  ->orWhere('brand', 'like', "%$search%")
                   ->orWhere('model', 'like', "%$search%");
             });
         }
@@ -205,11 +214,10 @@ class ProductController extends Controller
         $suppliers = Supplier::orderBy('name')->get();
 
         $suggestions = [];
-        $prods = Product::get(['name', 'code', 'brand']);
+        $prods = Product::get(['name', 'code']);
         foreach ($prods as $p) {
             if ($p->name) $suggestions[] = ['label' => $p->name, 'value' => $p->name];
             if ($p->code) $suggestions[] = ['label' => $p->code . ($p->name ? ' - ' . $p->name : ''), 'value' => $p->code];
-            if ($p->brand) $suggestions[] = ['label' => $p->brand, 'value' => $p->brand];
         }
         $suggestions = collect($suggestions)->unique('label')->values()->all();
 
@@ -219,11 +227,10 @@ class ProductController extends Controller
     public function create()
     {
         Gate::authorize('manage-product');
-        $categories = Category::orderBy('name')->pluck('name');
+        $this->ensureExcelColumnsExist();
+        $categories = $this->getCategoryList();
         $suppliers = Supplier::orderBy('name')->get();
-        // Get unique brands from categories table
-        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
-        return view('admin.products.create', compact('categories', 'suppliers', 'brands'));
+        return view('admin.products.create', compact('categories', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -236,7 +243,6 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => 'nullable|string|max:255',
-            'brand' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
             'storage' => 'nullable|string|max:255',
@@ -252,7 +258,7 @@ class ProductController extends Controller
             'tax_type' => 'nullable|in:inclusive,exclusive,none',
         ]);
 
-        $data = $request->only(['code', 'barcode', 'name', 'name2', 'unit', 'exchange_unit', 'attributes', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'max_stock_qty', 'category', 'location', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description', 'stock_note', 'summary', 'seo', 'imei', 'last_stock_in_at']);
+        $data = $request->only(['code', 'barcode', 'name', 'name2', 'unit', 'exchange_unit', 'attributes', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'max_stock_qty', 'category', 'location', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description', 'stock_note', 'summary', 'seo', 'imei', 'last_stock_in_at']);
         $data['is_active'] = $request->boolean('is_active');
         $data['is_taxable'] = $request->boolean('is_taxable');
         $data['tax_rate'] = $request->input('is_taxable') ? $request->input('tax_rate', 0) : 0;
@@ -291,11 +297,10 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         Gate::authorize('manage-product');
-        $categories = Category::orderBy('name')->pluck('name');
-        // Get unique brands from categories table
-        $brands = Category::whereNotNull('brand')->where('brand', '!=', '')->orderBy('brand')->pluck('brand')->unique()->values();
+        $this->ensureExcelColumnsExist();
+        $categories = $this->getCategoryList();
         $suppliers = Supplier::orderBy('name')->get();
-        return view('admin.products.edit', compact('product', 'categories', 'brands', 'suppliers'));
+        return view('admin.products.edit', compact('product', 'categories', 'suppliers'));
     }
 
     public function update(Request $request, Product $product)
@@ -310,7 +315,6 @@ class ProductController extends Controller
             'stock' => 'required|integer',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'category' => 'nullable|string|max:255',
-            'brand' => 'nullable|string|max:255',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'cpu' => 'nullable|string|max:255',
             'ram' => 'nullable|string|max:255',
@@ -326,7 +330,7 @@ class ProductController extends Controller
             'tax_type' => 'nullable|in:inclusive,exclusive,none',
         ]);
 
-        $data = $request->only(['code', 'barcode', 'name', 'name2', 'unit', 'exchange_unit', 'attributes', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'max_stock_qty', 'category', 'location', 'brand', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description', 'stock_note', 'summary', 'seo', 'imei', 'last_stock_in_at']);
+        $data = $request->only(['code', 'barcode', 'name', 'name2', 'unit', 'exchange_unit', 'attributes', 'price', 'cost_price', 'stock', 'low_stock_threshold', 'max_stock_qty', 'category', 'location', 'supplier_id', 'model', 'cpu', 'ram', 'storage', 'graphics_card', 'color', 'warranty', 'condition', 'description', 'stock_note', 'summary', 'seo', 'imei', 'last_stock_in_at']);
         $data['is_active'] = $request->boolean('is_active');
         $data['is_taxable'] = $request->boolean('is_taxable');
         $data['tax_rate'] = $request->input('is_taxable') ? $request->input('tax_rate', 0) : 0;
@@ -478,6 +482,18 @@ class ProductController extends Controller
 
     private function ensureExcelColumnsExist()
     {
+        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'brand')) {
+            try {
+                \Illuminate\Support\Facades\Schema::table('products', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'brand')) {
+                        $table->dropColumn('brand');
+                    }
+                });
+            } catch (\Exception $e) {
+                // Ignore
+            }
+        }
+
         if (!\Illuminate\Support\Facades\Schema::hasColumn('products', 'barcode')) {
             try {
                 \Illuminate\Support\Facades\Schema::table('products', function (\Illuminate\Database\Schema\Blueprint $table) {
@@ -699,7 +715,6 @@ class ProductController extends Controller
                     'max_stock_qty' => $maxStock,
                     'category' => $categoryName ?: null,
                     'location' => $locationName ?: null,
-                    'brand' => $brandName ?: ($autoSpecs['brand'] ?? null),
                     'model' => trim((string)($data['model'] ?? '')) ?: null,
                     'cpu' => trim((string)($data['cpu'] ?? '')) ?: ($autoSpecs['cpu'] ?? null),
                     'ram' => trim((string)($data['ram'] ?? '')) ?: ($autoSpecs['ram'] ?? null),
@@ -735,8 +750,7 @@ class ProductController extends Controller
 
                     if (!empty($categoryName)) {
                         Category::firstOrCreate(
-                            ['name' => $categoryName],
-                            ['brand' => $brandName]
+                            ['name' => $categoryName]
                         );
                     }
 
@@ -757,8 +771,7 @@ class ProductController extends Controller
                 } else {
                     if (!empty($categoryName)) {
                         Category::firstOrCreate(
-                            ['name' => $categoryName],
-                            ['brand' => $brandName]
+                            ['name' => $categoryName]
                         );
                     }
 

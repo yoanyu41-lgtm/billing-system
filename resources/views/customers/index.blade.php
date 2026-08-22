@@ -10,6 +10,7 @@
             </h1>
             <p class="text-sm text-gray-500 mt-1">{{ ($type ?? 'installment') === 'direct' ? __('app.direct_customers_subtitle') : __('app.installment_customers_subtitle') }}</p>
         </div>
+        @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.create'))
         <a href="{{ route('customers.create', ['type' => $type ?? 'installment']) }}"
            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm {{ ($type ?? 'installment') === 'direct' ? 'hidden' : '' }}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,6 +18,7 @@
             </svg>
             {{ __('app.add_customer') }}
         </a>
+        @endif
     </div>
 
     {{-- Search --}}
@@ -150,6 +152,7 @@
                                     </svg>
                                     {{ __('app.view') }}
                                 </a>
+                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.edit'))
                                 <a href="{{ route('customers.edit', $customer) }}"
                                    class="inline-flex items-center gap-1 text-amber-600 hover:text-amber-800 text-xs font-medium transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +160,8 @@
                                     </svg>
                                     {{ __('app.edit') }}
                                 </a>
-                                @if(auth()->user()->role === 'admin')
+                                @endif
+                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.delete'))
                                 <form method="POST" action="{{ route('customers.destroy', $customer) }}"
                                       onsubmit="return confirm('{{ __('app.confirm_delete') }} {{ addslashes($customer->name) }}?')">
                                     @csrf @method('DELETE')

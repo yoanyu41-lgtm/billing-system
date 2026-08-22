@@ -22,7 +22,6 @@ class Product extends Model
         'max_stock_qty',
         'category',
         'location',
-        'brand',
         'supplier_id',
         'model',
         'cpu',

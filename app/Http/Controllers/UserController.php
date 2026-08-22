@@ -6,30 +6,30 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
     public function index()
     {
-        // Auto-update any legacy 'user' or non-admin roles to 'staff'
-        User::whereNotIn('role', ['admin', 'staff'])->update(['role' => 'staff']);
-
-        $users = User::all();
-        return view('admin.users.index', compact('users'));
+        $users = User::with('roles')->get();
+        $roles = Role::all();
+        return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
-        return view('admin.users.create');
+        $roles = Role::all();
+        return view('admin.users.create', compact('roles'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'role' => 'required|in:admin,staff',
+            'role' => 'required|string',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -37,32 +37,41 @@ class UserController extends Controller
             ? $request->file('profile_image')->store('users', 'public')
             : null;
 
-        User::create([
+        $roleName = trim($request->role);
+        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'role' => strtolower($roleName),
             'profile_image' => $profileImagePath,
         ]);
 
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        $user->syncRoles([$role->name]);
+
+        return redirect()->route('admin.users.index')->with('success', 'អ្នកប្រើប្រាស់ត្រូវបានបង្កើតដោយជោគជ័យ!');
     }
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $roles = Role::all();
+        $userRole = $user->roles->first()?->name ?? $user->role;
+
+        return view('admin.users.edit', compact('user', 'roles', 'userRole'));
     }
 
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,staff',
+            'role' => 'required|string',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data = $request->only(['name', 'email', 'role']);
+        $data = $request->only(['name', 'email']);
+        $data['role'] = strtolower($request->role);
 
         // Handle image removal
         if ($request->input('remove_image') == '1') {
@@ -79,37 +88,42 @@ class UserController extends Controller
             $data['profile_image'] = $request->file('profile_image')->store('users', 'public');
         }
 
-        $user->update($data);
+        $roleName = trim($request->role);
+        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        $data['role'] = strtolower($roleName);
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        $user->update($data);
+        $user->syncRoles([$role->name]);
+
+        return redirect()->route('admin.users.index')->with('success', 'ព័ត៌មានអ្នកប្រើប្រាស់ត្រូវបានកែប្រែដោយជោគជ័យ!');
     }
 
     public function destroy(User $user)
     {
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'អ្នកប្រើប្រាស់ត្រូវបានលុបដោយជោគជ័យ!');
     }
 
     public function resetPassword(User $user)
     {
         $user->update(['password' => Hash::make('password')]);
-        return redirect()->route('admin.users.index')->with('success', 'Password reset to "password".');
+        return redirect()->route('admin.users.index')->with('success', 'ពាក្យសម្ងាត់ត្រូវបានកំណត់ឡើងវិញទៅជា "password"');
     }
 
     public function restore($id)
     {
         $user = User::onlyTrashed()->findOrFail($id);
         $user->restore();
-        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'User restored successfully.');
+        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'គណនីត្រូវស្តារឡើងវិញដោយជោគជ័យ!');
     }
 
     public function forceDelete($id)
     {
         $user = User::onlyTrashed()->findOrFail($id);
         if ($user->profile_image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            Storage::disk('public')->delete($user->profile_image);
         }
         $user->forceDelete();
-        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'User permanently deleted.');
+        return redirect()->route('customers.trash', ['tab' => 'users'])->with('success', 'គណនីត្រូវលុបជាស្ថាពរ!');
     }
 }

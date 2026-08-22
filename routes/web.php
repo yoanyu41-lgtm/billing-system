@@ -21,6 +21,8 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SmartPaymentController;
 use App\Http\Controllers\TelegramLogController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -188,6 +190,10 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UserController::class);
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
+        // Roles & Permissions
+        Route::resource('roles', RoleController::class);
+        Route::resource('permissions', PermissionController::class)->only(['index', 'store', 'destroy']);
+
         // Products
         Route::get('products/import/template', [ProductController::class, 'downloadTemplate'])->name('products.import-template');
         Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import-form');
@@ -217,6 +223,7 @@ Route::middleware('auth')->group(function () {
         Route::post('expenses', [ReportController::class, 'storeExpense'])->name('expenses.store');
         Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');
         Route::get('reports/profit', [ReportController::class, 'profit'])->name('reports.profit');
+        Route::get('reports/{type}/print', [ReportController::class, 'printReport'])->name('reports.print');
         Route::get('reports/{type}/export', [ReportController::class, 'exportPdf'])->name('reports.export');
         Route::get('reports/excel/export', [ReportController::class, 'exportExcel'])->name('reports.excel');
 

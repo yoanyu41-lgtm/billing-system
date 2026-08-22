@@ -1,194 +1,221 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-7xl space-y-8">
+<div class="container mx-auto px-4 py-6 max-w-7xl space-y-6">
 
-    <!-- Header Navigation Pills -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="space-y-4">
         <div>
-            <div class="flex items-center gap-2 text-sm font-semibold text-emerald-600 mb-1">
-                <i class="fas fa-chart-line"></i> {{ __('app.reports') }}
-            </div>
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight">
-                {{ app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ (Profit / Income Report)' : 'Profit / Income Report' }}
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ' : 'Profit / Income Report' }}
             </h1>
-            <p class="text-sm font-semibold text-slate-500 mt-1 font-mono">
-                {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+            <p class="text-xs text-slate-500 mt-1 font-medium">
+                {{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង្ហាញ:' : 'Reporting Period:' }} 
+                <span class="font-semibold text-slate-700">
+                    {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+                </span>
             </p>
         </div>
+        
         @include('admin.reports._nav')
     </div>
 
-    <!-- Header Controls & Filters -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 no-print">
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="inline-flex items-center p-1 bg-slate-100 rounded-2xl text-xs font-bold border border-slate-200/60">
-                <a href="{{ route('admin.reports.profit', ['filter' => 'daily']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['today', 'daily']) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំថ្ងៃ' : 'Daily' }}</a>
-                <a href="{{ route('admin.reports.profit', ['filter' => 'this_week']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_week' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំសប្តាហ៍' : 'This Week' }}</a>
-                <a href="{{ route('admin.reports.profit', ['filter' => 'monthly']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['this_month', 'monthly']) || empty($filter) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំខែ' : 'Monthly' }}</a>
-                <a href="{{ route('admin.reports.profit', ['filter' => 'yearly']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['this_year', 'yearly']) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំឆ្នាំ' : 'Yearly' }}</a>
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 no-print">
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.reports.profit', ['filter' => 'daily']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['today', 'daily']) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំថ្ងៃ' : 'Daily' }}
+            </a>
+            <a href="{{ route('admin.reports.profit', ['filter' => 'this_week']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ ($filter ?? '') === 'this_week' ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំសប្តាហ៍' : 'This Week' }}
+            </a>
+            <a href="{{ route('admin.reports.profit', ['filter' => 'monthly']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['this_month', 'monthly']) || empty($filter) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំខែ' : 'Monthly' }}
+            </a>
+            <a href="{{ route('admin.reports.profit', ['filter' => 'yearly']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['this_year', 'yearly']) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំឆ្នាំ' : 'Yearly' }}
+            </a>
+        </div>
+
+        <form method="GET" action="{{ route('admin.reports.profit') }}" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="filter" value="custom">
+            
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <span>{{ app()->getLocale() === 'km' ? 'ចាប់ពី:' : 'From' }}</span>
+                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
             </div>
 
-            <form method="GET" action="{{ route('admin.reports.profit') }}" class="flex flex-wrap items-center gap-2">
-                <input type="hidden" name="filter" value="custom">
-                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <span class="text-xs font-medium text-slate-400">to</span>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-xs border-0 cursor-pointer flex items-center justify-center">
-                    Filter
-                </button>
-            </form>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <span>{{ app()->getLocale() === 'km' ? 'ដល់:' : 'To' }}</span>
+                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+            </div>
 
-            <button onclick="window.print()" class="ml-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border-0 cursor-pointer flex items-center gap-1.5">
-                <i class="fas fa-print text-slate-500"></i> Print
+            <button type="submit" class="px-4 py-2 bg-[#0b1f3a] hover:bg-[#07162b] text-white font-bold rounded-xl text-xs transition shadow-sm border-0 cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-search text-[11px]"></i> {{ app()->getLocale() === 'km' ? 'ស្វែងរក' : 'Search' }}
             </button>
+
+            <button type="button" onclick="printReportDirect('{{ route('admin.reports.print', ['type' => 'profit', 'start_date' => $startDate, 'end_date' => $endDate, 'filter' => $filter ?? '']) }}')" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition border border-slate-200 shadow-xs cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-print text-slate-500"></i> {{ app()->getLocale() === 'km' ? 'បោះពុម្ព' : 'Print' }}
+            </button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20 text-lg">
+                <i class="fas fa-cart-shopping"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'តម្លៃលក់សរុប' : 'TOTAL SALES' }}</span>
+                <div class="text-base font-black text-slate-900 mt-0.5 tracking-tight">${{ number_format($totalSelling, 2) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-purple-500/20 text-lg">
+                <i class="fas fa-boxes-packing"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ថ្លៃដើមទំនិញ' : 'COST OF GOODS' }}</span>
+                <div class="text-base font-black text-slate-900 mt-0.5 tracking-tight">${{ number_format($totalCost, 2) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20 text-lg">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'បញ្ចុះតម្លៃ' : 'DISCOUNT' }}</span>
+                <div class="text-base font-black text-slate-900 mt-0.5 tracking-tight">${{ number_format($totalDiscount, 2) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-teal-500/20 text-lg">
+                <i class="fas fa-money-bill-trend-up"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ចំណេញដុល' : 'GROSS PROFIT' }}</span>
+                <div class="text-base font-black text-emerald-600 mt-0.5 tracking-tight">${{ number_format($grossProfit, 2) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-500/20 text-lg">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ចំណាយសរុប' : 'TOTAL EXPENSE' }}</span>
+                <div class="text-base font-black text-rose-600 mt-0.5 tracking-tight">${{ number_format($totalExpenses, 2) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-500/20 text-lg">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ចំណេញសុទ្ធ' : 'NET INCOME' }}</span>
+                <div class="text-base font-black {{ $netIncome >= 0 ? 'text-slate-900' : 'text-rose-600' }} mt-0.5 tracking-tight">
+                    ${{ number_format($netIncome, 2) }}
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Formula Information Note Box -->
-    <div class="p-4 rounded-2xl bg-slate-900 text-white shadow-sm space-y-2">
-        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-            <i class="fas fa-calculator"></i> Profit Calculation Standard Formula
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono text-slate-300">
-            <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400">Net Sales:</span> <strong class="text-white">Selling Price - Discount</strong>
-            </div>
-            <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400">Gross Profit:</span> <strong class="text-emerald-400">Net Sales - Cost Price</strong>
-            </div>
-            <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                <span class="text-slate-400">Net Income:</span> <strong class="text-amber-400">Gross Profit - Total Expense</strong>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5 Summary KPI Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Net Sales (Blue) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-            <div class="flex items-center gap-2 text-blue-600 text-xs font-bold uppercase mb-1">
-                <i class="fas fa-shopping-bag"></i> Net Sales
-            </div>
-            <h3 class="text-xl font-black text-blue-600">${{ number_format($netSales, 2) }}</h3>
-        </div>
-
-        <!-- Total Cost Price (Amber) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-            <div class="flex items-center gap-2 text-amber-600 text-xs font-bold uppercase mb-1">
-                <i class="fas fa-boxes-packing"></i> Cost Price
-            </div>
-            <h3 class="text-xl font-black text-slate-900">${{ number_format($totalCost, 2) }}</h3>
-        </div>
-
-        <!-- Gross Profit (Green) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-            <div class="flex items-center gap-2 text-emerald-600 text-xs font-bold uppercase mb-1">
-                <i class="fas fa-chart-line"></i> Gross Profit
-            </div>
-            <h3 class="text-xl font-black text-emerald-600">${{ number_format($grossProfit, 2) }}</h3>
-        </div>
-
-        <!-- Expenses (Red) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-            <div class="flex items-center gap-2 text-rose-600 text-xs font-bold uppercase mb-1">
-                <i class="fas fa-hand-holding-dollar"></i> Expenses
-            </div>
-            <h3 class="text-xl font-black text-rose-600">${{ number_format($totalExpenses, 2) }}</h3>
-        </div>
-
-        <!-- Net Income (Orange) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-            <div class="flex items-center gap-2 text-amber-600 text-xs font-bold uppercase mb-1">
-                <i class="fas fa-coins"></i> Net Income
-            </div>
-            <h3 class="text-xl font-black {{ $netIncome >= 0 ? 'text-amber-600' : 'text-rose-600' }}">
-                ${{ number_format($netIncome, 2) }}
-            </h3>
-        </div>
-    </div>
-
-    <!-- Data Table -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                <i class="fas fa-receipt text-emerald-500"></i> Financial Profit Ledger
-            </h3>
-            <span class="text-sm font-black text-emerald-600">
-                Net Income: ${{ number_format($netIncome, 2) }}
+    <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'តារាងសៀវភៅគណនេយ្យប្រាក់ចំណេញ' : 'Profit Ledger' }}
+            </h2>
+            <span class="text-xs font-medium text-slate-500">
+                {{ app()->getLocale() === 'km' ? 'សរុប:' : 'Total:' }} <strong class="text-slate-800 font-bold">{{ count($ledger) }}</strong> {{ app()->getLocale() === 'km' ? 'ប្រតិបត្តិការ' : 'records' }}
             </span>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="py-3.5 px-4">Date</th>
-                        <th class="py-3.5 px-4">Ref No.</th>
-                        <th class="py-3.5 px-4">Type</th>
-                        <th class="py-3.5 px-4">Customer</th>
-                        <th class="py-3.5 px-4 text-right">Selling Price</th>
-                        <th class="py-3.5 px-4 text-right">Cost Price</th>
-                        <th class="py-3.5 px-4 text-right">Discount</th>
-                        <th class="py-3.5 px-4 text-right">Net Sales</th>
-                        <th class="py-3.5 px-4 text-right">Gross Profit</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($ledger as $item)
-                    <tr class="hover:bg-slate-50/50 transition">
-                        <td class="py-3.5 px-4 text-xs font-mono text-slate-500">
-                            {{ $item->date->format('d/m/Y') }}
-                        </td>
-                        <td class="py-3.5 px-4 font-bold text-slate-900 font-mono text-xs">
-                            {{ $item->ref_no }}
-                        </td>
-                        <td class="py-3.5 px-4 font-medium text-slate-700">
-                            @if($item->type === 'Direct Sale')
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Direct</span>
-                            @else
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">Installment</span>
-                            @endif
-                        </td>
-                        <td class="py-3.5 px-4 font-medium text-slate-800">
-                            {{ $item->customer }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-slate-900">
-                            ${{ number_format($item->selling_price, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-amber-600">
-                            ${{ number_format($item->cost_price, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-purple-600">
-                            ${{ number_format($item->discount, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-bold text-blue-600">
-                            ${{ number_format($item->net_sales, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-black text-emerald-600">
-                            ${{ number_format($item->gross_profit, 2) }}
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="9" class="py-12 text-center text-slate-400">
-                            <i class="fas fa-inbox text-3xl mb-2 block text-slate-300"></i>
-                            No Financial Ledger Data Found
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-                <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900 text-xs">
-                    <tr>
-                        <td colspan="4" class="py-4 px-4 text-right uppercase tracking-wider">Total Summary:</td>
-                        <td class="py-4 px-4 text-right font-black">${{ number_format($totalSelling, 2) }}</td>
-                        <td class="py-4 px-4 text-right font-black text-amber-600">${{ number_format($totalCost, 2) }}</td>
-                        <td class="py-4 px-4 text-right font-black text-purple-600">${{ number_format($totalDiscount, 2) }}</td>
-                        <td class="py-4 px-4 text-right font-black text-blue-600">${{ number_format($netSales, 2) }}</td>
-                        <td class="py-4 px-4 text-right font-black text-emerald-600">${{ number_format($grossProfit, 2) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wide">
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទ' : 'Date' }}</th>
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'លេខយោង' : 'Reference Number' }}</th>
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ប្រភេទ' : 'Type' }}</th>
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'អតិថិជន' : 'Customer' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'តម្លៃលក់' : 'Selling Price' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ថ្លៃដើម' : 'Cost Price' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'បញ្ចុះតម្លៃ' : 'Discount' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ការលក់សុទ្ធ' : 'Net Sales' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ចំណេញដុល' : 'Gross Profit' }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-800">
+                        @forelse($ledger as $item)
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3.5 px-4 text-slate-600 font-mono font-medium">
+                                {{ $item->date->format('d/m/Y') }}
+                            </td>
+                            <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">
+                                {{ $item->ref_no }}
+                            </td>
+                            <td class="py-3.5 px-4">
+                                @if($item->type === 'Direct Sale')
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                        {{ app()->getLocale() === 'km' ? 'លក់ដាច់' : 'Direct' }}
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                        {{ app()->getLocale() === 'km' ? 'បង់រំលស់' : 'Installment' }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 px-4 font-bold text-slate-900">
+                                {{ $item->customer }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900">
+                                ${{ number_format($item->selling_price, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-semibold text-slate-600">
+                                ${{ number_format($item->cost_price, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-semibold text-slate-500">
+                                ${{ number_format($item->discount, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900">
+                                ${{ number_format($item->net_sales, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-emerald-600">
+                                ${{ number_format($item->gross_profit, 2) }}
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="9" class="py-12 text-center text-slate-400">
+                                <i class="fas fa-inbox text-3xl mb-2 block text-slate-300"></i>
+                                {{ app()->getLocale() === 'km' ? 'មិនមានទិន្នន័យគណនេយ្យក្នុងចន្លោះពេលនេះទេ' : 'No financial ledger records found.' }}
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    @if(count($ledger) > 0)
+                    <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900">
+                        <tr>
+                            <td colspan="4" class="py-3.5 px-4 text-right uppercase text-[11px] text-slate-500 font-bold">
+                                {{ app()->getLocale() === 'km' ? 'សរុបរួម:' : 'Grand Total:' }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900 text-sm">${{ number_format($totalSelling, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-semibold text-slate-600">${{ number_format($totalCost, 2) }}</td>
+                            <td class="py-3.5 px-4 text-semibold text-slate-500">${{ number_format($totalDiscount, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900">${{ number_format($netSales, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-black text-emerald-600 text-sm">${{ number_format($grossProfit, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            </div>
         </div>
     </div>
 

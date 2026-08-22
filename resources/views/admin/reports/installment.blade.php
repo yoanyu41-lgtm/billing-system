@@ -1,194 +1,243 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-7xl space-y-8">
+<div class="container mx-auto px-4 py-6 max-w-7xl space-y-6">
 
-    <!-- Header Navigation Pills -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="space-y-4">
         <div>
-            <div class="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
-                <i class="fas fa-file-invoice-dollar"></i> {{ __('app.reports') }}
-            </div>
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight">
-                {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការបង់រំលស់' : 'Installment Report' }}
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់រំលស់' : 'Installment Report' }}
             </h1>
-            <p class="text-sm font-semibold text-slate-500 mt-1 font-mono">
-                {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+            <p class="text-xs text-slate-500 mt-1 font-medium">
+                {{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង្ហាញ:' : 'Reporting Period:' }} 
+                <span class="font-semibold text-slate-700">
+                    {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+                </span>
             </p>
         </div>
+        
         @include('admin.reports._nav')
     </div>
 
-    <!-- Header Controls & Filters -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 no-print">
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="inline-flex items-center p-1 bg-slate-100 rounded-2xl text-xs font-bold border border-slate-200/60">
-                <a href="{{ route('admin.reports.installment', ['filter' => 'daily']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['today', 'daily']) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំថ្ងៃ' : 'Daily' }}</a>
-                <a href="{{ route('admin.reports.installment', ['filter' => 'this_week']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ ($filter ?? '') === 'this_week' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំសប្តាហ៍' : 'This Week' }}</a>
-                <a href="{{ route('admin.reports.installment', ['filter' => 'monthly']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['this_month', 'monthly']) || empty($filter) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំខែ' : 'Monthly' }}</a>
-                <a href="{{ route('admin.reports.installment', ['filter' => 'yearly']) }}" class="px-4 py-2 rounded-xl transition no-underline {{ in_array($filter ?? '', ['this_year', 'yearly']) ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">{{ app()->getLocale() === 'km' ? 'ប្រចាំឆ្នាំ' : 'Yearly' }}</a>
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 no-print">
+        
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.reports.installment', ['filter' => 'daily', 'status' => $statusFilter ?? '']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['today', 'daily']) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំថ្ងៃ' : 'Daily' }}
+            </a>
+            <a href="{{ route('admin.reports.installment', ['filter' => 'this_week', 'status' => $statusFilter ?? '']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ ($filter ?? '') === 'this_week' ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំសប្តាហ៍' : 'This Week' }}
+            </a>
+            <a href="{{ route('admin.reports.installment', ['filter' => 'monthly', 'status' => $statusFilter ?? '']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['this_month', 'monthly']) || empty($filter) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំខែ' : 'Monthly' }}
+            </a>
+            <a href="{{ route('admin.reports.installment', ['filter' => 'yearly', 'status' => $statusFilter ?? '']) }}" 
+               class="px-4 py-2 rounded-xl text-xs font-semibold transition no-underline border {{ in_array($filter ?? '', ['this_year', 'yearly']) ? 'bg-white border-blue-500 text-slate-900 shadow-sm font-bold ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                {{ app()->getLocale() === 'km' ? 'ប្រចាំឆ្នាំ' : 'Yearly' }}
+            </a>
+        </div>
+
+        <form method="GET" action="{{ route('admin.reports.installment') }}" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="filter" value="custom">
+            
+            <select name="status" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+                <option value="">{{ app()->getLocale() === 'km' ? '-- ស្ថានភាពទាំងអស់ --' : '-- All Status --' }}</option>
+                <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
+                <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Pending</option>
+            </select>
+
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <span>{{ app()->getLocale() === 'km' ? 'ចាប់ពី:' : 'From' }}</span>
+                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
             </div>
 
-            <form method="GET" action="{{ route('admin.reports.installment') }}" class="flex flex-wrap items-center gap-2">
-                <select name="status" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="">-- Filter All Status --</option>
-                    <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Completed</option>
-                    <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Pending</option>
-                </select>
-                <input type="hidden" name="filter" value="custom">
-                <input type="date" name="start_date" value="{{ $startDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <span class="text-xs font-medium text-slate-400">to</span>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-xs border-0 cursor-pointer flex items-center justify-center">
-                    Filter
-                </button>
-            </form>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <span>{{ app()->getLocale() === 'km' ? 'ដល់:' : 'To' }}</span>
+                <input type="date" name="end_date" value="{{ $endDate }}" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+            </div>
 
-            <button onclick="window.print()" class="ml-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition border-0 cursor-pointer flex items-center gap-1.5">
-                <i class="fas fa-print text-slate-500"></i> Print
+            <button type="submit" class="px-4 py-2 bg-[#0b1f3a] hover:bg-[#07162b] text-white font-bold rounded-xl text-xs transition shadow-sm border-0 cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-search text-[11px]"></i> {{ app()->getLocale() === 'km' ? 'ស្វែងរក' : 'Search' }}
             </button>
-        </div>
+
+            <button type="button" onclick="printReportDirect('{{ route('admin.reports.print', ['type' => 'installment', 'start_date' => $startDate, 'end_date' => $endDate, 'status' => $statusFilter ?? '', 'filter' => $filter ?? '']) }}')" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition border border-slate-200 shadow-xs cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-print text-slate-500"></i> {{ app()->getLocale() === 'km' ? 'បោះពុម្ព' : 'Print' }}
+            </button>
+        </form>
     </div>
 
-    <!-- 5 Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Active Installments -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0 border border-blue-100">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20 text-lg">
                 <i class="fas fa-file-contract"></i>
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Active Contracts</span>
-                <span class="text-xl font-black text-slate-900">{{ number_format($activeCount) }}</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'កិច្ចសន្យាកំពុងបង់' : 'ACTIVE' }}</span>
+                <div class="text-lg font-black text-slate-900 mt-0.5 tracking-tight">{{ number_format($activeCount) }}</div>
             </div>
         </div>
 
-        <!-- Completed Installments -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0 border border-emerald-100">
-                <i class="fas fa-check-circle"></i>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-500/20 text-lg">
+                <i class="fas fa-hand-holding-dollar"></i>
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Completed</span>
-                <span class="text-xl font-black text-slate-900">{{ number_format($completedCount) }}</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រាក់ដើមនៅសល់' : 'OUTSTANDING' }}</span>
+                <div class="text-lg font-black text-slate-900 mt-0.5 tracking-tight">${{ number_format($totalOutstanding, 2) }}</div>
             </div>
         </div>
 
-        <!-- Overdue Installments -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg shrink-0 border border-rose-100">
-                <i class="fas fa-exclamation-triangle"></i>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/20 text-lg">
+                <i class="fas fa-sack-dollar"></i>
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Overdue</span>
-                <span class="text-xl font-black text-rose-600">{{ number_format($overdueCount) }}</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រាក់ប្រមូលបាន' : 'COLLECTED' }}</span>
+                <div class="text-lg font-black text-slate-900 mt-0.5 tracking-tight">${{ number_format($totalCollected, 2) }}</div>
             </div>
         </div>
 
-        <!-- Total Outstanding -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg shrink-0 border border-amber-100">
-                <i class="fas fa-coins"></i>
+        <!-- Overdue -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20 text-lg">
+                <i class="fas fa-clock-rotate-left"></i>
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Total Outstanding</span>
-                <span class="text-xl font-black text-amber-600">${{ number_format($totalOutstanding, 2) }}</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ហួសកាលកំណត់' : 'OVERDUE' }}</span>
+                <div class="text-lg font-black text-slate-900 mt-0.5 tracking-tight">{{ number_format($overdueCount) }}</div>
             </div>
         </div>
 
-        <!-- Total Collected -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg shrink-0 border border-purple-100">
-                <i class="fas fa-wallet"></i>
+        <!-- Completed -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition">
+            <div class="w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-teal-500/20 text-lg">
+                <i class="fas fa-circle-check"></i>
             </div>
             <div>
-                <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Total Collected</span>
-                <span class="text-xl font-black text-purple-600">${{ number_format($totalCollected, 2) }}</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'COMPLETED' }}</span>
+                <div class="text-lg font-black text-slate-900 mt-0.5 tracking-tight">{{ number_format($completedCount) }}</div>
             </div>
         </div>
+
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        <th class="py-3.5 px-4">Contract No.</th>
-                        <th class="py-3.5 px-4">Customer</th>
-                        <th class="py-3.5 px-4">Product</th>
-                        <th class="py-3.5 px-4 text-right">Total Amount</th>
-                        <th class="py-3.5 px-4 text-right">Down Payment</th>
-                        <th class="py-3.5 px-4 text-right">Remaining</th>
-                        <th class="py-3.5 px-4 text-center">Duration</th>
-                        <th class="py-3.5 px-4 text-right">Monthly Pay</th>
-                        <th class="py-3.5 px-4 text-center">Paid Months</th>
-                        <th class="py-3.5 px-4 text-center">Rem. Months</th>
-                        <th class="py-3.5 px-4 text-center">Next Due Date</th>
-                        <th class="py-3.5 px-4 text-center">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    @forelse($installmentList as $inst)
-                    <tr class="hover:bg-slate-50/50 transition">
-                        <td class="py-3.5 px-4 font-bold text-slate-900 font-mono text-xs">
-                            {{ $inst->contract_no }}
-                        </td>
-                        <td class="py-3.5 px-4 font-medium text-slate-800">
-                            {{ $inst->customer }}
-                        </td>
-                        <td class="py-3.5 px-4 font-medium text-slate-700">
-                            {{ $inst->product }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-slate-900">
-                            ${{ number_format($inst->total_amount, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-slate-600">
-                            ${{ number_format($inst->down_payment, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-black text-rose-600">
-                            ${{ number_format($inst->remaining, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-center font-semibold text-slate-700 text-xs">
-                            {{ $inst->duration }}
-                        </td>
-                        <td class="py-3.5 px-4 text-right font-semibold text-slate-800">
-                            ${{ number_format($inst->monthly_payment, 2) }}
-                        </td>
-                        <td class="py-3.5 px-4 text-center font-bold text-emerald-600">
-                            {{ $inst->paid_months }}
-                        </td>
-                        <td class="py-3.5 px-4 text-center font-bold text-amber-600">
-                            {{ $inst->remaining_months }}
-                        </td>
-                        <td class="py-3.5 px-4 text-center text-xs text-slate-500 font-mono">
-                            {{ $inst->next_due_date }}
-                        </td>
-                        <td class="py-3.5 px-4 text-center">
-                            @php
-                                $badgeCls = match($inst->status) {
-                                    'Completed' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                                    'Overdue' => 'bg-rose-50 text-rose-700 border-rose-100',
-                                    'Active' => 'bg-blue-50 text-blue-700 border-blue-100',
-                                    default => 'bg-amber-50 text-amber-700 border-amber-100'
-                                };
-                            @endphp
-                            <span class="px-2.5 py-1 rounded-full text-xs font-bold border {{ $badgeCls }}">
-                                {{ $inst->status }}
-                            </span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="12" class="py-12 text-center text-slate-400">
-                            <i class="fas fa-inbox text-3xl mb-2 block text-slate-300"></i>
-                            No Installment Data Found
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <!-- Data Table Section -->
+    <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-base font-bold text-slate-900 tracking-tight">
+                {{ app()->getLocale() === 'km' ? 'តារាងរបាយការណ៍កិច្ចសន្យាបង់រំលស់' : 'Installment Contracts' }}
+            </h2>
+            <span class="text-xs font-medium text-slate-500">
+                {{ app()->getLocale() === 'km' ? 'សរុប:' : 'Total:' }} <strong class="text-slate-800 font-bold">{{ count($installmentList) }}</strong> {{ app()->getLocale() === 'km' ? 'កិច្ចសន្យា' : 'contracts' }}
+            </span>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wide">
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'លេខកិច្ចសន្យា' : 'Contract Number' }}</th>
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'អតិថិជន' : 'Customer' }}</th>
+                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ទំនិញ' : 'Product' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'តម្លៃសរុប' : 'Total Amount' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ប្រាក់កក់' : 'Down Payment' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'នៅសល់' : 'Remaining' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'រយៈពេល' : 'Duration' }}</th>
+                            <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'បង់ប្រចាំខែ' : 'Monthly Pay' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'បានបង់' : 'Paid' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'នៅខ្វះ' : 'Left' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ថ្ងៃត្រូវបង់បន្ទាប់' : 'Next Due' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ស្ថានភាព' : 'Status' }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-800">
+                        @forelse($installmentList as $inst)
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3.5 px-4 font-bold text-slate-900">
+                                {{ $inst->contract_no }}
+                            </td>
+                            <td class="py-3.5 px-4 font-semibold text-slate-900">
+                                {{ $inst->customer }}
+                            </td>
+                            <td class="py-3.5 px-4 text-slate-700">
+                                {{ $inst->product }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900">
+                                ${{ number_format($inst->total_amount, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-semibold text-slate-600">
+                                ${{ number_format($inst->down_payment, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-rose-600">
+                                ${{ number_format($inst->remaining, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center font-medium text-slate-700">
+                                {{ $inst->duration }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-bold text-slate-800">
+                                ${{ number_format($inst->monthly_payment, 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center font-bold text-emerald-600">
+                                {{ $inst->paid_months }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center font-bold text-amber-600">
+                                {{ $inst->remaining_months }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-slate-600 font-medium">
+                                {{ $inst->next_due_date }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
+                                @if(strtolower($inst->status) === 'completed')
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                        {{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'Completed' }}
+                                    </span>
+                                @elseif(strtolower($inst->status) === 'overdue')
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#fee2e2] text-[#dc2626]">
+                                        {{ app()->getLocale() === 'km' ? 'ហួសកំណត់' : 'Overdue' }}
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                        {{ app()->getLocale() === 'km' ? 'សកម្ម' : 'Active' }}
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="12" class="py-12 text-center text-slate-400">
+                                <i class="fas fa-inbox text-3xl mb-2 block text-slate-300"></i>
+                                {{ app()->getLocale() === 'km' ? 'មិនមានទិន្នន័យកិច្ចសន្យាបង់រំលស់ទេ' : 'No installment contracts found.' }}
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    @if(count($installmentList) > 0)
+                    <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900">
+                        <tr>
+                            <td colspan="3" class="py-3.5 px-4 text-right uppercase text-[11px] text-slate-500 font-bold">
+                                {{ app()->getLocale() === 'km' ? 'សរុបរួម:' : 'Grand Total:' }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900 text-sm">
+                                ${{ number_format(collect($installmentList)->sum('total_amount'), 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-bold text-slate-600">
+                                ${{ number_format(collect($installmentList)->sum('down_payment'), 2) }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-black text-rose-600">
+                                ${{ number_format(collect($installmentList)->sum('remaining'), 2) }}
+                            </td>
+                            <td colspan="6"></td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            </div>
         </div>
     </div>
 

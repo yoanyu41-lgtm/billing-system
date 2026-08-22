@@ -58,7 +58,6 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-        </div>
 
             <!-- Category -->
             <div>
@@ -74,8 +73,6 @@
                 @enderror
             </div>
 
-
-
             <!-- Stock -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2 text-justify [text-align-last:justify]">{{ __('app.stock_quantity') }} <span class="text-red-500">*</span></label>
@@ -84,7 +81,6 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-
 
             <!-- Selling Price -->
             <div>

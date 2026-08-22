@@ -1051,14 +1051,16 @@
 
         <nav class="sb-nav">
 
-            {{-- ── General ── --}}
+            {{-- ── Dashboard ── --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('dashboard.view'))
             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i> {{ __('app.dashboard') }}
             </a>
+            @endif
 
             {{-- Customers Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.view'))
             @php
-                // Determine the active customer type for sidebar highlighting.
                 $routeCustomer = request()->route('customer');
                 if ($routeCustomer instanceof \App\Models\Customer) {
                     $custType = $routeCustomer->type;
@@ -1081,8 +1083,10 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             {{-- Installments Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.view'))
             <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-file-invoice-dollar"></i>
@@ -1107,19 +1111,14 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             {{-- Direct Sale (ទិញដាច់) --}}
-            @if(in_array(auth()->user()->role, ['admin', 'staff']))
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view') || auth()->user()->can('sales.create'))
             @php
                 $isDirectSaleOpen = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
                 $isDirectSaleIndexActive = (request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show')) && request('from') !== 'invoice';
             @endphp
-            @if(auth()->user()->role === 'admin')
-            <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
-                <i class="fas fa-cash-register"></i>
-                <span>{{ __('app.direct_sale') }}</span>
-            </a>
-            @else
             <div class="sb-dropdown {{ $isDirectSaleOpen ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ $isDirectSaleOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cash-register"></i>
@@ -1127,17 +1126,22 @@
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.create'))
                     <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
                         <i class="fas fa-plus-circle"></i> {{ __('app.new_direct_sale') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view'))
                     <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.sales_list') }}
                     </a>
+                    @endif
                 </div>
             </div>
             @endif
-            @endif
 
+            {{-- Invoices Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('invoices.view'))
             @php
                 $showInvoice = request()->route('invoice');
                 if (is_numeric($showInvoice)) {
@@ -1191,8 +1195,10 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             {{-- Payment Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.view'))
             <div class="sb-dropdown {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-money-check-alt"></i>
@@ -1203,16 +1209,20 @@
                     <a href="{{ route('payments.index') }}" class="{{ request()->routeIs('payments.index') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_payments') }}
                     </a>
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create'))
                     <a href="{{ route('payments.create') }}" class="{{ request()->routeIs('payments.create') ? 'active' : '' }}">
                         <i class="fas fa-plus-circle"></i> {{ __('app.new_payment') }}
                     </a>
+                    @endif
                     <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
                         <i class="fas fa-exclamation-circle"></i> {{ __('app.late_payments') }}
                     </a>
                 </div>
             </div>
+            @endif
 
-            {{-- Product Management (visible to admin & staff) --}}
+            {{-- Product Management --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('products.view'))
             <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-box-open"></i>
@@ -1223,29 +1233,37 @@
                     <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.product_list') }}
                     </a>
-                    @if(in_array(auth()->user()->role, ['admin', 'staff']))
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage'))
                     <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.create'))
                     <a href="{{ route('admin.purchases.create') }}" class="{{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
                         <i class="fas fa-truck-loading"></i> {{ __('app.stock_in') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.view'))
                     <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage'))
                     <a href="{{ route('admin.stock-movements.index') }}" class="{{ request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}">
                         <i class="fas fa-exchange-alt"></i> {{ __('app.stock_movements') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('suppliers.manage'))
                     <a href="{{ route('admin.suppliers.index') }}" class="{{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
                         <i class="fas fa-truck"></i> {{ __('app.suppliers') }}
                     </a>
                     @endif
                 </div>
             </div>
+            @endif
 
-
-            {{-- Reports Dropdown (Admin & Staff - 7 Main Reports) --}}
-            @if(in_array(auth()->user()->role, ['admin', 'staff']))
+            {{-- Reports Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('reports.view'))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-pie"></i>
@@ -1278,37 +1296,51 @@
             </div>
             @endif
 
-            {{-- Telegram Management (Admin & Staff) --}}
-            @if(in_array(auth()->user()->role, ['admin', 'staff']))
+            {{-- Telegram Management --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
             <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') || request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
                 <i class="fab fa-telegram-plane"></i>
                 <span>{{ app()->getLocale() === 'km' ? 'គ្រប់គ្រង Telegram' : 'Telegram Management' }}</span>
             </a>
             @endif
 
-            @if(auth()->user()->role === 'admin')
-            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            {{-- Settings Dropdown --}}
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage') || auth()->user()->can('users.view') || auth()->user()->can('roles.manage'))
+            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cog"></i>
                     <span>{{ __('app.settings') }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
                     <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
                         <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('users.view'))
                     <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('roles.manage'))
+                    <a href="{{ route('admin.roles.index') }}" class="{{ request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                        <i class="fas fa-user-shield"></i> {{ app()->getLocale() === 'km' ? 'កំណត់សិទ្ធិ (Roles & Permissions)' : 'Roles & Permissions' }}
+                    </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('backup.manage'))
                     <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
                         <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
                     </a>
+                    @endif
+                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
                     <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                         <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
                     </a>
                     <a href="{{ route('customers.trash') }}" class="{{ request()->routeIs('customers.trash') ? 'active' : '' }}">
                         <i class="fas fa-trash-alt"></i> {{ __('app.trash') }}
                     </a>
+                    @endif
                 </div>
             </div>
             @endif
@@ -1599,7 +1631,7 @@
                 </div>
                 <div>
                     <div class="topbar-uname">{{ auth()->user()->name }}</div>
-                    <div class="topbar-urole">{{ ucfirst(auth()->user()->role) }}</div>
+                    <div class="topbar-urole">{{ auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role) }}</div>
                 </div>
                 <i class="fas fa-chevron-down" style="font-size:10px;color:#94a3b8;margin-left:4px;"></i>
                 
@@ -2252,11 +2284,42 @@ function closeLogoutModal() {
 function executeLogout() {
     if (logoutFormToSubmit) {
         logoutFormToSubmit.submit();
+        return;
     }
+    
+    // Fallback: dynamically create and submit logout form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ route('logout') }}";
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = "{{ csrf_token() }}";
+    
+    form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    form.submit();
 }
-</script>
-</body>
-</html>
+
+function printReportDirect(url) {
+    let existingFrame = document.getElementById('report-print-iframe');
+    if (existingFrame) {
+        existingFrame.remove();
+    }
+    
+    const iframe = document.createElement('iframe');
+    iframe.id = 'report-print-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.src = url;
+    
+    document.body.appendChild(iframe);
+}
 </script>
 </body>
 </html>

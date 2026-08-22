@@ -27,7 +27,6 @@ class ProductApiController extends Controller
             'cost_price'  => 'nullable|numeric|min:0',
             'stock'       => 'required|integer|min:0',
             'category'    => 'nullable|string|max:100',
-            'brand'       => 'nullable|string|max:100',
             'model'       => 'nullable|string|max:100',
             'description' => 'nullable|string',
         ]);
@@ -46,7 +45,6 @@ class ProductApiController extends Controller
             'cost_price'  => 'nullable|numeric|min:0',
             'stock'       => 'sometimes|required|integer|min:0',
             'category'    => 'nullable|string|max:100',
-            'brand'       => 'nullable|string|max:100',
             'model'       => 'nullable|string|max:100',
             'description' => 'nullable|string',
         ]);

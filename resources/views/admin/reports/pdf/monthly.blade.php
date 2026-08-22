@@ -13,9 +13,17 @@
         $sales = $sales ?? collect();
     @endphp
     <title>របាយការណ៍ប្រចាំខែ - {{ $month }}/{{ $year }}</title>
+    @include('admin.reports.pdf.khmer_font_css')
     <style>
-        * { font-family: 'Khmer UI', 'khmeros', 'Battambang', 'DejaVu Sans', sans-serif; }
-        body { margin: 0; padding: 24px; font-size: 11px; color: #1f2937; line-height: 1.4; }
+        * { font-family: 'KhmerUI', 'DejaVu Sans', sans-serif !important; }
+        body, table, td, th, div, span, p, h1, h2, h3, h4, h5, h6 { 
+            font-family: 'KhmerUI', 'DejaVu Sans', sans-serif !important; 
+            margin: 0; 
+            padding: 24px; 
+            font-size: 11px; 
+            color: #1f2937; 
+            line-height: 1.4; 
+        }
         .header { text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 20px; }
         .title { font-size: 20px; font-weight: bold; color: #1e40af; }
         .period { font-size: 12px; color: #6b7280; margin-top: 6px; font-weight: 500; }

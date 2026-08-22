@@ -56,8 +56,9 @@
             <label for="roleFilter" class="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline-block">តម្រៀបតាមតួនាទី៖</label>
             <select id="roleFilter" onchange="filterUsers()" class="py-2 px-3 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
                 <option value="all">តួនាទីទាំងអស់ (All Roles)</option>
-                <option value="admin">🛡️ អ្នកគ្រប់គ្រង (Admin)</option>
-                <option value="staff">👤 បុគ្គលិក (Staff)</option>
+                @foreach($roles as $r)
+                    <option value="{{ strtolower($r->name) }}">{{ $r->name }}</option>
+                @endforeach
             </select>
         </div>
     </div>
@@ -77,7 +78,11 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
                     @foreach($users as $index => $user)
-                    <tr class="user-row hover:bg-slate-50/80 transition-colors" data-role="{{ $user->role }}">
+                    @php
+                        $assignedRoleName = $user->roles->first()?->name ?? ucfirst($user->role);
+                        $roleLower = strtolower($assignedRoleName);
+                    @endphp
+                    <tr class="user-row hover:bg-slate-50/80 transition-colors" data-role="{{ $roleLower }}">
                         <td class="px-5 py-3.5 font-bold text-slate-400 font-mono">{{ $index + 1 }}</td>
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-3">
@@ -101,13 +106,21 @@
                             </span>
                         </td>
                         <td class="px-5 py-3.5 whitespace-nowrap">
-                            @if($user->role === 'admin')
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
-                                    🛡️ {{ __('app.admin') }}
+                            @if($roleLower === 'admin')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
+                                    {{ $assignedRoleName }}
+                                </span>
+                            @elseif($roleLower === 'manager')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
+                                    {{ $assignedRoleName }}
+                                </span>
+                            @elseif($roleLower === 'cashier')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                                    {{ $assignedRoleName }}
                                 </span>
                             @else
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
-                                    👤 {{ __('app.staff') }}
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs">
+                                    {{ $assignedRoleName }}
                                 </span>
                             @endif
                         </td>

@@ -26,6 +26,116 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        try {
+            if (Schema::hasTable('products') && Schema::hasColumn('products', 'brand')) {
+                Schema::table('products', function ($table) {
+                    if (Schema::hasColumn('products', 'brand')) {
+                        $table->dropColumn('brand');
+                    }
+                });
+            }
+
+            if (!Schema::hasTable('categories')) {
+                Schema::create('categories', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->id();
+                    $table->string('name')->unique();
+                    $table->softDeletes();
+                    $table->timestamps();
+                });
+            }
+        } catch (\Exception $e) {
+            // Ignore
+        }
+
+        // Auto-create Permission tables and seed default roles if missing in database
+        try {
+            if (Schema::hasTable('users') && !Schema::hasTable('roles')) {
+                if (!Schema::hasTable('permissions')) {
+                    Schema::create('permissions', function ($table) {
+                        $table->bigIncrements('id');
+                        $table->string('name');
+                        $table->string('guard_name')->default('web');
+                        $table->timestamps();
+                        $table->unique(['name', 'guard_name']);
+                    });
+                }
+
+                if (!Schema::hasTable('roles')) {
+                    Schema::create('roles', function ($table) {
+                        $table->bigIncrements('id');
+                        $table->string('name');
+                        $table->string('guard_name')->default('web');
+                        $table->timestamps();
+                        $table->unique(['name', 'guard_name']);
+                    });
+                }
+
+                if (!Schema::hasTable('model_has_permissions')) {
+                    Schema::create('model_has_permissions', function ($table) {
+                        $table->unsignedBigInteger('permission_id');
+                        $table->string('model_type');
+                        $table->unsignedBigInteger('model_id');
+                        $table->index(['model_id', 'model_type']);
+                        $table->primary(['permission_id', 'model_id', 'model_type']);
+                    });
+                }
+
+                if (!Schema::hasTable('model_has_roles')) {
+                    Schema::create('model_has_roles', function ($table) {
+                        $table->unsignedBigInteger('role_id');
+                        $table->string('model_type');
+                        $table->unsignedBigInteger('model_id');
+                        $table->index(['model_id', 'model_type']);
+                        $table->primary(['role_id', 'model_id', 'model_type']);
+                    });
+                }
+
+                if (!Schema::hasTable('role_has_permissions')) {
+                    Schema::create('role_has_permissions', function ($table) {
+                        $table->unsignedBigInteger('permission_id');
+                        $table->unsignedBigInteger('role_id');
+                        $table->primary(['permission_id', 'role_id']);
+                    });
+                }
+
+                (new \Database\Seeders\RoleAndPermissionSeeder())->run();
+            }
+
+            // Sync all permissions into DB if missing
+            if (Schema::hasTable('permissions') && \Spatie\Permission\Models\Permission::count() < 45) {
+                (new \Database\Seeders\RoleAndPermissionSeeder())->run();
+            }
+
+            // Ensure logged in user has their spatie role synced
+            if (auth()->check() && auth()->user()->roles->isEmpty()) {
+                $user = auth()->user();
+                $roleToAssign = \Spatie\Permission\Models\Role::where('name', 'like', $user->role)->first()
+                    ?? \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
+                if ($roleToAssign) {
+                    $user->assignRole($roleToAssign);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Permission Table Setup Error: ' . $e->getMessage());
+        }
+
+        // Global Gate callback for Spatie Role & Permission evaluation
+        Gate::before(function ($user, $ability) {
+            if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
+                return true;
+            }
+
+            if (method_exists($user, 'hasPermissionTo')) {
+                try {
+                    return $user->hasPermissionTo($ability) ? true : false;
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            }
+
+            return null;
+        });
+
         // Share the company logo, name, and subtitle with every view (auth pages, sidebar, etc.)
         View::composer('*', function ($view) {
             $logoUrl = asset('logo-ct.svg'); // default fallback
@@ -63,56 +173,51 @@ class AppServiceProvider extends ServiceProvider
             $view->with('companySubtitle', $companySubtitle);
         });
 
-        // Staff + admin can view/edit any customer
-        Gate::define('manage-customer', fn($user, Customer $customer) =>
-            in_array($user->role, ['admin', 'staff']) || $customer->created_by === $user->id
-        );
-
-        // Only admin can delete customers
-        Gate::define('delete-customer', fn($user) =>
-            $user->role === 'admin'
-        );
-
-        // Only admin can delete installments
-        Gate::define('delete-installment', fn($user) =>
-            $user->role === 'admin'
-        );
-
-        // Staff + admin can manage any installment
-        Gate::define('manage-installment', fn($user, Installment $installment) =>
-            in_array($user->role, ['admin', 'staff']) || $installment->created_by === $user->id
-        );
-
-        // Only admin can approve/reject Cash payments; staff can approve other methods (QR, Credit Card)
-        Gate::define('approve-payment', function ($user, ?\App\Models\Payment $payment = null) {
-            if ($user->role === 'admin') {
+        // Super Admin Implicit Gate (Admin role gets all)
+        Gate::before(function ($user, $ability) {
+            if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
                 return true;
             }
-            if ($user->role === 'staff' && $payment) {
-                $method = $payment->paymentMethod ?: \App\Models\PaymentMethod::find($payment->payment_method_id);
-                return $method && strtolower($method->name) !== 'cash';
-            }
-            return false;
         });
 
-        // Only admin can delete payments
+        // Customers Gate
+        Gate::define('manage-customer', function ($user, ?Customer $customer = null) {
+            return $user->can('customers.edit') || $user->can('customers.create') || ($customer && $customer->created_by === $user->id);
+        });
+
+        Gate::define('delete-customer', fn($user) =>
+            $user->can('customers.delete')
+        );
+
+        // Installments Gate
+        Gate::define('manage-installment', function ($user, ?Installment $installment = null) {
+            return $user->can('installments.edit') || $user->can('installments.create') || ($installment && $installment->created_by === $user->id);
+        });
+
+        Gate::define('delete-installment', fn($user) =>
+            $user->can('installments.delete')
+        );
+
+        // Payments Gate
+        Gate::define('approve-payment', function ($user, ?\App\Models\Payment $payment = null) {
+            return $user->can('payments.approve');
+        });
+
         Gate::define('delete-payment', fn($user) =>
-            $user->role === 'admin'
+            $user->can('payments.delete')
         );
 
-        // Admin + staff can manage products (create/edit)
+        // Products Gate
         Gate::define('manage-product', fn($user) =>
-            in_array($user->role, ['admin', 'staff'])
+            $user->can('products.edit') || $user->can('products.create')
         );
 
-        // Only admin can delete products/categories
         Gate::define('delete-product', fn($user) =>
-            $user->role === 'admin'
+            $user->can('products.delete')
         );
 
-        // Admin + staff can view products
         Gate::define('view-product', fn($user) =>
-            in_array($user->role, ['admin', 'staff'])
+            $user->can('products.view')
         );
     }
 }

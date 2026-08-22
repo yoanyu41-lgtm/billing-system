@@ -21,53 +21,26 @@ class AdminMiddleware
 
         $user = auth()->user();
 
-        if ($user->role === 'admin') {
+        if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
             return $next($request);
         }
 
-        // Staff: read-only access to selected admin routes
-        if ($user->role === 'staff') {
-            $staffAllowedRoutes = [
-                'admin.products.index',
-                'admin.products.show',
-                'admin.categories.index',
-                'admin.suppliers.index',
-                'admin.purchases.index',
-                'admin.stock-movements.index',
-                'admin.sales.index',
-                'admin.sales.show',
-                'admin.sales.download',
-                'admin.reports.daily',
-                'admin.reports.export',
-                'admin.broadcast.index',
+        // Staff, Cashier, Manager: allowed access to operational admin routes
+        if (in_array(strtolower($user->role), ['staff', 'cashier', 'manager']) || $user->roles->isNotEmpty()) {
+            $restrictedAdminOnlyRoutes = [
+                'admin.roles.*',
+                'admin.permissions.*',
+                'admin.users.*',
+                'admin.backups.*',
+                'admin.settings.*',
+                'admin.contract-terms.*',
             ];
 
-            // Staff can create/edit data (no delete access)
-            $staffFullAccessRoutes = [
-                'admin.sales.create',
-                'admin.sales.store',
-                'admin.products.create',
-                'admin.products.store',
-                'admin.products.edit',
-                'admin.products.update',
-                'admin.categories.create',
-                'admin.categories.store',
-                'admin.categories.edit',
-                'admin.categories.update',
-                'admin.suppliers.create',
-                'admin.suppliers.store',
-                'admin.suppliers.edit',
-                'admin.suppliers.update',
-                'admin.purchases.create',
-                'admin.purchases.store',
-                'admin.purchases.edit',
-                'admin.purchases.update',
-                'admin.broadcast.send',
-            ];
-
-            if ($request->routeIs($staffAllowedRoutes) || $request->routeIs($staffFullAccessRoutes)) {
-                return $next($request);
+            if ($request->routeIs($restrictedAdminOnlyRoutes) && !($user->hasRole('Admin') || strtolower($user->role) === 'admin')) {
+                return redirect('/dashboard')->with('error', 'Access denied. System admin configuration requires Admin privileges.');
             }
+
+            return $next($request);
         }
 
         return redirect('/dashboard')->with('error', 'Access denied.');

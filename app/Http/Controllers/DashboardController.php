@@ -15,7 +15,20 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->role === 'admin') {
+        // If user is not Admin and does not have dashboard.view permission, redirect to first accessible page
+        if (!($user->hasRole('Admin') || strtolower($user->role) === 'admin') && !$user->can('dashboard.view')) {
+            if ($user->can('sales.create')) return redirect()->route('admin.sales.create');
+            if ($user->can('sales.view')) return redirect()->route('admin.sales.index');
+            if ($user->can('payments.create')) return redirect()->route('payments.create');
+            if ($user->can('payments.view')) return redirect()->route('payments.index');
+            if ($user->can('customers.view')) return redirect()->route('customers.index');
+            if ($user->can('installments.view')) return redirect()->route('installments.index');
+            if ($user->can('invoices.view')) return redirect()->route('invoices.index');
+            if ($user->can('products.view')) return redirect()->route('admin.products.index');
+            abort(403, 'អ្នកមិនមានសិទ្ធិចូលមើលទំព័រ Dashboard ឡើយ។');
+        }
+
+        if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
 
             // ── Stat Cards ──────────────────────────────────────
             $totalCustomers   = Customer::count();
@@ -299,6 +312,10 @@ class DashboardController extends Controller
                 'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
             ];
 
+            $directSalesToday = \App\Models\Sale::whereDate('sale_date', today())->count();
+            $totalProducts    = Product::count();
+            $activeInstallments = Installment::where('status', 'active')->count();
+
             $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
             return view('user.dashboard', compact(
                 'customers',
@@ -308,7 +325,10 @@ class DashboardController extends Controller
                 'recentPayments',
                 'monthlyCollection',
                 'installmentStatus',
-                'exchangeRate'
+                'exchangeRate',
+                'directSalesToday',
+                'totalProducts',
+                'activeInstallments'
             ));
         }
     }
