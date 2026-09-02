@@ -152,7 +152,7 @@
                                     </svg>
                                     {{ __('app.view') }}
                                 </a>
-                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.edit'))
+                                @if(auth()->user()->hasRole('Admin') || strtolower(auth()->user()->role) === 'admin' || auth()->user()->can('customers.edit'))
                                 <a href="{{ route('customers.edit', $customer) }}"
                                    class="inline-flex items-center gap-1 text-amber-600 hover:text-amber-800 text-xs font-medium transition-colors">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,7 +161,7 @@
                                     {{ __('app.edit') }}
                                 </a>
                                 @endif
-                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.delete'))
+                                @if(auth()->user()->hasRole('Admin') || strtolower(auth()->user()->role) === 'admin' || auth()->user()->can('customers.delete'))
                                 <form method="POST" action="{{ route('customers.destroy', $customer) }}"
                                       onsubmit="return confirm('{{ __('app.confirm_delete') }} {{ addslashes($customer->name) }}?')">
                                     @csrf @method('DELETE')

@@ -265,6 +265,169 @@ class SaleController extends Controller
     }
 
     /**
+     * Show the direct-sale edit form.
+     */
+    public function edit(Sale $sale)
+    {
+        $sale->load(['items.product', 'customer']);
+        $products = Product::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        $customers = Customer::orderBy('name')->get();
+        $paymentMethods = \App\Models\PaymentMethod::getAvailable();
+
+        return view('admin.sales.edit', compact('sale', 'products', 'customers', 'paymentMethods'));
+    }
+
+    /**
+     * Update an existing sale, adjust stock, and update records.
+     */
+    public function update(Request $request, Sale $sale)
+    {
+        $validated = $request->validate([
+            'customer_id'        => 'nullable|exists:customers,id',
+            'customer_name'      => 'nullable|string|max:255',
+            'customer_phone'     => 'nullable|string|max:50',
+            'sale_date'          => 'nullable|date',
+            'discount'           => 'nullable|numeric|min:0',
+            'payment_method'     => 'nullable|string|max:50',
+            'note'               => 'nullable|string|max:1000',
+            'items'              => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.price'      => 'required|numeric|min:0',
+        ]);
+
+        if (!empty($validated['customer_id'])) {
+            $customer = Customer::find($validated['customer_id']);
+            $validated['customer_name']  = $validated['customer_name'] ?: $customer->name;
+            $validated['customer_phone'] = $validated['customer_phone'] ?: $customer->phone;
+        }
+
+        try {
+            DB::transaction(function () use ($validated, $request, $sale) {
+                // 1. Revert previous stock changes
+                foreach ($sale->items as $oldItem) {
+                    $prod = Product::find($oldItem->product_id);
+                    if ($prod) {
+                        $prod->increment('stock', $oldItem->quantity);
+                    }
+                }
+
+                // 2. Verify stock availability for new items
+                foreach ($validated['items'] as $it) {
+                    $product = Product::lockForUpdate()->find($it['product_id']);
+                    if ($product->stock < $it['quantity']) {
+                        throw new \RuntimeException(
+                            __('app.insufficient_stock_for', ['product' => $product->name, 'stock' => $product->stock])
+                        );
+                    }
+                }
+
+                // 3. Clear old items & movements
+                $sale->items()->delete();
+                StockMovement::where('related_id', $sale->id)->where('type', 'out')->delete();
+
+                // 4. Calculate tax & totals
+                $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
+                $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
+
+                $originalSubtotal = 0;
+                $subtotalBeforeTax = 0;
+                $totalTaxAmount = 0;
+                $itemsWithTax = [];
+
+                foreach ($validated['items'] as $it) {
+                    $product = Product::find($it['product_id']);
+                    $itemTotal = $it['price'] * $it['quantity'];
+                    $originalSubtotal += $itemTotal;
+
+                    $itemTaxRate = 0;
+                    $itemTaxAmount = 0;
+                    $itemSubtotal = $itemTotal;
+
+                    if ($taxEnabled && $product->is_taxable) {
+                        $itemTaxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
+
+                        if ($product->tax_type === 'inclusive') {
+                            $itemTaxAmount = $itemTotal - ($itemTotal / (1 + $itemTaxRate / 100));
+                            $itemSubtotal = $itemTotal - $itemTaxAmount;
+                        } else {
+                            $itemTaxAmount = $itemTotal * ($itemTaxRate / 100);
+                            $itemSubtotal = $itemTotal;
+                        }
+                    }
+
+                    $subtotalBeforeTax += $itemSubtotal;
+                    $totalTaxAmount += $itemTaxAmount;
+
+                    $itemsWithTax[] = [
+                        'data'       => $it,
+                        'tax_rate'   => $itemTaxRate,
+                        'tax_amount' => $itemTaxAmount,
+                    ];
+                }
+
+                $discount = (float) ($validated['discount'] ?? 0);
+                $totalBeforeDiscount = $subtotalBeforeTax + $totalTaxAmount;
+                $total = max($totalBeforeDiscount - $discount, 0);
+
+                $finalTaxAmount = $totalTaxAmount;
+                if ($discount > 0 && $totalBeforeDiscount > 0) {
+                    $discountRatio = $total / $totalBeforeDiscount;
+                    $finalTaxAmount = $totalTaxAmount * $discountRatio;
+                }
+
+                // 5. Update Sale record
+                $sale->update([
+                    'customer_id'         => $validated['customer_id'] ?? null,
+                    'customer_name'       => $validated['customer_name'] ?? null,
+                    'customer_phone'      => $validated['customer_phone'] ?? null,
+                    'sale_date'           => $validated['sale_date'] ?? now(),
+                    'subtotal'            => $originalSubtotal,
+                    'subtotal_before_tax' => $subtotalBeforeTax,
+                    'discount'            => $discount,
+                    'tax_amount'          => $finalTaxAmount,
+                    'total'               => $total,
+                    'payment_method'      => $validated['payment_method'] ?? 'cash',
+                    'note'                => $validated['note'] ?? null,
+                ]);
+
+                // 6. Create new items and apply stock changes
+                foreach ($itemsWithTax as $item) {
+                    SaleItem::create([
+                        'sale_id'    => $sale->id,
+                        'product_id' => $item['data']['product_id'],
+                        'quantity'   => $item['data']['quantity'],
+                        'price'      => $item['data']['price'],
+                        'tax_rate'   => $item['tax_rate'],
+                        'tax_amount' => $item['tax_amount'],
+                    ]);
+
+                    StockMovement::create([
+                        'product_id' => $item['data']['product_id'],
+                        'type'       => 'out',
+                        'quantity'   => $item['data']['quantity'],
+                        'related_id' => $sale->id,
+                        'note'       => 'Direct Sale (Updated) ' . $sale->invoice_no,
+                    ]);
+
+                    $prod = Product::find($item['data']['product_id']);
+                    if ($prod) {
+                        $prod->decrement('stock', $item['data']['quantity']);
+                        $prod->checkLowStockAlert();
+                    }
+                }
+            });
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('admin.sales.show', $sale)
+            ->with('success', __('app.sale_updated_success') ?? 'Sale updated successfully.');
+    }
+
+    /**
      * Download the sale receipt as a PDF.
      */
     public function download(Sale $sale)

@@ -9,29 +9,29 @@
             <p class="text-sm text-gray-500 mt-1">Monitor all customer installment contracts, monthly payments, and balances.</p>
         </div>
         
-        <div class="flex flex-wrap items-center gap-2">
-            {{-- 1. កាលវិភាគបង់ប្រាក់ --}}
-            <a href="{{ route('installments.schedule-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+        <div class="flex flex-nowrap items-center gap-1.5 sm:gap-2 shrink-0 overflow-x-auto max-w-full">
+            {{-- 1. Payment Schedule --}}
+            <a href="{{ route('installments.schedule-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
                 <i class="fas fa-calendar-alt text-indigo-600"></i>
-                <span lang="km">កាលវិភាគបង់ប្រាក់</span>
+                <span>{{ __('app.payment_schedule') }}</span>
             </a>
 
-            {{-- 2. បោះពុម្ពកិច្ចសន្យា --}}
-            <a href="{{ route('installments.contract-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+            {{-- 2. Contracts --}}
+            <a href="{{ route('installments.contract-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
                 <i class="fas fa-file-signature text-purple-600"></i>
-                <span lang="km">បោះពុម្ពកិច្ចសន្យា</span>
+                <span>{{ __('app.contracts') }}</span>
             </a>
 
-            {{-- 3. បង់ផ្ដាច់ --}}
-            <a href="{{ route('installments.pay-off-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+            {{-- 3. Pay Off --}}
+            <a href="{{ route('installments.pay-off-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
                 <i class="fas fa-hand-holding-usd text-emerald-600"></i>
-                <span lang="km">បង់ផ្ដាច់</span>
+                <span>{{ __('app.pay_off') }}</span>
             </a>
 
-            {{-- 4. លិខិតបញ្ជាក់ការបង់ដាច់ --}}
-            <a href="{{ route('installments.clearance-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm transition">
+            {{-- 4. Clearance Certificates --}}
+            <a href="{{ route('installments.clearance-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
                 <i class="fas fa-certificate text-amber-600"></i>
-                <span lang="km">លិខិតបញ្ជាក់ការបង់ដាច់</span>
+                <span>{{ __('app.clearance_certificates') }}</span>
             </a>
         </div>
     </div>
@@ -115,8 +115,10 @@
                                 <div class="text-xs text-gray-500">{{ $installment->customer?->phone }}</div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ $installment->product?->name ?? 'N/A' }}</div>
+                        <td class="px-5 py-4">
+                            <div class="text-sm font-medium text-gray-900 max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                {{ $installment->product?->name ?? 'N/A' }}
+                            </div>
                             @if($installment->product?->code)
                                 <div class="text-xs text-indigo-600 font-medium">{{ $installment->product?->code }}</div>
                             @endif

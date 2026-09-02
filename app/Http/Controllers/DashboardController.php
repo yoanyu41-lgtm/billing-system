@@ -28,197 +28,191 @@ class DashboardController extends Controller
             abort(403, 'អ្នកមិនមានសិទ្ធិចូលមើលទំព័រ Dashboard ឡើយ។');
         }
 
-        if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
+        // ── Comprehensive System Metrics (Shared for both Admin & Staff) ──
+        $totalCustomers   = Customer::count();
+        $totalProducts    = Product::count();
+        $totalIncome      = Payment::where('status', 'approved')->sum('amount');
+        $remainingBalance = Installment::sum('remaining_balance');
 
-            // ── Stat Cards ──────────────────────────────────────
-            $totalCustomers   = Customer::count();
-            $totalProducts    = Product::count();
-            $totalIncome      = Payment::where('status', 'approved')->sum('amount');
-            $remainingBalance = Installment::sum('remaining_balance');
+        // ── Direct Sales income ──────────────────────────────
+        $directSalesTotal    = \App\Models\Sale::sum('total');
+        $directSalesToday    = \App\Models\Sale::whereDate('sale_date', today())->sum('total');
+        $directSalesMonth    = \App\Models\Sale::whereYear('sale_date', now()->year)
+                                    ->whereMonth('sale_date', now()->month)->sum('total');
+        $directSalesCount    = \App\Models\Sale::count();
+        
+        // Combined revenue = installment payments + penalties + direct sales
+        $totalPenaltiesPaid  = Payment::where('status', 'approved')->sum('penalty_amount');
+        $combinedIncome      = $totalIncome + $totalPenaltiesPaid + $directSalesTotal;
 
-            // ── Direct Sales income ──────────────────────────────
-            $directSalesTotal    = \App\Models\Sale::sum('total');
-            $directSalesToday    = \App\Models\Sale::whereDate('sale_date', today())->sum('total');
-            $directSalesMonth    = \App\Models\Sale::whereYear('sale_date', now()->year)
-                                        ->whereMonth('sale_date', now()->month)->sum('total');
-            $directSalesCount    = \App\Models\Sale::count();
+        // Expenses & Profit
+        $totalExpense        = \Illuminate\Support\Facades\Schema::hasTable('expenses') 
+                                ? \App\Models\Expense::sum('amount') 
+                                : 0.00;
+        $netProfit           = max($combinedIncome - $totalExpense, 0);
+
+        $activeInstallments = Installment::where('status', 'active')->count();
+        $installmentDue     = Installment::where('status', 'active')->sum('remaining_balance');
+        $overdueAmount      = Installment::where('status', 'active')
+            ->where('next_due_date', '<', today())
+            ->where('remaining_balance', '>', 0)
+            ->sum('remaining_balance');
+
+        // Payment stats
+        $totalPayments       = Payment::count();
+        $paymentsToday       = Payment::whereDate('created_at', today())->count();
+        $pendingPayments     = Payment::where('status', 'pending')->count();
+        $completedInstallments = Installment::where('status', 'completed')->count();
+
+        $lateCustomers = Installment::where('status', 'active')
+            ->where('next_due_date', '<', today())
+            ->where('remaining_balance', '>', 0)
+            ->count();
+
+        // ── Dynamic Trend Calculations (Current Month vs. Previous Month) ──
+        $calculateTrend = function ($current, $previous) {
+            $isKm = app()->getLocale() === 'km';
+            $fromLastMonthLabel = $isKm ? 'ពីខែមុន' : 'from last month';
             
-            // Combined revenue = installment payments + penalties + direct sales
-            $totalPenaltiesPaid  = Payment::where('status', 'approved')->sum('penalty_amount');
-            $combinedIncome      = $totalIncome + $totalPenaltiesPaid + $directSalesTotal;
-
-            // Expenses & Profit
-            $totalExpense        = \Illuminate\Support\Facades\Schema::hasTable('expenses') 
-                                    ? \App\Models\Expense::sum('amount') 
-                                    : 0.00;
-            $netProfit           = max($combinedIncome - $totalExpense, 0);
-
-            $activeInstallments = Installment::where('status', 'active')->count();
-            $installmentDue     = Installment::where('status', 'active')->sum('remaining_balance');
-            $overdueAmount      = Installment::where('status', 'active')
-                ->where('next_due_date', '<', today())
-                ->where('remaining_balance', '>', 0)
-                ->sum('remaining_balance');
-
-            // New stat cards
-            $totalPayments       = Payment::count();
-            $pendingPayments     = Payment::where('status', 'pending')->count();
-            $completedInstallments = Installment::where('status', 'completed')->count();
-
-            $lateCustomers = Installment::where('status', 'active')
-                ->where('next_due_date', '<', today())
-                ->where('remaining_balance', '>', 0)
-                ->count();
-
-            // ── Dynamic Trend Calculations (Current Month vs. Previous Month) ──
-            $calculateTrend = function ($current, $previous) {
-                $isKm = app()->getLocale() === 'km';
-                $fromLastMonthLabel = $isKm ? 'ពីខែមុន' : 'from last month';
-                
-                if ($previous == 0) {
-                    if ($current > 0) {
-                        return '<span style="color: #10b981; font-weight: 600;">↑ New</span>';
-                    }
-                    return '<span style="color: #64748b; font-weight: 500;">— 0% ' . $fromLastMonthLabel . '</span>';
+            if ($previous == 0) {
+                if ($current > 0) {
+                    return '<span style="color: #10b981; font-weight: 600;">↑ New</span>';
                 }
-                
-                $diff = $current - $previous;
-                $pct = round(($diff / $previous) * 100);
-                
-                if ($pct > 0) {
-                    return '<span style="color: #10b981; font-weight: 600;">↑ ' . $pct . '%</span> ' . $fromLastMonthLabel;
-                } elseif ($pct < 0) {
-                    return '<span style="color: #f43f5e; font-weight: 600;">↓ ' . abs($pct) . '%</span> ' . $fromLastMonthLabel;
-                } else {
-                    return '<span style="color: #64748b; font-weight: 500;">— 0%</span> ' . $fromLastMonthLabel;
-                }
-            };
-
-            // 1. Products trend (Total products now vs. before start of current month)
-            $prevProducts = Product::where('created_at', '<', now()->startOfMonth())->count();
-            $productTrend = $calculateTrend($totalProducts, $prevProducts);
-
-            // 2. Customers trend (Total customers now vs. before start of current month)
-            $prevCustomers = Customer::where('created_at', '<', now()->startOfMonth())->count();
-            $customerTrend = $calculateTrend($totalCustomers, $prevCustomers);
-
-            // 3. Revenue trend (Installment Income this month vs. last month)
-            $thisMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
-            $lastMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->sum('amount');
-            $revenueTrend = $calculateTrend($thisMonthRevenue, $lastMonthRevenue);
-
-            // 4. Active Installments trend (Active installments now vs. before start of current month)
-            $prevActiveInstallments = Installment::where('status', 'active')->where('created_at', '<', now()->startOfMonth())->count();
-            $activeTrend = $calculateTrend($activeInstallments, $prevActiveInstallments);
-
-            // 5. Overdue Amount trend (Overdue amount now vs. at start of current month)
-            $prevOverdueAmount = Installment::where('status', 'active')->where('next_due_date', '<', now()->startOfMonth())->where('remaining_balance', '>', 0)->sum('remaining_balance');
-            $overdueTrend = $calculateTrend($overdueAmount, $prevOverdueAmount);
-
-            // 6. Total Payments trend (Total payments this month vs. last month)
-            $thisMonthPayments = Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->count();
-            $lastMonthPayments = Payment::whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->count();
-            $paymentsTrend = $calculateTrend($thisMonthPayments, $lastMonthPayments);
-
-            // 7. Pending Payments trend (Pending payments now vs. before start of current month)
-            $prevPendingPayments = Payment::where('status', 'pending')->where('created_at', '<', now()->startOfMonth())->count();
-            $pendingTrend = $calculateTrend($pendingPayments, $prevPendingPayments);
-
-            // 8. Completed Installments trend (Completed installments this month vs. last month)
-            $thisMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->month)->whereYear('updated_at', now()->year)->count();
-            $lastMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->subMonth()->month)->whereYear('updated_at', now()->subMonth()->year)->count();
-            $completedTrend = $calculateTrend($thisMonthCompleted, $lastMonthCompleted);
-
-            // ── Low Stock Products ───────────────────────────────
-            $lowStockProducts = Product::where('is_active', true)
-                ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
-                ->orderBy('stock')
-                ->take(8)
-                ->get();
-            $lowStockCount = Product::where('is_active', true)
-                ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
-                ->count();
-
-            // ── Monthly Revenue Chart (Installment payments + Direct sales) ────────────────────────────
-            $paymentsQuery = Payment::where('status', 'approved')
-                ->whereYear('payment_date', now()->year)
-                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month_num')
-                ->pluck('total', 'month_num')
-                ->toArray();
-
-            $salesQuery = \App\Models\Sale::whereYear('sale_date', now()->year)
-                ->selectRaw("MONTH(sale_date) as month_num, SUM(total) as total")
-                ->groupBy('month_num')
-                ->pluck('total', 'month_num')
-                ->toArray();
-
-            $monthlyIncome = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $paymentTotal = $paymentsQuery[$m] ?? 0;
-                $saleTotal = $salesQuery[$m] ?? 0;
-                $monthlyIncome[] = [
-                    'month_num' => $m,
-                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
-                    'total' => $paymentTotal + $saleTotal
-                ];
+                return '<span style="color: #64748b; font-weight: 500;">— 0% ' . $fromLastMonthLabel . '</span>';
             }
-
-            // ── Monthly Collection Chart (Installment payments only) ─────────────────────────
-            $collectionQuery = Payment::whereYear('payment_date', now()->year)
-                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month_num')
-                ->pluck('total', 'month_num')
-                ->toArray();
-
-            $monthlyCollection = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $monthlyCollection[] = [
-                    'month_num' => $m,
-                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
-                    'total' => $collectionQuery[$m] ?? 0
-                ];
+            
+            $diff = $current - $previous;
+            $pct = round(($diff / $previous) * 100);
+            
+            if ($pct > 0) {
+                return '<span style="color: #10b981; font-weight: 600;">↑ ' . $pct . '%</span> ' . $fromLastMonthLabel;
+            } elseif ($pct < 0) {
+                return '<span style="color: #f43f5e; font-weight: 600;">↓ ' . abs($pct) . '%</span> ' . $fromLastMonthLabel;
+            } else {
+                return '<span style="color: #64748b; font-weight: 500;">— 0%</span> ' . $fromLastMonthLabel;
             }
+        };
 
-            // ── Installment Status Donut ─────────────────────────
-            $paidCount    = Installment::where('status', 'completed')->count();
-            $overdueCount = Installment::where('status', 'active')
-                ->where('next_due_date', '<', today())
-                ->where('remaining_balance', '>', 0)
-                ->count();
-            $ongoingCount = Installment::where('status', 'active')
-                ->where(function($q) {
-                    $q->whereNull('next_due_date')
-                      ->orWhere('next_due_date', '>=', today())
-                      ->orWhere('remaining_balance', '<=', 0);
-                })
-                ->count();
-            $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
+        // Trends
+        $prevProducts = Product::where('created_at', '<', now()->startOfMonth())->count();
+        $productTrend = $calculateTrend($totalProducts, $prevProducts);
 
-            $installmentStatus = [
-                'paid'    => ['count' => $paidCount,    'pct' => round($paidCount    / $totalInst * 100)],
-                'ongoing' => ['count' => $ongoingCount, 'pct' => round($ongoingCount / $totalInst * 100)],
-                'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
+        $prevCustomers = Customer::where('created_at', '<', now()->startOfMonth())->count();
+        $customerTrend = $calculateTrend($totalCustomers, $prevCustomers);
+
+        $thisMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
+        $lastMonthRevenue = Payment::where('status', 'approved')->whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->sum('amount');
+        $revenueTrend = $calculateTrend($thisMonthRevenue, $lastMonthRevenue);
+
+        $prevActiveInstallments = Installment::where('status', 'active')->where('created_at', '<', now()->startOfMonth())->count();
+        $activeTrend = $calculateTrend($activeInstallments, $prevActiveInstallments);
+
+        $prevOverdueAmount = Installment::where('status', 'active')->where('next_due_date', '<', now()->startOfMonth())->where('remaining_balance', '>', 0)->sum('remaining_balance');
+        $overdueTrend = $calculateTrend($overdueAmount, $prevOverdueAmount);
+
+        $thisMonthPayments = Payment::whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->count();
+        $lastMonthPayments = Payment::whereMonth('payment_date', now()->subMonth()->month)->whereYear('payment_date', now()->subMonth()->year)->count();
+        $paymentsTrend = $calculateTrend($thisMonthPayments, $lastMonthPayments);
+
+        $prevPendingPayments = Payment::where('status', 'pending')->where('created_at', '<', now()->startOfMonth())->count();
+        $pendingTrend = $calculateTrend($pendingPayments, $prevPendingPayments);
+
+        $thisMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->month)->whereYear('updated_at', now()->year)->count();
+        $lastMonthCompleted = Installment::where('status', 'completed')->whereMonth('updated_at', now()->subMonth()->month)->whereYear('updated_at', now()->subMonth()->year)->count();
+        $completedTrend = $calculateTrend($thisMonthCompleted, $lastMonthCompleted);
+
+        // ── Low Stock Products ───────────────────────────────
+        $lowStockProducts = Product::where('is_active', true)
+            ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
+            ->orderBy('stock')
+            ->take(8)
+            ->get();
+        $lowStockCount = Product::where('is_active', true)
+            ->whereColumn('stock', '<=', DB::raw('COALESCE(low_stock_threshold, 5)'))
+            ->count();
+
+        // ── Monthly Revenue Chart (Installment payments + Direct sales) ────────────────────────────
+        $paymentsQuery = Payment::where('status', 'approved')
+            ->whereYear('payment_date', now()->year)
+            ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
+
+        $salesQuery = \App\Models\Sale::whereYear('sale_date', now()->year)
+            ->selectRaw("MONTH(sale_date) as month_num, SUM(total) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
+
+        $monthlyIncome = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $paymentTotal = $paymentsQuery[$m] ?? 0;
+            $saleTotal = $salesQuery[$m] ?? 0;
+            $monthlyIncome[] = [
+                'month_num' => $m,
+                'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                'total' => $paymentTotal + $saleTotal
             ];
+        }
 
-            // ── Recent Customers ─────────────────────────────────
-            $recentCustomers = Customer::with(['installments.product'])
-                ->latest()
-                ->take(5)
-                ->get()
-                ->map(function ($c) {
-                    $latest = $c->installments->sortByDesc('created_at')->first();
-                    $c->latestInstallment = $latest;
-                    return $c;
-                });
+        // ── Monthly Collection Chart (Installment payments only) ─────────────────────────
+        $collectionQuery = Payment::whereYear('payment_date', now()->year)
+            ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
+            ->groupBy('month_num')
+            ->pluck('total', 'month_num')
+            ->toArray();
 
-            // ── Recent Payments ──────────────────────────────────
-            $recentPayments = Payment::with(['installment.customer', 'paymentMethod'])
-                ->latest()
-                ->take(5)
-                ->get();
+        $monthlyCollection = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthlyCollection[] = [
+                'month_num' => $m,
+                'month' => date('M', mktime(0, 0, 0, $m, 1)),
+                'total' => $collectionQuery[$m] ?? 0
+            ];
+        }
 
-            $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+        // ── Installment Status Donut ─────────────────────────
+        $paidCount    = Installment::where('status', 'completed')->count();
+        $overdueCount = Installment::where('status', 'active')
+            ->where('next_due_date', '<', today())
+            ->where('remaining_balance', '>', 0)
+            ->count();
+        $ongoingCount = Installment::where('status', 'active')
+            ->where(function($q) {
+                $q->whereNull('next_due_date')
+                  ->orWhere('next_due_date', '>=', today())
+                  ->orWhere('remaining_balance', '<=', 0);
+            })
+            ->count();
+        $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
+
+        $installmentStatus = [
+            'paid'    => ['count' => $paidCount,    'pct' => round($paidCount    / $totalInst * 100)],
+            'ongoing' => ['count' => $ongoingCount, 'pct' => round($ongoingCount / $totalInst * 100)],
+            'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
+        ];
+
+        // ── Recent Customers ─────────────────────────────────
+        $recentCustomers = Customer::with(['installments.product'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($c) {
+                $latest = $c->installments->sortByDesc('created_at')->first();
+                $c->latestInstallment = $latest;
+                return $c;
+            });
+
+        // ── Recent Payments ──────────────────────────────────
+        $recentPayments = Payment::with(['installment.customer', 'paymentMethod'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+
+        if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
             return view('admin.dashboard', compact(
                 'totalCustomers',
                 'totalProducts',
@@ -255,82 +249,45 @@ class DashboardController extends Controller
                 'pendingTrend',
                 'completedTrend',
             ));
-
-        } else {
-
-            // ── Staff Dashboard — sees all data ──────────────────
-            $customers = Customer::count();
-
-            $paymentsToday = Payment::whereDate('created_at', today())->count();
-
-            $pendingPayments = Payment::where('status', 'pending')->count();
-
-            $lateCustomers = Installment::where('status', 'active')
-                ->where('next_due_date', '<', today())
-                ->where('remaining_balance', '>', 0)
-                ->count();
-
-            $recentPayments = Payment::with(['installment.customer', 'paymentMethod'])
-                ->latest()
-                ->take(5)
-                ->get();
-                
-            // ── Monthly Collection Chart ─────────────────────────
-            $collectionQuery = Payment::whereYear('payment_date', now()->year)
-                ->selectRaw("MONTH(payment_date) as month_num, SUM(amount) as total")
-                ->groupBy('month_num')
-                ->pluck('total', 'month_num')
-                ->toArray();
-
-            $monthlyCollection = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $monthlyCollection[] = [
-                    'month_num' => $m,
-                    'month' => date('M', mktime(0, 0, 0, $m, 1)),
-                    'total' => $collectionQuery[$m] ?? 0
-                ];
-            }
-
-            // ── Installment Status Donut ─────────────────────────
-            $paidCount    = Installment::where('status', 'completed')->count();
-            $overdueCount = Installment::where('status', 'active')
-                ->where('next_due_date', '<', today())
-                ->where('remaining_balance', '>', 0)
-                ->count();
-            $ongoingCount = Installment::where('status', 'active')
-                ->where(function($q) {
-                    $q->whereNull('next_due_date')
-                      ->orWhere('next_due_date', '>=', today())
-                      ->orWhere('remaining_balance', '<=', 0);
-                })
-                ->count();
-            $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
-
-            $installmentStatus = [
-                'paid'    => ['count' => $paidCount,    'pct' => round($paidCount    / $totalInst * 100)],
-                'ongoing' => ['count' => $ongoingCount, 'pct' => round($ongoingCount / $totalInst * 100)],
-                'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
-            ];
-
-            $directSalesToday = \App\Models\Sale::whereDate('sale_date', today())->count();
-            $totalProducts    = Product::count();
-            $activeInstallments = Installment::where('status', 'active')->count();
-
-            $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
-            return view('user.dashboard', compact(
-                'customers',
-                'paymentsToday',
-                'pendingPayments',
-                'lateCustomers',
-                'recentPayments',
-                'monthlyCollection',
-                'installmentStatus',
-                'exchangeRate',
-                'directSalesToday',
-                'totalProducts',
-                'activeInstallments'
-            ));
         }
+
+        return view('user.dashboard', compact(
+            'totalCustomers',
+            'totalProducts',
+            'totalIncome',
+            'remainingBalance',
+            'activeInstallments',
+            'overdueAmount',
+            'totalPayments',
+            'pendingPayments',
+            'paymentsToday',
+            'completedInstallments',
+            'lateCustomers',
+            'lowStockProducts',
+            'lowStockCount',
+            'monthlyIncome',
+            'monthlyCollection',
+            'installmentStatus',
+            'recentCustomers',
+            'recentPayments',
+            'directSalesTotal',
+            'directSalesToday',
+            'directSalesMonth',
+            'directSalesCount',
+            'combinedIncome',
+            'totalExpense',
+            'netProfit',
+            'installmentDue',
+            'exchangeRate',
+            'productTrend',
+            'customerTrend',
+            'revenueTrend',
+            'activeTrend',
+            'overdueTrend',
+            'paymentsTrend',
+            'pendingTrend',
+            'completedTrend',
+        ));
     }
 
     // ── API: Year filter Revenue ─────────────────────────────────

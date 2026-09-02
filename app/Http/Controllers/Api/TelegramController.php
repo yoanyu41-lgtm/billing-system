@@ -644,28 +644,40 @@ class TelegramController extends Controller
         $inst = $customer->installments()->whereIn('status', ['active', 'overdue'])->first();
         $dueAmount = 0.0;
         $productName = '';
+        $targetMonth = 1;
         if ($inst) {
             $productName = $inst->product ? $inst->product->name : '';
             $schedule = $inst->getPaymentSchedule();
             $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
             if ($unpaidRow) {
                 $dueAmount = (float) $unpaidRow['amount'];
+                $targetMonth = (int) ($unpaidRow['month'] ?? 1);
             }
         }
 
         if ($qrKey === 'all') {
             $this->replyToChat($chatId, "📸 <b>បញ្ជី QR Code ទូទាត់ប្រាក់ទាំងអស់របស់ហាង " . htmlspecialchars($shopName) . " ៖</b>");
             foreach ($availableQrs as $qrItem) {
-                $this->sendSingleQrPhoto($chatId, $customer, $qrItem, $dueAmount, $productName, $shopName, $currency);
+                $this->sendSingleQrPhoto($chatId, $customer, $qrItem, $dueAmount, $productName, $shopName, $currency, $inst, $targetMonth);
             }
             return;
         }
 
         $selectedItem = collect($availableQrs)->firstWhere('key', $qrKey) ?? $availableQrs[0];
-        $this->sendSingleQrPhoto($chatId, $customer, $selectedItem, $dueAmount, $productName, $shopName, $currency);
+        $this->sendSingleQrPhoto($chatId, $customer, $selectedItem, $dueAmount, $productName, $shopName, $currency, $inst, $targetMonth);
     }
 
-    private function sendSingleQrPhoto(string|int $chatId, Customer $customer, array $qrItem, float $dueAmount, string $productName, string $shopName, string $currency): void
+    private function sendSingleQrPhoto(
+        string|int $chatId,
+        Customer $customer,
+        array $qrItem,
+        float $dueAmount,
+        string $productName,
+        string $shopName,
+        string $currency,
+        ?\App\Models\Installment $installment = null,
+        int $targetMonth = 1
+    ): void
     {
         $qrLabel = $qrItem['label'];
         $qrImage = $qrItem['img'];
@@ -719,7 +731,10 @@ class TelegramController extends Controller
                 $dynamicQrPath = $khqrService->generateQrCodeImage($dynamicPayload);
                 
                 // Generate smart payment URL with deep links
-                $reference = 'INS-' . $installment->id . '-' . str_pad($targetMonth, 2, '0', STR_PAD_LEFT);
+                $reference = $installment 
+                    ? ('INS-' . $installment->id . '-' . str_pad($targetMonth, 2, '0', STR_PAD_LEFT))
+                    : ('CUST-' . $customer->id . '-' . time());
+                    
                 $smartPaymentUrl = $khqrService->generateSmartPaymentUrl(
                     $dynamicPayload,
                     $dueAmount,

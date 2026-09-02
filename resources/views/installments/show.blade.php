@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-5xl">
+<div class="container mx-auto px-4 py-8 max-w-7xl">
     @if(session('success'))
         <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow-sm">{{ session('success') }}</div>
     @endif
@@ -297,67 +297,78 @@
 
     <!-- Payment Schedule section -->
     <div class="mt-8 bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-calendar-alt text-indigo-600"></i>
-                <span>{{ __('app.payment_schedule') }}</span>
-            </h3>
-            <a href="{{ route('installments.schedule', $installment) }}" class="px-4 py-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-semibold rounded-lg text-xs transition" style="text-decoration: none;">
-                <i class="fas fa-print mr-1"></i>
-                {{ app()->getLocale() === 'km' ? 'មើលកាលវិភាគបោះពុម្ព' : 'View Printable Schedule' }}
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base shadow-sm border border-indigo-100">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
+                    <span>{{ __('app.payment_schedule') }}</span>
+                </h3>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">តារាងកាលវិភាគបង់ប្រាក់ប្រចាំខែ និងស្ថានភាពនៃការទូទាត់</p>
+            </div>
+            <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl text-sm transition shadow-sm" style="text-decoration: none;">
+                <i class="fas fa-print"></i>
+                <span>{{ app()->getLocale() === 'km' ? 'មើលកាលវិភាគបោះពុម្ព' : 'View Printable Schedule' }}</span>
             </a>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-full border-collapse text-sm">
-                <thead class="bg-gray-50">
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-xs">
+            <table class="min-w-full border-collapse">
+                <thead class="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">ល.រ<br><span class="font-normal text-[10px]">No.</span></th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង់ប្រាក់' : 'Payment Date' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់' : 'Total Payment' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ការប្រាក់' : 'Interests' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'ប្រាក់ដើម' : 'Principals' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'សមតុល្យប្រាក់ដើម' : 'Outstanding Principals' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-right font-bold text-gray-600 text-xs">{{ app()->getLocale() === 'km' ? 'សមតុល្យបំណុល' : 'Outstanding Debts' }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ __('app.status') }}</th>
-                        <th class="border-b border-gray-200 px-4 py-3 text-center font-bold text-gray-600 text-xs">{{ __('app.actions') }}</th>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ល.រ<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង់ប្រាក់' : 'Payment Date' }}</th>
+                        <th class="px-5 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់' : 'Total Payment' }}</th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ការប្រាក់' : 'Interests' }}</th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រាក់ដើម' : 'Principals' }}</th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'សមតុល្យប្រាក់ដើម' : 'Outstanding Principals' }}</th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'សមតុល្យបំណុល' : 'Outstanding Debts' }}</th>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.status') }}</th>
+                        <th class="px-5 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-gray-100 bg-white">
                     @foreach($schedule as $row)
-                    <tr class="hover:bg-gray-50/70 transition">
-                        <td class="px-4 py-3 text-center text-gray-700 font-semibold">{{ $row['month'] }}</td>
-                        <td class="px-4 py-3 text-center text-gray-700 whitespace-nowrap">
-                            {{ $row['due_date']->format('d/m/Y') }} 
-                            <span class="text-gray-400 text-xs">({{ $row['day'] }})</span>
+                    <tr class="hover:bg-slate-50/80 transition duration-150">
+                        <td class="px-4 py-4 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
+                        <td class="px-4 py-4 text-center text-slate-800 whitespace-nowrap text-sm">
+                            <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
+                            <span class="text-slate-400 text-xs block mt-0.5 font-medium">({{ $row['day'] }})</span>
                         </td>
-                        <td class="px-4 py-3 text-right font-bold text-gray-900">{{ format_currency($row['amount'], $exchangeRate) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['interest'], $exchangeRate) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['principal'], $exchangeRate) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['outstanding_principal'], $exchangeRate) }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-5 py-4 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount'], $exchangeRate) }}</td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest'], $exchangeRate) }}</td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal'], $exchangeRate) }}</td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal'], $exchangeRate) }}</td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
+                        <td class="px-4 py-4 text-center whitespace-nowrap">
                             @if($row['status'] === 'paid')
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-green-50 text-green-700 border border-green-200">{{ __('app.paid') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fas fa-check-circle mr-1 self-center"></i> {{ __('app.paid') }}
+                                </span>
                             @elseif($row['status'] === 'overdue')
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-red-50 text-red-700 border border-red-200">{{ __('app.overdue') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-exclamation-triangle mr-1 self-center"></i> {{ __('app.overdue') }}
+                                </span>
                             @else
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-gray-50 text-gray-600 border border-gray-200">{{ __('app.pending') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-clock mr-1 self-center"></i> {{ __('app.pending') }}
+                                </span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-5 py-4 text-center whitespace-nowrap">
                             @if($row['status'] !== 'paid')
-                            <div class="flex items-center justify-center gap-1.5">
+                            <div class="flex items-center justify-center gap-2">
                                 {{-- Send QR via Telegram - Opens QR Picker Modal --}}
                                 @if(empty($installment->customer?->telegram_id))
-                                    <span class="px-2.5 py-1 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg inline-flex items-center gap-1 cursor-not-allowed" title="{{ __('app.telegram_id_missing') }}">
+                                    <span class="px-3 py-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1.5 cursor-not-allowed font-medium" title="{{ __('app.telegram_id_missing') }}">
                                         <i class="fab fa-telegram-plane"></i>
                                         <span>{{ __('app.send_qr_telegram') }}</span>
                                     </span>
                                 @else
                                     <button type="button"
                                         onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
-                                        class="px-2.5 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold"
+                                        class="px-3 py-2 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs"
                                         title="{{ __('app.send_qr_telegram') }}">
                                         <i class="fab fa-telegram-plane"></i>
                                         <span>{{ __('app.send_qr_telegram') }}</span>
@@ -365,13 +376,13 @@
                                 @endif
 
                                 {{-- Record Payment --}}
-                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2.5 py-1 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
+                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-3 py-2 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs" title="{{ __('app.record_payment') }}">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                     <span>{{ __('app.record_payment') }}</span>
                                 </button>
                             </div>
                             @else
-                                <span class="text-xs text-gray-400 font-medium">—</span>
+                                <span class="text-xs text-slate-400 font-bold">—</span>
                             @endif
                         </td>
                     </tr>

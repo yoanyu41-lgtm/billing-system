@@ -831,6 +831,19 @@ class ProductController extends Controller
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
+
+        // Clean related installments and payments for this product
+        $pInstallments = Installment::withTrashed()->where('product_id', $product->id)->get();
+        foreach ($pInstallments as $inst) {
+            \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+            $inst->payments()->withTrashed()->forceDelete();
+            $inst->forceDelete();
+        }
+
+        // Clean related stock movements, purchase items, and sale items
+        $product->stockMovements()->delete();
+        $product->purchaseItems()->delete();
+        \App\Models\SaleItem::where('product_id', $product->id)->delete();
         
         $product->forceDelete();
         return redirect()->route('customers.trash', ['tab' => 'products'])->with('success', 'Product permanently deleted.');

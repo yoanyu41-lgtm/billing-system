@@ -847,9 +847,9 @@ class InstallmentController extends Controller
         
         // Delete related payments and invoices permanently
         \DB::table('invoices')
-            ->whereIn('payment_id', $installment->payments()->pluck('id'))
+            ->whereIn('payment_id', $installment->payments()->withTrashed()->pluck('id'))
             ->delete();
-        $installment->payments()->delete();
+        $installment->payments()->withTrashed()->forceDelete();
         
         $installment->forceDelete();
         return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment permanently deleted.');

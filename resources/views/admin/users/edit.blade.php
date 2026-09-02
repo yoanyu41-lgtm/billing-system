@@ -99,17 +99,17 @@
                     <input type="password" name="password" id="password" placeholder="{{ app()->getLocale() === 'km' ? 'ទុកទំនេរ បើមិនចង់ផ្លាស់ប្ដូរ' : 'Leave empty to keep current password' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
                 </div>
 
-                <!-- Role Selection / Typing -->
+                <!-- Role Selection -->
                 <div>
                     <label for="role" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
                         <span class="text-indigo-600">🛡️</span>
                         <span>{{ app()->getLocale() === 'km' ? 'តួនាទីក្នុងប្រព័ន្ធ (Role)' : 'User Role' }} <span class="text-rose-500">*</span></span>
                     </label>
-                    <div>
-                        <input type="text" name="role" id="role" value="{{ old('role', $userRole) }}" required 
-                               placeholder="{{ app()->getLocale() === 'km' ? 'បញ្ចូលឈ្មោះតួនាទី (ឧ. Admin, Staff, Manager...)' : 'Enter role name (e.g. Admin, Staff, Manager...)' }}"
-                               class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
-                    </div>
+                    @php $currentRole = strtolower(old('role', $userRole)); @endphp
+                    <select name="role" id="role" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+                        <option value="Admin" {{ $currentRole === 'admin' ? 'selected' : '' }}>Admin (អ្នកគ្រប់គ្រងទូទៅ)</option>
+                        <option value="Staff" {{ $currentRole !== 'admin' ? 'selected' : '' }}>Staff (បុគ្គលិក)</option>
+                    </select>
                 </div>
             </div>
 

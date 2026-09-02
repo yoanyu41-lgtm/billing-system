@@ -1238,11 +1238,6 @@
                         <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
                     </a>
                     @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.create'))
-                    <a href="{{ route('admin.purchases.create') }}" class="{{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
-                        <i class="fas fa-truck-loading"></i> {{ __('app.stock_in') }}
-                    </a>
-                    @endif
                     @if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.view'))
                     <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}
@@ -1305,9 +1300,9 @@
             @endif
 
             {{-- Settings Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage') || auth()->user()->can('users.view') || auth()->user()->can('roles.manage'))
-            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage') || auth()->user()->can('users.view'))
+            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-cog"></i>
                     <span>{{ __('app.settings') }}</span>
                     <i class="fas fa-chevron-down"></i>
@@ -1321,11 +1316,6 @@
                     @if(auth()->user()->hasRole('Admin') || auth()->user()->can('users.view'))
                     <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('roles.manage'))
-                    <a href="{{ route('admin.roles.index') }}" class="{{ request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                        <i class="fas fa-user-shield"></i> {{ app()->getLocale() === 'km' ? 'កំណត់សិទ្ធិ (Roles & Permissions)' : 'Roles & Permissions' }}
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Admin') || auth()->user()->can('backup.manage'))

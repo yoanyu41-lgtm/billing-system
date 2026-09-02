@@ -80,8 +80,8 @@
                             <td class="px-6 py-4 text-sm text-gray-700">
                                 @foreach($sale->items as $item)
                                     <div class="flex items-center gap-2 {{ !$loop->last ? 'mb-1' : '' }}">
-                                        <span>{{ $item->product->name ?? '—' }}</span>
-                                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">x{{ $item->quantity }}</span>
+                                        <span class="max-w-[180px] lg:max-w-[220px] truncate block" title="{{ $item->product->name ?? '—' }}">{{ $item->product->name ?? '—' }}</span>
+                                        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shrink-0">x{{ $item->quantity }}</span>
                                     </div>
                                 @endforeach
                             </td>
@@ -99,6 +99,13 @@
                                    title="{{ __('app.view_receipt') }}">
                                     <i class="fas fa-eye text-base"></i>
                                 </a>
+                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.edit'))
+                                <a href="{{ route('admin.sales.edit', [$sale, 'from' => request('from')]) }}" 
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-800 transition" 
+                                   title="{{ __('app.edit') ?? 'Edit' }}">
+                                    <i class="fas fa-edit text-base"></i>
+                                </a>
+                                @endif
                                 @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.delete'))
                                 <form action="{{ route('admin.sales.destroy', $sale) }}" method="POST" class="inline"
                                       onsubmit="return confirm('{{ __('app.confirm_delete_sale') }}')">

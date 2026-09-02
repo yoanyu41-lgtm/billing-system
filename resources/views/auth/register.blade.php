@@ -88,7 +88,7 @@
             <!-- Link to Login -->
             <p style="text-align:center; font-size:14px; color: var(--text-muted); font-weight:600; margin: 0;">
                 {{ __('app.already_member') }}
-                <a href="{{ route('login') }}" style="color: var(--secondary); text-decoration:none; font-weight:700; border-bottom:1.5px solid rgba(37, 99, 235, 0.15); padding-bottom: 2px; transition: all 0.2s ease;" onmouseover="this.style.color='var(--brand)'; this.style.borderBottomColor='var(--brand)'" onmouseout="this.style.color='var(--secondary)'; this.style.borderBottomColor='rgba(37, 99, 235, 0.15)'">{{ __('app.sign_in_instead') }}</a>
+                <a href="{{ route('login') }}" style="color: var(--secondary); text-decoration:none; font-weight:700; border-bottom:1.5px solid rgba(37, 99, 235, 0.15); padding-bottom: 2px; transition: all 0.2s ease;" onmouseover="this.style.color='var(--brand)'; this.style.borderBottomColor='var(--brand)'" onmouseout="this.style.color='var(--secondary)'; this.style.borderBottomColor='rgba(37, 99, 235, 0.15)'">{{ __('app.sign_in') }}</a>
             </p>
         </form>
     </div>

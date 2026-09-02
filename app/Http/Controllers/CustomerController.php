@@ -190,7 +190,7 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer)
     {
-        Gate::authorize('manage-customer', $customer);
+        Gate::authorize('edit-customer', $customer);
         $sales = $customer->type === 'direct'
             ? $customer->sales()->with('items.product')->latest()->get()
             : collect();
@@ -199,7 +199,7 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer)
     {
-        Gate::authorize('manage-customer', $customer);
+        Gate::authorize('edit-customer', $customer);
 
         $request->validate([
             'name'          => 'required|string|max:255',
@@ -241,6 +241,96 @@ class CustomerController extends Controller
     public function trash(Request $request)
     {
         Gate::authorize('delete-customer');
+
+        // Automatically purge any trashed items older than 30 days
+        $threshold = now()->subDays(30);
+
+        // Clean expired customers
+        $expiredCustomers = Customer::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredCustomers as $c) {
+            // Delete customer storage files
+            foreach (['photo', 'id_card_photo', 'family_photo', 'income_proof', 'guarantor_doc'] as $f) {
+                if ($c->$f) Storage::disk('public')->delete($c->$f);
+            }
+
+            // Remove associated payments, invoices, installments
+            $cInstallments = Installment::withTrashed()->where('customer_id', $c->id)->get();
+            foreach ($cInstallments as $inst) {
+                \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+                $inst->payments()->forceDelete();
+                $inst->forceDelete();
+            }
+
+            // Remove associated sales
+            $cSales = Sale::withTrashed()->where('customer_id', $c->id)->get();
+            foreach ($cSales as $sale) {
+                $sale->items()->delete();
+                $sale->forceDelete();
+            }
+
+            // Remove guarantors, credit checks, telegram logs
+            $c->guarantors()->forceDelete();
+            $c->creditChecks()->forceDelete();
+            $c->telegramLogs()->delete();
+
+            $c->forceDelete();
+        }
+
+        // Clean expired installments
+        $expiredInstallments = Installment::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredInstallments as $inst) {
+            \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+            $inst->payments()->withTrashed()->forceDelete();
+            $inst->forceDelete();
+        }
+
+        // Clean expired products
+        $expiredProducts = Product::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredProducts as $p) {
+            if ($p->image) Storage::disk('public')->delete($p->image);
+
+            // Clean related installments and payments for this product
+            $pInstallments = Installment::withTrashed()->where('product_id', $p->id)->get();
+            foreach ($pInstallments as $inst) {
+                \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+                $inst->payments()->withTrashed()->forceDelete();
+                $inst->forceDelete();
+            }
+
+            // Clean related stock movements, purchase items, and sale items
+            $p->stockMovements()->delete();
+            $p->purchaseItems()->delete();
+            \App\Models\SaleItem::where('product_id', $p->id)->delete();
+
+            $p->forceDelete();
+        }
+
+        // Clean expired users
+        $expiredUsers = User::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredUsers as $u) {
+            if ($u->profile_image) Storage::disk('public')->delete($u->profile_image);
+            $u->forceDelete();
+        }
+
+        // Clean expired payments
+        $expiredPayments = Payment::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredPayments as $pay) {
+            $pay->invoice()?->delete();
+            if ($pay->qr_image && Storage::disk('public')->exists($pay->qr_image)) {
+                Storage::disk('public')->delete($pay->qr_image);
+            }
+            $pay->forceDelete();
+        }
+
+        // Clean expired suppliers, categories, sales
+        Supplier::onlyTrashed()->where('deleted_at', '<=', $threshold)->get()->each->forceDelete();
+        Category::onlyTrashed()->where('deleted_at', '<=', $threshold)->get()->each->forceDelete();
+        $expiredSales = Sale::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        foreach ($expiredSales as $s) {
+            $s->items()->delete();
+            $s->forceDelete();
+        }
+
         $tab = $request->get('tab', 'customers');
         $customers = Customer::onlyTrashed()->latest()->paginate(10, ['*'], 'customers_page');
         $installments = Installment::onlyTrashed()->with('customer', 'product')->latest()->paginate(10, ['*'], 'installments_page');
@@ -270,9 +360,31 @@ class CustomerController extends Controller
         Gate::authorize('delete-customer');
         $customer = Customer::onlyTrashed()->findOrFail($id);
 
-        if ($customer->photo) {
-            Storage::disk('public')->delete($customer->photo);
+        // Delete documents/photos
+        foreach (['photo', 'id_card_photo', 'family_photo', 'income_proof', 'guarantor_doc'] as $field) {
+            if ($customer->$field) {
+                Storage::disk('public')->delete($customer->$field);
+            }
         }
+
+        // Delete associated installments and payments
+        $cInstallments = Installment::withTrashed()->where('customer_id', $customer->id)->get();
+        foreach ($cInstallments as $inst) {
+            \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+            $inst->payments()->forceDelete();
+            $inst->forceDelete();
+        }
+
+        // Delete associated sales
+        $cSales = Sale::withTrashed()->where('customer_id', $customer->id)->get();
+        foreach ($cSales as $sale) {
+            $sale->items()->delete();
+            $sale->forceDelete();
+        }
+
+        $customer->guarantors()->forceDelete();
+        $customer->creditChecks()->forceDelete();
+        $customer->telegramLogs()->delete();
 
         $customer->forceDelete();
         return redirect()->route('customers.trash')->with('success', __('app.force_delete_success'));
@@ -358,6 +470,24 @@ class CustomerController extends Controller
                         Storage::disk('public')->delete($customer->$field);
                     }
                 }
+
+                $cInstallments = Installment::withTrashed()->where('customer_id', $customer->id)->get();
+                foreach ($cInstallments as $inst) {
+                    \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+                    $inst->payments()->forceDelete();
+                    $inst->forceDelete();
+                }
+
+                $cSales = Sale::withTrashed()->where('customer_id', $customer->id)->get();
+                foreach ($cSales as $sale) {
+                    $sale->items()->delete();
+                    $sale->forceDelete();
+                }
+
+                $customer->guarantors()->forceDelete();
+                $customer->creditChecks()->forceDelete();
+                $customer->telegramLogs()->delete();
+
                 $customer->forceDelete();
             }
             $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមអតិថិជនរួចរាល់។' : 'Customer trash emptied successfully.';
@@ -365,9 +495,9 @@ class CustomerController extends Controller
             $installments = Installment::onlyTrashed()->get();
             foreach ($installments as $installment) {
                 \DB::table('invoices')
-                    ->whereIn('payment_id', $installment->payments()->pluck('id'))
+                    ->whereIn('payment_id', $installment->payments()->withTrashed()->pluck('id'))
                     ->delete();
-                $installment->payments()->delete();
+                $installment->payments()->withTrashed()->forceDelete();
                 $installment->forceDelete();
             }
             $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមគម្រោងបង់រំលស់រួចរាល់។' : 'Installment trash emptied successfully.';
@@ -377,6 +507,18 @@ class CustomerController extends Controller
                 if ($product->image) {
                     Storage::disk('public')->delete($product->image);
                 }
+
+                $pInstallments = Installment::withTrashed()->where('product_id', $product->id)->get();
+                foreach ($pInstallments as $inst) {
+                    \DB::table('invoices')->whereIn('payment_id', $inst->payments()->withTrashed()->pluck('id'))->delete();
+                    $inst->payments()->withTrashed()->forceDelete();
+                    $inst->forceDelete();
+                }
+
+                $product->stockMovements()->delete();
+                $product->purchaseItems()->delete();
+                \App\Models\SaleItem::where('product_id', $product->id)->delete();
+
                 $product->forceDelete();
             }
             $msg = app()->getLocale() === 'km' ? 'បានសម្អាតធុងសំរាមផលិតផលរួចរាល់។' : 'Product trash emptied successfully.';

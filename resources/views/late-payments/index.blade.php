@@ -84,8 +84,10 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ $installment->product?->name ?? 'N/A' }}
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                {{ $installment->product?->name ?? 'N/A' }}
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-bold text-rose-600">

@@ -3,10 +3,36 @@
 @section('content')
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
             <h1 class="text-3xl font-bold text-gray-800" lang="km">{{ __('app.contracts') }}</h1>
             <p class="text-sm text-gray-500 mt-1" lang="km">{{ __('app.contracts_sub') }}</p>
+        </div>
+
+        <div class="flex flex-nowrap items-center gap-1.5 sm:gap-2 shrink-0 overflow-x-auto max-w-full">
+            {{-- 1. Payment Schedule --}}
+            <a href="{{ route('installments.schedule-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-calendar-alt text-indigo-600"></i>
+                <span>{{ __('app.payment_schedule') }}</span>
+            </a>
+
+            {{-- 2. Contracts --}}
+            <a href="{{ route('installments.contract-index') }}" class="inline-flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100/80 text-purple-700 font-semibold text-xs px-3 py-2 rounded-xl border border-purple-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-file-signature text-purple-600"></i>
+                <span>{{ __('app.contracts') }}</span>
+            </a>
+
+            {{-- 3. Pay Off --}}
+            <a href="{{ route('installments.pay-off-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-hand-holding-usd text-emerald-600"></i>
+                <span>{{ __('app.pay_off') }}</span>
+            </a>
+
+            {{-- 4. Clearance Certificates --}}
+            <a href="{{ route('installments.clearance-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-certificate text-amber-600"></i>
+                <span>{{ __('app.clearance_certificates') }}</span>
+            </a>
         </div>
     </div>
 
@@ -62,7 +88,11 @@
                             <div class="text-sm font-semibold text-gray-900">{{ $installment->customer?->name ?? 'N/A' }}</div>
                             <div class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $installment->product?->name ?? 'N/A' }}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                {{ $installment->product?->name ?? 'N/A' }}
+                            </div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->total_price) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($installment->signed_contract)

@@ -1,20 +1,36 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mb-8 flex justify-between items-end">
-    <div>
-        <h1 class="text-3xl font-bold text-gray-800">
-            @php
-                $roleTitle = auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role);
-            @endphp
-            {{ $roleTitle }} {{ app()->getLocale() === 'km' ? 'ផ្ទាំងគ្រប់គ្រង (Dashboard)' : 'Dashboard' }}
-        </h1>
-        <p class="text-gray-500 mt-1">{{ __('app.overview_subtitle') }}</p>
+<div class="space-y-6">
+
+    <!-- ── Dashboard Header ── -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-emerald-500/20 flex-shrink-0">
+                ⚡
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight">
+                        @php
+                            $roleTitle = auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role);
+                        @endphp
+                        {{ $roleTitle }} {{ app()->getLocale() === 'km' ? 'ផ្ទាំងគ្រប់គ្រង (Dashboard)' : 'Workspace Dashboard' }}
+                    </h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                        Active Mode
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    {{ app()->getLocale() === 'km' ? 'ទិដ្ឋភាពទូទៅនៃប្រតិបត្តិការប្រចាំថ្ងៃ និងសកម្មភាពរហ័ស' : 'Operational overview, daily transactions, and quick task management' }}
+                </p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 shadow-2xs">
+            <i class="far fa-calendar-alt text-emerald-600"></i>
+            <span>{{ now()->format('l, d F Y') }}</span>
+        </div>
     </div>
-    <div class="text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm">
-        <i class="fas fa-calendar-day mr-2 text-blue-500"></i> {{ now()->format('l, d F Y') }}
-    </div>
-</div>
 
     <!-- ── TOP SECTION (Stat Cards Grid on Left 2 cols, Quick Actions on Right 1 col) ── -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -28,7 +44,7 @@
                     <div>
                         <div class="sc-icon"><i class="fas fa-users"></i></div>
                         <div class="sc-label">{{ __('app.total_customers') }}</div>
-                        <div class="sc-value text-2xl font-bold">{{ number_format($customers ?? 0) }}</div>
+                        <div class="sc-value text-2xl font-bold">{{ number_format($totalCustomers ?? $customers ?? 0) }}</div>
                         <div class="sc-trend" style="color:#059669;">&uarr; {{ app()->getLocale() === 'km' ? 'អតិថិជនសរុប' : 'Total Registered' }}</div>
                     </div>
                     <svg class="sc-wave" viewBox="0 0 200 36" preserveAspectRatio="none">
@@ -108,61 +124,72 @@
         <div class="space-y-6">
             
             {{-- Quick Actions --}}
-            <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs">
-                <div class="flex items-center justify-between mb-3.5">
-                    <span class="text-xs font-extrabold uppercase text-slate-800 tracking-wider">
-                        {{ __('app.quick_actions') }}
-                    </span>
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-xs font-bold uppercase text-slate-800 tracking-wider">
+                            {{ __('app.quick_actions') }}
+                        </span>
+                    </div>
+                    <span class="text-[10px] font-semibold text-slate-400">Shortcuts</span>
                 </div>
-                <div class="space-y-2">
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.create'))
-                    <a href="{{ route('customers.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-100/80 hover:border-indigo-100 transition-all text-slate-700 hover:text-indigo-600 no-underline group shadow-2xs">
+                <div class="space-y-2.5">
+                    <!-- Add Customer -->
+                    <a href="{{ route('customers.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-100 hover:border-indigo-200 transition-all text-slate-700 hover:text-indigo-600 no-underline group shadow-2xs">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-user-plus text-xs"></i>
+                            <span class="w-9 h-9 rounded-xl bg-white shadow-2xs flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all text-sm border border-indigo-100/60">
+                                <i class="fas fa-user-plus"></i>
                             </span>
-                            <span class="text-xs font-bold">{{ __('app.add_customer') }}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-indigo-600">{{ __('app.add_customer') }}</div>
+                                <div class="text-[10px] text-slate-400">{{ app()->getLocale() === 'km' ? 'ចុះឈ្មោះអតិថិជនថ្មី' : 'Register new customer' }}</div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+                        <i class="fas fa-chevron-right text-xs text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all"></i>
                     </a>
-                    @endif
 
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.create'))
-                    <a href="{{ route('admin.sales.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-100/80 hover:border-emerald-100 transition-all text-slate-700 hover:text-emerald-600 no-underline group shadow-2xs">
+                    <!-- Direct Sale -->
+                    <a href="{{ route('admin.sales.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-emerald-50/70 border border-slate-100 hover:border-emerald-200 transition-all text-slate-700 hover:text-emerald-600 no-underline group shadow-2xs">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-cash-register text-xs"></i>
+                            <span class="w-9 h-9 rounded-xl bg-white shadow-2xs flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all text-sm border border-emerald-100/60">
+                                <i class="fas fa-cash-register"></i>
                             </span>
-                            <span class="text-xs font-bold">{{ __('app.new_direct_sale') }}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-600">{{ __('app.new_direct_sale') }}</div>
+                                <div class="text-[10px] text-slate-400">{{ app()->getLocale() === 'km' ? 'លក់ចេញជាសាច់ប្រាក់' : 'Create direct sale' }}</div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
+                        <i class="fas fa-chevron-right text-xs text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all"></i>
                     </a>
-                    @endif
 
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create'))
-                    <a href="{{ route('payments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-100/80 hover:border-amber-100 transition-all text-slate-700 hover:text-amber-600 no-underline group shadow-2xs">
+                    <!-- New Payment -->
+                    <a href="{{ route('payments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-amber-50/70 border border-slate-100 hover:border-amber-200 transition-all text-slate-700 hover:text-amber-600 no-underline group shadow-2xs">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-credit-card text-xs"></i>
+                            <span class="w-9 h-9 rounded-xl bg-white shadow-2xs flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all text-sm border border-amber-100/60">
+                                <i class="fas fa-credit-card"></i>
                             </span>
-                            <span class="text-xs font-bold">{{ __('app.new_payment') }}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-amber-600">{{ __('app.new_payment') }}</div>
+                                <div class="text-[10px] text-slate-400">{{ app()->getLocale() === 'km' ? 'ទទួលប្រាក់បង់រំលស់' : 'Record payment' }}</div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-amber-600 transition-colors"></i>
+                        <i class="fas fa-chevron-right text-xs text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all"></i>
                     </a>
-                    @endif
 
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.create'))
-                    <a href="{{ route('installments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-purple-50/60 border border-slate-100/80 hover:border-purple-100 transition-all text-slate-700 hover:text-purple-600 no-underline group shadow-2xs">
+                    <!-- New Installment -->
+                    <a href="{{ route('installments.create') }}" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-purple-50/70 border border-slate-100 hover:border-purple-200 transition-all text-slate-700 hover:text-purple-600 no-underline group shadow-2xs">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-lg bg-white shadow-2xs flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-file-contract text-xs"></i>
+                            <span class="w-9 h-9 rounded-xl bg-white shadow-2xs flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all text-sm border border-purple-100/60">
+                                <i class="fas fa-file-contract"></i>
                             </span>
-                            <span class="text-xs font-bold">{{ __('app.new_installment') }}</span>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 group-hover:text-purple-600">{{ __('app.new_installment') }}</div>
+                                <div class="text-[10px] text-slate-400">{{ app()->getLocale() === 'km' ? 'បង្កើតកិច្ចសន្យាថ្មី' : 'Create new contract' }}</div>
+                            </div>
                         </div>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-purple-600 transition-colors"></i>
+                        <i class="fas fa-chevron-right text-xs text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all"></i>
                     </a>
-                    @endif
                 </div>
             </div>
 
@@ -171,47 +198,63 @@
     </div>
 
 <!-- Charts Section -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold text-gray-800 flex items-center">
-                <i class="fas fa-chart-line text-green-500 mr-2"></i> {{ __('app.monthly_payment_collection') }}
-            </h2>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6">
+        <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold border border-emerald-100">
+                    <i class="fas fa-chart-line"></i>
+                </span>
+                <div>
+                    <h2 class="text-sm font-bold text-slate-800">
+                        {{ __('app.monthly_payment_collection') }}
+                    </h2>
+                    <p class="text-[10px] text-slate-400">Monthly overview for {{ now()->year }}</p>
+                </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-[10px] font-bold text-slate-600">
+                12 Months
+            </span>
         </div>
-        <div style="position: relative; height: 250px;">
+        <div style="position: relative; height: 260px;">
             <canvas id="staffCollectionChart"></canvas>
         </div>
     </div>
     
-    <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-chart-pie text-purple-500 mr-2"></i> {{ __('app.installment_status') }}
-        </h2>
-        <div class="flex-grow flex items-center justify-center relative">
+    <div class="lg:col-span-1 bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 flex flex-col justify-between">
+        <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+            <span class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-bold border border-purple-100">
+                <i class="fas fa-chart-pie"></i>
+            </span>
+            <div>
+                <h2 class="text-sm font-bold text-slate-800">
+                    {{ __('app.installment_status') }}
+                </h2>
+                <p class="text-[10px] text-slate-400">Contracts breakdown</p>
+            </div>
+        </div>
+        <div class="flex-grow flex items-center justify-center relative my-2">
             <div style="height: 180px; width: 180px;">
                 <canvas id="staffDonutChart"></canvas>
             </div>
             <!-- Center Text -->
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span class="text-2xl font-bold text-gray-700">{{ $installmentStatus['paid']['count'] + $installmentStatus['ongoing']['count'] + $installmentStatus['overdue']['count'] }}</span>
-                <span class="text-xs text-gray-400">{{ __('app.total') }}</span>
+                <span class="text-2xl font-black text-slate-800 tracking-tight">{{ $installmentStatus['paid']['count'] + $installmentStatus['ongoing']['count'] + $installmentStatus['overdue']['count'] }}</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('app.total') }}</span>
             </div>
         </div>
-        <div class="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
-            <div>
-                <div class="w-3 h-3 rounded-full bg-emerald-500 mx-auto mb-1"></div>
-                <span class="font-medium text-gray-800">{{ $installmentStatus['paid']['count'] }}</span>
-                <p class="text-xs text-gray-500">{{ __('app.paid') }}</p>
+        <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-slate-100">
+            <div class="p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                <span class="block font-bold text-emerald-700 text-sm">{{ $installmentStatus['paid']['count'] }}</span>
+                <p class="text-[10px] font-semibold text-emerald-600 mt-0.5">{{ __('app.paid') }}</p>
             </div>
-            <div>
-                <div class="w-3 h-3 rounded-full bg-amber-500 mx-auto mb-1"></div>
-                <span class="font-medium text-gray-800">{{ $installmentStatus['ongoing']['count'] }}</span>
-                <p class="text-xs text-gray-500">{{ __('app.ongoing') }}</p>
+            <div class="p-2 rounded-xl bg-amber-50/50 border border-amber-100">
+                <span class="block font-bold text-amber-700 text-sm">{{ $installmentStatus['ongoing']['count'] }}</span>
+                <p class="text-[10px] font-semibold text-amber-600 mt-0.5">{{ __('app.ongoing') }}</p>
             </div>
-            <div>
-                <div class="w-3 h-3 rounded-full bg-red-500 mx-auto mb-1"></div>
-                <span class="font-medium text-gray-800">{{ $installmentStatus['overdue']['count'] }}</span>
-                <p class="text-xs text-gray-500">{{ __('app.overdue') }}</p>
+            <div class="p-2 rounded-xl bg-rose-50/50 border border-rose-100">
+                <span class="block font-bold text-rose-700 text-sm">{{ $installmentStatus['overdue']['count'] }}</span>
+                <p class="text-[10px] font-semibold text-rose-600 mt-0.5">{{ __('app.overdue') }}</p>
             </div>
         </div>
     </div>
@@ -220,66 +263,85 @@
 <div class="space-y-6">
     <!-- Recent Payments & Tasks -->
     <div class="space-y-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-tasks text-blue-500 mr-2"></i> {{ __('app.priority_tasks') }}
-            </h2>
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6">
+            <div class="flex items-center gap-2.5 mb-4 pb-2 border-b border-slate-100">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold border border-blue-100">
+                    <i class="fas fa-tasks"></i>
+                </span>
+                <h2 class="text-sm font-bold text-slate-800">
+                    {{ __('app.priority_tasks') }}
+                </h2>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <a href="{{ route('payments.index', ['status' => 'pending']) }}" class="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-100 hover:shadow-md transition">
-                    <i class="fas fa-clock text-yellow-500 mt-1 mr-3 text-lg"></i>
+                <a href="{{ route('payments.index', ['status' => 'pending']) }}" class="flex items-start p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 hover:bg-amber-100/60 transition-all no-underline shadow-2xs group">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-base mr-3.5 flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-clock"></i>
+                    </div>
                     <div>
-                        <p class="font-semibold text-gray-800">{{ __('app.process_pending_payments') }}</p>
-                        <p class="text-sm text-gray-600 mt-1"><span class="font-bold">{{ $pendingPayments }}</span> {{ __('app.payments_awaiting_review') }}</p>
+                        <p class="font-bold text-slate-800 text-xs group-hover:text-amber-700 transition-colors">{{ __('app.process_pending_payments') }}</p>
+                        <p class="text-[11px] text-slate-600 mt-1"><span class="font-black text-amber-700">{{ $pendingPayments }}</span> {{ __('app.payments_awaiting_review') }}</p>
                     </div>
                 </a>
                 
-                <a href="{{ route('late-payments.index') }}" class="flex items-start p-4 bg-red-50 rounded-lg border border-red-100 hover:shadow-md transition">
-                    <i class="fas fa-exclamation-circle text-red-500 mt-1 mr-3 text-lg"></i>
+                <a href="{{ route('late-payments.index') }}" class="flex items-start p-4 bg-rose-50/60 rounded-2xl border border-rose-200/80 hover:bg-rose-100/60 transition-all no-underline shadow-2xs group">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base mr-3.5 flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
                     <div>
-                        <p class="font-semibold text-gray-800">{{ __('app.late_payments') }}</p>
-                        <p class="text-sm text-gray-600 mt-1"><span class="font-bold">{{ $lateCustomers }}</span> {{ __('app.late_customers_reminders') }}</p>
+                        <p class="font-bold text-slate-800 text-xs group-hover:text-rose-700 transition-colors">{{ __('app.late_payments') }}</p>
+                        <p class="text-[11px] text-slate-600 mt-1"><span class="font-black text-rose-700">{{ $lateCustomers }}</span> {{ __('app.late_customers_reminders') }}</p>
                     </div>
                 </a>
             </div>
         </div>
 
         @if(isset($recentPayments) && $recentPayments->count() > 0)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-history text-gray-500 mr-2"></i> {{ __('app.recent_payments') }}
-                </h2>
-                <a href="{{ route('payments.index') }}" class="text-sm text-blue-600 hover:underline">{{ __('app.view_all') }}</a>
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 overflow-hidden">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-bold">
+                        <i class="fas fa-history"></i>
+                    </span>
+                    <h2 class="text-sm font-bold text-slate-800">
+                        {{ __('app.recent_payments') }}
+                    </h2>
+                </div>
+                <a href="{{ route('payments.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 no-underline">{{ __('app.view_all') }} &rarr;</a>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead>
-                        <tr class="text-gray-500 border-b border-gray-100">
-                            <th class="pb-3 font-medium">{{ __('app.customer_name') }}</th>
-                            <th class="pb-3 font-medium">{{ __('app.amount') }}</th>
-                            <th class="pb-3 font-medium">{{ __('app.date') }}</th>
-                            <th class="pb-3 font-medium">{{ __('app.status') }}</th>
+                <table class="w-full text-left text-xs whitespace-nowrap">
+                    <thead class="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase">
+                        <tr>
+                            <th class="py-3 px-4">{{ __('app.customer_name') }}</th>
+                            <th class="py-3 px-4">{{ __('app.amount') }}</th>
+                            <th class="py-3 px-4">{{ __('app.date') }}</th>
+                            <th class="py-3 px-4 text-center">{{ __('app.status') }}</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="divide-y divide-slate-100">
                         @foreach($recentPayments as $payment)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="py-3 text-gray-800 font-medium">
-                                <a href="{{ route('payments.show', $payment->id) }}" class="hover:text-blue-600 transition">
-                                    {{ $payment->installment->customer->name ?? 'N/A' }}
+                        <tr class="hover:bg-slate-50/80 transition-colors">
+                            <td class="py-3.5 px-4 text-slate-800 font-bold">
+                                <a href="{{ route('payments.show', $payment->id) }}" class="text-slate-800 hover:text-indigo-600 no-underline flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold flex items-center justify-center">
+                                        {{ mb_substr($payment->installment?->customer?->name ?? 'C', 0, 1) }}
+                                    </span>
+                                    <span>{{ $payment->installment->customer->name ?? 'N/A' }}</span>
                                 </a>
                             </td>
-                            <td class="py-3">
-                                <span class="font-semibold text-gray-800">${{ number_format($payment->amount, 2) }}</span>
+                            <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                                ${{ number_format($payment->amount, 2) }}
                             </td>
-                            <td class="py-3 text-gray-500">{{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A' }}</td>
-                            <td class="py-3">
+                            <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                                {{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A' }}
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
                                 @if($payment->status === 'approved')
-                                    <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200">{{ __('app.approved') }}</span>
+                                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-[10px] font-bold">{{ __('app.approved') }}</span>
                                 @elseif($payment->status === 'pending')
-                                    <span class="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-md text-xs font-medium border border-amber-200">{{ __('app.pending') }}</span>
+                                    <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full text-[10px] font-bold">{{ __('app.pending') }}</span>
                                 @else
-                                    <span class="px-2.5 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium border border-red-200">{{ __('app.'.$payment->status) }}</span>
+                                    <span class="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-[10px] font-bold">{{ __('app.'.$payment->status) }}</span>
                                 @endif
                             </td>
                         </tr>

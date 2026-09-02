@@ -161,16 +161,18 @@ class RoleAndPermissionSeeder extends Seeder
             'stock.view',
         ]);
 
-        // 4. Staff Role
+        // 4. Staff Role (Daily Operations: view/create customers, manage sales, payments & view info)
         $staffRole = Role::firstOrCreate(['name' => 'Staff', 'guard_name' => 'web']);
         $staffRole->syncPermissions([
             'dashboard.view',
-            'customers.view', 'customers.create',
-            'installments.view', 'installments.schedule', 'installments.contract',
-            'sales.view', 'sales.create',
-            'invoices.view', 'invoices.print',
-            'payments.view', 'payments.create',
+            'customers.view', 'customers.create', 'customers.credit_check', 'customers.guarantor',
+            'installments.view', 'installments.create', 'installments.schedule', 'installments.contract', 'installments.payoff', 'installments.clearance',
+            'sales.view', 'sales.create', 'sales.download',
+            'invoices.view', 'invoices.create', 'invoices.print', 'invoices.download',
+            'payments.view', 'payments.create', 'payments.approve', 'payments.late',
             'products.view',
+            'stock.view',
+            'categories.view', 'suppliers.view',
         ]);
 
         // Sync existing users legacy role column

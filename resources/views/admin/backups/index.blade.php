@@ -92,24 +92,24 @@
     </div>
 
     <!-- Actions Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <!-- Create Backup Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 flex flex-col justify-between">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-4 sm:p-5 flex flex-col justify-between">
             <div>
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold">
+                <div class="flex items-center gap-2.5 mb-2">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-bold shrink-0">
                         📥
                     </div>
-                    <h2 class="text-base font-bold text-slate-800">{{ __('app.create_backup') }}</h2>
+                    <h2 class="text-sm font-bold text-slate-800">{{ __('app.create_backup') }}</h2>
                 </div>
-                <p class="text-slate-600 text-xs leading-relaxed mb-6">
-                    បង្កើតឯកសារបម្រុងទុកនៃមូលដ្ឋានទិន្នន័យ (Database SQL Dump) ដែលមានផ្ទុកនូវរាល់ទិន្នន័យអតិថិជន ផលិតផល គម្រោងបង់រំលស់ និងការទូទាត់ទាំងអស់។ ឯកសារនឹងត្រូវរក្សាទុកនៅលើម៉ាស៊ីនមេ ហើយអាចទាញយកបានគ្រប់ពេល។
+                <p class="text-slate-600 text-xs leading-relaxed mb-4">
+                    បង្កើតឯកសារបម្រុងទុកនៃមូលដ្ឋានទិន្នន័យ (Database SQL Dump) ដែលមានផ្ទុកនូវរាល់ទិន្នន័យអតិថិជន ផលិតផល គម្រោងបង់រំលស់ និងការទូទាត់ទាំងអស់។
                 </p>
             </div>
-            <div>
+            <div class="pt-2">
                 <form method="POST" action="{{ route('admin.backups.create') }}">
                     @csrf
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 text-xs cursor-pointer">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 text-xs cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         <span>{{ __('app.create_backup') }}</span>
                     </button>
@@ -118,39 +118,37 @@
         </div>
 
         <!-- Upload & Restore Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6">
-            <div class="flex items-center gap-3 mb-3">
-                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-bold">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-4 sm:p-5">
+            <div class="flex items-center gap-2.5 mb-2.5">
+                <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base font-bold shrink-0">
                     📤
                 </div>
-                <h2 class="text-base font-bold text-slate-800">{{ __('app.upload_backup') }}</h2>
+                <h2 class="text-sm font-bold text-slate-800">{{ __('app.upload_backup') }}</h2>
             </div>
 
-            <form method="POST" action="{{ route('admin.backups.restore') }}" enctype="multipart/form-data" id="upload-restore-form" class="space-y-4">
+            <form method="POST" action="{{ route('admin.backups.restore') }}" enctype="multipart/form-data" id="upload-restore-form" class="space-y-3">
                 @csrf
 
-                <div class="border-2 border-dashed border-slate-200 hover:border-amber-500 rounded-2xl p-5 transition-colors duration-200 cursor-pointer text-center relative group bg-slate-50/50 hover:bg-amber-50/20" id="drop-zone">
+                <div class="border-2 border-dashed border-slate-200 hover:border-amber-500 rounded-xl py-2.5 px-3 transition-colors duration-200 cursor-pointer text-center relative group bg-slate-50/50 hover:bg-amber-50/20" id="drop-zone">
                     <input type="file" name="file" id="file-input" accept=".sql" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required onchange="updateFileLabel(this)">
-                    <div class="space-y-1.5">
-                        <div class="w-10 h-10 rounded-full bg-white text-slate-400 group-hover:text-amber-600 transition-colors mx-auto flex items-center justify-center text-xl shadow-2xs">
-                            ☁️
-                        </div>
-                        <p class="text-xs font-bold text-slate-700 group-hover:text-amber-700 transition-colors" id="file-label">
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="text-base text-slate-400 group-hover:text-amber-600 transition-colors">☁️</span>
+                        <p class="text-xs font-bold text-slate-700 group-hover:text-amber-700 transition-colors truncate" id="file-label">
                             {{ __('app.select_sql_file') }}
                         </p>
-                        <p class="text-[10px] text-slate-400 font-medium">{{ app()->getLocale() === 'km' ? 'ទំហំឯកសារ SQL ធំបំផុត 20MB' : 'SQL file maximum size 20MB' }}</p>
+                        <span class="text-[10px] text-slate-400 font-medium">(.sql ≤ 20MB)</span>
                     </div>
                 </div>
 
                 <!-- Warning Box -->
-                <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2.5">
-                    <span class="text-amber-600 font-bold text-sm">⚠️</span>
-                    <div>
-                        <span class="font-bold text-amber-900">ការព្រមាន៖</span> ការស្ដារទិន្នន័យឡើងវិញ នឹងសរសេរជាន់លើ (Overwrite) ទិន្នន័យបច្ចុប្បន្នទាំងអស់! សូមប្រាកដថាបានបម្រុងទុកទិន្នន័យសិន។
+                <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl px-3 py-2 text-[11px] text-amber-800 flex items-center gap-2">
+                    <span class="text-amber-600 font-bold shrink-0">⚠️</span>
+                    <div class="leading-tight">
+                        <span class="font-bold text-amber-900">ការព្រមាន៖</span> ការស្ដារទិន្នន័យឡើងវិញ នឹងសរសេរជាន់លើ (Overwrite) ទិន្នន័យបច្ចុប្បន្នទាំងអស់!
                     </div>
                 </div>
 
-                <button type="submit" onclick="return confirmRestoreUploaded(event);" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 text-xs cursor-pointer">
+                <button type="submit" onclick="return confirmRestoreUploaded(event);" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-4 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 text-xs cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     <span>{{ __('app.upload_and_restore') }}</span>
                 </button>

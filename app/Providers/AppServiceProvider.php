@@ -101,33 +101,40 @@ class AppServiceProvider extends ServiceProvider
                 (new \Database\Seeders\RoleAndPermissionSeeder())->run();
             }
 
-            // Sync all permissions into DB if missing
-            if (Schema::hasTable('permissions') && \Spatie\Permission\Models\Permission::count() < 45) {
-                (new \Database\Seeders\RoleAndPermissionSeeder())->run();
+            // Sync Staff role permissions in DB
+            if (Schema::hasTable('permissions')) {
+                $staffRoleObj = \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
+                if ($staffRoleObj && $staffRoleObj->permissions()->where('name', 'customers.edit')->exists()) {
+                    (new \Database\Seeders\RoleAndPermissionSeeder())->run();
+                    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+                }
             }
 
             // Ensure logged in user has their spatie role synced
-            if (auth()->check() && auth()->user()->roles->isEmpty()) {
+            if (auth()->check()) {
                 $user = auth()->user();
-                $roleToAssign = \Spatie\Permission\Models\Role::where('name', 'like', $user->role)->first()
-                    ?? \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
-                if ($roleToAssign) {
-                    $user->assignRole($roleToAssign);
+                if ($user->roles->isEmpty()) {
+                    $roleToAssign = \Spatie\Permission\Models\Role::where('name', 'like', $user->role)->first()
+                        ?? \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
+                    if ($roleToAssign) {
+                        $user->assignRole($roleToAssign);
+                    }
                 }
             }
         } catch (\Throwable $e) {
             \Log::error('Permission Table Setup Error: ' . $e->getMessage());
         }
 
-        // Global Gate callback for Spatie Role & Permission evaluation
+        // Global Gate callback for Role & Spatie Permission evaluation
         Gate::before(function ($user, $ability) {
+            // Super Admin has full operational access to everything
             if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
                 return true;
             }
 
             if (method_exists($user, 'hasPermissionTo')) {
                 try {
-                    return $user->hasPermissionTo($ability) ? true : false;
+                    return $user->hasPermissionTo($ability) ? true : null;
                 } catch (\Throwable $e) {
                     return null;
                 }
@@ -173,51 +180,48 @@ class AppServiceProvider extends ServiceProvider
             $view->with('companySubtitle', $companySubtitle);
         });
 
-        // Super Admin Implicit Gate (Admin role gets all)
-        Gate::before(function ($user, $ability) {
-            if ($user->hasRole('Admin') || strtolower($user->role) === 'admin') {
-                return true;
-            }
-        });
-
         // Customers Gate
         Gate::define('manage-customer', function ($user, ?Customer $customer = null) {
-            return $user->can('customers.edit') || $user->can('customers.create') || ($customer && $customer->created_by === $user->id);
+            return $user->can('customers.view') || $user->can('customers.create') || $user->can('customers.edit');
         });
 
-        Gate::define('delete-customer', fn($user) =>
-            $user->can('customers.delete')
-        );
+        Gate::define('edit-customer', function ($user, ?Customer $customer = null) {
+            return $user->can('customers.edit');
+        });
+
+        Gate::define('delete-customer', function ($user) {
+            return $user->can('customers.delete');
+        });
 
         // Installments Gate
         Gate::define('manage-installment', function ($user, ?Installment $installment = null) {
-            return $user->can('installments.edit') || $user->can('installments.create') || ($installment && $installment->created_by === $user->id);
+            return $user->can('installments.edit') || $user->can('installments.create') || $user->can('installments.view');
         });
 
-        Gate::define('delete-installment', fn($user) =>
-            $user->can('installments.delete')
-        );
+        Gate::define('delete-installment', function ($user) {
+            return $user->can('installments.delete');
+        });
 
         // Payments Gate
         Gate::define('approve-payment', function ($user, ?\App\Models\Payment $payment = null) {
             return $user->can('payments.approve');
         });
 
-        Gate::define('delete-payment', fn($user) =>
-            $user->can('payments.delete')
-        );
+        Gate::define('delete-payment', function ($user) {
+            return $user->can('payments.delete');
+        });
 
         // Products Gate
-        Gate::define('manage-product', fn($user) =>
-            $user->can('products.edit') || $user->can('products.create')
-        );
+        Gate::define('manage-product', function ($user) {
+            return $user->can('products.edit') || $user->can('products.create') || $user->can('products.view');
+        });
 
-        Gate::define('delete-product', fn($user) =>
-            $user->can('products.delete')
-        );
+        Gate::define('delete-product', function ($user) {
+            return $user->can('products.delete');
+        });
 
-        Gate::define('view-product', fn($user) =>
-            $user->can('products.view')
-        );
+        Gate::define('view-product', function ($user) {
+            return $user->can('products.view');
+        });
     }
 }

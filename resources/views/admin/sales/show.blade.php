@@ -30,6 +30,12 @@
                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                 <i class="fas fa-arrow-left"></i> {{ __('app.back') }}
             </a>
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.edit'))
+            <a href="{{ route('admin.sales.edit', [$sale, 'from' => request('from')]) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition shadow-sm">
+                <i class="fas fa-edit"></i> {{ __('app.edit') }}
+            </a>
+            @endif
             <button onclick="savePDF()"
                     class="inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm">
                 <i class="fas fa-file-pdf"></i> PDF

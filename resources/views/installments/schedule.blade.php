@@ -12,12 +12,6 @@
     $companyLogo = !empty($settings['company_logo']) ? asset('storage/' . $settings['company_logo']) : null;
 @endphp
 <style>
-.schedule-table th, .schedule-table td {
-    padding: 4px 6px !important;
-    font-size: 11px !important;
-    line-height: 1.25 !important;
-}
-.schedule-table th { font-size: 10px !important; }
 @media print {
     /* Main print resets */
     .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
@@ -27,7 +21,7 @@
     /* Remove card styling for clean print */
     .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
     .print-header { border-bottom: 2px solid #1e1b4b !important; padding-bottom: 6px !important; margin-bottom: 8px !important; }
-    .schedule-table th, .schedule-table td { border: 1px solid #334155 !important; padding: 1.5px 3px !important; font-size: 8pt !important; line-height: 1.15 !important; }
+    .schedule-table th, .schedule-table td { border: 1px solid #334155 !important; padding: 2px 4px !important; font-size: 8pt !important; line-height: 1.15 !important; }
     
     /* Force grid elements inside print-area to remain side-by-side in print */
     .print-area .grid { display: grid !important; }
@@ -42,7 +36,7 @@
 .pdf-export-mode .schedule-table th, 
 .pdf-export-mode .schedule-table td { 
     border: 1px solid #334155 !important; 
-    padding: 1.5px 3px !important; 
+    padding: 2px 4px !important; 
     font-size: 7.8pt !important; 
     line-height: 1.15 !important;
 }
@@ -54,7 +48,7 @@
     visibility: hidden !important;
 }
 </style>
-<div class="container mx-auto px-4 py-8 max-w-5xl">
+<div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header -->
     <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div class="no-print">
@@ -179,53 +173,62 @@
         </div>
 
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-full border-collapse text-sm schedule-table">
-                <thead class="bg-gray-50">
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-xs">
+            <table class="min-w-full border-collapse schedule-table">
+                <thead class="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <th class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600 text-xs">ល.រ<br><span class="font-normal">No.</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600 text-xs" lang="km">កាលបរិច្ឆេទបង់ប្រាក់<br><span class="font-normal">Payment Date</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600 text-xs" lang="km">ទឹកប្រាក់សរុបត្រូវបង់<br><span class="font-normal">Total Payment</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600 text-xs" lang="km">ការប្រាក់<br><span class="font-normal">Interests</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600 text-xs" lang="km">ប្រាក់ដើម<br><span class="font-normal">Principals</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600 text-xs" lang="km">សមតុល្យប្រាក់ដើម<br><span class="font-normal">Outstanding Principals</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600 text-xs" lang="km">សមតុល្យបំណុល<br><span class="font-normal">Outstanding Debts</span></th>
-                        <th class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600 text-xs">{{ __('app.status') }}</th>
-                        <th class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600 text-xs no-print">{{ __('app.actions') }}</th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ល.រ<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">កាលបរិច្ឆេទបង់ប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Payment Date</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ទឹកប្រាក់សរុបត្រូវបង់<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Interests</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Principals</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">សមតុល្យប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Outstanding Principals</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">សមតុល្យបំណុល<br><span class="font-normal text-[11px] text-slate-400">Outstanding Debts</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.status') }}</th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-gray-100 bg-white">
                     @foreach($schedule as $row)
-                    <tr class="hover:bg-gray-50/70">
-                        <td class="border border-gray-200 px-3 py-2 text-center text-gray-700">{{ $row['month'] }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-gray-700 whitespace-nowrap">{{ $row['due_date']->format('d/m/Y') }} <span class="text-gray-400 text-xs">{{ $row['day'] }}</span></td>
-                        <td class="border border-gray-200 px-3 py-2 text-right font-semibold text-gray-900">{{ format_currency($row['amount']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-right text-gray-700">{{ format_currency($row['interest']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-right text-gray-700">{{ format_currency($row['principal']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-right text-gray-700">{{ format_currency($row['outstanding_principal']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-right text-gray-700">{{ format_currency($row['outstanding_debt']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-center">
+                    <tr class="hover:bg-slate-50/80 transition duration-150">
+                        <td class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 whitespace-nowrap text-sm">
+                            <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
+                            <span class="text-slate-400 text-xs block font-medium">({{ $row['day'] }})</span>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap">
                             @if($row['status'] === 'paid')
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-green-100 text-green-800 border border-green-200">{{ __('app.paid') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fas fa-check-circle mr-1 self-center"></i> {{ __('app.paid') }}
+                                </span>
                             @elseif($row['status'] === 'overdue')
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-red-100 text-red-800 border border-red-200">{{ __('app.overdue') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-exclamation-triangle mr-1 self-center"></i> {{ __('app.overdue') }}
+                                </span>
                             @else
-                                <span class="px-2.5 py-0.5 inline-flex text-xs font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-200">{{ __('app.pending') }}</span>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-clock mr-1 self-center"></i> {{ __('app.pending') }}
+                                </span>
                             @endif
                         </td>
-                        <td class="border border-gray-200 px-3 py-2 text-center no-print">
+                        <td class="border border-gray-200 px-4 py-3.5 text-center no-print whitespace-nowrap">
                             @if($row['status'] !== 'paid')
                             <div class="flex items-center justify-center gap-1.5">
                                 {{-- Send QR via Telegram --}}
                                 @if(empty($installment->customer?->telegram_id))
-                                    <span class="px-2 py-1 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg inline-flex items-center gap-1 cursor-not-allowed" title="{{ __('app.telegram_id_missing') }}">
+                                    <span class="px-2.5 py-1.5 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1 cursor-not-allowed font-medium" title="{{ __('app.telegram_id_missing') }}">
                                         <i class="fab fa-telegram-plane"></i>
                                         <span>{{ __('app.send_qr_telegram') }}</span>
                                     </span>
                                 @else
                                     <button type="button" 
                                         onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
-                                        class="px-2 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" 
+                                        class="px-2.5 py-1.5 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1 transition font-bold" 
                                         title="{{ __('app.send_qr_telegram') }}">
                                         <i class="fab fa-telegram-plane"></i>
                                         <span>{{ __('app.send_qr_telegram') }}</span>
@@ -233,28 +236,28 @@
                                 @endif
 
                                 {{-- Record Payment --}}
-                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2 py-1 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg border-0 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
+                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2.5 py-1.5 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                     <span>{{ __('app.record_payment') }}</span>
                                 </button>
                             </div>
                             @else
-                                <span class="text-xs text-gray-400 font-medium">—</span>
+                                <span class="text-xs text-slate-400 font-bold">—</span>
                             @endif
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
-                <tfoot class="bg-gray-50 border-t border-gray-200 font-bold">
+                <tfoot class="bg-slate-50 border-t-2 border-gray-300 font-bold">
                     <tr>
-                        <td colspan="2" class="border border-gray-200 px-3 py-2.5 text-center text-gray-700" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs">Total Amount</span></td>
-                        <td class="border border-gray-200 px-3 py-2.5 text-right text-indigo-700">{{ format_currency($summary['total_scheduled']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2.5 text-right text-gray-900">{{ format_currency($summary['total_interest']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2.5 text-right text-gray-900">{{ format_currency($summary['total_principal']) }}</td>
-                        <td class="border border-gray-200 px-3 py-2.5 text-center text-gray-400">-</td>
-                        <td class="border border-gray-200 px-3 py-2.5 text-center text-gray-400">-</td>
-                        <td class="border border-gray-200 px-3 py-2.5"></td>
-                        <td class="border border-gray-200 px-3 py-2.5 no-print"></td>
+                        <td colspan="2" class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-indigo-700 font-black text-base">{{ format_currency($summary['total_scheduled']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-center text-gray-400">-</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-center text-gray-400">-</td>
+                        <td class="border border-gray-200 px-4 py-3.5"></td>
+                        <td class="border border-gray-200 px-4 py-3.5 no-print"></td>
                     </tr>
                 </tfoot>
             </table>

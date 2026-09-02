@@ -56,9 +56,8 @@
             <label for="roleFilter" class="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline-block">តម្រៀបតាមតួនាទី៖</label>
             <select id="roleFilter" onchange="filterUsers()" class="py-2 px-3 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
                 <option value="all">តួនាទីទាំងអស់ (All Roles)</option>
-                @foreach($roles as $r)
-                    <option value="{{ strtolower($r->name) }}">{{ $r->name }}</option>
-                @endforeach
+                <option value="admin">Admin</option>
+                <option value="staff">Staff</option>
             </select>
         </div>
     </div>
