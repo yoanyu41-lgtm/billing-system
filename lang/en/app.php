@@ -619,6 +619,7 @@ return [
     'select_product'        => 'Select product',
     'total_amount'          => 'Total Amount',
     'total_items'           => 'Total Items',
+    'items'                 => 'Items',
     'total_invoices'        => 'Total Invoices',
 
     // ── Direct Sale (ទិញដាច់) ──

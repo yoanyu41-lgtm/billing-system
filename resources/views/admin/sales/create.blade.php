@@ -4,21 +4,21 @@
 <div class="content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     {{-- Top Bar / Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-            <div class="flex items-center gap-2 text-xs font-medium text-slate-500 mb-1">
-                <a href="{{ route('admin.sales.index') }}" class="hover:text-blue-600 transition flex items-center gap-1" style="text-decoration: none;">
-                    <i class="fas fa-arrow-left text-[10px]"></i> {{ __('app.sales_list') }}
-                </a>
-                <span>/</span>
-                <span class="text-slate-700 font-semibold">{{ __('app.new_direct_sale') }}</span>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.sales.index') }}"
+               class="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 flex items-center justify-center shadow-xs transition duration-150"
+               title="{{ __('app.back') ?? 'ត្រឡប់ក្រោយ' }}">
+                <i class="fas fa-arrow-left text-sm"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-sm border border-blue-100">
+                        <i class="fas fa-cash-register"></i>
+                    </span>
+                    {{ __('app.new_direct_sale') }}
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">{{ __('app.direct_sale_subtitle') }}</p>
             </div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-sm border border-blue-100">
-                    <i class="fas fa-cash-register"></i>
-                </span>
-                {{ __('app.new_direct_sale') }}
-            </h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">{{ __('app.direct_sale_subtitle') }}</p>
         </div>
 
         <a href="{{ route('admin.sales.index') }}"

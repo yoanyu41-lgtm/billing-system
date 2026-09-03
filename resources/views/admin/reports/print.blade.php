@@ -90,6 +90,11 @@
         table.data-table td.center { text-align: center; }
         .total-row td { font-weight: 700; background: #f8fafc; border-top: 2px solid #334155; }
 
+        /* Prevent tfoot / total-row from repeating on every page in print */
+        tfoot {
+            display: table-row-group !important;
+        }
+
         .signature-table { width: 100%; border-collapse: collapse; margin-top: 25px; page-break-inside: avoid; }
         .signature-table td { border: none; vertical-align: top; width: 50%; text-align: center; }
         .sig-line { border-bottom: 1px dashed #94a3b8; width: 75%; margin: 35px auto 8px auto; }
@@ -112,6 +117,16 @@
                 box-shadow: none !important;
                 border-radius: 0 !important;
                 border: none !important;
+            }
+
+            /* Ensure table footer and totals only display at the end of data, not on each page bottom */
+            tfoot {
+                display: table-row-group !important;
+                page-break-inside: avoid;
+            }
+
+            tr {
+                page-break-inside: avoid;
             }
 
             @page {

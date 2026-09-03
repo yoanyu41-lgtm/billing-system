@@ -169,9 +169,11 @@
                                 <a href="{{ route('installments.schedule', $installment) }}" class="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-900 rounded-lg transition duration-150" title="{{ __('app.payment_schedule') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </a>
+                                @if(auth()->user()->role === 'admin')
                                 <a href="{{ route('installments.edit', $installment) }}" class="p-2 text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition duration-150" title="{{ __('app.edit') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 </a>
+                                @endif
                                 @if(auth()->user()->role === 'admin')
                                 <form method="POST" action="{{ route('installments.destroy', $installment) }}" class="inline-block delete-form" onsubmit="return confirm('{{ __('app.confirm_delete_installment') }}')">
                                     @csrf

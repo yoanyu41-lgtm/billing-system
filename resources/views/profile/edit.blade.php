@@ -289,18 +289,21 @@
         <p>{{ __('គ្រប់គ្រងព័ត៌មានគណនី និងសុវត្ថិភាពរបស់អ្នក') }}</p>
     </div>
 
-    {{-- Profile Picture Card --}}
+    {{-- Profile Information & Picture Card (Merged) --}}
     <div class="profile-card">
         <div class="profile-card-header">
             <div class="profile-card-icon">
-                <i class="fas fa-camera"></i>
+                <i class="fas fa-user-circle"></i>
             </div>
-            <h2 class="profile-card-title">{{ __('រូបភាពប្រវត្តិរូប') }}</h2>
+            <h2 class="profile-card-title">{{ __('ព័ត៌មានប្រវត្តិរូប') }}</h2>
         </div>
         
-        <form method="POST" action="{{ route('profile.update-picture') }}" enctype="multipart/form-data" id="profile-picture-form">
+        <form method="POST" action="{{ route('profile.update-info') }}" enctype="multipart/form-data" id="profile-info-form">
             @csrf
+            @method('PATCH')
+            <input type="hidden" name="remove_profile_image" id="remove_profile_image" value="0">
             
+            {{-- Profile Avatar Section inside Info Card --}}
             <div class="profile-avatar-section">
                 <div class="profile-avatar-wrapper">
                     <div id="profile-preview" class="profile-avatar">
@@ -316,13 +319,21 @@
                 </div>
                 
                 <div class="profile-avatar-info">
-                    <h3>{{ __('ជ្រើសរើសរូបភាពថ្មី') }}</h3>
-                    <div class="profile-file-input">
-                        <input type="file" name="profile_image" id="profile_image" accept="image/*" onchange="previewImage(event)">
-                        <label for="profile_image" class="profile-file-label">
-                            <i class="fas fa-upload"></i>
-                            {{ __('ជ្រើសរើសឯកសារ') }}
-                        </label>
+                    <h3>{{ __('រូបភាពប្រវត្តិរូប') }}</h3>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="profile-file-input">
+                            <input type="file" name="profile_image" id="profile_image" accept="image/*" onchange="previewImage(event)">
+                            <label for="profile_image" class="profile-file-label">
+                                <i class="fas fa-upload"></i>
+                                <span id="file-label-text">{{ __('ជ្រើសរើសរូបភាពថ្មី') }}</span>
+                            </label>
+                        </div>
+                        @if(auth()->user()->profile_image)
+                        <button type="button" onclick="markDeletePhoto()" id="btn-remove-photo" class="btn btn-danger" style="padding: 10px 16px; font-size: 13px;">
+                            <i class="fas fa-trash-alt"></i>
+                            {{ __('លុបរូបភាព') }}
+                        </button>
+                        @endif
                     </div>
                     <p class="profile-hint">
                         <i class="fas fa-info-circle"></i>
@@ -330,45 +341,10 @@
                     </p>
                 </div>
             </div>
-            
-            <div class="btn-group">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    {{ __('រក្សាទុករូបភាព') }}
-                </button>
-                @if(auth()->user()->profile_image)
-                <button type="button" onclick="confirmDelete()" class="btn btn-danger">
-                    <i class="fas fa-trash-alt"></i>
-                    {{ __('លុបរូបភាព') }}
-                </button>
-                @endif
-            </div>
-        </form>
 
-        @if(auth()->user()->profile_image)
-        <form id="remove-picture-form" method="POST" action="{{ route('profile.remove-picture') }}" style="display:none;">
-            @csrf
-            @method('DELETE')
-        </form>
-        @endif
-    </div>
-
-    {{-- Profile Information Card --}}
-    <div class="profile-card">
-        <div class="profile-card-header">
-            <div class="profile-card-icon">
-                <i class="fas fa-user"></i>
-            </div>
-            <h2 class="profile-card-title">{{ __('ព័ត៌មានប្រវត្តិរូប') }}</h2>
-        </div>
-        
-        <form method="POST" action="{{ route('profile.update-info') }}">
-            @csrf
-            @method('PATCH')
-            
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fas fa-user-circle"></i>
+                    <i class="fas fa-user"></i>
                     {{ __('ឈ្មោះ') }}
                 </label>
                 <input type="text" name="name" value="{{ auth()->user()->name }}" required class="form-input" placeholder="បញ្ចូលឈ្មោះរបស់អ្នក">
@@ -450,6 +426,7 @@
 function previewImage(event) {
     const file = event.target.files[0];
     const preview = document.getElementById('profile-preview');
+    const removeInput = document.getElementById('remove_profile_image');
     
     if (file) {
         // Validate file size (2MB)
@@ -471,18 +448,33 @@ function previewImage(event) {
         reader.onload = function(e) {
             preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">';
             
-            // Update label
-            const label = document.querySelector('.profile-file-label');
-            label.innerHTML = '<i class="fas fa-check"></i> ' + file.name;
+            // Update label text
+            const labelText = document.getElementById('file-label-text');
+            if (labelText) {
+                labelText.textContent = file.name;
+            }
+            if (removeInput) {
+                removeInput.value = '0';
+            }
         }
         
         reader.readAsDataURL(file);
     }
 }
 
-function confirmDelete() {
-    if (confirm('⚠️ តើអ្នកប្រាកដថាចង់លុបរូបភាពនេះ?\n\nការលុបនេះមិនអាចត្រឡប់វិញបានទេ។')) {
-        document.getElementById('remove-picture-form').submit();
+function markDeletePhoto() {
+    if (confirm('⚠️ តើអ្នកប្រាកដថាចង់លុបរូបភាពនេះ?\n\nរូបភាពនឹងត្រូវលុបពេលអ្នកចុច "រក្សាទុកការផ្លាស់ប្តូរ" នៅខាងក្រោម។')) {
+        const removeInput = document.getElementById('remove_profile_image');
+        const fileInput = document.getElementById('profile_image');
+        const preview = document.getElementById('profile-preview');
+        const btnRemove = document.getElementById('btn-remove-photo');
+        const labelText = document.getElementById('file-label-text');
+
+        if (removeInput) removeInput.value = '1';
+        if (fileInput) fileInput.value = '';
+        if (preview) preview.innerHTML = '{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}';
+        if (btnRemove) btnRemove.style.display = 'none';
+        if (labelText) labelText.textContent = '{{ __('ជ្រើសរើសរូបភាពថ្មី') }}';
     }
 }
 </script>

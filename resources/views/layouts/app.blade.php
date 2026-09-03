@@ -1113,31 +1113,15 @@
             </div>
             @endif
 
-            {{-- Direct Sale (ទិញដាច់) --}}
+            {{-- Direct Sale (លក់ដាច់) - Single Menu --}}
             @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view') || auth()->user()->can('sales.create'))
             @php
-                $isDirectSaleOpen = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
-                $isDirectSaleIndexActive = (request()->routeIs('admin.sales.index') || request()->routeIs('admin.sales.show')) && request('from') !== 'invoice';
+                $isDirectSaleActive = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
             @endphp
-            <div class="sb-dropdown {{ $isDirectSaleOpen ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ $isDirectSaleOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
-                    <i class="fas fa-cash-register"></i>
-                    <span>{{ __('app.direct_sale') }}</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="sb-dropdown-menu">
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.create'))
-                    <a href="{{ route('admin.sales.create') }}" class="{{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
-                        <i class="fas fa-plus-circle"></i> {{ __('app.new_direct_sale') }}
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view'))
-                    <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="{{ $isDirectSaleIndexActive ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.sales_list') }}
-                    </a>
-                    @endif
-                </div>
-            </div>
+            <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="sb-item {{ $isDirectSaleActive ? 'active' : '' }}">
+                <i class="fas fa-cash-register"></i>
+                <span>{{ __('app.direct_sale') }}</span>
+            </a>
             @endif
 
             {{-- Invoices Dropdown --}}

@@ -5,13 +5,9 @@
 
     <!-- ── Dashboard Header ── -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center text-xl font-bold shadow-md shadow-emerald-500/20 flex-shrink-0">
-                ⚡
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="text-xl font-bold text-slate-800 tracking-tight">
+        <div>
+            <div class="flex items-center gap-2.5">
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight capitalize">
                         @php
                             $roleTitle = auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role);
                         @endphp

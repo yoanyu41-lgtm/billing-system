@@ -54,10 +54,23 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
+
+        if ($request->hasFile('profile_image')) {
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
+            $validated['profile_image'] = $request->file('profile_image')->store('profile-pictures', 'public');
+        } elseif ($request->boolean('remove_profile_image')) {
+            if ($user->profile_image) {
+                Storage::disk('public')->delete($user->profile_image);
+            }
+            $validated['profile_image'] = null;
+        }
 
         $user->update($validated);
 
-        return redirect()->route('profile.edit')->with('success', 'Profile information updated successfully!');
+        return redirect()->route('profile.edit')->with('success', __('app.profile_updated_successfully') ?? 'បានធ្វើបច្ចុប្បន្នភាពព័ត៌មានប្រវត្តិរូបដោយជោគជ័យ!');
     }
 }
