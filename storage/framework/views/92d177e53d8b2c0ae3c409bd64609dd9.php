@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
+    <link rel="stylesheet" href="<?php echo e(asset('css/fonts.css')); ?>">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Brand Tokens -->
-    @include('partials.brand')
+    <?php echo $__env->make('partials.brand', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <style>
         /* Dark Mode Styles */
         :root {
@@ -1039,94 +1039,102 @@
 
 <div style="display:flex;width:100%;min-height:100vh;margin:0;padding:0;">
 
-    {{-- ── SIDEBAR ── --}}
+    
     <aside id="sidebar">
         <div class="sb-logo">
-            <div class="sb-logo-icon"><img src="{{ $companyLogo }}" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
+            <div class="sb-logo-icon"><img src="<?php echo e($companyLogo); ?>" alt="CT" style="width:34px;height:34px;object-fit:contain;"></div>
             <div>
-                <h1>{{ $companyName ?? 'COMPUTER SHOP' }}</h1>
-                <p>{{ $companySubtitle ?? 'Installment System' }}</p>
+                <h1><?php echo e($companyName ?? 'COMPUTER SHOP'); ?></h1>
+                <p><?php echo e($companySubtitle ?? 'Installment System'); ?></p>
             </div>
         </div>
 
         <nav class="sb-nav">
 
-            {{-- ── Dashboard ── --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('dashboard.view'))
-            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="fas fa-th-large"></i> {{ __('app.dashboard') }}
-            </a>
-            @endif
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('dashboard.view')): ?>
+            <a href="<?php echo e(route('dashboard')); ?>" class="<?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>">
+                <i class="fas fa-th-large"></i> <?php echo e(__('app.dashboard')); ?>
 
-            {{-- Customers Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.view'))
-            @php
+            </a>
+            <?php endif; ?>
+
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.view')): ?>
+            <?php
                 $routeCustomer = request()->route('customer');
                 if ($routeCustomer instanceof \App\Models\Customer) {
                     $custType = $routeCustomer->type;
                 } else {
                     $custType = request('type', 'installment');
                 }
-            @endphp
-            <div class="sb-dropdown {{ request()->routeIs('customers.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('customers.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('customers.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('customers.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-user-friends"></i>
-                    <span>{{ __('app.customer_management') }}</span>
+                    <span><?php echo e(__('app.customer_management')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('customers.index', ['type' => 'installment']) }}" class="{{ request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType !== 'direct' ? 'active' : '' }}">
-                        <i class="fas fa-file-invoice-dollar"></i> {{ __('app.installment_customers') }}
+                    <a href="<?php echo e(route('customers.index', ['type' => 'installment'])); ?>" class="<?php echo e(request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType !== 'direct' ? 'active' : ''); ?>">
+                        <i class="fas fa-file-invoice-dollar"></i> <?php echo e(__('app.installment_customers')); ?>
+
                     </a>
-                    <a href="{{ route('customers.index', ['type' => 'direct']) }}" class="{{ request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType === 'direct' ? 'active' : '' }}">
-                        <i class="fas fa-cash-register"></i> {{ __('app.direct_customers') }}
+                    <a href="<?php echo e(route('customers.index', ['type' => 'direct'])); ?>" class="<?php echo e(request()->routeIs('customers.*') && !request()->routeIs('customers.trash') && $custType === 'direct' ? 'active' : ''); ?>">
+                        <i class="fas fa-cash-register"></i> <?php echo e(__('app.direct_customers')); ?>
+
                     </a>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Installments Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.view'))
-            <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.view')): ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('installments.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('installments.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-file-invoice-dollar"></i>
-                    <span>{{ __('app.installment_plans') }}</span>
+                    <span><?php echo e(__('app.installment_plans')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('installments.index') }}" class="{{ request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.all_plans') }}
+                    <a href="<?php echo e(route('installments.index')); ?>" class="<?php echo e(request()->routeIs('installments.index') || request()->routeIs('installments.show') || request()->routeIs('installments.edit') ? 'active' : ''); ?>">
+                        <i class="fas fa-list"></i> <?php echo e(__('app.all_plans')); ?>
+
                     </a>
-                    <a href="{{ route('installments.schedule-index') }}" class="{{ request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : '' }}">
-                        <i class="fas fa-calendar-alt"></i> {{ __('app.payment_schedule') }}
+                    <a href="<?php echo e(route('installments.schedule-index')); ?>" class="<?php echo e(request()->routeIs('installments.schedule-index') || request()->routeIs('installments.schedule') ? 'active' : ''); ?>">
+                        <i class="fas fa-calendar-alt"></i> <?php echo e(__('app.payment_schedule')); ?>
+
                     </a>
-                    <a href="{{ route('installments.contract-index') }}" class="{{ request()->routeIs('installments.contract-index') || request()->routeIs('installments.contract') ? 'active' : '' }}">
-                        <i class="fas fa-file-signature"></i> {{ __('app.contracts') ?? 'បោះពុម្ពកិច្ចសន្យា' }}
+                    <a href="<?php echo e(route('installments.contract-index')); ?>" class="<?php echo e(request()->routeIs('installments.contract-index') || request()->routeIs('installments.contract') ? 'active' : ''); ?>">
+                        <i class="fas fa-file-signature"></i> <?php echo e(__('app.contracts') ?? 'បោះពុម្ពកិច្ចសន្យា'); ?>
+
                     </a>
-                    <a href="{{ route('installments.pay-off-index') }}" class="{{ request()->routeIs('installments.pay-off-index') ? 'active' : '' }}">
-                        <i class="fas fa-hand-holding-usd"></i> {{ __('app.pay_off') }}
+                    <a href="<?php echo e(route('installments.pay-off-index')); ?>" class="<?php echo e(request()->routeIs('installments.pay-off-index') ? 'active' : ''); ?>">
+                        <i class="fas fa-hand-holding-usd"></i> <?php echo e(__('app.pay_off')); ?>
+
                     </a>
-                    <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
-                        <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
+                    <a href="<?php echo e(route('installments.clearance-index')); ?>" class="<?php echo e(request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : ''); ?>">
+                        <i class="fas fa-certificate"></i> <?php echo e(__('app.clearance_certificates')); ?>
+
                     </a>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Direct Sale (លក់ដាច់) - Single Menu --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view') || auth()->user()->can('sales.create'))
-            @php
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('sales.view') || auth()->user()->can('sales.create')): ?>
+            <?php
                 $isDirectSaleActive = request()->routeIs('admin.sales.*') && request('from') !== 'invoice';
-            @endphp
-            <a href="{{ route('admin.sales.index', ['from' => 'sale']) }}" class="sb-item {{ $isDirectSaleActive ? 'active' : '' }}">
+            ?>
+            <a href="<?php echo e(route('admin.sales.index', ['from' => 'sale'])); ?>" class="sb-item <?php echo e($isDirectSaleActive ? 'active' : ''); ?>">
                 <i class="fas fa-cash-register"></i>
-                <span>{{ __('app.direct_sale') }}</span>
+                <span><?php echo e(__('app.direct_sale')); ?></span>
             </a>
-            @endif
+            <?php endif; ?>
 
-            {{-- Invoices Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('invoices.view'))
-            @php
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('invoices.view')): ?>
+            <?php
                 $showInvoice = request()->route('invoice');
                 if (is_numeric($showInvoice)) {
                     $showInvoice = \App\Models\Invoice::find($showInvoice);
@@ -1154,219 +1162,256 @@
                 $isInstallmentInvoice = (request()->routeIs('invoices.index') && request('type') === 'installment') || (request()->routeIs('invoices.show') && request('type') !== 'payoff' && request('type') !== 'direct' && request('type') !== 'completed' && !$isPayoffShow && !$isCompletedInvoiceShow);
                 $isPayoffInvoice = (request()->routeIs('invoices.index') && request('type') === 'payoff') || (request()->routeIs('invoices.show') && (request('type') === 'payoff' || $isPayoffShow));
                 $isDirectSaleInvoice = (request()->routeIs('invoices.index') && request('type') === 'direct') || (request()->routeIs('invoices.show') && request('type') === 'direct');
-            @endphp
-            <div class="sb-dropdown {{ $isInvoiceOpen ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ $isInvoiceOpen ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            ?>
+            <div class="sb-dropdown <?php echo e($isInvoiceOpen ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e($isInvoiceOpen ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-file-alt"></i>
-                    <span>{{ __('app.invoices') }}</span>
+                    <span><?php echo e(__('app.invoices')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('invoices.index') }}" class="{{ $isAllInvoicesActive ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.all_invoices') }}
+                    <a href="<?php echo e(route('invoices.index')); ?>" class="<?php echo e($isAllInvoicesActive ? 'active' : ''); ?>">
+                        <i class="fas fa-list"></i> <?php echo e(__('app.all_invoices')); ?>
+
                     </a>
-                    <a href="{{ route('invoices.index', ['type' => 'installment']) }}" class="{{ $isInstallmentInvoice ? 'active' : '' }}">
-                        <i class="fas fa-calendar-alt"></i> {{ __('app.installment_invoices') }}
+                    <a href="<?php echo e(route('invoices.index', ['type' => 'installment'])); ?>" class="<?php echo e($isInstallmentInvoice ? 'active' : ''); ?>">
+                        <i class="fas fa-calendar-alt"></i> <?php echo e(__('app.installment_invoices')); ?>
+
                     </a>
-                    <a href="{{ route('invoices.index', ['type' => 'payoff']) }}" class="{{ $isPayoffInvoice ? 'active' : '' }}">
-                        <i class="fas fa-file-signature"></i> {{ __('app.payoff_invoices') }}
+                    <a href="<?php echo e(route('invoices.index', ['type' => 'payoff'])); ?>" class="<?php echo e($isPayoffInvoice ? 'active' : ''); ?>">
+                        <i class="fas fa-file-signature"></i> <?php echo e(__('app.payoff_invoices')); ?>
+
                     </a>
-                    <a href="{{ route('invoices.index', ['type' => 'direct']) }}" class="{{ $isDirectSaleInvoice ? 'active' : '' }}">
-                        <i class="fas fa-cash-register"></i> {{ __('app.direct_sale_invoices') }}
+                    <a href="<?php echo e(route('invoices.index', ['type' => 'direct'])); ?>" class="<?php echo e($isDirectSaleInvoice ? 'active' : ''); ?>">
+                        <i class="fas fa-cash-register"></i> <?php echo e(__('app.direct_sale_invoices')); ?>
+
                     </a>
-                    <a href="{{ route('invoices.index', ['type' => 'completed']) }}" class="{{ $isCompletedInvoice ? 'active' : '' }}">
-                        <i class="fas fa-check-circle"></i> {{ __('app.completed_invoices') }}
+                    <a href="<?php echo e(route('invoices.index', ['type' => 'completed'])); ?>" class="<?php echo e($isCompletedInvoice ? 'active' : ''); ?>">
+                        <i class="fas fa-check-circle"></i> <?php echo e(__('app.completed_invoices')); ?>
+
                     </a>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Payment Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.view'))
-            <div class="sb-dropdown {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.view')): ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-money-check-alt"></i>
-                    <span>{{ __('app.payments') }}</span>
+                    <span><?php echo e(__('app.payments')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('payments.index') }}" class="{{ request()->routeIs('payments.index') ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.all_payments') }}
+                    <a href="<?php echo e(route('payments.index')); ?>" class="<?php echo e(request()->routeIs('payments.index') ? 'active' : ''); ?>">
+                        <i class="fas fa-list"></i> <?php echo e(__('app.all_payments')); ?>
+
                     </a>
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create'))
-                    <a href="{{ route('payments.create') }}" class="{{ request()->routeIs('payments.create') ? 'active' : '' }}">
-                        <i class="fas fa-plus-circle"></i> {{ __('app.new_payment') }}
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create')): ?>
+                    <a href="<?php echo e(route('payments.create')); ?>" class="<?php echo e(request()->routeIs('payments.create') ? 'active' : ''); ?>">
+                        <i class="fas fa-plus-circle"></i> <?php echo e(__('app.new_payment')); ?>
+
                     </a>
-                    @endif
-                    <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
-                        <i class="fas fa-exclamation-circle"></i> {{ __('app.late_payments') }}
+                    <?php endif; ?>
+                    <a href="<?php echo e(route('late-payments.index')); ?>" class="<?php echo e(request()->routeIs('late-payments.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-exclamation-circle"></i> <?php echo e(__('app.late_payments')); ?>
+
                     </a>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Product Management --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('products.view'))
-            <div class="sb-dropdown {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('products.view')): ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('admin.products.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.suppliers.*') || request()->routeIs('admin.purchases.*') || request()->routeIs('admin.stock-movements.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-box-open"></i>
-                    <span>{{ __('app.products') }}</span>
+                    <span><?php echo e(__('app.products')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.products.index') }}" class="{{ (request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.product_list') }}
+                    <a href="<?php echo e(route('admin.products.index')); ?>" class="<?php echo e((request()->routeIs('admin.products.index') || (request()->routeIs('admin.products.show') && request('from') !== 'stock') || (request()->routeIs('admin.products.edit') && request('from') !== 'stock') || (request()->routeIs('admin.products.create') && request('from') !== 'stock')) ? 'active' : ''); ?>">
+                        <i class="fas fa-list"></i> <?php echo e(__('app.product_list')); ?>
+
                     </a>
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage'))
-                    <a href="{{ route('admin.products.stock') }}" class="{{ (request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : '' }}">
-                        <i class="fas fa-boxes"></i> {{ __('app.manage_stock') }}
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage')): ?>
+                    <a href="<?php echo e(route('admin.products.stock')); ?>" class="<?php echo e((request()->routeIs('admin.products.stock') || (request()->routeIs('admin.products.show') && request('from') === 'stock') || (request()->routeIs('admin.products.edit') && request('from') === 'stock') || (request()->routeIs('admin.products.create') && request('from') === 'stock')) ? 'active' : ''); ?>">
+                        <i class="fas fa-boxes"></i> <?php echo e(__('app.manage_stock')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.view'))
-                    <a href="{{ route('admin.purchases.index') }}" class="{{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
-                        <i class="fas fa-clipboard-list"></i> {{ __('app.purchase_history') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('purchases.view')): ?>
+                    <a href="<?php echo e(route('admin.purchases.index')); ?>" class="<?php echo e(request()->routeIs('admin.purchases.index') ? 'active' : ''); ?>">
+                        <i class="fas fa-clipboard-list"></i> <?php echo e(__('app.purchase_history')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage'))
-                    <a href="{{ route('admin.stock-movements.index') }}" class="{{ request()->routeIs('admin.stock-movements.*') ? 'active' : '' }}">
-                        <i class="fas fa-exchange-alt"></i> {{ __('app.stock_movements') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('stock.manage')): ?>
+                    <a href="<?php echo e(route('admin.stock-movements.index')); ?>" class="<?php echo e(request()->routeIs('admin.stock-movements.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-exchange-alt"></i> <?php echo e(__('app.stock_movements')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('suppliers.manage'))
-                    <a href="{{ route('admin.suppliers.index') }}" class="{{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
-                        <i class="fas fa-truck"></i> {{ __('app.suppliers') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('suppliers.manage')): ?>
+                    <a href="<?php echo e(route('admin.suppliers.index')); ?>" class="<?php echo e(request()->routeIs('admin.suppliers.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-truck"></i> <?php echo e(__('app.suppliers')); ?>
+
                     </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Reports Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('reports.view'))
-            <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('reports.view')): ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('admin.reports.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('admin.reports.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-pie"></i>
-                    <span>{{ __('app.reports') }}</span>
+                    <span><?php echo e(__('app.reports')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    <a href="{{ route('admin.reports.sales') }}" class="{{ request()->routeIs('admin.reports.sales') || request()->routeIs('admin.reports.daily') ? 'active' : '' }}">
-                        <i class="fas fa-chart-bar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់' : 'Sales Report' }}
+                    <a href="<?php echo e(route('admin.reports.sales')); ?>" class="<?php echo e(request()->routeIs('admin.reports.sales') || request()->routeIs('admin.reports.daily') ? 'active' : ''); ?>">
+                        <i class="fas fa-chart-bar"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ការលក់' : 'Sales Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.payment') }}" class="{{ request()->routeIs('admin.reports.payment') ? 'active' : '' }}">
-                        <i class="fas fa-wallet"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ការទូទាត់' : 'Payment Report' }}
+                    <a href="<?php echo e(route('admin.reports.payment')); ?>" class="<?php echo e(request()->routeIs('admin.reports.payment') ? 'active' : ''); ?>">
+                        <i class="fas fa-wallet"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ការទូទាត់' : 'Payment Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.installment') }}" class="{{ request()->routeIs('admin.reports.installment') ? 'active' : '' }}">
-                        <i class="fas fa-file-invoice-dollar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់រំលស់' : 'Installment Report' }}
+                    <a href="<?php echo e(route('admin.reports.installment')); ?>" class="<?php echo e(request()->routeIs('admin.reports.installment') ? 'active' : ''); ?>">
+                        <i class="fas fa-file-invoice-dollar"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍បង់រំលស់' : 'Installment Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.customer') }}" class="{{ request()->routeIs('admin.reports.customer') ? 'active' : '' }}">
-                        <i class="fas fa-users"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍អតិថិជន' : 'Customer Report' }}
+                    <a href="<?php echo e(route('admin.reports.customer')); ?>" class="<?php echo e(request()->routeIs('admin.reports.customer') ? 'active' : ''); ?>">
+                        <i class="fas fa-users"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍អតិថិជន' : 'Customer Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.product') }}" class="{{ request()->routeIs('admin.reports.product') ? 'active' : '' }}">
-                        <i class="fas fa-boxes-stacked"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ផលិតផល' : 'Product Report' }}
+                    <a href="<?php echo e(route('admin.reports.product')); ?>" class="<?php echo e(request()->routeIs('admin.reports.product') ? 'active' : ''); ?>">
+                        <i class="fas fa-boxes-stacked"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ផលិតផល' : 'Product Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.expense') }}" class="{{ request()->routeIs('admin.reports.expense') ? 'active' : '' }}">
-                        <i class="fas fa-hand-holding-dollar"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ចំណាយ' : 'Expense Report' }}
+                    <a href="<?php echo e(route('admin.reports.expense')); ?>" class="<?php echo e(request()->routeIs('admin.reports.expense') ? 'active' : ''); ?>">
+                        <i class="fas fa-hand-holding-dollar"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ចំណាយ' : 'Expense Report'); ?>
+
                     </a>
-                    <a href="{{ route('admin.reports.profit') }}" class="{{ request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
-                        <i class="fas fa-chart-line"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ' : 'Profit Report' }}
+                    <a href="<?php echo e(route('admin.reports.profit')); ?>" class="<?php echo e(request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : ''); ?>">
+                        <i class="fas fa-chart-line"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ' : 'Profit Report'); ?>
+
                     </a>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- Telegram Management (Accessible by Admin, Manager, and Staff) --}}
-            @if(auth()->user()->hasAnyRole(['Admin', 'Manager', 'Staff']) || in_array(strtolower(auth()->user()->role ?? ''), ['admin', 'manager', 'staff']) || auth()->user()->can('telegram.view') || auth()->user()->can('settings.manage'))
-            <a href="{{ route('telegram-logs.index') }}" class="{{ request()->routeIs('telegram-logs.*') || request()->routeIs('admin.broadcast.*') ? 'active' : '' }}">
+            
+            <?php if(auth()->user()->hasAnyRole(['Admin', 'Manager', 'Staff']) || in_array(strtolower(auth()->user()->role ?? ''), ['admin', 'manager', 'staff']) || auth()->user()->can('telegram.view') || auth()->user()->can('settings.manage')): ?>
+            <a href="<?php echo e(route('telegram-logs.index')); ?>" class="<?php echo e(request()->routeIs('telegram-logs.*') || request()->routeIs('admin.broadcast.*') ? 'active' : ''); ?>">
                 <i class="fab fa-telegram-plane"></i>
-                <span>{{ app()->getLocale() === 'km' ? 'គ្រប់គ្រង Telegram' : 'Telegram Management' }}</span>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'គ្រប់គ្រង Telegram' : 'Telegram Management'); ?></span>
             </a>
-            @endif
+            <?php endif; ?>
 
-            {{-- Settings Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage') || auth()->user()->can('users.view'))
-            <div class="sb-dropdown {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            
+            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage') || auth()->user()->can('users.view')): ?>
+            <div class="sb-dropdown <?php echo e(request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('admin.settings.*') || request()->routeIs('admin.contract-terms.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.backups.*') || request()->routeIs('customers.trash') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-cog"></i>
-                    <span>{{ __('app.settings') }}</span>
+                    <span><?php echo e(__('app.settings')); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="sb-dropdown-menu">
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
-                    <a href="{{ route('admin.contract-terms.index') }}" class="{{ request()->routeIs('admin.contract-terms.*') ? 'active' : '' }}">
-                        <i class="fas fa-file-signature"></i> {{ __('app.contract_terms') }}
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage')): ?>
+                    <a href="<?php echo e(route('admin.contract-terms.index')); ?>" class="<?php echo e(request()->routeIs('admin.contract-terms.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-file-signature"></i> <?php echo e(__('app.contract_terms')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('users.view'))
-                    <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                        <i class="fas fa-users-cog"></i> {{ __('app.user_management') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('users.view')): ?>
+                    <a href="<?php echo e(route('admin.users.index')); ?>" class="<?php echo e(request()->routeIs('admin.users.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-users-cog"></i> <?php echo e(__('app.user_management')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('backup.manage'))
-                    <a href="{{ route('admin.backups.index') }}" class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
-                        <i class="fas fa-database"></i> {{ __('app.backup_restore') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('backup.manage')): ?>
+                    <a href="<?php echo e(route('admin.backups.index')); ?>" class="<?php echo e(request()->routeIs('admin.backups.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-database"></i> <?php echo e(__('app.backup_restore')); ?>
+
                     </a>
-                    @endif
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
-                    <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                        <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
+                    <?php endif; ?>
+                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage')): ?>
+                    <a href="<?php echo e(route('admin.settings.index')); ?>" class="<?php echo e(request()->routeIs('admin.settings.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-sliders-h"></i> <?php echo e(__('app.general_settings')); ?>
+
                     </a>
-                    <a href="{{ route('customers.trash') }}" class="{{ request()->routeIs('customers.trash') ? 'active' : '' }}">
-                        <i class="fas fa-trash-alt"></i> {{ __('app.trash') }}
+                    <a href="<?php echo e(route('customers.trash')); ?>" class="<?php echo e(request()->routeIs('customers.trash') ? 'active' : ''); ?>">
+                        <i class="fas fa-trash-alt"></i> <?php echo e(__('app.trash')); ?>
+
                     </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
         </nav>
 
         <div class="sb-logout">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('logout')); ?>">
+                <?php echo csrf_field(); ?>
                 <button type="button" onclick="confirmLogout(this, event)" class="w-full text-left text-gray-300 hover:text-white flex items-center gap-3 px-4 py-3 rounded" style="background: transparent; border: none; cursor: pointer;">
-                    <i class="fas fa-sign-out-alt"></i> {{ __('app.logout') }}
+                    <i class="fas fa-sign-out-alt"></i> <?php echo e(__('app.logout')); ?>
+
                 </button>
             </form>
         </div>
     </aside>
 
-    {{-- ── MAIN WRAPPER ── --}}
+    
     <div class="main-wrapper">
 
-        {{-- Topbar --}}
+        
         <header class="topbar">
             <div class="topbar-hamburger" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </div>
             <div class="topbar-title">
                 <h2>
-                    @if(request()->routeIs('dashboard'))
-                        {{ __('app.dashboard') }}
-                    @elseif(request()->routeIs('customers.*'))
-                        {{ __('app.customers') }}
-                    @elseif(request()->routeIs('installments.contract-index') || request()->routeIs('contracts'))
-                        {{ __('app.contracts') }}
-                    @elseif(request()->routeIs('installments.pay-off-index') || request()->routeIs('pay-offs'))
-                        {{ __('app.pay_off') }}
-                    @elseif(request()->routeIs('installments.schedule-index') || request()->routeIs('payment-schedules'))
-                        {{ __('app.payment_schedule') }}
-                    @elseif(request()->routeIs('installments.*'))
-                        {{ __('app.installment_plans') }}
-                    @elseif(request()->routeIs('invoices.index'))
-                        @if(request('type') === 'installment')
-                            {{ __('app.installment_invoices') }}
-                        @elseif(request('type') === 'completed')
-                            {{ __('app.completed_invoices') }}
-                        @elseif(request('type') === 'payoff')
-                            {{ __('app.payoff_invoices') }}
-                        @elseif(request('type') === 'direct')
-                            {{ __('app.direct_sale_invoices') }}
-                        @else
-                            {{ __('app.invoices') }}
-                        @endif
-                    @elseif(request()->routeIs('invoices.show'))
-                        @php
+                    <?php if(request()->routeIs('dashboard')): ?>
+                        <?php echo e(__('app.dashboard')); ?>
+
+                    <?php elseif(request()->routeIs('customers.*')): ?>
+                        <?php echo e(__('app.customers')); ?>
+
+                    <?php elseif(request()->routeIs('installments.contract-index') || request()->routeIs('contracts')): ?>
+                        <?php echo e(__('app.contracts')); ?>
+
+                    <?php elseif(request()->routeIs('installments.pay-off-index') || request()->routeIs('pay-offs')): ?>
+                        <?php echo e(__('app.pay_off')); ?>
+
+                    <?php elseif(request()->routeIs('installments.schedule-index') || request()->routeIs('payment-schedules')): ?>
+                        <?php echo e(__('app.payment_schedule')); ?>
+
+                    <?php elseif(request()->routeIs('installments.*')): ?>
+                        <?php echo e(__('app.installment_plans')); ?>
+
+                    <?php elseif(request()->routeIs('invoices.index')): ?>
+                        <?php if(request('type') === 'installment'): ?>
+                            <?php echo e(__('app.installment_invoices')); ?>
+
+                        <?php elseif(request('type') === 'completed'): ?>
+                            <?php echo e(__('app.completed_invoices')); ?>
+
+                        <?php elseif(request('type') === 'payoff'): ?>
+                            <?php echo e(__('app.payoff_invoices')); ?>
+
+                        <?php elseif(request('type') === 'direct'): ?>
+                            <?php echo e(__('app.direct_sale_invoices')); ?>
+
+                        <?php else: ?>
+                            <?php echo e(__('app.invoices')); ?>
+
+                        <?php endif; ?>
+                    <?php elseif(request()->routeIs('invoices.show')): ?>
+                        <?php
                             $showInvoice = request()->route('invoice');
                             if (is_numeric($showInvoice)) {
                                 $showInvoice = \App\Models\Invoice::find($showInvoice);
@@ -1385,78 +1430,96 @@
                                     }
                                 }
                             }
-                        @endphp
-                        @if(request('type') === 'direct')
-                            {{ __('app.direct_sale_invoices') }}
-                        @elseif($isPayoffShow)
-                            {{ __('app.payoff_invoices') }}
-                        @elseif(request('type') === 'completed' || $isCompletedInvoiceShow)
-                            {{ __('app.completed_invoices') }}
-                        @else
-                            {{ __('app.installment_invoices') }}
-                        @endif
-                    @elseif(request()->routeIs('invoices.*'))
-                        {{ __('app.invoices') }}
-                    @elseif(request()->routeIs('payments.*'))
-                        {{ __('app.payments') }}
-                    @elseif(request()->routeIs('admin.sales.*') || request()->routeIs('sales.*'))
-                        {{ __('app.direct_sale') }}
-                    @elseif(request()->routeIs('admin.purchases.*') || request()->routeIs('purchases.*'))
-                        {{ __('app.stock_in') }}
-                    @elseif(request()->routeIs('admin.stock-movements.*') || request()->routeIs('stock-movements.*'))
-                        {{ __('app.stock_movements') }}
-                    @elseif(request()->routeIs('admin.products.*') || request()->routeIs('products.*'))
-                        {{ __('app.products') }}
-                    @elseif(request()->routeIs('admin.categories.*') || request()->routeIs('categories.*'))
-                        {{ __('app.categories') }}
-                    @elseif(request()->routeIs('admin.suppliers.*') || request()->routeIs('suppliers.*'))
-                        {{ __('app.suppliers') }}
-                    @elseif(request()->routeIs('admin.users.*') || request()->routeIs('users.*'))
-                        {{ __('app.user_management') }}
-                    @elseif(request()->routeIs('admin.reports.*') || request()->routeIs('reports.*') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.daily'))
-                        {{ __('app.reports') }}
-                    @elseif(request()->routeIs('admin.settings.*') || request()->routeIs('settings.*') || request()->routeIs('admin.payment-methods.*'))
-                        {{ __('app.settings') }}
-                    @elseif(request()->routeIs('late-payments.*') || request()->routeIs('late-payments.index'))
-                        {{ __('app.late_payments') }}
-                    @elseif(request()->routeIs('notifications.*') || request()->routeIs('notifications.index'))
-                        {{ __('app.notifications') }}
-                    @else
-                        {{ __('app.dashboard') }}
-                    @endif
+                        ?>
+                        <?php if(request('type') === 'direct'): ?>
+                            <?php echo e(__('app.direct_sale_invoices')); ?>
+
+                        <?php elseif($isPayoffShow): ?>
+                            <?php echo e(__('app.payoff_invoices')); ?>
+
+                        <?php elseif(request('type') === 'completed' || $isCompletedInvoiceShow): ?>
+                            <?php echo e(__('app.completed_invoices')); ?>
+
+                        <?php else: ?>
+                            <?php echo e(__('app.installment_invoices')); ?>
+
+                        <?php endif; ?>
+                    <?php elseif(request()->routeIs('invoices.*')): ?>
+                        <?php echo e(__('app.invoices')); ?>
+
+                    <?php elseif(request()->routeIs('payments.*')): ?>
+                        <?php echo e(__('app.payments')); ?>
+
+                    <?php elseif(request()->routeIs('admin.sales.*') || request()->routeIs('sales.*')): ?>
+                        <?php echo e(__('app.direct_sale')); ?>
+
+                    <?php elseif(request()->routeIs('admin.purchases.*') || request()->routeIs('purchases.*')): ?>
+                        <?php echo e(__('app.stock_in')); ?>
+
+                    <?php elseif(request()->routeIs('admin.stock-movements.*') || request()->routeIs('stock-movements.*')): ?>
+                        <?php echo e(__('app.stock_movements')); ?>
+
+                    <?php elseif(request()->routeIs('admin.products.*') || request()->routeIs('products.*')): ?>
+                        <?php echo e(__('app.products')); ?>
+
+                    <?php elseif(request()->routeIs('admin.categories.*') || request()->routeIs('categories.*')): ?>
+                        <?php echo e(__('app.categories')); ?>
+
+                    <?php elseif(request()->routeIs('admin.suppliers.*') || request()->routeIs('suppliers.*')): ?>
+                        <?php echo e(__('app.suppliers')); ?>
+
+                    <?php elseif(request()->routeIs('admin.users.*') || request()->routeIs('users.*')): ?>
+                        <?php echo e(__('app.user_management')); ?>
+
+                    <?php elseif(request()->routeIs('admin.reports.*') || request()->routeIs('reports.*') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.daily')): ?>
+                        <?php echo e(__('app.reports')); ?>
+
+                    <?php elseif(request()->routeIs('admin.settings.*') || request()->routeIs('settings.*') || request()->routeIs('admin.payment-methods.*')): ?>
+                        <?php echo e(__('app.settings')); ?>
+
+                    <?php elseif(request()->routeIs('late-payments.*') || request()->routeIs('late-payments.index')): ?>
+                        <?php echo e(__('app.late_payments')); ?>
+
+                    <?php elseif(request()->routeIs('notifications.*') || request()->routeIs('notifications.index')): ?>
+                        <?php echo e(__('app.notifications')); ?>
+
+                    <?php else: ?>
+                        <?php echo e(__('app.dashboard')); ?>
+
+                    <?php endif; ?>
                 </h2>
-                <p>{{ __('app.welcome_back') }}, {{ auth()->user()->name }}! 👋</p>
+                <p><?php echo e(__('app.welcome_back')); ?>, <?php echo e(auth()->user()->name); ?>! 👋</p>
             </div>
             <div class="topbar-spacer"></div>
 
-            {{-- Currency Switcher & Exchange Rate --}}
+            
             <div class="flex items-center gap-3 mr-2" style="font-family: inherit;">
                 <!-- Currency Toggle Buttons -->
                 <div class="flex items-center bg-gray-100 rounded-lg p-1 text-xs border border-gray-200">
-                    <span class="text-gray-500 font-semibold px-2 hidden md:inline">{{ __('app.currency') }}:</span>
-                    <a href="{{ route('currency.switch', 'USD') }}" class="px-2.5 py-1 rounded-md font-bold transition {{ session('display_currency', 'USD') === 'USD' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-blue-600' }}" style="text-decoration: none;">
+                    <span class="text-gray-500 font-semibold px-2 hidden md:inline"><?php echo e(__('app.currency')); ?>:</span>
+                    <a href="<?php echo e(route('currency.switch', 'USD')); ?>" class="px-2.5 py-1 rounded-md font-bold transition <?php echo e(session('display_currency', 'USD') === 'USD' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-blue-600'); ?>" style="text-decoration: none;">
                         USD $
                     </a>
                     <span class="text-gray-400 px-0.5"><i class="fas fa-arrows-alt-h"></i></span>
-                    <a href="{{ route('currency.switch', 'KHR') }}" class="px-2.5 py-1 rounded-md font-bold transition {{ session('display_currency', 'USD') === 'KHR' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-600 hover:text-emerald-600' }}" style="text-decoration: none;">
+                    <a href="<?php echo e(route('currency.switch', 'KHR')); ?>" class="px-2.5 py-1 rounded-md font-bold transition <?php echo e(session('display_currency', 'USD') === 'KHR' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-600 hover:text-emerald-600'); ?>" style="text-decoration: none;">
                         KHR ៛
                     </a>
                 </div>
 
                 <!-- Exchange Rate Display -->
-                @php
+                <?php
                     $rateValue = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
-                @endphp
+                ?>
                 <div class="hidden lg:flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700">
-                    <span class="font-medium text-gray-500">{{ __('app.exchange_rate') }}:</span>
-                    <span class="font-bold text-gray-800">1 USD = {{ number_format($rateValue) }} KHR</span>
-                    <a href="{{ route('admin.settings.index') }}" class="text-gray-400 hover:text-blue-600 transition" title="Change Exchange Rate">
+                    <span class="font-medium text-gray-500"><?php echo e(__('app.exchange_rate')); ?>:</span>
+                    <span class="font-bold text-gray-800">1 USD = <?php echo e(number_format($rateValue)); ?> KHR</span>
+                    <a href="<?php echo e(route('admin.settings.index')); ?>" class="text-gray-400 hover:text-blue-600 transition" title="Change Exchange Rate">
                         <i class="fas fa-sync-alt"></i>
                     </a>
                 </div>
             </div>
 
-            {{-- Theme Switcher --}}
+            
             <div style="position:relative; display:none !important;" id="theme-switcher">
                 <button onclick="toggleThemeMenu()" style="
                     display:flex; align-items:center; justify-content:center;
@@ -1513,7 +1576,7 @@
                 </div>
             </div>
 
-            {{-- Language Switcher --}}
+            
             <div style="position:relative;" id="lang-switcher">
                 <button onclick="toggleLangMenu()" style="
                     display:flex; align-items:center; gap:6px;
@@ -1522,137 +1585,139 @@
                     cursor:pointer; font-size:13px; font-weight:600;
                     color:#334155; transition:all 0.2s;
                 " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f8fafc'">
-                    @if(app()->getLocale() === 'km')
+                    <?php if(app()->getLocale() === 'km'): ?>
                         <span style="font-size:16px;">🇰🇭</span>
                         <span>ខ្មែរ</span>
-                    @else
+                    <?php else: ?>
                         <span style="font-size:16px;">🇺🇸</span>
                         <span>English</span>
-                    @endif
+                    <?php endif; ?>
                     <svg style="width:10px;height:10px;color:#94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
                 </button>
 
                 <div id="lang-menu" class="animate-dropdown" style="min-width: 150px;">
-                    <a href="{{ route('lang.switch', 'en') }}" style="
+                    <a href="<?php echo e(route('lang.switch', 'en')); ?>" style="
                         display:flex; align-items:center; gap:10px;
                         padding:10px 14px; font-size:13px; font-weight:600;
-                        color:{{ app()->getLocale() === 'en' ? '#2563eb' : '#334155' }};
-                        background:{{ app()->getLocale() === 'en' ? '#eff6ff' : 'transparent' }};
+                        color:<?php echo e(app()->getLocale() === 'en' ? '#2563eb' : '#334155'); ?>;
+                        background:<?php echo e(app()->getLocale() === 'en' ? '#eff6ff' : 'transparent'); ?>;
                         text-decoration:none; transition:background 0.15s;
-                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='{{ app()->getLocale() === 'en' ? '#eff6ff' : 'transparent' }}'">
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='<?php echo e(app()->getLocale() === 'en' ? '#eff6ff' : 'transparent'); ?>'">
                         <span style="font-size:18px;">🇺🇸</span>
                         <span>English</span>
-                        @if(app()->getLocale() === 'en')
+                        <?php if(app()->getLocale() === 'en'): ?>
                             <svg style="width:14px;height:14px;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                             </svg>
-                        @endif
+                        <?php endif; ?>
                     </a>
                     <div style="height:1px;background:#f1f5f9;margin:2px 0;"></div>
-                    <a href="{{ route('lang.switch', 'km') }}" style="
+                    <a href="<?php echo e(route('lang.switch', 'km')); ?>" style="
                         display:flex; align-items:center; gap:10px;
                         padding:10px 14px; font-size:13px; font-weight:600;
-                        color:{{ app()->getLocale() === 'km' ? '#2563eb' : '#334155' }};
-                        background:{{ app()->getLocale() === 'km' ? '#eff6ff' : 'transparent' }};
+                        color:<?php echo e(app()->getLocale() === 'km' ? '#2563eb' : '#334155'); ?>;
+                        background:<?php echo e(app()->getLocale() === 'km' ? '#eff6ff' : 'transparent'); ?>;
                         text-decoration:none; transition:background 0.15s;
-                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='{{ app()->getLocale() === 'km' ? '#eff6ff' : 'transparent' }}'">
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='<?php echo e(app()->getLocale() === 'km' ? '#eff6ff' : 'transparent'); ?>'">
                         <span style="font-size:18px;">🇰🇭</span>
                         <span>ភាសាខ្មែរ</span>
-                        @if(app()->getLocale() === 'km')
+                        <?php if(app()->getLocale() === 'km'): ?>
                             <svg style="width:14px;height:14px;margin-left:auto;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                             </svg>
-                        @endif
+                        <?php endif; ?>
                     </a>
                 </div>
             </div>
 
             <div class="topbar-search" style="display:none !important;">
                 <i class="fas fa-search"></i>
-                <input type="text" id="global-search" placeholder="{{ __('app.search_here') }}" onkeyup="handleGlobalSearch(event)">
+                <input type="text" id="global-search" placeholder="<?php echo e(__('app.search_here')); ?>" onkeyup="handleGlobalSearch(event)">
             </div>
             <div class="topbar-bell" onclick="toggleNotificationDropdown(event)">
                 <i class="fas fa-bell"></i>
                 <span class="badge" id="notification-badge">0</span>
                 
-                {{-- Notification Dropdown --}}
+                
                 <div class="notification-dropdown">
                     <div class="notification-header">
-                        <h3>{{ __('app.notifications') }}</h3>
-                        <span class="mark-read" onclick="markAllAsRead(event)">{{ __('app.mark_all_read') }}</span>
+                        <h3><?php echo e(__('app.notifications')); ?></h3>
+                        <span class="mark-read" onclick="markAllAsRead(event)"><?php echo e(__('app.mark_all_read')); ?></span>
                     </div>
                     <div class="notification-list" id="notification-list">
-                        {{-- Notifications will be loaded here dynamically --}}
+                        
                         <div class="notification-empty">
                             <i class="fas fa-bell-slash"></i>
-                            <p>{{ __('app.no_notifications') }}</p>
+                            <p><?php echo e(__('app.no_notifications')); ?></p>
                         </div>
                     </div>
                     <div class="notification-footer">
-                        <a href="{{ route('payments.index') }}">{{ __('app.view_all_notifications') }}</a>
+                        <a href="<?php echo e(route('payments.index')); ?>"><?php echo e(__('app.view_all_notifications')); ?></a>
                     </div>
                 </div>
             </div>
             <div class="topbar-user" onclick="toggleUserDropdown(event)">
                 <div class="topbar-avatar">
-                    @if(auth()->user()->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists(auth()->user()->profile_image))
-                        <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="avatar" onerror="this.style.display='none'">
-                    @else
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    @endif
+                    <?php if(auth()->user()->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists(auth()->user()->profile_image)): ?>
+                        <img src="<?php echo e(asset('storage/' . auth()->user()->profile_image)); ?>" alt="avatar" onerror="this.style.display='none'">
+                    <?php else: ?>
+                        <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
+
+                    <?php endif; ?>
                 </div>
                 <div>
-                    <div class="topbar-uname">{{ auth()->user()->name }}</div>
-                    <div class="topbar-urole">{{ auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role) }}</div>
+                    <div class="topbar-uname"><?php echo e(auth()->user()->name); ?></div>
+                    <div class="topbar-urole"><?php echo e(auth()->user()->roles->first()?->name ?? ucfirst(auth()->user()->role)); ?></div>
                 </div>
                 <i class="fas fa-chevron-down" style="font-size:10px;color:#94a3b8;margin-left:4px;"></i>
                 
-                {{-- User Dropdown Menu --}}
+                
                 <div class="user-dropdown">
                     <div class="user-dropdown-header">
                         <div class="user-dropdown-avatar">
-                            @if(auth()->user()->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists(auth()->user()->profile_image))
-                                <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="avatar" onerror="this.style.display='none'">
-                            @else
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                            @endif
+                            <?php if(auth()->user()->profile_image && \Illuminate\Support\Facades\Storage::disk('public')->exists(auth()->user()->profile_image)): ?>
+                                <img src="<?php echo e(asset('storage/' . auth()->user()->profile_image)); ?>" alt="avatar" onerror="this.style.display='none'">
+                            <?php else: ?>
+                                <?php echo e(strtoupper(substr(auth()->user()->name, 0, 1))); ?>
+
+                            <?php endif; ?>
                         </div>
                         <div class="user-dropdown-info">
-                            <div class="name">{{ auth()->user()->name }}</div>
-                            <div class="email">{{ auth()->user()->email }}</div>
+                            <div class="name"><?php echo e(auth()->user()->name); ?></div>
+                            <div class="email"><?php echo e(auth()->user()->email); ?></div>
                         </div>
                     </div>
                     <div class="user-dropdown-menu">
-                        <a href="{{ route('profile.edit') }}" class="user-dropdown-item">
+                        <a href="<?php echo e(route('profile.edit')); ?>" class="user-dropdown-item">
                             <i class="fas fa-user"></i>
-                            <span>{{ __('app.my_profile') }}</span>
+                            <span><?php echo e(__('app.my_profile')); ?></span>
                         </a>
-                        @if(auth()->user()->role === 'admin')
-                        <a href="{{ route('admin.users.index') }}" class="user-dropdown-item">
+                        <?php if(auth()->user()->role === 'admin'): ?>
+                        <a href="<?php echo e(route('admin.users.index')); ?>" class="user-dropdown-item">
                             <i class="fas fa-users-cog"></i>
-                            <span>{{ __('app.manage_users') }}</span>
+                            <span><?php echo e(__('app.manage_users')); ?></span>
                         </a>
-                        <a href="{{ route('admin.settings.index') }}" class="user-dropdown-item">
+                        <a href="<?php echo e(route('admin.settings.index')); ?>" class="user-dropdown-item">
                             <i class="fas fa-cog"></i>
-                            <span>{{ __('app.settings') }}</span>
+                            <span><?php echo e(__('app.settings')); ?></span>
                         </a>
-                        <a href="{{ route('admin.backups.index') }}" class="user-dropdown-item">
+                        <a href="<?php echo e(route('admin.backups.index')); ?>" class="user-dropdown-item">
                             <i class="fas fa-database"></i>
-                            <span>{{ __('app.backup_restore') }}</span>
+                            <span><?php echo e(__('app.backup_restore')); ?></span>
                         </a>
-                        @endif
-                        <a href="{{ route('dashboard') }}" class="user-dropdown-item">
+                        <?php endif; ?>
+                        <a href="<?php echo e(route('dashboard')); ?>" class="user-dropdown-item">
                             <i class="fas fa-th-large"></i>
-                            <span>{{ __('app.dashboard') }}</span>
+                            <span><?php echo e(__('app.dashboard')); ?></span>
                         </a>
                         <div class="user-dropdown-divider"></div>
-                        <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                            @csrf
+                        <form method="POST" action="<?php echo e(route('logout')); ?>" style="margin:0;">
+                            <?php echo csrf_field(); ?>
                             <button type="button" onclick="confirmLogout(this, event)" class="user-dropdown-item logout" style="width:100%;border:none;background:none;text-align:left;">
                                 <i class="fas fa-sign-out-alt"></i>
-                                <span>{{ __('app.logout') }}</span>
+                                <span><?php echo e(__('app.logout')); ?></span>
                             </button>
                         </form>
                     </div>
@@ -1660,10 +1725,10 @@
             </div>
         </header>
 
-        {{-- Content --}}
+        
         <main class="content">
 
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
 
         </main>
 
@@ -1779,8 +1844,8 @@ function handleGlobalSearch(event) {
 }
 
 function performSearch(query) {
-    const loadingText = '{{ __("app.loading") }}';
-    const noResultsText = '{{ __("app.no_data") }}';
+    const loadingText = '<?php echo e(__("app.loading")); ?>';
+    const noResultsText = '<?php echo e(__("app.no_data")); ?>';
     
     // Show loading state
     showSearchResults(`<p style="color:#64748b;font-size:13px;text-align:center;padding:20px;">${loadingText}</p>`);
@@ -1799,9 +1864,9 @@ function performSearch(query) {
 
 function displaySearchResults(data) {
     const translations = {
-        noResults: '{{ __("app.no_data") }}',
-        customers: '{{ __("app.customers") }}',
-        products: '{{ __("app.products") }}'
+        noResults: '<?php echo e(__("app.no_data")); ?>',
+        customers: '<?php echo e(__("app.customers")); ?>',
+        products: '<?php echo e(__("app.products")); ?>'
     };
     
     let html = '<div style="padding:12px;max-height:400px;overflow-y:auto;">';
@@ -1955,7 +2020,7 @@ function escapeHtml(text) {
 
 // Load Notifications
 function loadNotifications() {
-    fetch('{{ route("notifications.index") }}')
+    fetch('<?php echo e(route("notifications.index")); ?>')
         .then(response => response.json())
         .then(notifications => {
             const notificationList = document.getElementById('notification-list');
@@ -2001,7 +2066,7 @@ function loadNotifications() {
 
 // Load Unread Count
 function loadUnreadCount() {
-    fetch('{{ route("notifications.unread-count") }}')
+    fetch('<?php echo e(route("notifications.unread-count")); ?>')
         .then(response => response.json())
         .then(data => {
             const badge = document.getElementById('notification-badge');
@@ -2018,7 +2083,7 @@ function markNotificationAsRead(event, notificationId, link) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         }
     })
     .then(response => response.json())
@@ -2039,11 +2104,11 @@ function markNotificationAsRead(event, notificationId, link) {
 function markAllAsRead(event) {
     event.stopPropagation();
     
-    fetch('{{ route("notifications.mark-all-read") }}', {
+    fetch('<?php echo e(route("notifications.mark-all-read")); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         }
     })
     .then(response => response.json())
@@ -2067,7 +2132,7 @@ function deleteNotification(event, notificationId) {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         }
     })
     .then(response => response.json())
@@ -2193,20 +2258,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Message text -->
             <div class="text-center">
                 <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 leading-6" id="logout-modal-title">
-                    {{ __('app.logout') }}
+                    <?php echo e(__('app.logout')); ?>
+
                 </h3>
                 <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                    {{ __('app.logout_confirm') }}
+                    <?php echo e(__('app.logout_confirm')); ?>
+
                 </p>
             </div>
             
             <!-- Buttons -->
             <div class="mt-6 flex flex-row justify-center gap-3">
                 <button type="button" onclick="closeLogoutModal()" class="w-1/2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors duration-200 cursor-pointer text-center">
-                    {{ __('app.cancel') }}
+                    <?php echo e(__('app.cancel')); ?>
+
                 </button>
                 <button type="button" onclick="executeLogout()" class="w-1/2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-sm font-semibold text-white shadow-lg shadow-rose-500/20 dark:shadow-none hover:shadow-rose-600/30 transition-all duration-200 cursor-pointer text-center">
-                    {{ __('app.logout') }}
+                    <?php echo e(__('app.logout')); ?>
+
                 </button>
             </div>
             
@@ -2264,12 +2333,12 @@ function executeLogout() {
     // Fallback: dynamically create and submit logout form
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = "{{ route('logout') }}";
+    form.action = "<?php echo e(route('logout')); ?>";
     
     const csrfInput = document.createElement('input');
     csrfInput.type = 'hidden';
     csrfInput.name = '_token';
-    csrfInput.value = "{{ csrf_token() }}";
+    csrfInput.value = "<?php echo e(csrf_token()); ?>";
     
     form.appendChild(csrfInput);
     document.body.appendChild(form);
@@ -2297,3 +2366,4 @@ function printReportDirect(url) {
 </script>
 </body>
 </html>
+<?php /**PATH E:\billing-system\resources\views/layouts/app.blade.php ENDPATH**/ ?>

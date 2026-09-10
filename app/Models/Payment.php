@@ -39,12 +39,12 @@ class Payment extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function receiver()
     {
-        return $this->belongsTo(User::class, 'approved_by')->withTrashed();
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function invoice()

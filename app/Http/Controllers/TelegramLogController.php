@@ -65,6 +65,8 @@ class TelegramLogController extends Controller
 
     public function setWebhook(Request $request)
     {
+        abort_unless(auth()->user()->hasRole('Admin') || strtolower(auth()->user()->role ?? '') === 'admin', 403, 'Unauthorized action.');
+
         $validated = $request->validate([
             'webhook_url' => 'required|url',
         ]);

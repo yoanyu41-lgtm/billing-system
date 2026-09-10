@@ -1,0 +1,377 @@
+<?php $__env->startSection('content'); ?>
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">
+            <?php if(request('type') === 'installment'): ?>
+                <?php echo e(__('app.installment_invoices')); ?>
+
+            <?php elseif(request('type') === 'completed'): ?>
+                <?php echo e(__('app.completed_invoices')); ?>
+
+            <?php elseif(request('type') === 'payoff'): ?>
+                <?php echo e(__('app.payoff_invoices')); ?>
+
+            <?php elseif(request('type') === 'direct'): ?>
+                <?php echo e(__('app.direct_sale_invoices')); ?>
+
+            <?php else: ?>
+                <?php echo e(__('app.invoices')); ?>
+
+            <?php endif; ?>
+        </h1>
+        <p class="text-sm text-gray-500 mt-1"><?php echo e(__('app.manage_your_business_easily')); ?></p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide"><?php echo e(__('app.total_invoices')); ?></p>
+                <p class="text-2xl font-bold text-gray-800"><?php echo e(number_format($totalInvoices)); ?></p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide"><?php echo e(__('app.total_amount')); ?></p>
+                <p class="text-2xl font-bold text-emerald-600 block"><?php echo e(format_currency($totalAmount, $exchangeRate)); ?></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <form method="GET" action="<?php echo e(route('invoices.index')); ?>" class="flex flex-col md:flex-row gap-4">
+            <?php if(request('type')): ?>
+                <input type="hidden" name="type" value="<?php echo e(request('type')); ?>">
+            <?php endif; ?>
+            <!-- Search Input -->
+            <div class="flex-1">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input 
+                        type="text" 
+                        name="search" 
+                        id="search-input"
+                        value="<?php echo e(request('search')); ?>"
+                        autocomplete="off"
+                        placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ស្វែងរក (ឈ្មោះ, លេខវិក្កយបត្រ, ឬ ប្រភេទ: ទិញដាច់ / បង់រំលស់)...' : 'Search (name, invoice, or type)...'); ?>"
+                        class="pl-10 pr-9 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+
+                    <?php if(request('search')): ?>
+                    <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <?php endif; ?>
+
+                    <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Date Filter -->
+            <div class="w-full md:w-48">
+                <input 
+                    type="date" 
+                    name="date" 
+                    value="<?php echo e(request('date')); ?>"
+                    class="px-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+            </div>
+
+            <!-- Search Button -->
+            <button 
+                type="submit" 
+                class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 flex items-center justify-center gap-2 text-sm"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <span><?php echo e(__('app.search')); ?></span>
+            </button>
+
+            <!-- Clear Button -->
+            <?php if(request('search') || request('date')): ?>
+            <a 
+                href="<?php echo e(route('invoices.index', ['type' => request('type')])); ?>" 
+                class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-150 flex items-center justify-center gap-2 text-sm"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span><?php echo e(__('app.clear')); ?></span>
+            </a>
+            <?php endif; ?>
+        </form>
+
+        <!-- Search Results Info -->
+        <?php if(request('search') || request('date')): ?>
+        <div class="mt-3 pt-3 border-t border-gray-200 text-sm text-gray-600">
+            <span class="font-medium">លទ្ធផលស្វែងរក / Search Results:</span>
+            <span class="text-gray-900 font-semibold"><?php echo e($invoices->total()); ?></span> វិក្កយបត្រ / invoices found
+            <?php if(request('search')): ?>
+                <span class="ml-2 px-2 py-1 bg-blue-50 text-blue-700 rounded">
+                    "<?php echo e(request('search')); ?>"
+                </span>
+            <?php endif; ?>
+            <?php if(request('date')): ?>
+                <span class="ml-2 px-2 py-1 bg-purple-50 text-purple-700 rounded">
+                    📅 <?php echo e(\Carbon\Carbon::parse(request('date'))->format('d/m/Y')); ?>
+
+                </span>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <?php if(session('success')): ?>
+        <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center shadow-sm">
+            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <?php echo e(session('success')); ?>
+
+        </div>
+    <?php endif; ?>
+
+    <!-- Invoices Table Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.invoice_number')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.type')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.customer_name')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.amount')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.status')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.date')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.actions')); ?></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <?php $__empty_1 = true; $__currentLoopData = $invoices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $invoice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
+                        $invoiceType = $invoice->invoice_type ?? null;
+                        if (!$invoiceType && !$invoice instanceof \App\Models\Sale) {
+                            if ($invoice->payment?->is_settlement) {
+                                $invoiceType = 'payoff';
+                            } else {
+                                $inst = $invoice->payment?->installment;
+                                if ($inst && $inst->status === 'completed') {
+                                    $latestApprovedId = \App\Models\Payment::where('installment_id', $inst->id)
+                                        ->where('status', 'approved')
+                                        ->max('id');
+                                    if ($latestApprovedId && $latestApprovedId === $invoice->payment?->id) {
+                                        $invoiceType = 'completed';
+                                    } else {
+                                        $invoiceType = 'installment';
+                                    }
+                                } else {
+                                    $invoiceType = 'installment';
+                                }
+                            }
+                        }
+                    ?>
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <?php if($invoice instanceof \App\Models\Sale): ?>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
+                                <?php echo e($invoice->invoice_no); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                                    <?php echo e(__('app.direct')); ?>
+
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                <?php echo e($invoice->customer_name ?: ($invoice->customer?->name ?? __('app.walk_in_customer'))); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="font-bold text-gray-900"><?php echo e(format_currency($invoice->total ?? 0, $exchangeRate)); ?></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                    <?php echo e(__('app.paid')); ?>
+
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                <?php echo e(optional($invoice->sale_date)->format('Y-m-d') ?? $invoice->created_at?->format('Y-m-d')); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end items-center gap-1.5">
+                                    <a href="<?php echo e(route('invoices.show', ['invoice' => $invoice->id, 'type' => 'direct', 'back' => request('type', 'all')])); ?>" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="<?php echo e(__('app.view')); ?>">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        <?php else: ?>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
+                                <?php echo e($invoice->invoice_number); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <?php if($invoiceType === 'payoff'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100">
+                                        <?php echo e(__('app.payoff')); ?>
+
+                                    </span>
+                                <?php elseif($invoiceType === 'completed'): ?>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                                        <?php echo e(__('app.final_paid')); ?>
+
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                                        <?php echo e(__('app.installment')); ?>
+
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                                <?php echo e($invoice->payment?->installment?->customer?->name ?? 'N/A'); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="font-bold text-gray-900"><?php echo e(format_currency($invoice->payment?->amount ?? 0, $exchangeRate)); ?></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <?php $pstatus = $invoice->payment?->status ?? 'approved'; ?>
+                                <?php $statusColors = ['approved' => 'bg-emerald-100 text-emerald-700', 'pending' => 'bg-amber-100 text-amber-700', 'rejected' => 'bg-red-100 text-red-600']; ?>
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold <?php echo e($statusColors[$pstatus] ?? 'bg-gray-100 text-gray-600'); ?>">
+                                    <?php echo e(__('app.'.$pstatus)); ?>
+
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                <?php echo e($invoice->created_at?->format('Y-m-d') ?? '—'); ?>
+
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end items-center gap-1.5">
+                                    <a href="<?php echo e(route('invoices.show', [$invoice, 'type' => request('type')])); ?>" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="<?php echo e(__('app.view')); ?>">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        <?php endif; ?>
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    <tr>
+                        <td colspan="7" class="px-6 py-6 text-center text-gray-500">
+                            <?php echo e(__('app.no_invoices')); ?>
+
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4">
+        <?php echo e($invoices->links()); ?>
+
+    </div>
+</div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = <?php echo json_encode($suggestions ?? [], 15, 512) ?>;
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/invoices/index.blade.php ENDPATH**/ ?>

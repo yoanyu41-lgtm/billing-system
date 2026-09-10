@@ -193,14 +193,43 @@ class DashboardController extends Controller
             'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
         ];
 
-        // ── Recent Customers ─────────────────────────────────
-        $recentCustomers = Customer::with(['installments.product'])
+        // ── Recent Customers (Checks both Installments & Direct Sales) ──
+        $recentCustomers = Customer::with(['installments.product', 'sales.items.product'])
             ->latest()
             ->take(5)
             ->get()
             ->map(function ($c) {
-                $latest = $c->installments->sortByDesc('created_at')->first();
-                $c->latestInstallment = $latest;
+                $latestInstallment = $c->installments->sortByDesc('created_at')->first();
+                $latestSale = $c->sales->sortByDesc('sale_date')->first();
+
+                // Check which transaction is newer or available
+                if ($latestInstallment && $latestSale) {
+                    $installmentTime = $latestInstallment->created_at ? $latestInstallment->created_at->timestamp : 0;
+                    $saleTime = $latestSale->created_at ? $latestSale->created_at->timestamp : ($latestSale->sale_date ? strtotime($latestSale->sale_date) : 0);
+                    $useInstallment = $installmentTime >= $saleTime;
+                } else {
+                    $useInstallment = (bool) $latestInstallment;
+                }
+
+                if ($useInstallment && $latestInstallment) {
+                    $c->latest_type = 'installment';
+                    $c->latest_product_name = $latestInstallment->product?->name ?? '—';
+                    $c->latest_amount = (float) $latestInstallment->total_price;
+                    $c->latest_status = $latestInstallment->status ?? 'active';
+                } elseif ($latestSale) {
+                    $c->latest_type = 'sale';
+                    $firstItem = $latestSale->items->first();
+                    $c->latest_product_name = $firstItem?->product?->name ?? ($firstItem?->description ?? 'Direct Sale');
+                    $c->latest_amount = (float) $latestSale->total;
+                    $c->latest_status = 'completed';
+                } else {
+                    $c->latest_type = 'none';
+                    $c->latest_product_name = '—';
+                    $c->latest_amount = 0.00;
+                    $c->latest_status = 'new';
+                }
+
+                $c->latestInstallment = $latestInstallment;
                 return $c;
             });
 

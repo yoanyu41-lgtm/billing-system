@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Gate;
 
 class InstallmentController extends Controller
 {
+    public function __construct(private readonly TelegramService $telegramService)
+    {
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();

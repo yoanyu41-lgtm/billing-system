@@ -1,0 +1,301 @@
+<?php $__env->startSection('content'); ?>
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800" lang="km"><?php echo e(__('app.installment_plans')); ?></h1>
+            <p class="text-sm text-gray-500 mt-1">Monitor all customer installment contracts, monthly payments, and balances.</p>
+        </div>
+        
+        <div class="flex flex-nowrap items-center gap-1.5 sm:gap-2 shrink-0 overflow-x-auto max-w-full">
+            
+            <a href="<?php echo e(route('installments.schedule-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-calendar-alt text-indigo-600"></i>
+                <span><?php echo e(__('app.payment_schedule')); ?></span>
+            </a>
+
+            
+            <a href="<?php echo e(route('installments.contract-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-file-signature text-purple-600"></i>
+                <span><?php echo e(__('app.contracts')); ?></span>
+            </a>
+
+            
+            <a href="<?php echo e(route('installments.pay-off-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-hand-holding-usd text-emerald-600"></i>
+                <span><?php echo e(__('app.pay_off')); ?></span>
+            </a>
+
+            
+            <a href="<?php echo e(route('installments.clearance-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-certificate text-amber-600"></i>
+                <span><?php echo e(__('app.clearance_certificates')); ?></span>
+            </a>
+        </div>
+    </div>
+
+    <?php if(session('success')): ?>
+        <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center justify-between shadow-sm">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <?php echo e(session('success')); ?>
+
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-green-600 hover:text-green-800">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    <?php endif; ?>
+
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <form method="GET" action="<?php echo e(route('installments.index')); ?>" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 max-w-xl">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" name="search" id="search-input" value="<?php echo e(request('search')); ?>" autocomplete="off"
+                       placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ស្វែងរកគម្រោងបង់រំលស់ (ឈ្មោះអតិថិជន ឬ ទំនិញ)...' : 'Search installments (customer or product)...'); ?>"
+                       class="w-full pl-10 pr-9 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                <?php if(request('search')): ?>
+                <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <?php endif; ?>
+                
+                <!-- Suggestions box -->
+                <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition-colors shrink-0">
+                <?php echo e(__('app.search')); ?>
+
+            </button>
+            <?php if(request('search')): ?>
+            <a href="<?php echo e(route('installments.index')); ?>" class="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center shrink-0">
+                <?php echo e(__('app.clear')); ?>
+
+            </a>
+            <?php endif; ?>
+        </form>
+
+        
+        <a href="<?php echo e(route('installments.create')); ?>" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition shrink-0 whitespace-nowrap">
+            <i class="fas fa-plus"></i>
+            <span lang="km"><?php echo e(__('app.create_installment')); ?></span>
+        </a>
+    </div>
+
+    <!-- Installments Table Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-12">#</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.customer')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.product')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.monthly_payment')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.remaining_balance')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.status')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.contract')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.actions')); ?></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <?php $__empty_1 = true; $__currentLoopData = $installments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $installment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-medium">
+                            <?php echo e(($installments->currentPage() - 1) * $installments->perPage() + $i + 1); ?>
+
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-gray-900"><?php echo e($installment->customer?->name ?? 'N/A'); ?></div>
+                            <?php if($installment->customer?->phone): ?>
+                                <div class="text-xs text-gray-500"><?php echo e($installment->customer?->phone); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="text-sm font-medium text-gray-900 max-w-[150px] lg:max-w-[170px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
+                                <?php echo e($installment->product?->name ?? 'N/A'); ?>
+
+                            </div>
+                            <?php if($installment->product?->code): ?>
+                                <div class="text-xs text-indigo-600 font-medium"><?php echo e($installment->product?->code); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                            <?php echo e(format_currency($installment->monthly_payment, $exchangeRate)); ?>
+
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                            <?php echo e(format_currency($installment->remaining_balance, $exchangeRate)); ?>
+
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <?php if($installment->status === 'active' || $installment->status === 'ongoing'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                                    <?php echo e(__('app.active')); ?>
+
+                                </span>
+                            <?php elseif($installment->status === 'completed' || $installment->status === 'paid'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    <?php echo e(__('app.completed')); ?>
+
+                                </span>
+                            <?php elseif($installment->status === 'cancelled'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                    <?php echo e(__('app.cancelled')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                                    <?php echo e($installment->status); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <?php if($installment->signed_contract): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" title="<?php echo e(__('app.signed')); ?>">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <?php echo e(__('app.signed')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200" title="<?php echo e(__('app.not_signed')); ?>">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    <?php echo e(__('app.not_signed')); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end items-center gap-1.5">
+                                <a href="<?php echo e(route('installments.show', $installment)); ?>" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="<?php echo e(__('app.view')); ?>">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </a>
+                                <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-900 rounded-lg transition duration-150" title="<?php echo e(__('app.payment_schedule')); ?>">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </a>
+                                <?php if(auth()->user()->role === 'admin'): ?>
+                                <a href="<?php echo e(route('installments.edit', $installment)); ?>" class="p-2 text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition duration-150" title="<?php echo e(__('app.edit')); ?>">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </a>
+                                <?php endif; ?>
+                                <?php if(auth()->user()->role === 'admin'): ?>
+                                <form method="POST" action="<?php echo e(route('installments.destroy', $installment)); ?>" class="inline-block delete-form" onsubmit="return confirm('<?php echo e(__('app.confirm_delete_installment')); ?>')">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('DELETE'); ?>
+                                    <button type="submit" class="p-2 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-900 rounded-lg transition duration-150" title="<?php echo e(__('app.delete')); ?>">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    <tr>
+                        <td colspan="8" class="px-6 py-6 text-center text-gray-500">
+                            <?php echo e(__('app.no_installments')); ?>. Click the button above to add one.
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4">
+        <?php echo e($installments->links()); ?>
+
+    </div>
+</div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+        const suggestions = <?php echo json_encode($suggestions ?? [], 15, 512) ?>;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/installments/index.blade.php ENDPATH**/ ?>

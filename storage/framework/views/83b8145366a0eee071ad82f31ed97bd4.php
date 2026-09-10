@@ -1,0 +1,715 @@
+<?php $__env->startSection('content'); ?>
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <?php if(session('success')): ?>
+        <div class="mb-6 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 shadow-sm"><?php echo e(session('success')); ?></div>
+    <?php endif; ?>
+    <?php if(session('error')): ?>
+        <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm"><?php echo e(session('error')); ?></div>
+    <?php endif; ?>
+    <!-- Header Section -->
+    <div class="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <nav class="text-xs text-gray-400 mb-1 flex items-center gap-1.5">
+                <a href="<?php echo e(route('installments.index')); ?>" class="hover:text-indigo-600 transition"><?php echo e(__('app.installment_plans')); ?></a>
+                <span>/</span>
+                <span class="text-gray-600">#INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?></span>
+            </nav>
+            <h1 class="text-3xl font-bold text-gray-800"><?php echo e(__('app.installment_plan_details')); ?></h1>
+            <p class="text-sm text-gray-500 mt-1"><?php echo e(__('app.installment_plan_details_sub')); ?></p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="<?php echo e(route('installments.index')); ?>" class="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2.5 rounded-lg transition duration-150 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <?php echo e(__('app.back')); ?>
+
+            </a>
+            <a href="<?php echo e(route('installments.contract', $installment)); ?>" target="_blank" class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <?php echo e(__('app.print_contract')); ?>
+
+            </a>
+            <?php if($installment->status === 'completed' || $installment->remaining_balance <= 0): ?>
+            <a href="<?php echo e(route('installments.clearance', $installment)); ?>" target="_blank" class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <?php echo e(__('app.print_clearance')); ?>
+
+            </a>
+            <?php endif; ?>
+            <?php if(auth()->user()->role === 'admin'): ?>
+            <a href="<?php echo e(route('installments.edit', $installment)); ?>" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                <?php echo e(__('app.edit_plan')); ?>
+
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left: Customer & Product Info -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Customer Card -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
+                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-lg">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base"><?php echo e(__('app.customer_profile')); ?></h3>
+                        <p class="text-xs text-gray-500"><?php echo e(__('app.contract_holder')); ?></p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.name')); ?></div>
+                        <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->customer?->name ?? 'N/A'); ?></div>
+                    </div>
+                    <?php if($installment->customer?->phone): ?>
+                    <div>
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.phone')); ?></div>
+                        <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->customer?->phone); ?></div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if($installment->customer?->email): ?>
+                    <div>
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.email')); ?></div>
+                        <div class="text-sm text-gray-800"><?php echo e($installment->customer?->email); ?></div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Product Card -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
+                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base"><?php echo e(__('app.product_details')); ?></h3>
+                        <p class="text-xs text-gray-500"><?php echo e(__('app.financed_asset')); ?></p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.model_name')); ?></div>
+                        <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->product?->name ?? 'N/A'); ?></div>
+                    </div>
+                    <?php if($installment->product?->code): ?>
+                    <div>
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.item_code')); ?></div>
+                        <div class="text-sm font-semibold text-indigo-600"><?php echo e($installment->product?->code); ?></div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Contract Document Card -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center text-lg">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base"><?php echo e(__('app.contract')); ?></h3>
+                        <p class="text-xs text-gray-500"><?php echo e(__('app.contract_document')); ?></p>
+                    </div>
+                </div>
+
+                <?php if($installment->signed_contract): ?>
+                    <div class="space-y-3">
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-6 h-6 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-emerald-800"><?php echo e(__('app.signed')); ?></p>
+                                    <p class="text-xs text-emerald-600 mt-1"><?php echo e($installment->contract_signed_at->format('d/m/Y H:i')); ?></p>
+                                    <p class="text-xs text-emerald-600"><?php echo e($installment->contract_signed_by); ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <a href="<?php echo e(route('installments.downloadContract', $installment)); ?>" 
+                               class="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                <span><?php echo e(__('app.download')); ?></span>
+                            </a>
+                            <a href="<?php echo e(asset('storage/' . $installment->signed_contract)); ?>" target="_blank"
+                               class="flex-1 inline-flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                <span><?php echo e(__('app.view')); ?></span>
+                            </a>
+                        </div>
+
+                        <form method="POST" action="<?php echo e(route('installments.deleteContract', $installment)); ?>" 
+                              onsubmit="return confirm('<?php echo e(__('app.confirm_delete')); ?>')" class="mt-2">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('DELETE'); ?>
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium px-4 py-2 rounded-lg transition-colors border border-red-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                <span><?php echo e(__('app.delete')); ?></span>
+                            </button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-6 h-6 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-amber-800"><?php echo e(__('app.not_signed')); ?></p>
+                                    <p class="text-xs text-amber-600 mt-1" lang="km">សូម upload ឯកសារកិច្ចសន្យាដែលបានចុះហត្ថលេខារួចហើយ</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="<?php echo e(route('installments.uploadContract', $installment)); ?>" enctype="multipart/form-data">
+                            <?php echo csrf_field(); ?>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2" lang="km">ជ្រើសរើសឯកសារ</label>
+                                    <input type="file" name="contract_file" accept=".pdf,.jpg,.jpeg,.png" required
+                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <p class="text-xs text-gray-500 mt-1" lang="km">PDF, JPG, PNG (អតិបរមា 5MB)</p>
+                                    <?php $__errorArgs = ['contract_file'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                        <p class="text-xs text-red-500 mt-1"><?php echo e($message); ?></p>
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                                </div>
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                    </svg>
+                                    <span lang="km">Upload ឯកសារ</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Right: Financial Breakdown -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Payment Metrics -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800 mb-6 border-b border-gray-100 pb-3"><?php echo e(__('app.financial_schedule')); ?></h3>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-100 mb-6">
+                    <table class="min-w-full divide-y divide-gray-100 text-sm">
+                        <tbody class="divide-y divide-gray-100">
+                            <?php if($installment->tax_amount > 0): ?>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.subtotal')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">$<?php echo e(number_format($installment->subtotal_before_tax ?? $installment->total_price, 2)); ?></span>
+                                    <span class="text-xs text-gray-400 block font-semibold"><?php echo e(number_format(round(($installment->subtotal_before_tax ?? $installment->total_price) * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                            <?php
+                                $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
+                            ?>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.tax')); ?> <?php echo e($taxLabel); ?> (<?php echo e($installment->tax_rate); ?>%)</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">$<?php echo e(number_format($installment->tax_amount, 2)); ?></span>
+                                    <span class="text-xs text-gray-400 block font-semibold"><?php echo e(number_format(round($installment->tax_amount * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.total_price')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">$<?php echo e(number_format($installment->total_price, 2)); ?></span>
+                                    <span class="text-xs text-gray-400 block font-semibold"><?php echo e(number_format(round($installment->total_price * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.down_payment')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900 block">$<?php echo e(number_format($installment->down_payment, 2)); ?></span>
+                                    <span class="text-xs text-gray-400 block font-semibold"><?php echo e(number_format(round($installment->down_payment * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.interest_rate')); ?></td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900"><?php echo e($installment->interest_rate); ?>%</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.duration')); ?></td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></td>
+                            </tr>
+                            <tr class="bg-indigo-50/60 hover:bg-indigo-50">
+                                <td class="px-5 py-3.5 text-indigo-700 font-semibold"><?php echo e(__('app.monthly_payment')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-extrabold text-indigo-700 text-base block">$<?php echo e(number_format($installment->monthly_payment, 2)); ?></span>
+                                    <span class="text-xs text-indigo-500 block font-semibold"><?php echo e(number_format(round($installment->monthly_payment * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                            <tr class="bg-amber-50/60 hover:bg-amber-50">
+                                <td class="px-5 py-3.5 text-amber-800 font-semibold"><?php echo e(__('app.remaining_balance')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-extrabold text-amber-800 text-base block">$<?php echo e(number_format($installment->remaining_balance, 2)); ?></span>
+                                    <span class="text-xs text-amber-600 block font-semibold"><?php echo e(number_format(round($installment->remaining_balance * $exchangeRate))); ?> ៛</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Metadata details -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider"><?php echo e(__('app.plan_status')); ?></span>
+                        <div class="mt-1">
+                            <?php if($installment->status === 'active' || $installment->status === 'ongoing'): ?>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200"><?php echo e(__('app.active')); ?></span>
+                            <?php elseif($installment->status === 'completed' || $installment->status === 'paid'): ?>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200"><?php echo e(__('app.completed')); ?></span>
+                            <?php elseif($installment->status === 'cancelled'): ?>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200"><?php echo e(__('app.cancelled')); ?></span>
+                            <?php else: ?>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-800 border border-gray-200"><?php echo e($installment->status); ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php if($installment->next_due_date): ?>
+                    <div>
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider"><?php echo e(__('app.next_due_date')); ?></span>
+                        <div class="mt-1 text-sm font-semibold text-gray-800">
+                            <?php echo e(\Carbon\Carbon::parse($installment->next_due_date)->format('d M Y')); ?>
+
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Schedule section -->
+    <div class="mt-8 bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base shadow-sm border border-indigo-100">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
+                    <span><?php echo e(__('app.payment_schedule')); ?></span>
+                </h3>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">តារាងកាលវិភាគបង់ប្រាក់ប្រចាំខែ និងស្ថានភាពនៃការទូទាត់</p>
+            </div>
+            <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl text-sm transition shadow-sm" style="text-decoration: none;">
+                <i class="fas fa-print"></i>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'មើលកាលវិភាគបោះពុម្ព' : 'View Printable Schedule'); ?></span>
+            </a>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-xs">
+            <table class="min-w-full border-collapse">
+                <thead class="bg-slate-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ល.រ<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង់ប្រាក់' : 'Payment Date'); ?></th>
+                        <th class="px-5 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់' : 'Total Payment'); ?></th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ការប្រាក់' : 'Interests'); ?></th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ប្រាក់ដើម' : 'Principals'); ?></th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'សមតុល្យប្រាក់ដើម' : 'Outstanding Principals'); ?></th>
+                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'សមតុល្យបំណុល' : 'Outstanding Debts'); ?></th>
+                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider"><?php echo e(__('app.status')); ?></th>
+                        <th class="px-5 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider"><?php echo e(__('app.actions')); ?></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    <?php $__currentLoopData = $schedule; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <tr class="hover:bg-slate-50/80 transition duration-150">
+                        <td class="px-4 py-4 text-center text-slate-800 font-bold text-sm"><?php echo e($row['month']); ?></td>
+                        <td class="px-4 py-4 text-center text-slate-800 whitespace-nowrap text-sm">
+                            <span class="font-semibold"><?php echo e($row['due_date']->format('d/m/Y')); ?></span>
+                            <span class="text-slate-400 text-xs block mt-0.5 font-medium">(<?php echo e($row['day']); ?>)</span>
+                        </td>
+                        <td class="px-5 py-4 text-right font-black text-slate-900 text-base"><?php echo e(format_currency($row['amount'], $exchangeRate)); ?></td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['interest'], $exchangeRate)); ?></td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['principal'], $exchangeRate)); ?></td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['outstanding_principal'], $exchangeRate)); ?></td>
+                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['outstanding_debt'], $exchangeRate)); ?></td>
+                        <td class="px-4 py-4 text-center whitespace-nowrap">
+                            <?php if($row['status'] === 'paid'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fas fa-check-circle mr-1 self-center"></i> <?php echo e(__('app.paid')); ?>
+
+                                </span>
+                            <?php elseif($row['status'] === 'overdue'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-exclamation-triangle mr-1 self-center"></i> <?php echo e(__('app.overdue')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-clock mr-1 self-center"></i> <?php echo e(__('app.pending')); ?>
+
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-4 text-center whitespace-nowrap">
+                            <?php if($row['status'] !== 'paid'): ?>
+                            <div class="flex items-center justify-center gap-2">
+                                
+                                <?php if(empty($installment->customer?->telegram_id)): ?>
+                                    <span class="px-3 py-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1.5 cursor-not-allowed font-medium" title="<?php echo e(__('app.telegram_id_missing')); ?>">
+                                        <i class="fab fa-telegram-plane"></i>
+                                        <span><?php echo e(__('app.send_qr_telegram')); ?></span>
+                                    </span>
+                                <?php else: ?>
+                                    <button type="button"
+                                        onclick="openTelegramQrModal(<?php echo e($row['month']); ?>, '<?php echo e(number_format($row['amount'], 2)); ?>', '<?php echo e($row['due_date']->toDateString()); ?>')"
+                                        class="px-3 py-2 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs"
+                                        title="<?php echo e(__('app.send_qr_telegram')); ?>">
+                                        <i class="fab fa-telegram-plane"></i>
+                                        <span><?php echo e(__('app.send_qr_telegram')); ?></span>
+                                    </button>
+                                <?php endif; ?>
+
+                                
+                                <button type="button" onclick="openRecordPaymentModal(<?php echo e($row['month']); ?>, <?php echo e($row['amount']); ?>, '<?php echo e($row['due_date']->toDateString()); ?>')" class="px-3 py-2 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs" title="<?php echo e(__('app.record_payment')); ?>">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                    <span><?php echo e(__('app.record_payment')); ?></span>
+                                </button>
+                            </div>
+                            <?php else: ?>
+                                <span class="text-xs text-slate-400 font-bold">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div id="recordPaymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeRecordPaymentModal()"></div>
+
+        <!-- Modal Center spacer -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <!-- Modal content card -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <form method="POST" action="<?php echo e(route('payments.store')); ?>" enctype="multipart/form-data" class="m-0">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="installment_id" value="<?php echo e($installment->id); ?>">
+                <input type="hidden" name="redirect_to" value="<?php echo e(request()->fullUrl()); ?>">
+                
+                <div class="bg-white px-6 pt-6 pb-4 sm:p-6 sm:pb-4 space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-file-invoice-dollar text-indigo-600"></i>
+                            <span><?php echo e(__('app.record_payment')); ?></span>
+                        </h3>
+                        <button type="button" onclick="closeRecordPaymentModal()" class="text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer text-xl">
+                            &times;
+                        </button>
+                    </div>
+
+                    <!-- Details Display -->
+                    <div class="bg-indigo-50/50 rounded-xl p-4 text-sm text-indigo-950 border border-indigo-100 flex justify-between">
+                        <div>
+                            <span class="font-medium block text-xs text-indigo-500 uppercase tracking-wider"><?php echo e(__('app.customer')); ?></span>
+                            <span class="font-semibold"><?php echo e($installment->customer?->name); ?></span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-medium block text-xs text-indigo-500 uppercase tracking-wider" id="modalMonthLabel">Month</span>
+                            <span class="font-semibold" id="modalMonthVal">1</span>
+                        </div>
+                    </div>
+
+                    <!-- Amount and Date -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"><?php echo e(__('app.amount')); ?> (USD)</label>
+                            <input 
+                                type="number" 
+                                name="amount" 
+                                id="modalAmountInput" 
+                                step="0.01" 
+                                min="0.01" 
+                                required 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"><?php echo e(__('app.payment_date')); ?></label>
+                            <input 
+                                type="date" 
+                                name="payment_date" 
+                                value="<?php echo e(now()->toDateString()); ?>" 
+                                required 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Payment Method selector -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"><?php echo e(__('app.payment_method')); ?></label>
+                        <select name="payment_method_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <?php $__currentLoopData = $paymentMethods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $method): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
+                                    $methodKey = strtolower(str_replace(' ', '_', $method->name));
+                                    $translatedName = trans()->has('app.' . $methodKey) ? __('app.' . $methodKey) : $method->name;
+                                ?>
+                                <option value="<?php echo e($method->id); ?>" <?php echo e($methodKey === 'qr_code' ? 'selected' : ''); ?>>
+                                    <?php echo e($translatedName); ?>
+
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </div>
+
+                    <!-- Customer Slip Attachment -->
+                    <div class="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 p-4">
+                        <label class="block text-sm font-bold text-blue-900 mb-1.5">
+                            <i class="fas fa-image mr-1"></i>
+                            <?php echo e(__('app.upload_customer_slip')); ?>
+
+                        </label>
+                        <input type="file" name="qr_image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        <p class="mt-1 text-[11px] text-gray-500">
+                            <?php echo e(app()->getLocale() === 'km' ? 'សូមបញ្ចូលរូបភាពបង្កាន់ដៃទូទាត់ QR / Slip របស់អតិថិជន។' : 'Please upload the customer\'s QR payment receipt/slip image.'); ?>
+
+                        </p>
+                    </div>
+
+                    <!-- Approve Immediately (for authorized users) -->
+                    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('approve-payment')): ?>
+                    <div class="flex items-center gap-2 pt-1">
+                        <input 
+                            type="checkbox" 
+                            name="approve_now" 
+                            id="modalApproveCheckbox" 
+                            value="1" 
+                            checked 
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        >
+                        <label for="modalApproveCheckbox" class="text-sm font-semibold text-gray-700 cursor-pointer flex items-center gap-1 select-none">
+                            <i class="fas fa-check-double text-emerald-600"></i>
+                            <span><?php echo e(__('app.approve_now')); ?></span>
+                        </label>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Footer buttons -->
+                <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2 border-t border-gray-100">
+                    <button 
+                        type="submit" 
+                        class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition text-sm shadow-sm border-0 cursor-pointer"
+                    >
+                        <?php echo e(__('app.confirm_and_approve')); ?>
+
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="closeRecordPaymentModal()" 
+                        class="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition text-sm"
+                    >
+                        <?php echo e(__('app.cancel')); ?>
+
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRecordPaymentModal(month, amount, dueDate) {
+        document.getElementById('modalMonthVal').innerText = month;
+        document.getElementById('modalMonthLabel').innerText = "<?php echo e(__('app.installment_month')); ?> " + month;
+        document.getElementById('modalAmountInput').value = amount;
+        
+        const modal = document.getElementById('recordPaymentModal');
+        modal.classList.remove('hidden');
+    }
+
+    function closeRecordPaymentModal() {
+        const modal = document.getElementById('recordPaymentModal');
+        modal.classList.add('hidden');
+    }
+</script>
+
+
+<?php
+    $tgSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+    $hiddenSetting = $tgSettings['hidden_payment_methods'] ?? '[]';
+    $hiddenList = json_decode($hiddenSetting, true) ?: [];
+    $deletedSetting = $tgSettings['deleted_default_qr'] ?? '[]';
+    $deletedList = json_decode($deletedSetting, true) ?: [];
+    $allHiddenTg = array_unique(array_merge($hiddenList, $deletedList));
+
+    $tgQrList = [];
+    $tgQrMap = [
+        'qr_aba'          => 'ABA Bank KHQR',
+        'qr_acleda'       => 'ACLEDA KHQR',
+        'qr_wing'         => 'Wing KHQR',
+        'qr_truemoney'    => 'TrueMoney KHQR',
+        'qr_creditcard'   => 'Credit Card',
+        'qr_bakong'       => 'Bakong KHQR',
+        'company_bank_qr' => 'QR Code ធនាគារ (Default)',
+    ];
+    foreach ($tgQrMap as $k => $lbl) {
+        $variant = str_replace('qr_', '', $k) . '_qr';
+        if (in_array($k, $allHiddenTg) || in_array($variant, $allHiddenTg)) continue;
+        if (!empty($tgSettings[$k])) $tgQrList[] = ['key' => $k, 'label' => $lbl, 'img' => $tgSettings[$k]];
+    }
+    $tgCustom = json_decode($tgSettings['custom_qr_list'] ?? '[]', true) ?: [];
+    foreach ($tgCustom as $ci) {
+        if (!empty($ci['key']) && !empty($ci['label']) && !empty($tgSettings[$ci['key']])) {
+            if (in_array($ci['key'], $allHiddenTg)) continue;
+            $tgQrList[] = ['key' => $ci['key'], 'label' => $ci['label'], 'img' => $tgSettings[$ci['key']]];
+        }
+    }
+?>
+
+<div id="telegramQrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <i class="fab fa-telegram-plane text-white text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-base"><?php echo e(app()->getLocale() === 'km' ? 'ផ្ញើ QR Code តាម Telegram' : 'Send QR Code via Telegram'); ?></h3>
+                    <p id="tgModalSubtitle" class="text-blue-100 text-xs"></p>
+                </div>
+            </div>
+            <button onclick="closeTelegramQrModal()" class="text-white/70 hover:text-white border-0 bg-transparent cursor-pointer text-xl leading-none">&times;</button>
+        </div>
+
+        <form id="tgQrForm" method="POST" action="" class="p-6 space-y-5">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="qr_key" id="tgSelectedQrKey" value="<?php echo e(!empty($tgQrList) ? $tgQrList[0]['key'] : ''); ?>">
+
+            
+            <?php if(!empty($tgQrList)): ?>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                    <i class="fas fa-qrcode text-purple-500"></i>
+                    <?php echo e(app()->getLocale() === 'km' ? 'ជ្រើសរើស QR Code ដែលត្រូវផ្ញើ' : 'Select QR Code to Send'); ?>
+
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="tgQrGrid">
+                    <?php $__currentLoopData = $tgQrList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $qr): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div onclick="selectTgQr('<?php echo e($qr['key']); ?>', this)"
+                        class="tg-qr-card cursor-pointer rounded-xl border-2 p-3 flex flex-col items-center gap-2 transition-all duration-150 hover:shadow-md <?php echo e($idx === 0 ? 'border-purple-500 bg-purple-50 shadow-sm ring-2 ring-purple-200' : 'border-slate-200 bg-white hover:border-purple-300 hover:bg-purple-50'); ?>"
+                        data-qr-key="<?php echo e($qr['key']); ?>">
+                        <div class="relative">
+                            <img src="<?php echo e(asset('storage/' . $qr['img'])); ?>"
+                                class="w-16 h-16 object-contain rounded-lg border border-slate-100 bg-white p-1"
+                                onerror="this.src='https://ui-avatars.com/api/?name=QR&background=EEF2FF&color=4F46E5'">
+                            <?php if($idx === 0): ?>
+                            <div id="tgCheckBadge_<?php echo e($idx); ?>" class="tg-check-badge absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs" style="font-size:9px"></i>
+                            </div>
+                            <?php else: ?>
+                            <div id="tgCheckBadge_<?php echo e($idx); ?>" class="tg-check-badge hidden absolute -top-1.5 -right-1.5 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xs" style="font-size:9px"></i>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-700 text-center leading-tight"><?php echo e($qr['label']); ?></span>
+                    </div>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800 text-sm flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'មិនមាន QR Code ណាមួយត្រូវបានកំណត់ក្នុង Settings ទេ។' : 'No QR codes are configured in Settings yet.'); ?></span>
+            </div>
+            <?php endif; ?>
+
+            
+            <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeTelegramQrModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border-0 cursor-pointer transition">
+                    <?php echo e(app()->getLocale() === 'km' ? 'បោះបង់' : 'Cancel'); ?>
+
+                </button>
+                <button type="submit" id="tgSendBtn"
+                    class="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg border-0 cursor-pointer transition flex items-center gap-2 shadow-sm <?php echo e(empty($tgQrList) ? 'opacity-50 pointer-events-none' : ''); ?>">
+                    <i class="fab fa-telegram-plane"></i>
+                    <?php echo e(app()->getLocale() === 'km' ? 'ផ្ញើ QR Code' : 'Send QR Code'); ?>
+
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const tgBaseUrl = "<?php echo e(route('installments.send-telegram-qr', [$installment, '__MONTH__'])); ?>";
+
+    function openTelegramQrModal(month, amount, dueDate) {
+        const url = tgBaseUrl.replace('__MONTH__', month);
+        document.getElementById('tgQrForm').action = url;
+        document.getElementById('tgModalSubtitle').textContent =
+            '<?php echo e(app()->getLocale() === "km" ? "ខែ" : "Month"); ?> ' + month +
+            ' · $' + amount + ' · ' + dueDate;
+        document.getElementById('telegramQrModal').classList.remove('hidden');
+    }
+
+    function closeTelegramQrModal() {
+        document.getElementById('telegramQrModal').classList.add('hidden');
+    }
+
+    function selectTgQr(key, el) {
+        // Deselect all
+        document.querySelectorAll('.tg-qr-card').forEach(function(c) {
+            c.classList.remove('border-purple-500', 'bg-purple-50', 'shadow-sm', 'ring-2', 'ring-purple-200');
+            c.classList.add('border-slate-200', 'bg-white');
+        });
+        document.querySelectorAll('.tg-check-badge').forEach(function(b) {
+            b.classList.add('hidden');
+        });
+        // Select clicked
+        el.classList.remove('border-slate-200', 'bg-white');
+        el.classList.add('border-purple-500', 'bg-purple-50', 'shadow-sm', 'ring-2', 'ring-purple-200');
+        const badge = el.querySelector('.tg-check-badge');
+        if (badge) badge.classList.remove('hidden');
+        document.getElementById('tgSelectedQrKey').value = key;
+    }
+
+    // Close on backdrop click
+    document.getElementById('telegramQrModal').addEventListener('click', function(e) {
+        if (e.target === this) closeTelegramQrModal();
+    });
+</script>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/installments/show.blade.php ENDPATH**/ ?>

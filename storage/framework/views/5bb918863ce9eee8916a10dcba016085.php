@@ -1,0 +1,297 @@
+<?php $__env->startSection('content'); ?>
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">
+                <?php echo e(($type ?? 'installment') === 'direct' ? __('app.direct_customers') : __('app.installment_customers')); ?>
+
+            </h1>
+            <p class="text-sm text-gray-500 mt-1"><?php echo e(($type ?? 'installment') === 'direct' ? __('app.direct_customers_subtitle') : __('app.installment_customers_subtitle')); ?></p>
+        </div>
+        <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('customers.create')): ?>
+        <a href="<?php echo e(route('customers.create', ['type' => $type ?? 'installment'])); ?>"
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-sm <?php echo e(($type ?? 'installment') === 'direct' ? 'hidden' : ''); ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <?php echo e(__('app.add_customer')); ?>
+
+        </a>
+        <?php endif; ?>
+    </div>
+
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <form method="GET" class="flex flex-col sm:flex-row gap-3">
+            <input type="hidden" name="type" value="<?php echo e($type ?? 'installment'); ?>">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" name="search" id="search-input" value="<?php echo e(request('search')); ?>" autocomplete="off"
+                       placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ស្វែងរកតាមឈ្មោះ ឬ លេខអត្តសញ្ញាណប័ណ្ណ...' : 'Search customer name or ID card...'); ?>"
+                       class="w-full pl-10 pr-9 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                <?php if(request('search')): ?>
+                <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <?php endif; ?>
+
+                <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+            </div>
+            <button type="submit" class="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium rounded-lg transition-colors">
+                <?php echo e(__('app.search')); ?>
+
+            </button>
+            <?php if(request('search')): ?>
+            <a href="<?php echo e(route('customers.index', ['type' => $type ?? 'installment'])); ?>" class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors text-center">
+                <?php echo e(__('app.clear')); ?>
+
+            </a>
+            <?php endif; ?>
+        </form>
+    </div>
+
+    
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide"><?php echo e(__('app.total_customers')); ?></p>
+            <p class="text-2xl font-bold text-gray-800 mt-1"><?php echo e($customers->total()); ?></p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide"><?php echo e(__('app.showing')); ?></p>
+            <p class="text-2xl font-bold text-blue-600 mt-1"><?php echo e($customers->count()); ?></p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 col-span-2 sm:col-span-1">
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide"><?php echo e(__('app.search')); ?></p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1"><?php echo e(request('search') ? $customers->total() : __('app.all')); ?></p>
+        </div>
+    </div>
+
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100 bg-gray-50">
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.customers')); ?></th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.phone')); ?></th>
+                        <?php if(($type ?? 'installment') !== 'direct'): ?>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.id_card')); ?></th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.gender')); ?></th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.installments_count')); ?></th>
+                        <?php endif; ?>
+                        <th class="px-5 py-3.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide"><?php echo e(__('app.actions')); ?></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <?php $__empty_1 = true; $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                        <td class="px-5 py-2.5">
+                            <div class="flex items-center gap-3">
+                                <?php if($customer->photo): ?>
+                                    <img src="<?php echo e(asset('storage/' . $customer->photo)); ?>" alt="<?php echo e($customer->name); ?>"
+                                         class="w-9 h-9 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                                <?php else: ?>
+                                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-sm font-bold"><?php echo e(strtoupper(substr($customer->name, 0, 1))); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                <div>
+                                    <div class="font-semibold text-gray-800"><?php echo e($customer->name); ?></div>
+                                    <?php if($customer->address): ?>
+                                        <div class="text-xs text-gray-400 truncate max-w-[160px]"><?php echo e($customer->address); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-2.5 text-gray-600"><?php echo e($customer->phone ?? '—'); ?></td>
+                        <?php if(($type ?? 'installment') !== 'direct'): ?>
+                        <td class="px-5 py-2.5">
+                            <?php if($customer->id_card): ?>
+                                <span class="font-mono text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded"><?php echo e($customer->id_card); ?></span>
+                            <?php else: ?>
+                                <span class="text-gray-300 text-xs">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-2.5">
+                            <?php if($customer->gender === 'male'): ?>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/></svg>
+                                    <?php echo e(__('app.male')); ?>
+
+                                </span>
+                            <?php elseif($customer->gender === 'female'): ?>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-700">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/></svg>
+                                    <?php echo e(__('app.female')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span class="text-gray-300 text-xs">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-2.5">
+                            <?php $count = $customer->installments->count(); ?>
+                            <?php if($count > 0): ?>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                    <?php echo e($count); ?> <?php echo e(__('app.plans')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span class="text-gray-300 text-xs"><?php echo e(__('app.none')); ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <?php endif; ?>
+                        <td class="px-5 py-2.5">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="<?php echo e(route('customers.show', $customer)); ?>"
+                                   class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <?php echo e(__('app.view')); ?>
+
+                                </a>
+                                <?php if(auth()->user()->hasRole('Admin') || strtolower(auth()->user()->role) === 'admin' || auth()->user()->can('customers.edit')): ?>
+                                <a href="<?php echo e(route('customers.edit', $customer)); ?>"
+                                   class="inline-flex items-center gap-1 text-amber-600 hover:text-amber-800 text-xs font-medium transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    <?php echo e(__('app.edit')); ?>
+
+                                </a>
+                                <?php endif; ?>
+                                <?php if(auth()->user()->hasRole('Admin') || strtolower(auth()->user()->role) === 'admin' || auth()->user()->can('customers.delete')): ?>
+                                <form method="POST" action="<?php echo e(route('customers.destroy', $customer)); ?>"
+                                      onsubmit="return confirm('<?php echo e(__('app.confirm_delete')); ?> <?php echo e(addslashes($customer->name)); ?>?')">
+                                    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
+                                    <button type="submit" class="inline-flex items-center gap-1 text-red-500 hover:text-red-700 text-xs font-medium transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <?php echo e(__('app.delete')); ?>
+
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                    <tr>
+                        <td colspan="<?php echo e(($type ?? 'installment') !== 'direct' ? 6 : 3); ?>" class="px-5 py-16 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <svg class="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <p class="text-gray-400 font-medium"><?php echo e(__('app.no_customers')); ?></p>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php if($customers->hasPages()): ?>
+        <div class="px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <?php echo e($customers->links()); ?>
+
+        </div>
+        <?php endif; ?>
+    </div>
+
+</div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = <?php echo json_encode($suggestions ?? [], 15, 512) ?>;
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/customers/index.blade.php ENDPATH**/ ?>

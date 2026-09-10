@@ -305,8 +305,10 @@ class CustomerController extends Controller
             $p->forceDelete();
         }
 
-        // Clean expired users
-        $expiredUsers = User::onlyTrashed()->where('deleted_at', '<=', $threshold)->get();
+        // Clean expired users (skip if User does not use SoftDeletes)
+        $expiredUsers = method_exists(User::class, 'onlyTrashed') 
+            ? User::onlyTrashed()->where('deleted_at', '<=', $threshold)->get() 
+            : collect();
         foreach ($expiredUsers as $u) {
             if ($u->profile_image) Storage::disk('public')->delete($u->profile_image);
             $u->forceDelete();
@@ -335,7 +337,9 @@ class CustomerController extends Controller
         $customers = Customer::onlyTrashed()->latest()->paginate(10, ['*'], 'customers_page');
         $installments = Installment::onlyTrashed()->with('customer', 'product')->latest()->paginate(10, ['*'], 'installments_page');
         $products = Product::onlyTrashed()->latest()->paginate(10, ['*'], 'products_page');
-        $users = User::onlyTrashed()->latest()->paginate(10, ['*'], 'users_page');
+        $users = method_exists(User::class, 'onlyTrashed') 
+            ? User::onlyTrashed()->latest()->paginate(10, ['*'], 'users_page') 
+            : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, ['pageName' => 'users_page']);
         $payments = Payment::onlyTrashed()->with('installment.customer', 'paymentMethod')->latest()->paginate(10, ['*'], 'payments_page');
         $suppliers = Supplier::onlyTrashed()->latest()->paginate(10, ['*'], 'suppliers_page');
         $categories = Category::onlyTrashed()->latest()->paginate(10, ['*'], 'categories_page');

@@ -1,0 +1,88 @@
+
+<style>
+    /* ── Font Configuration - ការកំណត់ពុម្ពអក្សរ ── */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Battambang:wght@400;700;900&display=swap');
+    
+    /* Font family setup - ការដំឡើងពុម្ពអក្សរ */
+    /* English: Poppins, Khmer: Battambang */
+    * {
+        font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
+    }
+    
+    /* English text - អត្ថបទអង់គ្លេស */
+    *:lang(en) {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Khmer text - អត្ថបទខ្មែរ */
+    *:lang(km) {
+        font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
+        line-height: 1.8; /* Better spacing for Khmer - គម្លាតល្អសម្រាប់ខ្មែរ */
+    }
+    
+    /* Fallback for mixed content - សម្រាប់អត្ថបទចម្រុះ */
+    body {
+        font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif;
+    }
+    
+    /* Exclude Font Awesome icons from generic font family overrides */
+    .fa, .fas, .far, .fal, .fad, .fab, .fa-solid, .fa-regular, [class*="fa-"] {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Font Awesome 5 Free", "Font Awesome 5 Brands", "FontAwesome" !important;
+        line-height: 1 !important;
+        display: inline-block;
+    }
+
+    :root {
+        /* ── Brand - ពណ៌ Brand ── */
+        --brand:            #1E3A5F;   /* deep professional navy (primary) - ខៀវចាស់ professional */
+        --brand-hover:      #162D47;   /* navy hover / pressed - ពេលចុច */
+        --brand-active:     #112138;   /* navy darkest - ខ្មៅបំផុត */
+        --on-brand:         #FFFFFF;
+
+        --secondary:        #2563EB;   /* support blue - ខៀវជំនួយ */
+        --secondary-hover:  #1D4ED8;
+
+        --accent:           #059669;   /* emerald — "paid / success" - បៃតង "បង់រួច / ជោគជ័យ" */
+        --accent-hover:     #047857;
+        --accent-soft:      #34D399;   /* emerald highlight on dark surfaces - បៃតងភ្លឺលើផ្ទៃងងឹត */
+
+        /* ── Sidebar (dark navy surface) - របារចំហៀង (ផ្ទៃខៀវងងឹត) ── */
+        --sidebar:          #0F1E33;
+        --sidebar-raised:   #18293F;
+        --sidebar-text:     #94A3B8;
+        --sidebar-text-hi:  #E2E8F0;
+        --sidebar-hover:    rgba(255,255,255,0.06);
+
+        /* ── Semantic status - ស្ថានភាពអត្ថន័យ ── */
+        --success:          #059669;   /* Green - បង់រួច/ជោគជ័យ */
+        --warning:          #D97706;   /* Yellow - ការព្រមាន/កំពុងរង់ចាំ */
+        --danger:           #DC2626;   /* Red - លើសកំណត់/កំហុស */
+        --info:             #2563EB;   /* Blue - ព័ត៌មាន */
+
+        /* ── Surfaces & text - ផ្ទៃ & អត្ថបទ ── */
+        --bg:               #FFFFFF;   /* Background - ផ្ទៃខាងក្រោយពណ៌ស */
+        --surface:          #FFFFFF;   /* Surface - ផ្ទៃ */
+        --surface-muted:    #F8FAFC;   /* Muted surface - ផ្ទៃស្រាល */
+        --text:             #0F172A;   /* Text - អត្ថបទ */
+        --text-muted:       #64748B;   /* Muted text - អត្ថបទស្រាល */
+        --text-subtle:      #94A3B8;   /* Subtle text - អត្ថបទស្រាលជាង */
+        --border:           #E2E8F0;   /* Border - ស្រទាប់ */
+        --border-strong:    #CBD5E1;   /* Strong border - ស្រទាប់ខ្លាំង */
+        --ring:             #1E3A5F;
+
+        /* ── Radius - កាត់ជ្រុង ── */
+        --radius-sm: 10px;
+        --radius:    14px;
+        --radius-lg: 18px;
+        --radius-pill: 999px;
+
+        /* ── Premium layered shadows (soft, never harsh) - ស្រមោលទន់ ── */
+        --shadow-sm: 0 1px 2px rgba(15,23,42,.06);
+        --shadow:    0 1px 3px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.04);
+        --shadow-md: 0 4px 14px rgba(15,23,42,.08);
+        --shadow-lg: 0 12px 32px -8px rgba(15,23,42,.16);
+        --shadow-brand: 0 8px 20px -6px rgba(30,58,95,.45);
+        --shadow-accent: 0 8px 20px -6px rgba(5,150,105,.40);
+    }
+</style>
+<?php /**PATH E:\billing-system\resources\views/partials/brand.blade.php ENDPATH**/ ?>
