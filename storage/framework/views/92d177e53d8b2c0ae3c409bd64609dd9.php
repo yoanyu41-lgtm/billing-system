@@ -1207,12 +1207,6 @@
                         <i class="fas fa-list"></i> <?php echo e(__('app.all_payments')); ?>
 
                     </a>
-                    <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create')): ?>
-                    <a href="<?php echo e(route('payments.create')); ?>" class="<?php echo e(request()->routeIs('payments.create') ? 'active' : ''); ?>">
-                        <i class="fas fa-plus-circle"></i> <?php echo e(__('app.new_payment')); ?>
-
-                    </a>
-                    <?php endif; ?>
                     <a href="<?php echo e(route('late-payments.index')); ?>" class="<?php echo e(request()->routeIs('late-payments.*') ? 'active' : ''); ?>">
                         <i class="fas fa-exclamation-circle"></i> <?php echo e(__('app.late_payments')); ?>
 

@@ -172,9 +172,9 @@ return [
     'customer'              => 'អតិថិជន',
     'customer_management'   => 'គ្រប់គ្រងអតិថិជន',
     'installment_customers' => 'អតិថិជនបង់រំលស់',
-    'direct_customers'      => 'អតិថិជនលក់ដាច់',
+    'direct_customers'      => 'អតិថិជនទិញដាច់',
     'installment_customers_subtitle' => 'គ្រប់គ្រងអតិថិជនបង់រំលស់ និងប្រវត្តិការទូទាត់ទាំងអស់បានយ៉ាងងាយស្រួល។',
-    'direct_customers_subtitle' => 'គ្រប់គ្រងអតិថិជនលក់ដាច់ និងប្រវត្តិការទិញទាំងអស់បានយ៉ាងងាយស្រួល។',
+    'direct_customers_subtitle' => 'គ្រប់គ្រងអតិថិជនទិញដាច់ និងប្រវត្តិការទិញទាំងអស់បានយ៉ាងងាយស្រួល។',
     'direct_sale_product_hint' => 'ស្រេចចិត្ត៖ ជ្រើសផលិតផលដើម្បីកត់ត្រាការលក់ភ្លាមៗ និងកាត់ស្តុក។',
     'customer_profile'      => 'ប្រវត្តិរូបអតិថិជន',
     'add_customer'          => 'បន្ថែមអតិថិជន',
@@ -646,7 +646,7 @@ return [
     // ── Direct Sale (លក់ដាច់) ──
     'direct_sale'           => 'លក់ដាច់',
     'direct_sales'          => 'ការលក់ដាច់',
-    'new_direct_sale'       => 'ការលក់ដាច់ថ្មី',
+    'new_direct_sale'       => 'បន្ថែមការលក់ដាច់',
     'direct_sale_subtitle'  => 'លក់ផលិតផលដោយផ្ទាល់ បង់ប្រាក់ពេញភ្លាមៗ។ ស្តុកនឹងថយចុះដោយស្វ័យប្រវត្តិ។',
     'sales_list'            => 'បញ្ជីការលក់ដាច់',
     'sales_list_subtitle'   => 'ការលក់ដាច់ (សាច់ប្រាក់) ទាំងអស់ដែលបានកត់ត្រា។',
@@ -726,7 +726,7 @@ return [
     'exchange_rate'         => 'អត្រាប្តូរប្រាក់',
     'installment_invoices'  => 'វិក្កយបត្របង់រំលស់',
     'payoff_invoices'       => 'វិក្កយបត្របង់ផ្តាច់',
-    'direct_sale_invoices'  => 'វិក្កយបត្រលក់ដាច់',
+    'direct_sale_invoices'  => 'វិក្កយបត្រទិញដាច់',
     'completed_invoices'    => 'វិក្កយបត្រទូទាត់បញ្ចប់',
     
     // ── Telegram QR and Direct Payment Slip Upload ──

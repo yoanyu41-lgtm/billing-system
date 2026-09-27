@@ -1193,11 +1193,6 @@
                     <a href="{{ route('payments.index') }}" class="{{ request()->routeIs('payments.index') ? 'active' : '' }}">
                         <i class="fas fa-list"></i> {{ __('app.all_payments') }}
                     </a>
-                    @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.create'))
-                    <a href="{{ route('payments.create') }}" class="{{ request()->routeIs('payments.create') ? 'active' : '' }}">
-                        <i class="fas fa-plus-circle"></i> {{ __('app.new_payment') }}
-                    </a>
-                    @endif
                     <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
                         <i class="fas fa-exclamation-circle"></i> {{ __('app.late_payments') }}
                     </a>

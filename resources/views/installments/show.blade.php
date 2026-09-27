@@ -345,9 +345,15 @@
                         <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             @if($row['status'] === 'paid')
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <i class="fas fa-check-circle mr-1 self-center"></i> {{ __('app.paid') }}
-                                </span>
+                                @if(!empty($row['is_settlement']))
+                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                        <i class="fas fa-check-double mr-1 self-center"></i> {{ app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff' }}
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <i class="fas fa-check-circle mr-1 self-center"></i> {{ __('app.paid') }}
+                                    </span>
+                                @endif
                             @elseif($row['status'] === 'overdue')
                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                                     <i class="fas fa-exclamation-triangle mr-1 self-center"></i> {{ __('app.overdue') }}

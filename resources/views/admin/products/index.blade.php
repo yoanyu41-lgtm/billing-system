@@ -50,7 +50,7 @@
             <!-- Category Filter -->
             <div>
                 <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.category') }}</label>
-                <select name="category" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                <select name="category" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
                     <option value="">{{ __('app.all') }} {{ __('app.categories') }}</option>
                     @foreach($categories as $category)
                         <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
@@ -65,7 +65,7 @@
             <div class="flex space-x-2">
                 <div class="w-3/5">
                     <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.sort_by') }}</label>
-                    <select name="sort" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    <select name="sort" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
                         <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>{{ __('app.name') }}</option>
                         <option value="price" {{ request('sort') == 'price' ? 'selected' : '' }}>{{ __('app.price') }}</option>
                         <option value="stock" {{ request('sort') == 'stock' ? 'selected' : '' }}>{{ __('app.stock') }}</option>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="w-2/5">
                     <label class="block text-gray-700 text-sm font-medium mb-2">{{ __('app.direction') }}</label>
-                    <select name="direction" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    <select name="direction" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
                         <option value="asc" {{ request('direction') == 'asc' ? 'selected' : '' }}>{{ __('app.ascending') }}</option>
                         <option value="desc" {{ request('direction') == 'desc' ? 'selected' : '' }}>{{ __('app.descending') }}</option>
                     </select>

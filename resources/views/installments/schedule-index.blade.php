@@ -84,6 +84,9 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($installments as $installment)
+                    @php
+                        $isPaidOff = ($installment->remaining_balance <= 0) || in_array($installment->status, ['completed', 'paid', 'paid_off']);
+                    @endphp
                     <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900">{{ $installment->customer?->name ?? 'N/A' }}</div>
@@ -96,9 +99,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->monthly_payment) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">{{ format_currency($installment->remaining_balance) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $isPaidOff ? 'text-emerald-600' : 'text-amber-700' }}">{{ format_currency($installment->remaining_balance) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg transition duration-150">
+                            <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 {{ $isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600' }} text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 {{ __('app.payment_schedule') }}
                             </a>

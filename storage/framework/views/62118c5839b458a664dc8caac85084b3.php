@@ -102,7 +102,7 @@
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div class="text-xs text-gray-400 font-medium uppercase tracking-wider"><?php echo e(__('app.remaining_balance')); ?></div>
-            <div class="text-xl font-extrabold text-amber-700 mt-1"><?php echo e(format_currency($summary['remaining'])); ?></div>
+            <div class="text-xl font-extrabold <?php echo e($summary['remaining'] <= 0 ? 'text-emerald-600' : 'text-amber-700'); ?> mt-1"><?php echo e(format_currency($summary['remaining'])); ?></div>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div class="text-xs text-gray-400 font-medium uppercase tracking-wider"><?php echo e(__('app.overdue')); ?></div>
@@ -206,10 +206,17 @@
                         <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['outstanding_debt'])); ?></td>
                         <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap">
                             <?php if($row['status'] === 'paid'): ?>
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <i class="fas fa-check-circle mr-1 self-center"></i> <?php echo e(__('app.paid')); ?>
+                                <?php if(!empty($row['is_settlement'])): ?>
+                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                        <i class="fas fa-check-double mr-1 self-center"></i> <?php echo e(app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff'); ?>
 
-                                </span>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <i class="fas fa-check-circle mr-1 self-center"></i> <?php echo e(__('app.paid')); ?>
+
+                                    </span>
+                                <?php endif; ?>
                             <?php elseif($row['status'] === 'overdue'): ?>
                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                                     <i class="fas fa-exclamation-triangle mr-1 self-center"></i> <?php echo e(__('app.overdue')); ?>

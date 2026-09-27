@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class ProductController extends Controller
 {
@@ -64,9 +69,9 @@ class ProductController extends Controller
             $query->orderBy($sort, $direction);
         }
 
-        // 4. Export to CSV/Excel
+        // 4. Export to Excel (.xlsx)
         if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportCsv($query);
+            return $this->exportXlsx($query);
         }
 
         // 5. Pagination (បែងទំព័រ)
@@ -97,19 +102,44 @@ class ProductController extends Controller
         return Product::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
     }
 
-    private function exportCsv($query)
+    private function exportXlsx($query)
     {
         $products = $query->get();
-        $filename = "Product_List_" . date('Ymd_His') . ".csv";
+        $filename = "Product_List_" . date('Ymd_His') . ".xlsx";
 
-        $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        // Normalize any date format → dd/MM/yyyy HH:mm
+        $normalizeDate = function($value) {
+            if (!$value) return '';
+            if ($value instanceof \Carbon\Carbon) {
+                return $value->format('d/m/Y H:i');
+            }
+            $str = trim((string) $value);
+            if ($str === '' || $str === '0000-00-00' || $str === '0000-00-00 00:00:00') return '';
+            $formats = [
+                'Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d',
+                'd/m/Y H:i:s', 'd/m/Y H:i', 'd/m/Y',
+                'm/d/Y H:i:s', 'm/d/Y H:i', 'm/d/Y',
+                'n/j/Y G:i:s', 'n/j/Y G:i',  'n/j/Y',
+                'd-m-Y H:i:s', 'd-m-Y H:i',  'd-m-Y',
+            ];
+            foreach ($formats as $fmt) {
+                try {
+                    $dt = \Carbon\Carbon::createFromFormat($fmt, $str);
+                    if ($dt && $dt->format($fmt) === $str) return $dt->format('d/m/Y H:i');
+                } catch (\Exception $e) { /* try next */ }
+            }
+            try {
+                return \Carbon\Carbon::parse($str)->format('d/m/Y H:i');
+            } catch (\Exception $e) {
+                return $str;
+            }
+        };
 
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Products');
+
+        // ---- Header row ----
         $columns = [
             'Code', 'Barcode', 'Name', 'Name2', 'Unit', 'Attributes',
             'Price', 'Stock Qty.', 'Supply Price', 'Stock Value',
@@ -119,80 +149,87 @@ class ProductController extends Controller
             'Last Stock In', 'Created Date',
         ];
 
-        $callback = function() use($products, $columns) {
-            $file = fopen('php://output', 'w');
+        $col = 1;
+        foreach ($columns as $header) {
+            $sheet->setCellValue([$col, 1], $header);
+            $col++;
+        }
 
-            // Add BOM for UTF-8 to ensure Excel reads Khmer characters correctly
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($file, $columns);
+        // Style header row
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($columns));
+        $headerRange = 'A1:' . $lastCol . '1';
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '93C5FD']]],
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(22);
 
-            // Normalize any date format → dd/MM/yyyy HH:mm
-            $normalizeDate = function($value) {
-                if (!$value) return '';
-                if ($value instanceof \Carbon\Carbon) {
-                    return $value->format('d/m/Y H:i');
-                }
-                $str = trim((string) $value);
-                if ($str === '' || $str === '0000-00-00' || $str === '0000-00-00 00:00:00') return '';
+        // ---- Data rows ----
+        $row = 2;
+        foreach ($products as $product) {
+            $unitCost   = $product->cost_price ?? $product->price;
+            $stockValue = round((float)$unitCost * (int)$product->stock, 2);
 
-                // Try multiple known formats (covers Excel imports & DB storage)
-                $formats = [
-                    'Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d',
-                    'd/m/Y H:i:s', 'd/m/Y H:i', 'd/m/Y',
-                    'm/d/Y H:i:s', 'm/d/Y H:i', 'm/d/Y',
-                    'n/j/Y G:i:s', 'n/j/Y G:i',  'n/j/Y',
-                    'd-m-Y H:i:s', 'd-m-Y H:i',  'd-m-Y',
-                ];
-                foreach ($formats as $fmt) {
-                    try {
-                        $dt = \Carbon\Carbon::createFromFormat($fmt, $str);
-                        if ($dt && $dt->format($fmt) === $str) {
-                            return $dt->format('d/m/Y H:i');
-                        }
-                    } catch (\Exception $e) { /* try next */ }
-                }
-                try {
-                    return \Carbon\Carbon::parse($str)->format('d/m/Y H:i');
-                } catch (\Exception $e) {
-                    return $str;
-                }
-            };
+            $data = [
+                $product->code,
+                $product->barcode ?: '',
+                $product->name,
+                $product->name2 ?? '',
+                $product->unit ?? '',
+                $product->attributes ?? '',
+                (float)$product->price,
+                (int)$product->stock,
+                (float)($product->cost_price ?? 0),
+                $stockValue,
+                $product->location ?? '',
+                $product->category ?? '',
+                $product->exchange_unit ?? '',
+                $product->stock_note ?? '',
+                $product->summary ?? '',
+                $product->description ?? '',
+                $product->imei ?? '',
+                (int)($product->low_stock_threshold ?? 0),
+                (int)($product->max_stock_qty ?? 0),
+                $product->seo ?? '',
+                $normalizeDate($product->last_stock_in_at),
+                $normalizeDate($product->created_at),
+            ];
 
-            foreach ($products as $product) {
-                // Stock Value = Supply Price × Stock Qty (ត្រឹមត្រូវ)
-                $unitCost   = $product->cost_price ?? $product->price;
-                $stockValue = round((float)$unitCost * (int)$product->stock, 2);
-
-                fputcsv($file, [
-                    $product->code,                        // Code
-                    $product->barcode ?: '',               // Barcode
-                    $product->name,                        // Name
-                    $product->name2,                       // Name2
-                    $product->unit,                        // Unit
-                    $product->attributes,                  // Attributes
-                    $product->price,                       // Price
-                    $product->stock,                       // Stock Qty.
-                    $product->cost_price,                  // Supply Price
-                    $stockValue,                           // Stock Value
-                    $product->location,                    // Location
-                    $product->category,                    // Product Group
-                    $product->exchange_unit,               // Exchange Unit
-                    $product->stock_note,                  // Stock Note
-                    $product->summary,                     // Summary
-                    $product->description,                 // Description
-                    $product->imei,                        // IMEI
-                    $product->low_stock_threshold,         // Min Stock Qty.
-                    $product->max_stock_qty,               // Max Stock Qty.
-                    $product->seo,                         // SEO
-                    $normalizeDate($product->last_stock_in_at),  // Last Stock In
-                    $normalizeDate($product->created_at),        // Created Date
-                ]);
+            $col = 1;
+            foreach ($data as $value) {
+                $sheet->setCellValue([$col, $row], $value);
+                $col++;
             }
 
-            fclose($file);
-        };
+            // Zebra stripe
+            if ($row % 2 === 0) {
+                $sheet->getStyle('A' . $row . ':' . $lastCol . $row)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('EFF6FF');
+            }
+            $row++;
+        }
 
-        return response()->stream($callback, 200, $headers);
+        // Auto-fit column widths
+        foreach (range(1, count($columns)) as $colIndex) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+
+        // Freeze header row
+        $sheet->freezePane('A2');
+
+        // Write to temp file and stream
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx_');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ])->deleteFileAfterSend(true);
     }
 
     public function stockIndex(Request $request)
@@ -524,8 +561,8 @@ class ProductController extends Controller
 
         $request->validate([
             'csv_file' => 'required|file|max:10240',
-            'duplicate_handling' => 'required|in:skip,update',
-            'stock_handling' => 'required|in:add,overwrite',
+            'duplicate_handling' => 'nullable|in:skip,update',
+            'stock_handling' => 'nullable|in:add,overwrite',
         ]);
 
         $file = $request->file('csv_file');

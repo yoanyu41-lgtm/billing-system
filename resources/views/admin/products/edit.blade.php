@@ -231,8 +231,7 @@
                     <i class="fas fa-percent text-amber-500"></i>
                 </div>
                 <div>
-                    <p class="text-sm font-bold text-gray-800">{{ __('app.tax') }} / VAT</p>
-                    <p class="text-xs text-gray-400">{{ app()->getLocale() === 'km' ? 'ការកំណត់ VAT' : 'Tax configuration' }}</p>
+                    <p class="text-sm font-bold text-gray-800">{{ __('app.tax') }}</p>
                 </div>
             </div>
             <div class="form-section-body">
@@ -243,14 +242,12 @@
                                    class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500">
                             <span class="text-sm font-semibold text-gray-700">{{ __('app.taxable') }} (មាន VAT)</span>
                         </label>
-                        <p class="text-xs text-gray-400 mt-1 ml-8">{{ app()->getLocale() === 'km' ? 'ធីកប្រសិនបើផលិតផលនេះមាន VAT' : 'Check if this product is taxable' }}</p>
                     </div>
                     <div>
                         <label class="field-label">{{ __('app.tax_rate') }} (%)</label>
                         <input type="number" name="tax_rate" step="0.01" min="0" max="100"
                                value="{{ old('tax_rate', $product->tax_rate ?? $defaultTaxRate) }}"
                                class="field-input" placeholder="10.00">
-                        <p class="text-xs text-gray-400 mt-1">ឧ. 10 សម្រាប់ 10%</p>
                     </div>
                     <div>
                         @php
@@ -263,7 +260,6 @@
                             <option value="exclusive" {{ $currentTaxType === 'exclusive' ? 'selected' : '' }}>{{ __('app.tax_exclusive') }}</option>
                             <option value="inclusive" {{ $currentTaxType === 'inclusive' ? 'selected' : '' }}>{{ __('app.tax_inclusive') }}</option>
                         </select>
-                        <p class="text-xs text-gray-400 mt-1">មិនរួម VAT = តម្លៃ + VAT | រួម VAT ហើយ = តម្លៃបូក VAT</p>
                     </div>
                 </div>
             </div>

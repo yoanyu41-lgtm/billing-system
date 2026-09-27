@@ -533,7 +533,7 @@ class InstallmentController extends Controller
             'total_principal'   => round(array_sum(array_column($schedule, 'principal')), 2),
             'total_interest'    => round(array_sum(array_column($schedule, 'interest')), 2),
             'total_paid'        => round((float) $totalPaid, 2),
-            'remaining'         => round(max($totalScheduled - (float) $totalPaid, 0), 2),
+            'remaining'         => ($installment->remaining_balance <= 0 || in_array($installment->status, ['completed', 'paid'])) ? 0.00 : round(max($totalScheduled - (float) $totalPaid, 0), 2),
             'paid_count'        => count(array_filter($schedule, fn ($row) => $row['status'] === 'paid')),
             'overdue_count'     => count(array_filter($schedule, fn ($row) => $row['status'] === 'overdue')),
         ];

@@ -1,0 +1,320 @@
+<?php $__env->startSection('content'); ?>
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800"><?php echo e(__('app.product_list')); ?></h1>
+            <p class="text-sm text-gray-500 mt-1"><?php echo e(__('app.product_list_subtitle')); ?></p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <?php if(auth()->user()->role === 'admin'): ?>
+            <a href="<?php echo e(route('admin.products.stock')); ?>" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150 ease-in-out">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 11m8 4V5M4 11v10l8 4"></path></svg>
+                <?php echo e(__('app.manage_stock')); ?>
+
+            </a>
+            <a href="<?php echo e(route('admin.stock-movements.index')); ?>" class="inline-flex items-center bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium px-4 py-2.5 rounded-lg shadow-sm transition duration-150 ease-in-out">
+                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <?php echo e(__('app.stock_movements')); ?>
+
+            </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Filter and Search Form -->
+    <form method="GET" action="<?php echo e(route('admin.products.index')); ?>" class="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Search -->
+            <div class="md:col-span-2">
+                <label class="block text-gray-700 text-sm font-medium mb-2"><?php echo e(__('app.search')); ?></label>
+                <div class="relative">
+                    <input type="text" name="search" id="search-input" value="<?php echo e(request('search')); ?>" autocomplete="off"
+                           placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ស្វែងរកតាមឈ្មោះ, លេខកូដ, ម៉ាក...' : 'Search by name, code, brand...'); ?>"
+                           class="w-full border border-gray-300 rounded-lg pl-4 pr-9 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+
+                    <?php if(request('search')): ?>
+                    <button type="button" onclick="clearSearchInput(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition" title="Clear">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <?php endif; ?>
+
+                    <div id="suggestions-box" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <label class="block text-gray-700 text-sm font-medium mb-2"><?php echo e(__('app.category')); ?></label>
+                <select name="category" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
+                    <option value=""><?php echo e(__('app.all')); ?> <?php echo e(__('app.categories')); ?></option>
+                    <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($category); ?>" <?php echo e(request('category') == $category ? 'selected' : ''); ?>>
+                            <?php echo e($category); ?>
+
+                        </option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </select>
+            </div>
+
+
+            <!-- Sort -->
+            <div class="flex space-x-2">
+                <div class="w-3/5">
+                    <label class="block text-gray-700 text-sm font-medium mb-2"><?php echo e(__('app.sort_by')); ?></label>
+                    <select name="sort" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
+                        <option value="name" <?php echo e(request('sort') == 'name' ? 'selected' : ''); ?>><?php echo e(__('app.name')); ?></option>
+                        <option value="price" <?php echo e(request('sort') == 'price' ? 'selected' : ''); ?>><?php echo e(__('app.price')); ?></option>
+                        <option value="stock" <?php echo e(request('sort') == 'stock' ? 'selected' : ''); ?>><?php echo e(__('app.stock')); ?></option>
+                    </select>
+                </div>
+                <div class="w-2/5">
+                    <label class="block text-gray-700 text-sm font-medium mb-2"><?php echo e(__('app.direction')); ?></label>
+                    <select name="direction" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none transition duration-150">
+                        <option value="asc" <?php echo e(request('direction') == 'asc' ? 'selected' : ''); ?>><?php echo e(__('app.ascending')); ?></option>
+                        <option value="desc" <?php echo e(request('direction') == 'desc' ? 'selected' : ''); ?>><?php echo e(__('app.descending')); ?></option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="md:col-span-4 flex justify-end items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                <a href="<?php echo e(route('admin.products.index')); ?>" class="text-gray-600 hover:text-gray-900 font-medium px-4 py-2 rounded-lg transition duration-150"><?php echo e(__('app.clear')); ?></a>
+                
+                <a href="<?php echo e(route('admin.products.import-form')); ?>" class="inline-flex items-center bg-indigo-50/60 text-indigo-700 border border-indigo-200 hover:bg-indigo-100/80 hover:border-indigo-300 font-medium px-5 py-2.5 rounded-lg transition duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <?php echo e(__('app.import_products')); ?>
+
+                </a>
+
+                <button type="submit" name="export" value="excel" class="inline-flex items-center bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 font-medium px-5 py-2.5 rounded-lg transition duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+                    <?php echo e(__('app.export')); ?> Excel
+                </button>
+                
+                <button type="submit" class="inline-flex items-center bg-gray-800 hover:bg-gray-900 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm transition duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    <?php echo e(__('app.filter')); ?>
+
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Product Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.image')); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'កូដទំនិញ' : 'Item Code'); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.name')); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ប្រភេទទំនិញ' : 'Product Group'); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'តម្លៃលក់' : 'Price'); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ចំនួនស្តុក' : 'Stock Qty.'); ?></th>
+                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'តម្លៃស្តុកសរុប' : 'Stock Value'); ?></th>
+
+
+                    <th scope="col" class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.actions')); ?></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                <?php $__empty_1 = true; $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <?php
+                            $hasValidImage = $product->image && !\Illuminate\Support\Str::contains(strtolower($product->image), 'undefined');
+                            $imgSrc = $hasValidImage ? (\Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://']) ? $product->image : asset('storage/' . $product->image)) : null;
+                        ?>
+                        <?php if($imgSrc): ?>
+                            <div class="relative group">
+                                <img src="<?php echo e($imgSrc); ?>" 
+                                     class="w-20 h-20 object-contain p-1 bg-white rounded-xl border border-slate-200/90 shadow-md group-hover:scale-110 group-hover:border-blue-400 group-hover:shadow-lg transition duration-200" 
+                                     alt="<?php echo e($product->name); ?>"
+                                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=<?php echo e(urlencode($product->name)); ?>&color=4F46E5&background=EEF2FF&bold=true';">
+                            </div>
+                        <?php else: ?>
+                            <div class="w-20 h-20 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-500 font-black text-sm shadow-xs">
+                                <?php echo e(strtoupper(substr($product->name, 0, 2))); ?>
+
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <?php echo e($product->code); ?>
+
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm font-semibold text-gray-900"><?php echo e($product->name); ?></div>
+                        <?php if($product->name2): ?>
+                            <div class="text-xs text-gray-500"><?php echo e($product->name2); ?></div>
+                        <?php endif; ?>
+                        <?php
+                            $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') ?? '0';
+                        ?>
+                        <div class="text-xs mt-1 flex flex-wrap gap-1 items-center">
+                            <?php if($product->barcode): ?>
+                                <span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded border border-gray-200 font-mono font-medium">🏷️ <?php echo e($product->barcode); ?></span>
+                            <?php endif; ?>
+                            <?php if($product->cpu): ?>
+                                <span class="bg-indigo-50/50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100/40 font-medium">CPU: <?php echo e($product->cpu); ?></span>
+                            <?php endif; ?>
+                            <?php if($product->unit): ?>
+                                <span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-medium"><?php echo e($product->unit); ?></span>
+                            <?php endif; ?>
+                            <?php if($taxEnabled == '1'): ?>
+                                <?php if($product->is_taxable): ?>
+                                    <span class="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-100 font-medium" title="<?php echo e($product->tax_type === 'inclusive' ? __('app.tax_inclusive') : __('app.tax_exclusive')); ?>">
+                                        VAT (<?php echo e((float) $product->tax_rate); ?>%)
+                                    </span>
+                                <?php else: ?>
+                                    <span class="bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 font-medium">
+                                        <?php echo e(__('app.non_taxable')); ?>
+
+                                    </span>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-md font-medium text-xs"><?php echo e($product->category ?: '-'); ?></span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">$<?php echo e(number_format($product->price, 2)); ?></td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <?php if($product->stock <= 0): ?>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200"><?php echo e(__('app.out_of_stock')); ?></span>
+                        <?php elseif($product->stock <= ($product->low_stock_threshold ?? 5)): ?>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200"><?php echo e($product->stock); ?> (<?php echo e(__('app.low_stock')); ?>)</span>
+                        <?php else: ?>
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200"><?php echo e($product->stock); ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-emerald-600">
+                        <?php
+                            $unitCost = $product->cost_price ?? $product->price;
+                            $stockVal = (float)$unitCost * (int)$product->stock;
+                        ?>
+                        $<?php echo e(number_format($stockVal, 2)); ?>
+
+                        <?php if($product->cost_price === null): ?>
+                            <span class="text-gray-400 text-xs block leading-none">(<?php echo e(app()->getLocale() === 'km' ? 'ប្រើតម្លៃលក់' : 'using price'); ?>)</span>
+                        <?php endif; ?>
+                    </td>
+
+                    <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex justify-end gap-2">
+                             <a href="<?php echo e(route('admin.products.show', [$product, 'from' => 'index'])); ?>" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="<?php echo e(__('app.view')); ?>">
+                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                             </a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr>
+                    <td colspan="10" class="px-6 py-4 text-center text-gray-500"><?php echo e(__('app.no_products')); ?></td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4">
+        <?php echo e($products->links()); ?>
+
+    </div>
+</div>
+
+<script>
+    function clearSearchInput(btn) {
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = '';
+            input.closest('form').submit();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const suggestions = <?php echo json_encode($suggestions ?? [], 15, 512) ?>;
+        const input = document.getElementById('search-input');
+        const box = document.getElementById('suggestions-box');
+
+        if (!input || !box) return;
+
+        function filterSuggestions(val) {
+            if (!val || val.trim().length < 1) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            const query = val.toLowerCase();
+            const matches = suggestions.filter(item => 
+                item.label.toLowerCase().includes(query) || 
+                item.value.toLowerCase().includes(query)
+            ).slice(0, 8);
+
+            if (matches.length === 0) {
+                box.innerHTML = '';
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.innerHTML = matches.map(match => {
+                return `
+                    <div class="suggestion-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition duration-150 font-medium border-b border-gray-50 last:border-0" data-value="${escapeHtml(match.value)}">
+                        ${escapeHtml(match.label)}
+                    </div>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        input.addEventListener('input', function() {
+            filterSuggestions(this.value);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (this.value.trim() === '' && urlParams.has('search') && urlParams.get('search') !== '') {
+                this.closest('form').submit();
+            }
+        });
+
+        input.addEventListener('focus', function() {
+            filterSuggestions(this.value);
+        });
+
+        box.addEventListener('click', function(e) {
+            const item = e.target.closest('.suggestion-item');
+            if (item) {
+                input.value = item.getAttribute('data-value');
+                box.classList.add('hidden');
+                input.closest('form').submit();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !box.contains(e.target)) {
+                box.classList.add('hidden');
+            }
+        });
+    });
+</script>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/admin/products/index.blade.php ENDPATH**/ ?>
