@@ -30,7 +30,7 @@
     </a>
 
     <a href="<?php echo e(route('admin.reports.profit')); ?>" class="pb-2.5 transition whitespace-nowrap no-underline <?php echo e(request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'); ?>">
-        <?php echo e(app()->getLocale() === 'km' ? 'ប្រាក់ចំណេញ' : 'Profit / Income'); ?>
+        <?php echo e(app()->getLocale() === 'km' ? 'ចំណូល/ចំណេញ' : 'Profit / Income'); ?>
 
     </a>
 </div>

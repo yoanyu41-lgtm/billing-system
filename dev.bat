@@ -78,6 +78,17 @@ if not exist node_modules (
     echo [OK] Node.js packages are already installed.
 )
 
+:: 5. Ensure Laravel database schema and default seed data are ready
+echo [INFO] Running Laravel database migrations and seeders...
+call php artisan migrate --seed
+if errorlevel 1 (
+    color 0C
+    echo [ERROR] Database migration failed. Please confirm MySQL is running and the DB credentials in .env are correct.
+    pause
+    exit /b 1
+)
+echo [SUCCESS] Database tables and default records are ready.
+
 echo.
 echo ======================================================================
 echo  [READY] Launching all development servers concurrently:

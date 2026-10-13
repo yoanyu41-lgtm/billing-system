@@ -1290,7 +1290,7 @@
 
                     </a>
                     <a href="<?php echo e(route('admin.reports.profit')); ?>" class="<?php echo e(request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : ''); ?>">
-                        <i class="fas fa-chart-line"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ប្រាក់ចំណេញ' : 'Profit Report'); ?>
+                        <i class="fas fa-chart-line"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ចំណូល/ចំណេញ' : 'Profit / Income Report'); ?>
 
                     </a>
                 </div>

@@ -193,6 +193,20 @@ class DashboardController extends Controller
             'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
         ];
 
+        // ── អតិថិជនជិតដល់ថ្ងៃបង់ (៣ ថ្ងៃចុះក្រោម) ────────────────────────
+        $upcomingDueInstallments = Installment::with('customer')
+            ->where('status', 'active')
+            ->where('remaining_balance', '>', 0)
+            ->where('next_due_date', '>=', \Carbon\Carbon::today())
+            ->where('next_due_date', '<=', \Carbon\Carbon::today()->addDays(3))
+            ->orderBy('next_due_date')
+            ->get()
+            ->map(function ($inst) {
+                $inst->days_left = (int) \Carbon\Carbon::today()
+                    ->diffInDays(\Carbon\Carbon::parse($inst->next_due_date)->startOfDay());
+                return $inst;
+            });
+
         // ── Recent Customers (Checks both Installments & Direct Sales) ──
         $recentCustomers = Customer::with(['installments.product', 'sales.items.product'])
             ->latest()
@@ -277,6 +291,7 @@ class DashboardController extends Controller
                 'paymentsTrend',
                 'pendingTrend',
                 'completedTrend',
+                'upcomingDueInstallments',
             ));
         }
 
@@ -316,6 +331,7 @@ class DashboardController extends Controller
             'paymentsTrend',
             'pendingTrend',
             'completedTrend',
+            'upcomingDueInstallments',
         ));
     }
 

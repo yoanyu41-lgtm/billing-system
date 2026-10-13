@@ -263,61 +263,107 @@
         </div>
     </div>
 
-    <!-- ── TABLES SECTION (Recent Customers & Recent Payments) ── -->
+    <!-- ── TABLES SECTION (Upcoming Due & Recent Payments) ── -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
         
         <div class="card">
-            <div class="card-title">
-                <span><?php echo e(__('app.recent_customers')); ?></span>
-                <a href="<?php echo e(route('customers.index')); ?>" class="btn-viewall"><?php echo e(__('app.view_all')); ?></a>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th><?php echo e(__('app.customer_name')); ?></th>
-                            <th><?php echo e(__('app.phone')); ?></th>
-                            <th><?php echo e(__('app.product')); ?></th>
-                            <th><?php echo e(__('app.amount')); ?></th>
-                            <th><?php echo e(__('app.status')); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php $__empty_1 = true; $__currentLoopData = $recentCustomers ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
-                            <td style="color:#94a3b8;"><?php echo e($i+1); ?></td>
-                            <td style="font-weight:600;"><?php echo e($customer->name); ?></td>
-                            <td class="mono"><?php echo e($customer->phone); ?></td>
-                            <td style="max-width: 180px;">
-                                <div class="truncate text-slate-800 font-medium" title="<?php echo e($customer->latest_product_name ?? '—'); ?>">
-                                    <?php echo e($customer->latest_product_name ?? '—'); ?>
-
-                                </div>
-                            </td>
-                            <td>
-                                <span class="font-semibold text-gray-900">$<?php echo e(number_format($customer->latest_amount ?? 0, 2)); ?></span>
-                            </td>
-                            <td>
-                                <?php 
-                                    $st = $customer->latest_status ?? 'new'; 
-                                    $label = match($st) {
-                                        'active'    => __('app.active') ?? 'Active',
-                                        'completed' => ($customer->latest_type === 'sale') ? (__('app.paid') ?? 'Paid') : (__('app.completed') ?? 'Completed'),
-                                        'overdue'   => __('app.overdue') ?? 'Overdue',
-                                        'new'       => 'New',
-                                        default     => ucfirst($st),
-                                    };
-                                ?>
-                                <span class="pill pill-<?php echo e($st); ?>"><?php echo e($label); ?></span>
-                            </td>
-                        </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px 0;"><?php echo e(__('app.no_data')); ?></td></tr>
+            <div class="card-title" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">⏰</span>
+                    <span style="color:#b45309;font-weight:700;">
+                        <?php if(app()->getLocale() === 'km'): ?>
+                            អតិថិជនជិតដល់ថ្ងៃបង់
+                        <?php else: ?>
+                            Upcoming Due Payments
                         <?php endif; ?>
-                    </tbody>
-                </table>
+                    </span>
+                </span>
+                <?php $dueCount = count($upcomingDueInstallments ?? []); ?>
+                <?php if($dueCount > 0): ?>
+                <span style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid #fcd34d;">
+                    <?php echo e($dueCount); ?> <?php echo e(app()->getLocale() === 'km' ? 'នាក់' : 'due soon'); ?>
+
+                </span>
+                <?php endif; ?>
             </div>
+
+            <?php if(($upcomingDueInstallments ?? collect())->isEmpty()): ?>
+                <div style="text-align:center;padding:32px 0;color:#94a3b8;">
+                    <div style="font-size:36px;margin-bottom:8px;">✅</div>
+                    <div style="font-size:13px;font-weight:500;">
+                        <?php echo e(app()->getLocale() === 'km' ? 'មិនមានអតិថិជនដល់ថ្ងៃបង់ក្នុង 3 ថ្ងៃទៀតទេ' : 'No payments due in the next 3 days'); ?>
+
+                    </div>
+                </div>
+            <?php else: ?>
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+                    <?php $__currentLoopData = $upcomingDueInstallments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $inst): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
+                        $daysLeft = $inst->days_left ?? 0;
+                        if ($daysLeft == 0) {
+                            $badgeBg = '#fee2e2'; $badgeColor = '#991b1b'; $badgeBorder = '#fca5a5';
+                            $rowBg   = 'rgba(254,226,226,0.50)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'ថ្ងៃនេះ!' : 'Today!';
+                        } elseif ($daysLeft == 1) {
+                            $badgeBg = '#fee2e2'; $badgeColor = '#b91c1c'; $badgeBorder = '#fca5a5';
+                            $rowBg   = 'rgba(254,226,226,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ១ ថ្ងៃ' : '1 day left';
+                        } elseif ($daysLeft == 2) {
+                            $badgeBg = '#ffedd5'; $badgeColor = '#c2410c'; $badgeBorder = '#fed7aa';
+                            $rowBg   = 'rgba(255,237,213,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ២ ថ្ងៃ' : '2 days left';
+                        } else {
+                            $badgeBg = '#fef3c7'; $badgeColor = '#b45309'; $badgeBorder = '#fcd34d';
+                            $rowBg   = 'rgba(254,243,199,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ៣ ថ្ងៃ' : '3 days left';
+                        }
+                    ?>
+                    <a href="<?php echo e(route('installments.show', $inst->id)); ?>"
+                       style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:<?php echo e($rowBg); ?>;border:1px solid <?php echo e($badgeBorder); ?>;text-decoration:none;transition:box-shadow .15s;"
+                       onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.10)'" onmouseout="this.style.boxShadow='none'">
+
+                        
+                        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
+                            <?php echo e(mb_substr($inst->customer?->name ?? '?', 0, 1)); ?>
+
+                        </div>
+
+                        
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <?php echo e($inst->customer?->name ?? '—'); ?>
+
+                            </div>
+                            <div style="font-size:11px;color:#64748b;margin-top:1px;">
+                                <?php echo e($inst->customer?->phone ?? ''); ?>
+
+                                &nbsp;·&nbsp;
+                                <?php echo e(app()->getLocale() === 'km' ? 'បង់ថ្ងៃ:' : 'Due:'); ?>
+
+                                <span style="font-weight:600;color:#92400e;"><?php echo e(\Carbon\Carbon::parse($inst->next_due_date)->format('d M Y')); ?></span>
+                            </div>
+                        </div>
+
+                        
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;">$<?php echo e(number_format($inst->monthly_payment ?? 0, 2)); ?></div>
+                            <span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:<?php echo e($badgeBg); ?>;color:<?php echo e($badgeColor); ?>;border:1px solid <?php echo e($badgeBorder); ?>;">
+                                <?php echo e($daysLabel); ?>
+
+                            </span>
+                        </div>
+                    </a>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </div>
+
+                <div style="margin-top:10px;">
+                    <a href="<?php echo e(route('installments.index')); ?>" class="btn-viewall" style="background:#f59e0b;">
+                        <?php echo e(app()->getLocale() === 'km' ? 'មើលទាំងអស់' : 'View All Installments'); ?>
+
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
 
         

@@ -261,60 +261,99 @@
         </div>
     </div>
 
-    <!-- ── TABLES SECTION (Recent Customers & Recent Payments) ── -->
+    <!-- ── TABLES SECTION (Upcoming Due & Recent Payments) ── -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {{-- Recent Customers --}}
+
+        {{-- ⏰ Upcoming Due Payments (2-3 days) --}}
         <div class="card">
-            <div class="card-title">
-                <span>{{ __('app.recent_customers') }}</span>
-                <a href="{{ route('customers.index') }}" class="btn-viewall">{{ __('app.view_all') }}</a>
+            <div class="card-title" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:18px;">⏰</span>
+                    <span style="color:#b45309;font-weight:700;">
+                        @if(app()->getLocale() === 'km')
+                            អតិថិជនជិតដល់ថ្ងៃបង់
+                        @else
+                            Upcoming Due Payments
+                        @endif
+                    </span>
+                </span>
+                @php $dueCount = count($upcomingDueInstallments ?? []); @endphp
+                @if($dueCount > 0)
+                <span style="background:#fef3c7;color:#b45309;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid #fcd34d;">
+                    {{ $dueCount }} {{ app()->getLocale() === 'km' ? 'នាក់' : 'due soon' }}
+                </span>
+                @endif
             </div>
-            <div style="overflow-x:auto;">
-                <table class="tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>{{ __('app.customer_name') }}</th>
-                            <th>{{ __('app.phone') }}</th>
-                            <th>{{ __('app.product') }}</th>
-                            <th>{{ __('app.amount') }}</th>
-                            <th>{{ __('app.status') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentCustomers ?? [] as $i => $customer)
-                        <tr>
-                            <td style="color:#94a3b8;">{{ $i+1 }}</td>
-                            <td style="font-weight:600;">{{ $customer->name }}</td>
-                            <td class="mono">{{ $customer->phone }}</td>
-                            <td style="max-width: 180px;">
-                                <div class="truncate text-slate-800 font-medium" title="{{ $customer->latest_product_name ?? '—' }}">
-                                    {{ $customer->latest_product_name ?? '—' }}
-                                </div>
-                            </td>
-                            <td>
-                                <span class="font-semibold text-gray-900">${{ number_format($customer->latest_amount ?? 0, 2) }}</span>
-                            </td>
-                            <td>
-                                @php 
-                                    $st = $customer->latest_status ?? 'new'; 
-                                    $label = match($st) {
-                                        'active'    => __('app.active') ?? 'Active',
-                                        'completed' => ($customer->latest_type === 'sale') ? (__('app.paid') ?? 'Paid') : (__('app.completed') ?? 'Completed'),
-                                        'overdue'   => __('app.overdue') ?? 'Overdue',
-                                        'new'       => 'New',
-                                        default     => ucfirst($st),
-                                    };
-                                @endphp
-                                <span class="pill pill-{{ $st }}">{{ $label }}</span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px 0;">{{ __('app.no_data') }}</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+
+            @if(($upcomingDueInstallments ?? collect())->isEmpty())
+                <div style="text-align:center;padding:32px 0;color:#94a3b8;">
+                    <div style="font-size:36px;margin-bottom:8px;">✅</div>
+                    <div style="font-size:13px;font-weight:500;">
+                        {{ app()->getLocale() === 'km' ? 'មិនមានអតិថិជនដល់ថ្ងៃបង់ក្នុង 3 ថ្ងៃទៀតទេ' : 'No payments due in the next 3 days' }}
+                    </div>
+                </div>
+            @else
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+                    @foreach($upcomingDueInstallments as $inst)
+                    @php
+                        $daysLeft = $inst->days_left ?? 0;
+                        if ($daysLeft == 0) {
+                            $badgeBg = '#fee2e2'; $badgeColor = '#991b1b'; $badgeBorder = '#fca5a5';
+                            $rowBg   = 'rgba(254,226,226,0.50)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'ថ្ងៃនេះ!' : 'Today!';
+                        } elseif ($daysLeft == 1) {
+                            $badgeBg = '#fee2e2'; $badgeColor = '#b91c1c'; $badgeBorder = '#fca5a5';
+                            $rowBg   = 'rgba(254,226,226,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ១ ថ្ងៃ' : '1 day left';
+                        } elseif ($daysLeft == 2) {
+                            $badgeBg = '#ffedd5'; $badgeColor = '#c2410c'; $badgeBorder = '#fed7aa';
+                            $rowBg   = 'rgba(255,237,213,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ២ ថ្ងៃ' : '2 days left';
+                        } else {
+                            $badgeBg = '#fef3c7'; $badgeColor = '#b45309'; $badgeBorder = '#fcd34d';
+                            $rowBg   = 'rgba(254,243,199,0.40)';
+                            $daysLabel = app()->getLocale() === 'km' ? 'នៅសល់ ៣ ថ្ងៃ' : '3 days left';
+                        }
+                    @endphp
+                    <a href="{{ route('installments.show', $inst->id) }}"
+                       style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:{{ $rowBg }};border:1px solid {{ $badgeBorder }};text-decoration:none;transition:box-shadow .15s;"
+                       onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.10)'" onmouseout="this.style.boxShadow='none'">
+
+                        {{-- Avatar --}}
+                        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
+                            {{ mb_substr($inst->customer?->name ?? '?', 0, 1) }}
+                        </div>
+
+                        {{-- Info --}}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                {{ $inst->customer?->name ?? '—' }}
+                            </div>
+                            <div style="font-size:11px;color:#64748b;margin-top:1px;">
+                                {{ $inst->customer?->phone ?? '' }}
+                                &nbsp;·&nbsp;
+                                {{ app()->getLocale() === 'km' ? 'បង់ថ្ងៃ:' : 'Due:' }}
+                                <span style="font-weight:600;color:#92400e;">{{ \Carbon\Carbon::parse($inst->next_due_date)->format('d M Y') }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Right: amount + badge --}}
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;">${{ number_format($inst->monthly_payment ?? 0, 2) }}</div>
+                            <span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:{{ $badgeBg }};color:{{ $badgeColor }};border:1px solid {{ $badgeBorder }};">
+                                {{ $daysLabel }}
+                            </span>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+
+                <div style="margin-top:10px;">
+                    <a href="{{ route('installments.index') }}" class="btn-viewall" style="background:#f59e0b;">
+                        {{ app()->getLocale() === 'km' ? 'មើលទាំងអស់' : 'View All Installments' }}
+                    </a>
+                </div>
+            @endif
         </div>
 
         {{-- Recent Payments --}}
