@@ -74,7 +74,7 @@
 
     <!-- Customer / Product summary (Screen dashboard) -->
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-print">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.customer') ?? 'Customer'); ?></div>
                 <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->customer?->name ?? 'N/A'); ?></div>
@@ -82,6 +82,16 @@
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.product_details')); ?></div>
                 <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->product?->name ?? 'N/A'); ?></div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.duration')); ?></div>
+                <div class="text-sm font-semibold text-gray-800">
+                    <?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?>
+
+                    <span class="text-xs font-semibold <?php echo e(($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600'); ?> ml-1">
+                        (<?php echo e(app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 mo left' : $installment->remaining_months . ' mo left')); ?>)
+                    </span>
+                </div>
             </div>
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.monthly_payment')); ?></div>

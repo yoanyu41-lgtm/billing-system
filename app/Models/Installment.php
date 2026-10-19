@@ -321,4 +321,42 @@ class Installment extends Model
         }
         return round($days * 10.00, 2);
     }
+
+    /**
+     * Get remaining months count.
+     */
+    public function getRemainingMonthsAttribute(): int
+    {
+        if ((float) $this->remaining_balance <= 0.01 || in_array($this->status, ['completed', 'paid', 'paid_off'])) {
+            return 0;
+        }
+
+        $duration = (int) ($this->duration_months ?: 0);
+        if ($duration <= 0) {
+            return 0;
+        }
+
+        $monthly = (float) $this->monthly_payment;
+        if ($monthly <= 0) {
+            $principalBase = max((float) $this->total_price - (float) $this->down_payment, 0);
+            $monthly = $principalBase / $duration;
+        }
+
+        if ($monthly <= 0) {
+            return 0;
+        }
+
+        $months = (int) ceil(round((float) $this->remaining_balance / $monthly, 2));
+
+        return min(max($months, 0), $duration);
+    }
+
+    /**
+     * Get paid months count.
+     */
+    public function getPaidMonthsAttribute(): int
+    {
+        $duration = (int) ($this->duration_months ?: 0);
+        return max(0, $duration - $this->remaining_months);
+    }
 }

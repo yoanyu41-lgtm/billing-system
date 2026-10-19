@@ -42,11 +42,21 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        if (! Auth::attempt($this->only('email', 'password'), false)) {
+            RateLimiter::hit($this->throttleKey(), 300);
+
+            $remaining = RateLimiter::remaining($this->throttleKey(), 5);
+
+            $message = trans('auth.failed');
+            if ($remaining > 0 && $remaining <= 2) {
+                $warning = app()->getLocale() === 'km'
+                    ? " (សល់ការប៉ុនប៉ង {$remaining} ដងទៀត មុនពេលផ្អាក ៥ នាទី)"
+                    : " ({$remaining} attempt(s) remaining before a 5-minute lockout)";
+                $message .= $warning;
+            }
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => $message,
             ]);
         }
 
@@ -67,12 +77,14 @@ class LoginRequest extends FormRequest
         event(new Lockout($this));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+        $minutes = (int) ceil($seconds / 60);
+
+        $message = $seconds >= 60
+            ? trans('auth.throttle_minutes', ['minutes' => $minutes, 'seconds' => $seconds])
+            : trans('auth.throttle', ['seconds' => $seconds, 'minutes' => $minutes]);
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'email' => $message,
         ]);
     }
 

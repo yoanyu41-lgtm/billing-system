@@ -99,7 +99,24 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><?php echo e(format_currency($installment->monthly_payment)); ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></div>
+                            <div class="text-xs mt-0.5 font-medium">
+                                <?php if($isPaidOff || $installment->remaining_months <= 0): ?>
+                                    <span class="inline-flex items-center text-emerald-600">
+                                        <i class="fas fa-check-circle text-[10px] mr-1"></i>
+                                        <?php echo e(app()->getLocale() === 'km' ? 'នៅសល់ ០ ខែ' : '0 months left'); ?>
+
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center text-amber-600">
+                                        <i class="far fa-clock text-[10px] mr-1"></i>
+                                        <?php echo e(app()->getLocale() === 'km' ? 'នៅសល់ ' . $installment->remaining_months . ' ខែ' : $installment->remaining_months . ' ' . __('app.months') . ' left'); ?>
+
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold <?php echo e($isPaidOff ? 'text-emerald-600' : 'text-amber-700'); ?>"><?php echo e(format_currency($installment->remaining_balance)); ?></td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="inline-flex items-center gap-2 <?php echo e($isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'); ?> text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">

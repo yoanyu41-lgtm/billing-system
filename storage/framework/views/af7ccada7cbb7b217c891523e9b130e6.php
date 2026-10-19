@@ -475,7 +475,7 @@ unset($__errorArgs, $__bag); ?>
         'name' => $p->name,
         'price' => (float) $p->price,
         'code' => $p->code ?? $p->sku ?? '',
-        'stock' => (int) $p->quantity,
+        'stock' => (int) $p->stock,
         'is_taxable' => (bool) ($p->is_taxable ?? false),
         'tax_rate' => (float) ($p->tax_rate ?? 0),
         'tax_type' => $p->tax_type ?? 'exclusive'
@@ -621,10 +621,18 @@ unset($__errorArgs, $__bag); ?>
             html += '<div class="p-3 text-xs text-slate-400 text-center">មិនមានទិន្នន័យទំនិញ</div>';
         } else {
             list.forEach(p => {
-                html += `<div class="ic-option" onclick="selectProduct(${p.id})">
+                const isOutOfStock = p.stock <= 0;
+                const stockBadge = isOutOfStock
+                    ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-semibold">អស់ស្តុក</span>`
+                    : `<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium border border-emerald-100">ស្តុក: ${p.stock}</span>`;
+                
+                html += `<div class="ic-option ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}" onclick="${isOutOfStock ? `alert('ទំនិញនេះបានអស់ពីស្តុកហើយ / Out of stock!')` : `selectProduct(${p.id})`}">
                     <div>
                         <div class="ic-option-name font-semibold text-slate-800">${escapeHtml(p.name)}</div>
-                        <div class="text-[11px] text-slate-400">${p.code ? 'Code: ' + escapeHtml(p.code) : ''}</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[11px] text-slate-400">${p.code ? 'Code: ' + escapeHtml(p.code) : ''}</span>
+                            ${stockBadge}
+                        </div>
                     </div>
                     <span class="font-extrabold text-indigo-600 text-xs px-2 py-0.5 bg-indigo-50 rounded border border-indigo-100">$${p.price.toFixed(2)}</span>
                 </div>`;

@@ -32,27 +32,53 @@ class LatePaymentController extends Controller
         return view('late-payments.index', compact('lateInstallments'));
     }
 
-    public function sendReminder(Installment $installment)
+    public function sendReminder(Request $request, Installment $installment)
     {
-        $message = "⏰ Payment reminder\n"
-            . "Customer: {$installment->customer->name}\n"
-            . "Remaining balance: $" . number_format($installment->remaining_balance, 2) . "\n"
-            . "Please contact the shop if you already paid.";
+        $installment->loadMissing('customer', 'product');
+
+        $daysLate = $installment->daysLate();
+        $penalty = $installment->calculatePenalty();
+        $remaining = number_format($installment->remaining_balance, 2);
+        $monthlyPayment = number_format($installment->monthly_payment, 2);
+        $customerName = $installment->customer?->name ?? 'អតិថិជន';
+        $productName = $installment->product?->name ?? 'ទំនិញ';
+
+        if ($request->filled('message')) {
+            $message = trim($request->input('message'));
+        } else {
+            $message = "⏰ *សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់យឺតយ៉ាវ*\n\n"
+                . "សូមជម្រាបជូនអតិថិជន៖ *{$customerName}*\n"
+                . "• ទំនិញ៖ *{$productName}*\n"
+                . "• ទឹកប្រាក់ប្រចាំខែ៖ *\${$monthlyPayment}*\n"
+                . "• ទឹកប្រាក់នៅសល់សរុប៖ *\${$remaining}*\n"
+                . ($daysLate > 0 ? "• ចំនួនថ្ងៃយឺតយ៉ាវ៖ *{$daysLate} ថ្ងៃ*\n" : "")
+                . ($penalty > 0 ? "• ប្រាក់ពិន័យយឺតយ៉ាវ៖ *\${$penalty}*\n" : "")
+                . "\nសូមអតិថិជនមេត្តាធ្វើការទូទាត់ប្រាក់ឱ្យបានឆាប់រហ័ស។ ប្រសិនបើលោកអ្នកបានទូទាត់រួចរាល់ សូមមេត្តាទាក់ទងមកកាន់ហាងដើម្បីផ្ទៀងផ្ទាត់។ សូមអរគុណ! 🙏";
+        }
 
         $telegramResult = $this->telegramService->sendToCustomer($installment->customer_id, $message);
 
-        $flashMessage = $telegramResult['ok']
-            ? 'Reminder sent via Telegram.'
-            : 'Reminder saved, but Telegram was not sent: ' . $telegramResult['reason'];
+        if ($telegramResult['ok']) {
+            $installment->update(['last_reminder_sent_at' => now()]);
+            $flashMessage = app()->getLocale() === 'km' 
+                ? 'បានផ្ញើសាររំលឹកជាភាសាខ្មែរតាម Telegram ដោយជោគជ័យ។' 
+                : 'Reminder sent in Khmer via Telegram.';
+            return redirect()->back()->with('success', $flashMessage);
+        }
 
-        return redirect()->back()->with($telegramResult['ok'] ? 'success' : 'error', $flashMessage);
+        $reason = $telegramResult['reason'] ?? 'Unknown error';
+        $flashMessage = app()->getLocale() === 'km'
+            ? 'មិនអាចផ្ញើសារតាម Telegram បានទេ៖ ' . $reason
+            : 'Reminder was not sent: ' . $reason;
+
+        return redirect()->back()->with('error', $flashMessage);
     }
 
     public function sendDueDateReminders()
     {
         $today = Carbon::today()->toDateString();
 
-        $installments = Installment::has('customer')->with('customer')
+        $installments = Installment::has('customer')->with('customer', 'product')
             ->where('status', 'active')
             ->where('remaining_balance', '>', 0)
             ->whereNotNull('next_due_date')
@@ -62,10 +88,19 @@ class LatePaymentController extends Controller
         $sent = 0;
 
         foreach ($installments as $installment) {
-            $message = "⏰ Payment due today\n"
-                . "Customer: {$installment->customer->name}\n"
-                . "Remaining balance: $" . number_format($installment->remaining_balance, 2) . "\n"
-                . "Please make payment now to avoid penalties.";
+            $monthlyPayment = number_format($installment->monthly_payment, 2);
+            $remaining = number_format($installment->remaining_balance, 2);
+            $dueDate = $installment->next_due_date ? Carbon::parse($installment->next_due_date)->format('d/m/Y') : date('d/m/Y');
+            $customerName = $installment->customer?->name ?? 'អតិថិជន';
+            $productName = $installment->product?->name ?? 'ទំនិញ';
+
+            $message = "⏰ *សេចក្តីជូនដំណឹងអំពីថ្ងៃកំណត់បង់ប្រាក់*\n\n"
+                . "សូមជម្រាបជូនអតិថិជន៖ *{$customerName}*\n"
+                . "• ទំនិញ៖ *{$productName}*\n"
+                . "• ថ្ងៃកំណត់បង់ប្រាក់៖ *{$dueDate}*\n"
+                . "• ទឹកប្រាក់ត្រូវបង់៖ *\${$monthlyPayment}*\n"
+                . "• ទឹកប្រាក់នៅសល់សរុប៖ *\${$remaining}*\n"
+                . "\nសូមលោកអ្នកមេត្តាធ្វើការទូទាត់ប្រាក់ឱ្យបានទាន់ពេលវេលា ដើម្បីជៀសវាងការផាកពិន័យ។ សូមអរគុណ! 🙏";
 
             $result = $this->telegramService->sendToCustomer($installment->customer_id, $message);
 
@@ -79,7 +114,13 @@ class LatePaymentController extends Controller
         }
 
         $status = $sent > 0 ? 'success' : 'error';
-        $message = $sent > 0 ? "{$sent} due reminders sent." : 'No due reminders sent.';
+        if (app()->getLocale() === 'km') {
+            $message = $sent > 0 
+                ? "បានផ្ញើសាររំលឹកជាភាសាខ្មែរចំនួន {$sent} នាក់រួចរាល់។" 
+                : 'ពុំមានអតិថិជនត្រូវផ្ញើសាររំលឹកនៅថ្ងៃនេះទេ។';
+        } else {
+            $message = $sent > 0 ? "{$sent} due reminders sent in Khmer." : 'No due reminders sent.';
+        }
 
         return redirect()->back()->with($status, $message);
     }

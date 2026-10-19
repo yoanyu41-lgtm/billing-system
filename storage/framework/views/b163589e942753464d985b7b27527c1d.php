@@ -49,7 +49,7 @@
             </div>
 
             <!-- Password -->
-            <div class="form-group" style="margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 28px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; width:100%;">
                     <label class="form-label" style="margin-bottom:0;"><?php echo e(__('app.password')); ?></label>
                     <?php if(Route::has('password.request')): ?>
@@ -65,13 +65,7 @@
                 </div>
             </div>
 
-            <!-- Remember Me -->
-            <div style="margin-bottom: 25px; display: flex; align-items: center;">
-                <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color: var(--text-muted); font-size:14px; font-weight: 600; user-select: none;">
-                    <input type="checkbox" name="remember" style="width:16px; height:16px; accent-color: var(--brand); cursor:pointer; margin:0;"> <?php echo e(__('app.stay_logged_in')); ?>
 
-                </label>
-            </div>
 
             <!-- Submit Button -->
             <button type="submit" class="btn-submit">

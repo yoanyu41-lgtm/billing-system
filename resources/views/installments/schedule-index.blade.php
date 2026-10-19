@@ -98,7 +98,22 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->monthly_payment) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</div>
+                            <div class="text-xs mt-0.5 font-medium">
+                                @if($isPaidOff || $installment->remaining_months <= 0)
+                                    <span class="inline-flex items-center text-emerald-600">
+                                        <i class="fas fa-check-circle text-[10px] mr-1"></i>
+                                        {{ app()->getLocale() === 'km' ? 'នៅសល់ ០ ខែ' : '0 months left' }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center text-amber-600">
+                                        <i class="far fa-clock text-[10px] mr-1"></i>
+                                        {{ app()->getLocale() === 'km' ? 'នៅសល់ ' . $installment->remaining_months . ' ខែ' : $installment->remaining_months . ' ' . __('app.months') . ' left' }}
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $isPaidOff ? 'text-emerald-600' : 'text-amber-700' }}">{{ format_currency($installment->remaining_balance) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 {{ $isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600' }} text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">

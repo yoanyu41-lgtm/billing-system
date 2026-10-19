@@ -170,7 +170,8 @@
                                 >
                                     <i class="fas fa-eye text-base"></i>
                                 </a>
-                                @if($payment->status === 'pending' && auth()->user()->role === 'admin')
+                                @if($payment->status === 'pending')
+                                @can('approve-payment', $payment)
                                 <form method="POST" action="{{ route('payments.approve', $payment) }}" class="inline">
                                     @csrf
                                     <button type="submit" 
@@ -189,8 +190,9 @@
                                         <i class="fas fa-times text-base"></i>
                                     </button>
                                 </form>
+                                @endcan
                                 @endif
-                                @if(auth()->user()->role === 'admin')
+                                @can('delete-payment')
                                 <form method="POST" action="{{ route('payments.destroy', $payment) }}" class="inline" onsubmit="return confirm('តើលោកអ្នកប្រាកដជាចង់លុបការទូទាត់នេះមែនទេ?')">
                                     @csrf
                                     @method('DELETE')
@@ -201,7 +203,7 @@
                                         <i class="fas fa-trash text-base"></i>
                                     </button>
                                 </form>
-                                @endif
+                                @endcan
                             </div>
                         </td>
                     </tr>

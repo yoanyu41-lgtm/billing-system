@@ -8,8 +8,10 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Models\StockMovement;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class InstallmentController extends Controller
@@ -90,11 +92,15 @@ class InstallmentController extends Controller
             'duration_months' => 'required|integer|min:1',
         ]);
 
+        $product = Product::findOrFail($request->product_id);
+
+        if ($product->stock <= 0) {
+            return back()->withInput()->with('error', __('app.out_of_stock') ?? 'This product is out of stock.');
+        }
+
         // Get tax settings
         $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
         $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
-        
-        $product = Product::find($request->product_id);
         
         // Calculate tax on total price if applicable
         $subtotalBeforeTax = $request->total_price;
@@ -128,21 +134,37 @@ class InstallmentController extends Controller
         $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
         $remainingBalance = round($monthlyPayment * $duration, 2);
 
-        $installment = Installment::create([
-            'customer_id' => $request->customer_id,
-            'product_id' => $request->product_id,
-            'total_price' => $totalPrice,
-            'subtotal_before_tax' => $subtotalBeforeTax,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'down_payment' => $downPayment,
-            'interest_rate' => $interestRate,
-            'duration_months' => $duration,
-            'monthly_payment' => $monthlyPayment,
-            'remaining_balance' => $remainingBalance,
-            'created_by' => auth()->id(),
-            'next_due_date' => now()->addMonth()->toDateString(),
-        ]);
+        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $duration, $monthlyPayment, $remainingBalance) {
+            $inst = Installment::create([
+                'customer_id' => $request->customer_id,
+                'product_id' => $request->product_id,
+                'total_price' => $totalPrice,
+                'subtotal_before_tax' => $subtotalBeforeTax,
+                'tax_rate' => $taxRate,
+                'tax_amount' => $taxAmount,
+                'down_payment' => $downPayment,
+                'interest_rate' => $interestRate,
+                'duration_months' => $duration,
+                'monthly_payment' => $monthlyPayment,
+                'remaining_balance' => $remainingBalance,
+                'created_by' => auth()->id(),
+                'next_due_date' => now()->addMonth()->toDateString(),
+            ]);
+
+            // Deduct product stock and log stock movement
+            $product->decrement('stock', 1);
+            $product->checkLowStockAlert();
+
+            StockMovement::create([
+                'product_id' => $product->id,
+                'type'       => 'out',
+                'quantity'   => 1,
+                'related_id' => $inst->id,
+                'note'       => 'Installment Contract #INS-' . str_pad($inst->id, 3, '0', STR_PAD_LEFT),
+            ]);
+
+            return $inst;
+        });
 
         // Send welcoming Telegram message with contract if customer is linked
         $customer = Customer::find($request->customer_id);
@@ -415,7 +437,71 @@ class InstallmentController extends Controller
             $updateData['next_due_date'] = $request->first_payment_date;
         }
 
-        $installment->update($updateData);
+        DB::transaction(function () use ($installment, $updateData, $request) {
+            $oldProductId = $installment->product_id;
+            $newProductId = $request->product_id ? (int)$request->product_id : $oldProductId;
+            $oldStatus = $installment->status;
+            $newStatus = $request->status;
+
+            // Handle product change while active
+            if ($oldStatus !== 'cancelled' && $newStatus !== 'cancelled') {
+                if ($oldProductId && $newProductId && $oldProductId !== $newProductId) {
+                    $oldProd = Product::find($oldProductId);
+                    if ($oldProd) {
+                        $oldProd->increment('stock', 1);
+                        StockMovement::create([
+                            'product_id' => $oldProd->id,
+                            'type'       => 'in',
+                            'quantity'   => 1,
+                            'related_id' => $installment->id,
+                            'note'       => 'Product changed from Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                        ]);
+                    }
+                    $newProd = Product::find($newProductId);
+                    if ($newProd) {
+                        $newProd->decrement('stock', 1);
+                        $newProd->checkLowStockAlert();
+                        StockMovement::create([
+                            'product_id' => $newProd->id,
+                            'type'       => 'out',
+                            'quantity'   => 1,
+                            'related_id' => $installment->id,
+                            'note'       => 'Product changed to Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                        ]);
+                    }
+                }
+            }
+
+            // Handle status change to/from cancelled
+            if ($oldStatus !== 'cancelled' && $newStatus === 'cancelled') {
+                $prod = Product::find($oldProductId);
+                if ($prod) {
+                    $prod->increment('stock', 1);
+                    StockMovement::create([
+                        'product_id' => $prod->id,
+                        'type'       => 'in',
+                        'quantity'   => 1,
+                        'related_id' => $installment->id,
+                        'note'       => 'Cancelled Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                    ]);
+                }
+            } elseif ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
+                $prod = Product::find($newProductId);
+                if ($prod) {
+                    $prod->decrement('stock', 1);
+                    $prod->checkLowStockAlert();
+                    StockMovement::create([
+                        'product_id' => $prod->id,
+                        'type'       => 'out',
+                        'quantity'   => 1,
+                        'related_id' => $installment->id,
+                        'note'       => 'Re-activated Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                    ]);
+                }
+            }
+
+            $installment->update($updateData);
+        });
 
         return redirect()->route('installments.index')->with('success', __('app.updated_successfully') ?? 'Installment updated successfully.');
     }
@@ -423,7 +509,22 @@ class InstallmentController extends Controller
     public function destroy(Installment $installment)
     {
         Gate::authorize('delete-installment');
-        $installment->delete();
+        DB::transaction(function () use ($installment) {
+            if ($installment->status !== 'cancelled' && $installment->product_id) {
+                $product = Product::find($installment->product_id);
+                if ($product) {
+                    $product->increment('stock', 1);
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'type'       => 'in',
+                        'quantity'   => 1,
+                        'related_id' => $installment->id,
+                        'note'       => 'Deleted Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                    ]);
+                }
+            }
+            $installment->delete();
+        });
         return redirect()->route('installments.index')->with('success', 'Installment deleted successfully.');
     }
 
@@ -840,7 +941,25 @@ class InstallmentController extends Controller
     {
         Gate::authorize('delete-installment');
         $installment = Installment::onlyTrashed()->findOrFail($id);
-        $installment->restore();
+        
+        DB::transaction(function () use ($installment) {
+            if ($installment->status !== 'cancelled' && $installment->product_id) {
+                $product = Product::find($installment->product_id);
+                if ($product) {
+                    $product->decrement('stock', 1);
+                    $product->checkLowStockAlert();
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'type'       => 'out',
+                        'quantity'   => 1,
+                        'related_id' => $installment->id,
+                        'note'       => 'Restored Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                    ]);
+                }
+            }
+            $installment->restore();
+        });
+
         return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment restored successfully.');
     }
 

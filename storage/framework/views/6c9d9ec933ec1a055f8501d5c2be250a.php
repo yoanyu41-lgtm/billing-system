@@ -173,7 +173,8 @@
                                 >
                                     <i class="fas fa-eye text-base"></i>
                                 </a>
-                                <?php if($payment->status === 'pending' && auth()->user()->role === 'admin'): ?>
+                                <?php if($payment->status === 'pending'): ?>
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('approve-payment', $payment)): ?>
                                 <form method="POST" action="<?php echo e(route('payments.approve', $payment)); ?>" class="inline">
                                     <?php echo csrf_field(); ?>
                                     <button type="submit" 
@@ -193,7 +194,8 @@
                                     </button>
                                 </form>
                                 <?php endif; ?>
-                                <?php if(auth()->user()->role === 'admin'): ?>
+                                <?php endif; ?>
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('delete-payment')): ?>
                                 <form method="POST" action="<?php echo e(route('payments.destroy', $payment)); ?>" class="inline" onsubmit="return confirm('តើលោកអ្នកប្រាកដជាចង់លុបការទូទាត់នេះមែនទេ?')">
                                     <?php echo csrf_field(); ?>
                                     <?php echo method_field('DELETE'); ?>

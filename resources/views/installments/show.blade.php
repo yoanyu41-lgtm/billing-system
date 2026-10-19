@@ -246,7 +246,12 @@
                             </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.duration') }}</td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</span>
+                                    <span class="text-xs block font-semibold {{ ($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600' }}">
+                                        {{ app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 months left' : $installment->remaining_months . ' ' . __('app.months') . ' left') }}
+                                    </span>
+                                </td>
                             </tr>
                             <tr class="bg-indigo-50/60 hover:bg-indigo-50">
                                 <td class="px-5 py-3.5 text-indigo-700 font-semibold">{{ __('app.monthly_payment') }}</td>

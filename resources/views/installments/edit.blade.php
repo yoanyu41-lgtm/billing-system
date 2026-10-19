@@ -165,7 +165,7 @@
                                                     data-taxrate="{{ $p->tax_rate }}"
                                                     data-taxtype="{{ $p->tax_type ?? 'exclusive' }}"
                                                     {{ old('product_id', $installment->product_id) == $p->id ? 'selected' : '' }}>
-                                                {{ $p->name }} (${{ number_format($p->price, 2) }})
+                                                {{ $p->name }} (${{ number_format($p->price, 2) }}) - {{ __('app.stock') ?? 'Stock' }}: {{ $p->stock }}
                                             </option>
                                         @endforeach
                                     </select>

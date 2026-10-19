@@ -7,6 +7,7 @@ use App\Models\Installment;
 use App\Models\Product;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (request()->header('x-forwarded-proto') === 'https' || request()->isSecure()) {
+            URL::forceScheme('https');
+        }
         try {
             if (Schema::hasTable('products') && Schema::hasColumn('products', 'brand')) {
                 Schema::table('products', function ($table) {
@@ -101,11 +105,17 @@ class AppServiceProvider extends ServiceProvider
                 (new \Database\Seeders\RoleAndPermissionSeeder())->run();
             }
 
-            // Sync Staff role permissions in DB
+            // Sync Staff & Manager role permissions in DB and ensure payments.approve is revoked
             if (Schema::hasTable('permissions')) {
                 $staffRoleObj = \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
-                if ($staffRoleObj && $staffRoleObj->permissions()->where('name', 'customers.edit')->exists()) {
-                    (new \Database\Seeders\RoleAndPermissionSeeder())->run();
+                if ($staffRoleObj && $staffRoleObj->permissions()->where('name', 'payments.approve')->exists()) {
+                    $staffRoleObj->revokePermissionTo('payments.approve');
+                    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+                }
+
+                $managerRoleObj = \Spatie\Permission\Models\Role::where('name', 'Manager')->first();
+                if ($managerRoleObj && $managerRoleObj->permissions()->where('name', 'payments.approve')->exists()) {
+                    $managerRoleObj->revokePermissionTo('payments.approve');
                     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
                 }
             }
@@ -202,9 +212,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->can('installments.delete');
         });
 
-        // Payments Gate
+        // Payments Gate - Only Admin can approve payments
         Gate::define('approve-payment', function ($user, ?\App\Models\Payment $payment = null) {
-            return $user->can('payments.approve');
+            return strtolower($user->role ?? '') === 'admin' 
+                || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('admin')));
         });
 
         Gate::define('delete-payment', function ($user) {

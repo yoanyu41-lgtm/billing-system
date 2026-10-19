@@ -16,6 +16,7 @@
             <form method="POST" action="{{ route('late-payments.due-reminders') }}">
                 @csrf
                 <button type="submit" 
+                        onclick="return confirm('តើលោកអ្នកពិតជាចង់ផ្ញើសាររំលឹកជាភាសាខ្មែរ ទៅកាន់អតិថិជនដល់ថ្ងៃកំណត់ទាំងអស់មែនទេ?')"
                         class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition duration-150 flex items-center gap-2 text-sm shadow-sm border-0 cursor-pointer"
                 >
                     <i class="fas fa-paper-plane text-base"></i>
@@ -70,18 +71,11 @@
                     @forelse($lateInstallments as $installment)
                     <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm">
-                                    {{ substr($installment->customer?->name ?? 'N/A', 0, 2) }}
-                                </div>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">
-                                        {{ $installment->customer?->name ?? 'N/A' }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        <i class="fas fa-phone-alt mr-1 text-slate-400"></i>{{ $installment->customer?->phone ?? 'N/A' }}
-                                    </div>
-                                </div>
+                            <div class="text-sm font-semibold text-gray-900">
+                                {{ $installment->customer?->name ?? 'N/A' }}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                <i class="fas fa-phone-alt mr-1 text-slate-400"></i>{{ $installment->customer?->phone ?? 'N/A' }}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
@@ -105,15 +99,13 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <form method="POST" action="{{ route('late-payments.remind', $installment) }}" class="inline">
-                                @csrf
-                                <button type="submit" 
-                                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition duration-150 border-0 cursor-pointer"
-                                >
-                                    <i class="fas fa-bell"></i>
-                                    <span>{{ __('app.send_reminder') }}</span>
-                                </button>
-                            </form>
+                            <button type="button" 
+                                    onclick="document.getElementById('remind-modal-{{ $installment->id }}').classList.remove('hidden')"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition duration-150 border border-blue-200 cursor-pointer shadow-xs"
+                            >
+                                <i class="fas fa-bell"></i>
+                                <span>{{ __('app.send_reminder') }}</span>
+                            </button>
                         </td>
                     </tr>
                     @empty
@@ -135,4 +127,119 @@
         </div>
     </div>
 </div>
+
+<!-- Remind Modals (Khmer Message Composer) -->
+@foreach($lateInstallments as $installment)
+@php
+    $daysLate = $installment->daysLate();
+    $penalty = $installment->calculatePenalty();
+    $custName = $installment->customer?->name ?? 'អតិថិជន';
+    $prodName = $installment->product?->name ?? 'ទំនិញ';
+    $monthlyAmt = number_format($installment->monthly_payment, 2);
+    $remAmt = number_format($installment->remaining_balance, 2);
+    $penAmt = number_format($penalty, 2);
+
+    $defaultKhmerMessage = "⏰ *សេចក្តីជូនដំណឹងអំពីការទូទាត់ប្រាក់យឺតយ៉ាវ*\n\n"
+        . "សូមជម្រាបជូនអតិថិជន៖ *{$custName}*\n"
+        . "• ទំនិញ៖ *{$prodName}*\n"
+        . "• ទឹកប្រាក់ប្រចាំខែ៖ *\${$monthlyAmt}*\n"
+        . "• ទឹកប្រាក់នៅសល់សរុប៖ *\${$remAmt}*\n"
+        . ($daysLate > 0 ? "• ចំនួនថ្ងៃយឺតយ៉ាវ៖ *{$daysLate} ថ្ងៃ*\n" : "")
+        . ($penalty > 0 ? "• ប្រាក់ពិន័យយឺតយ៉ាវ៖ *\${$penAmt}*\n" : "")
+        . "\nសូមអតិថិជនមេត្តាធ្វើការទូទាត់ប្រាក់ឱ្យបានឆាប់រហ័ស។ ប្រសិនបើលោកអ្នកបានទូទាត់រួចរាល់ សូមមេត្តាទាក់ទងមកកាន់ហាងដើម្បីផ្ទៀងផ្ទាត់។ សូមអរគុណ! 🙏";
+@endphp
+<div id="remind-modal-{{ $installment->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-gray-100">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-base">
+                    <i class="fab fa-telegram-plane"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900" lang="km">ផ្ញើសាររំលឹកតាម Telegram</h3>
+                    <p class="text-xs text-gray-500">Send Payment Reminder via Telegram</p>
+                </div>
+            </div>
+            <button type="button" 
+                    onclick="document.getElementById('remind-modal-{{ $installment->id }}').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg transition"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Modal Form -->
+        <form method="POST" action="{{ route('late-payments.remind', $installment) }}" class="p-6">
+            @csrf
+
+            <!-- Customer Details Summary -->
+            <div class="bg-blue-50/60 rounded-xl p-3.5 border border-blue-100 mb-4 text-xs space-y-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">អតិថិជន:</span>
+                    <span class="font-bold text-gray-900">{{ $custName }} ({{ $installment->customer?->phone ?? 'គ្មានលេខទូរស័ព្ទ' }})</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">ទំនិញ:</span>
+                    <span class="font-bold text-gray-800">{{ $prodName }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">យឺតយ៉ាវ:</span>
+                    <span class="font-bold text-amber-600">{{ $daysLate }} ថ្ងៃ</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">ទឹកប្រាក់នៅសល់:</span>
+                    <span class="font-bold text-rose-600">${{ $remAmt }}</span>
+                </div>
+                @if($penalty > 0)
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-medium">ប្រាក់ពិន័យ:</span>
+                    <span class="font-bold text-red-600">${{ $penAmt }}</span>
+                </div>
+                @endif
+                <div class="flex justify-between items-center pt-1 border-t border-blue-100">
+                    <span class="text-gray-600 font-medium">ស្ថានភាព Telegram:</span>
+                    @if($installment->customer?->telegram_id)
+                        <span class="text-emerald-700 font-bold flex items-center gap-1">
+                            <i class="fas fa-check-circle text-[11px]"></i> ភ្ជាប់រួចរាល់ (ID: {{ $installment->customer->telegram_id }})
+                        </span>
+                    @else
+                        <span class="text-amber-700 font-semibold flex items-center gap-1">
+                            <i class="fas fa-exclamation-triangle text-[11px]"></i> មិនទាន់ភ្ជាប់ Telegram (អាចមិនបានទទួល)
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Message Textarea -->
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5" lang="km">
+                    ខ្លឹមសារសារជាភាសាខ្មែរ (អាចកែប្រែបាន)
+                </label>
+                <textarea name="message" rows="8" 
+                          class="w-full px-3.5 py-2.5 text-xs font-normal border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent leading-relaxed text-gray-800 bg-slate-50/50 resize-y"
+                          placeholder="វាយខ្លឹមសារសារជាភាសាខ្មែរនៅទីនេះ..."
+                >{{ $defaultKhmerMessage }}</textarea>
+                <p class="text-[11px] text-gray-400 mt-1">លោកអ្នកអាចកែប្រែខ្លឹមសារសារជាភាសាខ្មែរខាងលើនេះបានតាមការចង់បាន មុនពេលចុចផ្ញើ។</p>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button type="button" 
+                        onclick="document.getElementById('remind-modal-{{ $installment->id }}').classList.add('hidden')"
+                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition border-0 cursor-pointer"
+                >
+                    {{ __('app.cancel') }}
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-2 shadow-sm border-0 cursor-pointer"
+                >
+                    <i class="fab fa-telegram-plane"></i>
+                    <span>ផ្ញើសារឥឡូវនេះ (Send Now)</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endforeach
 @endsection
