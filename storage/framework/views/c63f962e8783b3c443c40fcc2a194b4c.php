@@ -164,7 +164,8 @@
                                                     data-taxrate="<?php echo e($p->tax_rate); ?>"
                                                     data-taxtype="<?php echo e($p->tax_type ?? 'exclusive'); ?>"
                                                     <?php echo e(old('product_id', $installment->product_id) == $p->id ? 'selected' : ''); ?>>
-                                                <?php echo e($p->name); ?> ($<?php echo e(number_format($p->price, 2)); ?>)
+                                                <?php echo e($p->name); ?> ($<?php echo e(number_format($p->price, 2)); ?>) - <?php echo e(__('app.stock') ?? 'Stock'); ?>: <?php echo e($p->stock); ?>
+
                                             </option>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>

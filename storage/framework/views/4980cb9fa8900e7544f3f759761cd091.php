@@ -148,10 +148,19 @@
 
     
     <?php if (! ($isDirect)): ?>
+    <?php
+        $activePlansCount = $installments->where('status', 'active')->count();
+        $cancelledPlansCount = $installments->where('status', 'cancelled')->count();
+    ?>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide"><?php echo e(__('app.total_installments')); ?></p>
-            <p class="text-2xl font-bold text-gray-800 mt-1"><?php echo e($installments->count()); ?></p>
+            <div class="flex items-baseline gap-2 mt-1">
+                <span class="text-2xl font-bold text-gray-800"><?php echo e($installments->count()); ?></span>
+                <?php if($cancelledPlansCount > 0 && $activePlansCount === 0): ?>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700"><?php echo e(__('app.cancelled')); ?></span>
+                <?php endif; ?>
+            </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide"><?php echo e(__('app.total_paid')); ?></p>
@@ -331,7 +340,7 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-semibold text-gray-800"><?php echo e($inst->product->name ?? 'N/A'); ?></span>
-                                <?php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','cancelled'=>'bg-gray-100 text-gray-500']; ?>
+                                <?php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','cancelled'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold']; ?>
                                 <span class="px-2 py-0.5 rounded-full text-xs font-semibold <?php echo e($sc[$inst->status] ?? 'bg-gray-100 text-gray-500'); ?>">
                                     <?php echo e(__('app.' . $inst->status)); ?>
 
@@ -340,7 +349,7 @@
                             <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
                                 <span>💵 <?php echo e(format_currency($inst->monthly_payment)); ?>/<?php echo e(__('app.months')); ?></span>
                                 <span>📅 <?php echo e($inst->duration_months); ?> <?php echo e(__('app.months')); ?></span>
-                                <?php if($inst->next_due_date): ?>
+                                <?php if($inst->status !== 'cancelled' && $inst->next_due_date): ?>
                                     <span class="<?php echo e(\Carbon\Carbon::parse($inst->next_due_date)->isPast() ? 'text-red-500 font-semibold' : ''); ?>">
                                         🔔 <?php echo e(__('app.next_due_date')); ?>: <?php echo e(\Carbon\Carbon::parse($inst->next_due_date)->format('d M Y')); ?>
 
@@ -349,20 +358,37 @@
                             </div>
                         </div>
                         <div class="text-right flex-shrink-0">
-                            <div class="text-sm font-bold text-gray-800"><?php echo e(format_currency($inst->remaining_balance)); ?></div>
-                            <div class="text-xs text-gray-400"><?php echo e(__('app.remaining_balance')); ?></div>
+                            <div class="text-sm font-bold <?php echo e($inst->status === 'cancelled' ? 'text-slate-400' : 'text-gray-800'); ?>"><?php echo e(format_currency($inst->remaining_balance)); ?></div>
+                            <div class="text-xs <?php echo e($inst->status === 'cancelled' ? 'text-rose-500 font-semibold' : 'text-gray-400'); ?>">
+                                <?php echo e($inst->status === 'cancelled' ? __('app.cancelled') : __('app.remaining_balance')); ?>
+
+                            </div>
                         </div>
                     </div>
                     <?php if($inst->total_price > 0): ?>
-                    <?php $pct = round((($inst->total_price - $inst->remaining_balance) / $inst->total_price) * 100); ?>
+                    <?php 
+                        $isCancelled = ($inst->status === 'cancelled');
+                        $pct = $isCancelled ? 0 : round(min((($inst->total_price - $inst->remaining_balance) / $inst->total_price) * 100, 100)); 
+                    ?>
                     <div class="mt-3">
                         <div class="flex justify-between text-xs text-gray-400 mb-1">
-                            <span><?php echo e($pct); ?>% <?php echo e(__('app.paid')); ?></span>
+                            <?php if($isCancelled): ?>
+                                <span class="text-rose-600 font-bold flex items-center gap-1">
+                                    <i class="fas fa-ban text-[10px]"></i> <?php echo e(__('app.cancelled')); ?>
+
+                                </span>
+                            <?php else: ?>
+                                <span><?php echo e($pct); ?>% <?php echo e(__('app.paid')); ?></span>
+                            <?php endif; ?>
                             <span><?php echo e(__('app.total')); ?>: <?php echo e(format_currency($inst->total_price)); ?></span>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2">
-                            <div class="h-2 rounded-full <?php echo e($pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400')); ?>"
-                                 style="width: <?php echo e($pct); ?>%"></div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <?php if($isCancelled): ?>
+                                <div class="h-2 rounded-full bg-rose-400" style="width: 100%"></div>
+                            <?php else: ?>
+                                <div class="h-2 rounded-full <?php echo e($pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400')); ?>"
+                                     style="width: <?php echo e($pct); ?>%"></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endif; ?>

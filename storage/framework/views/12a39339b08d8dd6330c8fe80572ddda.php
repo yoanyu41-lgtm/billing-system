@@ -85,12 +85,26 @@
                 <tbody class="divide-y divide-gray-200">
                     <?php $__empty_1 = true; $__currentLoopData = $installments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $installment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <?php
-                        $isPaidOff = ($installment->remaining_balance <= 0) || in_array($installment->status, ['completed', 'paid', 'paid_off']);
+                        $isCancelled = ($installment->status === 'cancelled');
+                        $isPaidOff = !$isCancelled && (($installment->remaining_balance <= 0) || in_array($installment->status, ['completed', 'paid', 'paid_off']));
                     ?>
                     <tr class="hover:bg-gray-50 transition duration-150">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900"><?php echo e($installment->customer?->name ?? 'N/A'); ?></div>
-                            <div class="text-xs text-gray-400">#INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?></div>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="text-xs text-gray-400">#INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?></span>
+                                <?php if($isCancelled): ?>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                                        <?php echo e(__('app.cancelled')); ?>
+
+                                    </span>
+                                <?php elseif($isPaidOff): ?>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">
+                                        <?php echo e(__('app.completed')); ?>
+
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
                             <div class="max-w-[150px] lg:max-w-[170px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
@@ -102,7 +116,13 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></div>
                             <div class="text-xs mt-0.5 font-medium">
-                                <?php if($isPaidOff || $installment->remaining_months <= 0): ?>
+                                <?php if($isCancelled): ?>
+                                    <span class="inline-flex items-center text-rose-600 font-semibold">
+                                        <i class="fas fa-times-circle text-[10px] mr-1"></i>
+                                        <?php echo e(__('app.cancelled')); ?>
+
+                                    </span>
+                                <?php elseif($isPaidOff || $installment->remaining_months <= 0): ?>
                                     <span class="inline-flex items-center text-emerald-600">
                                         <i class="fas fa-check-circle text-[10px] mr-1"></i>
                                         <?php echo e(app()->getLocale() === 'km' ? 'នៅសល់ ០ ខែ' : '0 months left'); ?>
@@ -117,13 +137,32 @@
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold <?php echo e($isPaidOff ? 'text-emerald-600' : 'text-amber-700'); ?>"><?php echo e(format_currency($installment->remaining_balance)); ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="inline-flex items-center gap-2 <?php echo e($isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'); ?> text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                <?php echo e(__('app.payment_schedule')); ?>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold <?php echo e($isCancelled ? 'text-slate-400' : ($isPaidOff ? 'text-emerald-600' : 'text-amber-700')); ?>">
+                            <?php echo e(format_currency($installment->remaining_balance)); ?>
 
-                            </a>
+                            <?php if($isCancelled): ?>
+                                <span class="text-[11px] text-rose-500 font-medium block">(<?php echo e(__('app.cancelled')); ?>)</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <?php if($isCancelled): ?>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
+                                        <i class="fas fa-ban"></i>
+                                        <?php echo e(__('app.cancelled')); ?>
+
+                                    </span>
+                                    <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition" title="<?php echo e(__('app.payment_schedule')); ?>">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="inline-flex items-center gap-2 <?php echo e($isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'); ?> text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        <?php echo e(__('app.payment_schedule')); ?>
+
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>

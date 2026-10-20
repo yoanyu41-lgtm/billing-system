@@ -255,7 +255,13 @@ unset($__errorArgs, $__bag); ?>
                             </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.duration')); ?></td>
-                                <td class="px-5 py-3.5 text-right font-bold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></td>
+                                <td class="px-5 py-3.5 text-right">
+                                    <span class="font-bold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></span>
+                                    <span class="text-xs block font-semibold <?php echo e(($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600'); ?>">
+                                        <?php echo e(app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 months left' : $installment->remaining_months . ' ' . __('app.months') . ' left')); ?>
+
+                                    </span>
+                                </td>
                             </tr>
                             <tr class="bg-indigo-50/60 hover:bg-indigo-50">
                                 <td class="px-5 py-3.5 text-indigo-700 font-semibold"><?php echo e(__('app.monthly_payment')); ?></td>
@@ -354,7 +360,12 @@ unset($__errorArgs, $__bag); ?>
                         <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['outstanding_principal'], $exchangeRate)); ?></td>
                         <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm"><?php echo e(format_currency($row['outstanding_debt'], $exchangeRate)); ?></td>
                         <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <?php if($row['status'] === 'paid'): ?>
+                            <?php if($row['status'] === 'cancelled'): ?>
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-times-circle mr-1 self-center"></i> <?php echo e(__('app.cancelled')); ?>
+
+                                </span>
+                            <?php elseif($row['status'] === 'paid'): ?>
                                 <?php if(!empty($row['is_settlement'])): ?>
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                                         <i class="fas fa-check-double mr-1 self-center"></i> <?php echo e(app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff'); ?>
@@ -379,7 +390,7 @@ unset($__errorArgs, $__bag); ?>
                             <?php endif; ?>
                         </td>
                         <td class="px-5 py-4 text-center whitespace-nowrap">
-                            <?php if($row['status'] !== 'paid'): ?>
+                            <?php if($row['status'] !== 'paid' && $row['status'] !== 'cancelled'): ?>
                             <div class="flex items-center justify-center gap-2">
                                 
                                 <?php if(empty($installment->customer?->telegram_id)): ?>

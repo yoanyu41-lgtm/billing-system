@@ -57,7 +57,14 @@
                 <span>/</span>
                 <span class="text-gray-600">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</span>
             </nav>
-            <h1 class="text-3xl font-bold text-gray-800">{{ __('app.payment_schedule') }}</h1>
+            <div class="flex items-center gap-2.5">
+                <h1 class="text-3xl font-bold text-gray-800">{{ __('app.payment_schedule') }}</h1>
+                @if($installment->status === 'cancelled')
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                        <i class="fas fa-ban mr-1"></i> {{ __('app.cancelled') }}
+                    </span>
+                @endif
+            </div>
             <p class="text-sm text-gray-500 mt-1">{{ __('app.payment_schedule_sub') }}</p>
         </div>
         <div class="flex items-center gap-3 no-print">
@@ -87,9 +94,15 @@
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.duration') }}</div>
                 <div class="text-sm font-semibold text-gray-800">
                     {{ $installment->duration_months }} {{ __('app.duration_unit') }}
-                    <span class="text-xs font-semibold {{ ($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600' }} ml-1">
-                        ({{ app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 mo left' : $installment->remaining_months . ' mo left') }})
-                    </span>
+                    @if($installment->status === 'cancelled')
+                        <span class="text-xs font-semibold text-rose-600 ml-1">
+                            ({{ __('app.cancelled') }})
+                        </span>
+                    @else
+                        <span class="text-xs font-semibold {{ ($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600' }} ml-1">
+                            ({{ app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 mo left' : $installment->remaining_months . ' mo left') }})
+                        </span>
+                    @endif
                 </div>
             </div>
             <div>
@@ -111,11 +124,22 @@
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div class="text-xs text-gray-400 font-medium uppercase tracking-wider">{{ __('app.remaining_balance') }}</div>
-            <div class="text-xl font-extrabold {{ $summary['remaining'] <= 0 ? 'text-emerald-600' : 'text-amber-700' }} mt-1">{{ format_currency($summary['remaining']) }}</div>
+            <div class="text-xl font-extrabold {{ $installment->status === 'cancelled' ? 'text-slate-400' : ($summary['remaining'] <= 0 ? 'text-emerald-600' : 'text-amber-700') }} mt-1">
+                {{ format_currency($summary['remaining']) }}
+                @if($installment->status === 'cancelled')
+                    <span class="text-xs text-rose-500 font-normal">({{ __('app.cancelled') }})</span>
+                @endif
+            </div>
         </div>
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider">{{ __('app.overdue') }}</div>
-            <div class="text-xl font-extrabold {{ $summary['overdue_count'] > 0 ? 'text-red-600' : 'text-gray-900' }} mt-1">{{ $summary['overdue_count'] }}</div>
+            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider">{{ $installment->status === 'cancelled' ? __('app.status') : __('app.overdue') }}</div>
+            @if($installment->status === 'cancelled')
+                <div class="text-base font-bold text-rose-600 mt-1 flex items-center gap-1.5">
+                    <i class="fas fa-ban"></i> {{ __('app.cancelled') }}
+                </div>
+            @else
+                <div class="text-xl font-extrabold {{ $summary['overdue_count'] > 0 ? 'text-red-600' : 'text-gray-900' }} mt-1">{{ $summary['overdue_count'] }}</div>
+            @endif
         </div>
     </div>
 
@@ -211,7 +235,11 @@
                         <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
                         <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt']) }}</td>
                         <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap">
-                            @if($row['status'] === 'paid')
+                            @if($row['status'] === 'cancelled')
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-times-circle mr-1 self-center"></i> {{ __('app.cancelled') }}
+                                </span>
+                            @elseif($row['status'] === 'paid')
                                 @if(!empty($row['is_settlement']))
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                                         <i class="fas fa-check-double mr-1 self-center"></i> {{ app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff' }}
@@ -232,7 +260,7 @@
                             @endif
                         </td>
                         <td class="border border-gray-200 px-4 py-3.5 text-center no-print whitespace-nowrap">
-                            @if($row['status'] !== 'paid')
+                            @if($row['status'] !== 'paid' && $row['status'] !== 'cancelled')
                             <div class="flex items-center justify-center gap-1.5">
                                 {{-- Send QR via Telegram --}}
                                 @if(empty($installment->customer?->telegram_id))

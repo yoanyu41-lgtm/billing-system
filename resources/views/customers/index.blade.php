@@ -132,10 +132,23 @@
                             @endif
                         </td>
                         <td class="px-5 py-2.5">
-                            @php $count = $customer->installments->count(); @endphp
-                            @if($count > 0)
+                            @php 
+                                $activePlans = $customer->installments->where('status', 'active');
+                                $activeCount = $activePlans->count();
+                                $completedCount = $customer->installments->whereIn('status', ['completed', 'paid'])->count();
+                                $cancelledCount = $customer->installments->where('status', 'cancelled')->count();
+                            @endphp
+                            @if($activeCount > 0)
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                    {{ $count }} {{ __('app.plans') }}
+                                    {{ $activeCount }} {{ __('app.plans') }}
+                                </span>
+                            @elseif($completedCount > 0)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                    {{ __('app.completed') }}
+                                </span>
+                            @elseif($cancelledCount > 0)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                                    {{ __('app.cancelled') }}
                                 </span>
                             @else
                                 <span class="text-gray-300 text-xs">{{ __('app.none') }}</span>

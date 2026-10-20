@@ -136,10 +136,25 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-5 py-2.5">
-                            <?php $count = $customer->installments->count(); ?>
-                            <?php if($count > 0): ?>
+                            <?php 
+                                $activePlans = $customer->installments->where('status', 'active');
+                                $activeCount = $activePlans->count();
+                                $completedCount = $customer->installments->whereIn('status', ['completed', 'paid'])->count();
+                                $cancelledCount = $customer->installments->where('status', 'cancelled')->count();
+                            ?>
+                            <?php if($activeCount > 0): ?>
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                                    <?php echo e($count); ?> <?php echo e(__('app.plans')); ?>
+                                    <?php echo e($activeCount); ?> <?php echo e(__('app.plans')); ?>
+
+                                </span>
+                            <?php elseif($completedCount > 0): ?>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                    <?php echo e(__('app.completed')); ?>
+
+                                </span>
+                            <?php elseif($cancelledCount > 0): ?>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700">
+                                    <?php echo e(__('app.cancelled')); ?>
 
                                 </span>
                             <?php else: ?>

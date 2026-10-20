@@ -211,8 +211,9 @@ class Installment extends Model
             return $schedule;
         }
 
-        // Case 2: Normal installment (active or regular completion)
-        $isFullyPaid = ($this->remaining_balance <= 0) || in_array($this->status, ['completed', 'paid', 'paid_off']);
+        // Case 2: Normal installment (active, completed, or cancelled)
+        $isCancelled = ($this->status === 'cancelled');
+        $isFullyPaid = !$isCancelled && (($this->remaining_balance <= 0) || in_array($this->status, ['completed', 'paid', 'paid_off']));
         $lastApprovedDate = $approvedPayments->last()?->payment_date ? \Carbon\Carbon::parse($approvedPayments->last()->payment_date) : null;
 
         for ($i = 1; $i <= $duration; $i++) {
@@ -251,6 +252,14 @@ class Installment extends Model
                 $status = 'paid';
                 $allocated = $amountDue;
                 $displayDate = $actualPaymentDate ?: ($lastApprovedDate ?: $dueDate);
+            } elseif ($isCancelled) {
+                if ($allocated >= ($amountDue - 0.01)) {
+                    $status = 'paid';
+                    $displayDate = $actualPaymentDate ?: $dueDate;
+                } else {
+                    $status = 'cancelled';
+                    $displayDate = $dueDate;
+                }
             } else {
                 if ($allocated >= ($amountDue - 0.01)) {
                     $status = 'paid';

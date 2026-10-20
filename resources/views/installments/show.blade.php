@@ -349,7 +349,11 @@
                         <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal'], $exchangeRate) }}</td>
                         <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
                         <td class="px-4 py-4 text-center whitespace-nowrap">
-                            @if($row['status'] === 'paid')
+                            @if($row['status'] === 'cancelled')
+                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-times-circle mr-1 self-center"></i> {{ __('app.cancelled') }}
+                                </span>
+                            @elseif($row['status'] === 'paid')
                                 @if(!empty($row['is_settlement']))
                                     <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                                         <i class="fas fa-check-double mr-1 self-center"></i> {{ app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff' }}
@@ -370,7 +374,7 @@
                             @endif
                         </td>
                         <td class="px-5 py-4 text-center whitespace-nowrap">
-                            @if($row['status'] !== 'paid')
+                            @if($row['status'] !== 'paid' && $row['status'] !== 'cancelled')
                             <div class="flex items-center justify-center gap-2">
                                 {{-- Send QR via Telegram - Opens QR Picker Modal --}}
                                 @if(empty($installment->customer?->telegram_id))

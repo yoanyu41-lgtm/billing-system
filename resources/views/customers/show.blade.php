@@ -146,10 +146,19 @@
 
     {{-- ── Stats Row ── --}}
     @unless($isDirect)
+    @php
+        $activePlansCount = $installments->where('status', 'active')->count();
+        $cancelledPlansCount = $installments->where('status', 'cancelled')->count();
+    @endphp
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.total_installments') }}</p>
-            <p class="text-2xl font-bold text-gray-800 mt-1">{{ $installments->count() }}</p>
+            <div class="flex items-baseline gap-2 mt-1">
+                <span class="text-2xl font-bold text-gray-800">{{ $installments->count() }}</span>
+                @if($cancelledPlansCount > 0 && $activePlansCount === 0)
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">{{ __('app.cancelled') }}</span>
+                @endif
+            </div>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ __('app.total_paid') }}</p>
@@ -324,7 +333,7 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-semibold text-gray-800">{{ $inst->product->name ?? 'N/A' }}</span>
-                                @php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','cancelled'=>'bg-gray-100 text-gray-500']; @endphp
+                                @php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','cancelled'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold']; @endphp
                                 <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $sc[$inst->status] ?? 'bg-gray-100 text-gray-500' }}">
                                     {{ __('app.' . $inst->status) }}
                                 </span>
@@ -332,7 +341,7 @@
                             <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
                                 <span>💵 {{ format_currency($inst->monthly_payment) }}/{{ __('app.months') }}</span>
                                 <span>📅 {{ $inst->duration_months }} {{ __('app.months') }}</span>
-                                @if($inst->next_due_date)
+                                @if($inst->status !== 'cancelled' && $inst->next_due_date)
                                     <span class="{{ \Carbon\Carbon::parse($inst->next_due_date)->isPast() ? 'text-red-500 font-semibold' : '' }}">
                                         🔔 {{ __('app.next_due_date') }}: {{ \Carbon\Carbon::parse($inst->next_due_date)->format('d M Y') }}
                                     </span>
@@ -340,20 +349,35 @@
                             </div>
                         </div>
                         <div class="text-right flex-shrink-0">
-                            <div class="text-sm font-bold text-gray-800">{{ format_currency($inst->remaining_balance) }}</div>
-                            <div class="text-xs text-gray-400">{{ __('app.remaining_balance') }}</div>
+                            <div class="text-sm font-bold {{ $inst->status === 'cancelled' ? 'text-slate-400' : 'text-gray-800' }}">{{ format_currency($inst->remaining_balance) }}</div>
+                            <div class="text-xs {{ $inst->status === 'cancelled' ? 'text-rose-500 font-semibold' : 'text-gray-400' }}">
+                                {{ $inst->status === 'cancelled' ? __('app.cancelled') : __('app.remaining_balance') }}
+                            </div>
                         </div>
                     </div>
                     @if($inst->total_price > 0)
-                    @php $pct = round((($inst->total_price - $inst->remaining_balance) / $inst->total_price) * 100); @endphp
+                    @php 
+                        $isCancelled = ($inst->status === 'cancelled');
+                        $pct = $isCancelled ? 0 : round(min((($inst->total_price - $inst->remaining_balance) / $inst->total_price) * 100, 100)); 
+                    @endphp
                     <div class="mt-3">
                         <div class="flex justify-between text-xs text-gray-400 mb-1">
-                            <span>{{ $pct }}% {{ __('app.paid') }}</span>
+                            @if($isCancelled)
+                                <span class="text-rose-600 font-bold flex items-center gap-1">
+                                    <i class="fas fa-ban text-[10px]"></i> {{ __('app.cancelled') }}
+                                </span>
+                            @else
+                                <span>{{ $pct }}% {{ __('app.paid') }}</span>
+                            @endif
                             <span>{{ __('app.total') }}: {{ format_currency($inst->total_price) }}</span>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2">
-                            <div class="h-2 rounded-full {{ $pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400') }}"
-                                 style="width: {{ $pct }}%"></div>
+                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            @if($isCancelled)
+                                <div class="h-2 rounded-full bg-rose-400" style="width: 100%"></div>
+                            @else
+                                <div class="h-2 rounded-full {{ $pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400') }}"
+                                     style="width: {{ $pct }}%"></div>
+                            @endif
                         </div>
                     </div>
                     @endif
