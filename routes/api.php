@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
 
+    // Authentication
+    Route::post('login', [AuthApiController::class, 'login'])->name('login');
+
     // Telegram webhook (no auth)
     Route::post('telegram/webhook', [\App\Http\Controllers\Api\TelegramController::class, 'webhook'])
         ->name('telegram.webhook');
@@ -28,6 +31,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         ->name('payments.wing-callback');
 
     Route::middleware('auth:sanctum')->group(function () {
+
+        Route::post('logout', [AuthApiController::class, 'logout'])->name('logout');
 
         // Authenticated user profile
         Route::get('user',        [UserApiController::class, 'me'])->name('user.me');

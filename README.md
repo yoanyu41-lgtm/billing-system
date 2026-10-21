@@ -25,10 +25,10 @@ cd billing-system
 ---
 
 ### ជំហានទី ២៖ រៀបចំ File កំណត់រចនាសម្ព័ន្ធ (.env)
-ចម្លង file `.env.example` ទៅជា `.env`៖
+ចម្លង file  `.env`៖
 * **លើ Windows (Command Prompt):**
   ```cmd
-  copy .env.example .env
+  copy .env
   ```
 * **លើ Git Bash / Linux / macOS:**
   ```bash

@@ -71,7 +71,18 @@ class SetLocale
         ]);
         
         app()->setLocale($locale);
-        
+
+        if (auth()->check()) {
+            try {
+                $authUser = auth()->user();
+                if ($authUser && $authUser->roles->isEmpty()) {
+                    $roleName = $authUser->role ? ucfirst(strtolower($authUser->role)) : 'Staff';
+                    $roleToAssign = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+                    $authUser->assignRole($roleToAssign);
+                }
+            } catch (\Throwable $e) {}
+        }
+
         return $next($request);
     }
 }

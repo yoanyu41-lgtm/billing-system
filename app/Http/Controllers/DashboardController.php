@@ -15,8 +15,44 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // If user is not Admin and does not have dashboard.view permission, redirect to first accessible page
-        if (!($user->hasRole('Admin') || strtolower($user->role) === 'admin') && !$user->can('dashboard.view')) {
+        // Ensure user has their Spatie role assigned if missing
+        if ($user->roles->isEmpty()) {
+            $roleName = $user->role ? ucfirst(strtolower($user->role)) : 'Staff';
+            $roleToAssign = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            if ($roleToAssign->permissions()->count() === 0 && strtolower($roleName) === 'staff') {
+                $defaultStaffPermissions = [
+                    'dashboard.view',
+                    'customers.view', 'customers.create', 'customers.credit_check', 'customers.guarantor',
+                    'installments.view', 'installments.create', 'installments.schedule', 'installments.contract', 'installments.payoff', 'installments.clearance',
+                    'sales.view', 'sales.create', 'sales.download',
+                    'invoices.view', 'invoices.create', 'invoices.print', 'invoices.download',
+                    'payments.view', 'payments.create', 'payments.late',
+                    'products.view',
+                    'stock.view',
+                    'categories.view', 'suppliers.view',
+                ];
+                foreach ($defaultStaffPermissions as $perm) {
+                    \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+                }
+                $roleToAssign->syncPermissions($defaultStaffPermissions);
+            }
+            $user->assignRole($roleToAssign);
+            $user->load('roles', 'permissions');
+        }
+
+        // If Staff role exists but lacks dashboard.view permission, grant it
+        $staffRole = \Spatie\Permission\Models\Role::where('name', 'Staff')->first();
+        if ($staffRole && !$staffRole->hasPermissionTo('dashboard.view')) {
+            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'dashboard.view', 'guard_name' => 'web']);
+            $staffRole->givePermissionTo('dashboard.view');
+            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        }
+
+        $isAdmin = $user->hasRole('Admin') || strtolower($user->role) === 'admin';
+        $isStaff = $user->hasRole('Staff') || strtolower($user->role) === 'staff';
+
+        // If user is not Admin and does not have dashboard.view permission and is not Staff, redirect to first accessible page
+        if (!$isAdmin && !$isStaff && !$user->can('dashboard.view')) {
             if ($user->can('sales.create')) return redirect()->route('admin.sales.create');
             if ($user->can('sales.view')) return redirect()->route('admin.sales.index');
             if ($user->can('payments.create')) return redirect()->route('payments.create');

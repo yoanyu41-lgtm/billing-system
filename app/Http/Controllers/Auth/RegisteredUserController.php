@@ -50,6 +50,26 @@ class RegisteredUserController extends Controller
             'role' => 'staff',
         ]);
 
+        $staffRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Staff', 'guard_name' => 'web']);
+        if ($staffRole->permissions()->count() === 0) {
+            $defaultStaffPermissions = [
+                'dashboard.view',
+                'customers.view', 'customers.create', 'customers.credit_check', 'customers.guarantor',
+                'installments.view', 'installments.create', 'installments.schedule', 'installments.contract', 'installments.payoff', 'installments.clearance',
+                'sales.view', 'sales.create', 'sales.download',
+                'invoices.view', 'invoices.create', 'invoices.print', 'invoices.download',
+                'payments.view', 'payments.create', 'payments.late',
+                'products.view',
+                'stock.view',
+                'categories.view', 'suppliers.view',
+            ];
+            foreach ($defaultStaffPermissions as $perm) {
+                \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+            }
+            $staffRole->syncPermissions($defaultStaffPermissions);
+        }
+        $user->assignRole($staffRole);
+
         event(new Registered($user));
 
         Auth::login($user);

@@ -1,0 +1,189 @@
+<?php $__env->startSection('content'); ?>
+<div class="container mx-auto px-4 py-8 max-w-3xl">
+    
+    <!-- Top Action & Header Bar -->
+    <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center text-xl font-bold shadow-sm flex-shrink-0">
+                <i class="fas fa-truck-field"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+                    <?php echo e(app()->getLocale() === 'km' ? 'បន្ថែមអ្នកផ្គត់ផ្គង់ថ្មី' : 'Add New Supplier'); ?>
+
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    <?php echo e(app()->getLocale() === 'km' ? 'បង្កើតព័ត៌មានក្រុមហ៊ុន ឬ តំណាងចែកចាយទំនិញចូលស្តុក' : 'Create a profile for a new computer manufacturer or wholesale supplier.'); ?>
+
+                </p>
+            </div>
+        </div>
+
+        <a href="<?php echo e(route('admin.suppliers.index')); ?>" class="inline-flex items-center text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-xl transition duration-150 shadow-sm">
+            <i class="fas fa-arrow-left mr-2 text-slate-400"></i>
+            <?php echo e(__('app.back')); ?>
+
+        </a>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500"></div>
+
+        <form method="POST" action="<?php echo e(route('admin.suppliers.store')); ?>" class="p-6 sm:p-8">
+            <?php echo csrf_field(); ?>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                
+                <!-- Supplier Name -->
+                <div class="md:col-span-2 space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <?php echo e(app()->getLocale() === 'km' ? 'ឈ្មោះអ្នកផ្គត់ផ្គង់ / ក្រុមហ៊ុន' : 'Supplier / Company Name'); ?> <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-building text-sm"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            name="name" 
+                            value="<?php echo e(old('name')); ?>" 
+                            required 
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php echo e($errors->has('name') ? 'border-red-500 bg-red-50/30' : 'border-slate-300 bg-slate-50/50 hover:bg-white'); ?>" 
+                            placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ឧទាហរណ៍៖ ក្រុមហ៊ុន អាណាចក្រ កុំព្យូទ័រ' : 'Supplier Company or Agent Name'); ?>"
+                        >
+                    </div>
+                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <p class="text-red-500 text-xs font-semibold mt-1 flex items-center gap-1">
+                            <i class="fas fa-circle-exclamation"></i> <?php echo e($message); ?>
+
+                        </p>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <?php echo e(app()->getLocale() === 'km' ? 'លេខទូរស័ព្ទទំនាក់ទំនង' : 'Phone Number'); ?>
+
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-phone text-sm"></i>
+                        </div>
+                        <input 
+                            type="text" 
+                            name="phone" 
+                            value="<?php echo e(old('phone')); ?>" 
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php echo e($errors->has('phone') ? 'border-red-500 bg-red-50/30' : 'border-slate-300 bg-slate-50/50 hover:bg-white'); ?>" 
+                            placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ឧទាហរណ៍៖ 012 345 678' : 'Phone Number'); ?>"
+                        >
+                    </div>
+                    <?php $__errorArgs = ['phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <p class="text-red-500 text-xs font-semibold mt-1 flex items-center gap-1">
+                            <i class="fas fa-circle-exclamation"></i> <?php echo e($message); ?>
+
+                        </p>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+
+                <!-- Email Address -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <?php echo e(app()->getLocale() === 'km' ? 'អាសយដ្ឋានអ៊ីមែល' : 'Email Address'); ?>
+
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-envelope text-sm"></i>
+                        </div>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            value="<?php echo e(old('email')); ?>" 
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php echo e($errors->has('email') ? 'border-red-500 bg-red-50/30' : 'border-slate-300 bg-slate-50/50 hover:bg-white'); ?>" 
+                            placeholder="supplier@company.com"
+                        >
+                    </div>
+                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <p class="text-red-500 text-xs font-semibold mt-1 flex items-center gap-1">
+                            <i class="fas fa-circle-exclamation"></i> <?php echo e($message); ?>
+
+                        </p>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+
+                <!-- Business Address -->
+                <div class="md:col-span-2 space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <?php echo e(app()->getLocale() === 'km' ? 'អាសយដ្ឋានទីតាំងក្រុមហ៊ុន' : 'Business Address'); ?>
+
+                    </label>
+                    <div class="relative">
+                        <div class="absolute top-3.5 left-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-location-dot text-sm"></i>
+                        </div>
+                        <textarea 
+                            name="address" 
+                            rows="3" 
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent <?php echo e($errors->has('address') ? 'border-red-500 bg-red-50/30' : 'border-slate-300 bg-slate-50/50 hover:bg-white'); ?>" 
+                            placeholder="<?php echo e(app()->getLocale() === 'km' ? 'ឧទាហរណ៍៖ ផ្ទះលេខ..., ផ្លូវ..., សង្កាត់..., រាជធានីភ្នំពេញ' : 'Business Address'); ?>"
+                        ><?php echo e(old('address')); ?></textarea>
+                    </div>
+                    <?php $__errorArgs = ['address'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <p class="text-red-500 text-xs font-semibold mt-1 flex items-center gap-1">
+                            <i class="fas fa-circle-exclamation"></i> <?php echo e($message); ?>
+
+                        </p>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+
+            </div>
+
+            <!-- Footer Action Buttons -->
+            <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
+                <a href="<?php echo e(route('admin.suppliers.index')); ?>" class="px-6 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition duration-150 shadow-sm">
+                    <?php echo e(__('app.cancel')); ?>
+
+                </a>
+                <button type="submit" class="inline-flex items-center px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition duration-150">
+                    <i class="fas fa-save mr-2"></i>
+                    <?php echo e(__('app.save')); ?>
+
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/admin/suppliers/create.blade.php ENDPATH**/ ?>
