@@ -33,6 +33,12 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span>{{ __('app.clearance_certificates') }}</span>
             </a>
+
+            {{-- 5. Late Payments & Penalty Fee --}}
+            <a href="{{ route('late-payments.index') }}" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 font-semibold text-xs px-3 py-2 rounded-xl border border-rose-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-exclamation-triangle text-rose-600"></i>
+                <span>{{ __('app.late_payments') }} ({{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }})</span>
+            </a>
         </div>
     </div>
 
@@ -99,7 +105,7 @@
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.monthly_payment') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.remaining_balance') }}</th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.status') }}</th>
-                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.contract') }}</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រភេទរំលស់' : 'Installment Type' }}</th>
                         <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
@@ -116,11 +122,11 @@
                             @endif
                         </td>
                         <td class="px-5 py-4">
-                            <div class="text-sm font-medium text-gray-900 max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                            <div class="text-sm font-semibold text-gray-900 max-w-[170px] lg:max-w-[200px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
                                 {{ $installment->product?->name ?? 'N/A' }}
                             </div>
                             @if($installment->product?->code)
-                                <div class="text-xs text-indigo-600 font-medium">{{ $installment->product?->code }}</div>
+                                <div class="text-xs text-indigo-600 font-medium mt-0.5">{{ $installment->product?->code }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
@@ -149,25 +155,46 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if($installment->signed_contract)
-                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200" title="{{ __('app.signed') }}">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    {{ __('app.signed') }}
-                                </span>
-                            @else
-                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200" title="{{ __('app.not_signed') }}">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                    {{ __('app.not_signed') }}
-                                </span>
-                            @endif
+                            @php
+                                $isKm = app()->getLocale() === 'km';
+                                $typeKey = $installment->interest_type ?? 'flat';
+                                $badgeConfig = [
+                                    'flat' => [
+                                        'label' => $isKm ? 'ការប្រាក់ថេរ' : 'Flat Rate',
+                                        'sub' => $isKm ? 'Flat Rate' : '',
+                                        'class' => 'bg-blue-50 text-blue-700 border-blue-200'
+                                    ],
+                                    'declining' => [
+                                        'label' => $isKm ? 'ដើមថេរ ថយការប្រាក់' : 'Declining Balance',
+                                        'sub' => $isKm ? 'Declining' : '',
+                                        'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    ],
+                                    'amortization' => [
+                                        'label' => $isKm ? 'រំលស់ស្មើប្រចាំខែ' : 'Amortization',
+                                        'sub' => $isKm ? '' : '',
+                                        'class' => 'bg-purple-50 text-purple-700 border-purple-200'
+                                    ],
+                                    'bullet' => [
+                                        'label' => $isKm ? 'បង់តែការប្រាក់' : 'Bullet Payment',
+                                        'sub' => $isKm ? 'Bullet' : '',
+                                        'class' => 'bg-amber-50 text-amber-800 border-amber-200'
+                                    ],
+                                    'zero_interest' => [
+                                        'label' => $isKm ? 'ការប្រាក់ ០%' : '0% Interest',
+                                        'sub' => $isKm ? 'Zero Int' : '',
+                                        'class' => 'bg-rose-50 text-rose-700 border-rose-200'
+                                    ],
+                                ];
+                                $cfg = $badgeConfig[$typeKey] ?? $badgeConfig['flat'];
+                            @endphp
+                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg border {{ $cfg['class'] }}">
+                                {{ $cfg['label'] }}
+                            </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end items-center gap-1.5">
                                 <a href="{{ route('installments.show', $installment) }}" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="{{ __('app.view') }}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                </a>
-                                <a href="{{ route('installments.schedule', $installment) }}" class="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-900 rounded-lg transition duration-150" title="{{ __('app.payment_schedule') }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </a>
                                 @if(auth()->user()->role === 'admin')
                                 <a href="{{ route('installments.edit', $installment) }}" class="p-2 text-yellow-600 bg-yellow-50 hover:bg-yellow-100 hover:text-yellow-900 rounded-lg transition duration-150" title="{{ __('app.edit') }}">

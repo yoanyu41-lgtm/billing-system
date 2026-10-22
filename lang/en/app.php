@@ -906,6 +906,13 @@ return [
     'completed_installments'       => 'Completed Installments',
     'from_last_month'              => 'from last month',
     'this_month'                   => 'This Month',
+
+    // ── Installment Interest Types ──
+    'interest_type_flat'           => 'Flat Rate',
+    'interest_type_declining'      => 'Declining',
+    'interest_type_amortization'   => 'Annuity',
+    'interest_type_bullet'         => 'Bullet',
+    'interest_type_zero_interest'  => '0% Int',
 ];
 
 

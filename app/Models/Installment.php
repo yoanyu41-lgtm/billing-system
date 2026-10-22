@@ -14,6 +14,7 @@ class Installment extends Model
         'total_price',
         'down_payment',
         'interest_rate',
+        'interest_type',
         'tax_rate',
         'tax_amount',
         'subtotal_before_tax',
@@ -27,6 +28,10 @@ class Installment extends Model
         'signed_contract',
         'contract_signed_at',
         'contract_signed_by',
+    ];
+
+    protected $attributes = [
+        'interest_type' => 'flat',
     ];
 
     protected $casts = [
@@ -90,8 +95,15 @@ class Installment extends Model
     {
         $principalBase = max($this->total_price - $this->down_payment, 0);
         $duration = max($this->duration_months, 1);
-        $monthlyPrincipal = round($principalBase / $duration, 2);
-        $monthlyInterest = round(($principalBase * $this->interest_rate / 100) / 12, 2);
+        $startDate = \Carbon\Carbon::parse($this->created_at ?? now());
+        $type = $this->interest_type ?? \App\Services\InstallmentCalculationService::TYPE_FLAT;
+        $baseSchedule = \App\Services\InstallmentCalculationService::generateSchedule(
+            $principalBase,
+            (float) $this->interest_rate,
+            $duration,
+            $type,
+            $startDate
+        );
 
         // Find if there is a settlement (payoff) payment
         $settlementPayment = $this->payments()
@@ -120,7 +132,6 @@ class Installment extends Model
         }
         $poolIndex = 0;
 
-        $startDate = \Carbon\Carbon::parse($this->created_at);
         $outstandingPrincipal = $principalBase;   // remaining principal balance
         $accumulatedPrincipal = 0;                // principal repaid so far
 
@@ -134,19 +145,21 @@ class Installment extends Model
 
             for ($i = 1; $i <= $duration; $i++) {
                 $dueDate = $startDate->copy()->addMonths($i);
-
-                if ($i === $duration) {
-                    $principalPortion = round($principalBase - $accumulatedPrincipal, 2);
-                } else {
-                    $principalPortion = $monthlyPrincipal;
-                }
-                $amountDue = round($principalPortion + $monthlyInterest, 2);
+                $rowCalc = $baseSchedule[$i - 1] ?? null;
+                $principalPortion = $rowCalc ? $rowCalc['principal'] : round($principalBase / $duration, 2);
+                $rowInterest = $rowCalc ? $rowCalc['interest'] : 0.00;
+                $amountDue = $rowCalc ? $rowCalc['total'] : round($principalPortion + $rowInterest, 2);
 
                 // If regular payments cover this month
                 if ($remainingRegular >= ($amountDue - 0.01)) {
                     $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
-                    $outstandingPrincipal = round(max($outstandingPrincipal - $principalPortion, 0), 2);
-                    $outstandingDebt = round($outstandingPrincipal + $monthlyInterest, 2);
+                    $outstandingPrincipal = $rowCalc ? (float) $rowCalc['balance'] : round(max($outstandingPrincipal - $principalPortion, 0), 2);
+                    
+                    $futureInterest = 0.0;
+                    for ($k = $i; $k < $duration; $k++) {
+                        $futureInterest += (float) ($baseSchedule[$k]['interest'] ?? 0);
+                    }
+                    $outstandingDebt = $outstandingPrincipal <= 0 ? 0.00 : round($outstandingPrincipal + $futureInterest, 2);
                     $remainingRegular = round($remainingRegular - $amountDue, 2);
 
                     // Determine actual payment date from payment pool
@@ -218,18 +231,20 @@ class Installment extends Model
 
         for ($i = 1; $i <= $duration; $i++) {
             $dueDate = $startDate->copy()->addMonths($i);
+            $rowCalc = $baseSchedule[$i - 1] ?? null;
+            $principalPortion = $rowCalc ? $rowCalc['principal'] : round($principalBase / $duration, 2);
+            $rowInterest = $rowCalc ? $rowCalc['interest'] : 0.00;
+            $amountDue = $rowCalc ? $rowCalc['total'] : round($principalPortion + $rowInterest, 2);
 
-            if ($i === $duration) {
-                $principalPortion = round($principalBase - $accumulatedPrincipal, 2);
-            } else {
-                $principalPortion = $monthlyPrincipal;
-            }
             $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
-
-            $amountDue = round($principalPortion + $monthlyInterest, 2);
-
-            $outstandingPrincipal = round(max($outstandingPrincipal - $principalPortion, 0), 2);
-            $outstandingDebt = round($outstandingPrincipal + $monthlyInterest, 2);
+            $outstandingPrincipal = $rowCalc ? (float) $rowCalc['balance'] : round(max($outstandingPrincipal - $principalPortion, 0), 2);
+            
+            // Calculate total future remaining interest from month i+1 to end
+            $futureInterest = 0.0;
+            for ($k = $i; $k < $duration; $k++) {
+                $futureInterest += (float) ($baseSchedule[$k]['interest'] ?? 0);
+            }
+            $outstandingDebt = $outstandingPrincipal <= 0 ? 0.00 : round($outstandingPrincipal + $futureInterest, 2);
 
             // Determine how much is paid for this row and actual payment date
             $needed = $amountDue;
@@ -279,7 +294,7 @@ class Installment extends Model
                 'scheduled_date'        => $dueDate,
                 'day'                   => $displayDate->format('D'),
                 'principal'             => $principalPortion,
-                'interest'              => $monthlyInterest,
+                'interest'              => $rowInterest,
                 'amount'                => $amountDue,
                 'outstanding_principal' => $outstandingPrincipal,
                 'outstanding_debt'      => $outstandingDebt,

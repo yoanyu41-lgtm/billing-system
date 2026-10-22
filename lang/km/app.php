@@ -941,5 +941,12 @@ return [
     'completed_installments'       => 'បង់រំលស់បានបញ្ចប់',
     'from_last_month'              => 'ធៀបនឹងខែមុន',
     'this_month'                   => 'ខែនេះ',
+
+    // ── Installment Interest Types ──
+    'interest_type_flat'           => 'ការប្រាក់ថេរ',
+    'interest_type_declining'      => 'ដើមថេរ ថយការប្រាក់',
+    'interest_type_amortization'   => 'រំលស់ស្មើប្រចាំខែ',
+    'interest_type_bullet'         => 'បង់តែការប្រាក់',
+    'interest_type_zero_interest'  => 'ការប្រាក់ ០%',
 ];
 

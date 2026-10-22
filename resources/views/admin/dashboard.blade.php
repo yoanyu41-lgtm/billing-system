@@ -154,27 +154,19 @@
                 </a>
             </div>
 
-            {{-- Installment Status (ស្ថានភាពការបង់រំលោះ) --}}
+            {{-- Installment Types (ប្រភេទក្នុងការបង់រំលស់) --}}
             <div class="card">
-                <div class="card-title" style="margin-bottom:8px;">{{ __('app.installment_status') }}</div>
+                <div class="card-title" style="margin-bottom:8px;">{{ app()->getLocale() === 'km' ? 'ប្រភេទនៃការបង់រំលស់' : 'Installment Types' }}</div>
                 <div class="donut-wrap">
                     <canvas id="donutChart" style="width:90px!important;height:90px!important;flex-shrink:0;"></canvas>
                     <div class="donut-legend">
+                        @foreach($installmentTypesData as $tKey => $tData)
                         <div class="donut-row">
-                            <div class="donut-dot" style="background:#10b981;"></div>
-                            <div class="donut-label">{{ __('app.paid') }}</div>
-                            <div class="donut-val">{{ $installmentStatus['paid']['count'] ?? 0 }} ({{ $installmentStatus['paid']['pct'] ?? 0 }}%)</div>
+                            <div class="donut-dot" style="background:{{ $tData['color'] }};"></div>
+                            <div class="donut-label" title="{{ $tData['label'] }}">{{ $tData['label'] }}</div>
+                            <div class="donut-val">{{ $tData['count'] }} ({{ $tData['pct'] }}%)</div>
                         </div>
-                        <div class="donut-row">
-                            <div class="donut-dot" style="background:#f59e0b;"></div>
-                            <div class="donut-label">{{ __('app.ongoing') }}</div>
-                            <div class="donut-val">{{ $installmentStatus['ongoing']['count'] ?? 0 }} ({{ $installmentStatus['ongoing']['pct'] ?? 0 }}%)</div>
-                        </div>
-                        <div class="donut-row">
-                            <div class="donut-dot" style="background:#ef4444;"></div>
-                            <div class="donut-label">{{ __('app.overdue') }}</div>
-                            <div class="donut-val">{{ $installmentStatus['overdue']['count'] ?? 0 }} ({{ $installmentStatus['overdue']['pct'] ?? 0 }}%)</div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -525,17 +517,35 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             datasets: [{
                 data: [
-                    {{ $installmentStatus['paid']['count'] ?? 0 }}, 
-                    {{ $installmentStatus['ongoing']['count'] ?? 0 }}, 
-                    {{ $installmentStatus['overdue']['count'] ?? 0 }}
+                    @foreach($installmentTypesData as $tData)
+                        {{ $tData['count'] }},
+                    @endforeach
                 ],
-                backgroundColor: ['#10b981','#f59e0b','#ef4444'],
+                backgroundColor: [
+                    @foreach($installmentTypesData as $tData)
+                        '{{ $tData['color'] }}',
+                    @endforeach
+                ],
                 borderWidth: 0, hoverOffset: 4
             }]
         },
         options: {
             cutout: '70%', responsive: false,
-            plugins: { legend: { display: false } }
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const labels = [
+                                @foreach($installmentTypesData as $tData)
+                                    '{{ $tData['label'] }}',
+                                @endforeach
+                            ];
+                            return ' ' + labels[context.dataIndex] + ': ' + context.parsed;
+                        }
+                    }
+                }
+            }
         }
     });
 });

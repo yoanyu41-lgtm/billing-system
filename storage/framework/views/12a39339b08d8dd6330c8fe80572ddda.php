@@ -76,6 +76,7 @@
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.customer')); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.product')); ?></th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ប្រភេទរំលស់' : 'Installment Type'); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.monthly_payment')); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.duration')); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.remaining_balance')); ?></th>
@@ -111,6 +112,39 @@
                                 <?php echo e($installment->product?->name ?? 'N/A'); ?>
 
                             </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <?php
+                                $isKm = app()->getLocale() === 'km';
+                                $typeKey = $installment->interest_type ?? 'flat';
+                                $badgeConfig = [
+                                    'flat' => [
+                                        'label' => $isKm ? 'ការប្រាក់ថេរ' : 'Flat Rate',
+                                        'class' => 'bg-blue-50 text-blue-700 border-blue-200'
+                                    ],
+                                    'declining' => [
+                                        'label' => $isKm ? 'ដើមថេរ ថយការប្រាក់' : 'Declining Balance',
+                                        'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    ],
+                                    'amortization' => [
+                                        'label' => $isKm ? 'រំលស់ស្មើប្រចាំខែ' : 'Amortization',
+                                        'class' => 'bg-purple-50 text-purple-700 border-purple-200'
+                                    ],
+                                    'bullet' => [
+                                        'label' => $isKm ? 'បង់តែការប្រាក់' : 'Bullet Payment',
+                                        'class' => 'bg-amber-50 text-amber-800 border-amber-200'
+                                    ],
+                                    'zero_interest' => [
+                                        'label' => $isKm ? 'ការប្រាក់ ០%' : '0% Interest',
+                                        'class' => 'bg-rose-50 text-rose-700 border-rose-200'
+                                    ],
+                                ];
+                                $cfg = $badgeConfig[$typeKey] ?? $badgeConfig['flat'];
+                            ?>
+                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg border <?php echo e($cfg['class']); ?>">
+                                <?php echo e($cfg['label']); ?>
+
+                            </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><?php echo e(format_currency($installment->monthly_payment)); ?></td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -167,7 +201,7 @@
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-gray-500"><?php echo e(__('app.no_installments')); ?></td>
+                        <td colspan="7" class="px-6 py-6 text-center text-gray-500"><?php echo e(__('app.no_installments')); ?></td>
                     </tr>
                     <?php endif; ?>
                 </tbody>

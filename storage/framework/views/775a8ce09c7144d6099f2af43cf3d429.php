@@ -154,25 +154,17 @@
 
             
             <div class="card">
-                <div class="card-title" style="margin-bottom:8px;"><?php echo e(__('app.installment_status')); ?></div>
+                <div class="card-title" style="margin-bottom:8px;"><?php echo e(app()->getLocale() === 'km' ? 'ប្រភេទនៃការបង់រំលស់' : 'Installment Types'); ?></div>
                 <div class="donut-wrap">
                     <canvas id="donutChart" style="width:90px!important;height:90px!important;flex-shrink:0;"></canvas>
                     <div class="donut-legend">
+                        <?php $__currentLoopData = $installmentTypesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tKey => $tData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <div class="donut-row">
-                            <div class="donut-dot" style="background:#10b981;"></div>
-                            <div class="donut-label"><?php echo e(__('app.paid')); ?></div>
-                            <div class="donut-val"><?php echo e($installmentStatus['paid']['count'] ?? 0); ?> (<?php echo e($installmentStatus['paid']['pct'] ?? 0); ?>%)</div>
+                            <div class="donut-dot" style="background:<?php echo e($tData['color']); ?>;"></div>
+                            <div class="donut-label" title="<?php echo e($tData['label']); ?>"><?php echo e($tData['label']); ?></div>
+                            <div class="donut-val"><?php echo e($tData['count']); ?> (<?php echo e($tData['pct']); ?>%)</div>
                         </div>
-                        <div class="donut-row">
-                            <div class="donut-dot" style="background:#f59e0b;"></div>
-                            <div class="donut-label"><?php echo e(__('app.ongoing')); ?></div>
-                            <div class="donut-val"><?php echo e($installmentStatus['ongoing']['count'] ?? 0); ?> (<?php echo e($installmentStatus['ongoing']['pct'] ?? 0); ?>%)</div>
-                        </div>
-                        <div class="donut-row">
-                            <div class="donut-dot" style="background:#ef4444;"></div>
-                            <div class="donut-label"><?php echo e(__('app.overdue')); ?></div>
-                            <div class="donut-val"><?php echo e($installmentStatus['overdue']['count'] ?? 0); ?> (<?php echo e($installmentStatus['overdue']['pct'] ?? 0); ?>%)</div>
-                        </div>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
             </div>
@@ -535,18 +527,35 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             datasets: [{
                 data: [
-                    <?php echo e($installmentStatus['paid']['count'] ?? 0); ?>, 
-                    <?php echo e($installmentStatus['ongoing']['count'] ?? 0); ?>, 
-                    <?php echo e($installmentStatus['overdue']['count'] ?? 0); ?>
-
+                    <?php $__currentLoopData = $installmentTypesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php echo e($tData['count']); ?>,
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 ],
-                backgroundColor: ['#10b981','#f59e0b','#ef4444'],
+                backgroundColor: [
+                    <?php $__currentLoopData = $installmentTypesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        '<?php echo e($tData['color']); ?>',
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                ],
                 borderWidth: 0, hoverOffset: 4
             }]
         },
         options: {
             cutout: '70%', responsive: false,
-            plugins: { legend: { display: false } }
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const labels = [
+                                <?php $__currentLoopData = $installmentTypesData; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tData): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    '<?php echo e($tData['label']); ?>',
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            ];
+                            return ' ' + labels[context.dataIndex] + ': ' + context.parsed;
+                        }
+                    }
+                }
+            }
         }
     });
 });

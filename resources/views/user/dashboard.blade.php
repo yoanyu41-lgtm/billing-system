@@ -224,9 +224,9 @@
             </span>
             <div>
                 <h2 class="text-sm font-bold text-slate-800">
-                    {{ __('app.installment_status') }}
+                    {{ app()->getLocale() === 'km' ? 'ប្រភេទនៃការបង់រំលស់' : 'Installment Types' }}
                 </h2>
-                <p class="text-[10px] text-slate-400">Contracts breakdown</p>
+                <p class="text-[10px] text-slate-400">Plans distribution</p>
             </div>
         </div>
         <div class="flex-grow flex items-center justify-center relative my-2">
@@ -235,23 +235,17 @@
             </div>
             <!-- Center Text -->
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span class="text-2xl font-black text-slate-800 tracking-tight">{{ $installmentStatus['paid']['count'] + $installmentStatus['ongoing']['count'] + $installmentStatus['overdue']['count'] }}</span>
+                <span class="text-2xl font-black text-slate-800 tracking-tight">{{ array_sum(array_column($installmentTypesData, 'count')) }}</span>
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('app.total') }}</span>
             </div>
         </div>
-        <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-slate-100">
-            <div class="p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                <span class="block font-bold text-emerald-700 text-sm">{{ $installmentStatus['paid']['count'] }}</span>
-                <p class="text-[10px] font-semibold text-emerald-600 mt-0.5">{{ __('app.paid') }}</p>
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs pt-3 border-t border-slate-100">
+            @foreach($installmentTypesData as $tKey => $tData)
+            <div class="p-1.5 rounded-xl border border-slate-100 bg-slate-50/50">
+                <span class="block font-bold text-slate-800 text-xs" style="color: {{ $tData['color'] }};">{{ $tData['count'] }} ({{ $tData['pct'] }}%)</span>
+                <p class="text-[10px] font-semibold text-slate-500 truncate" title="{{ $tData['label'] }}">{{ $tData['label'] }}</p>
             </div>
-            <div class="p-2 rounded-xl bg-amber-50/50 border border-amber-100">
-                <span class="block font-bold text-amber-700 text-sm">{{ $installmentStatus['ongoing']['count'] }}</span>
-                <p class="text-[10px] font-semibold text-amber-600 mt-0.5">{{ __('app.ongoing') }}</p>
-            </div>
-            <div class="p-2 rounded-xl bg-rose-50/50 border border-rose-100">
-                <span class="block font-bold text-rose-700 text-sm">{{ $installmentStatus['overdue']['count'] }}</span>
-                <p class="text-[10px] font-semibold text-rose-600 mt-0.5">{{ __('app.overdue') }}</p>
-            </div>
+            @endforeach
         </div>
     </div>
 </div>
@@ -431,14 +425,22 @@ document.addEventListener("DOMContentLoaded", function() {
         new Chart(ctxDonut, {
             type: 'doughnut',
             data: {
-                labels: ['{{ __("app.paid") }}', '{{ __("app.ongoing") }}', '{{ __("app.overdue") }}'],
+                labels: [
+                    @foreach($installmentTypesData as $tData)
+                        '{{ $tData['label'] }}',
+                    @endforeach
+                ],
                 datasets: [{
                     data: [
-                        {{ $installmentStatus['paid']['count'] ?? 0 }}, 
-                        {{ $installmentStatus['ongoing']['count'] ?? 0 }}, 
-                        {{ $installmentStatus['overdue']['count'] ?? 0 }}
+                        @foreach($installmentTypesData as $tData)
+                            {{ $tData['count'] }},
+                        @endforeach
                     ],
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    backgroundColor: [
+                        @foreach($installmentTypesData as $tData)
+                            '{{ $tData['color'] }}',
+                        @endforeach
+                    ],
                     borderWidth: 0,
                     hoverOffset: 4
                 }]

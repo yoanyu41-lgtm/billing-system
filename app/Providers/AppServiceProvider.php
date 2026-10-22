@@ -47,6 +47,11 @@ class AppServiceProvider extends ServiceProvider
                     $table->timestamps();
                 });
             }
+            if (Schema::hasTable('installments') && !Schema::hasColumn('installments', 'interest_type')) {
+                Schema::table('installments', function ($table) {
+                    $table->string('interest_type', 30)->default('flat')->after('interest_rate');
+                });
+            }
         } catch (\Exception $e) {
             // Ignore
         }

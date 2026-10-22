@@ -229,6 +229,32 @@ class DashboardController extends Controller
             'overdue' => ['count' => $overdueCount, 'pct' => round($overdueCount / $totalInst * 100)],
         ];
 
+        // ── Installment Types Donut (ប្រភេទក្នុងការបង់រំលស់) ─────────────
+        $typeCounts = Installment::selectRaw("COALESCE(interest_type, 'flat') as itype, COUNT(*) as count")
+            ->groupBy('itype')
+            ->pluck('count', 'itype')
+            ->toArray();
+
+        $typesDef = [
+            'flat'          => ['label' => 'ការប្រាក់ថេរ',        'color' => '#3b82f6'], // blue
+            'declining'     => ['label' => 'ដើមថេរ ថយការប្រាក់',   'color' => '#10b981'], // emerald green
+            'amortization'  => ['label' => 'បង់ស្មើប្រចាំខែ',       'color' => '#8b5cf6'], // purple
+            'bullet'        => ['label' => 'បង់តែការប្រាក់',       'color' => '#f59e0b'], // amber orange
+            'zero_interest' => ['label' => 'ការប្រាក់ ០%',        'color' => '#e11d48'], // rose red/pink (distinct from emerald green)
+        ];
+
+        $totalTypesCount = max(array_sum($typeCounts), 1);
+        $installmentTypesData = [];
+        foreach ($typesDef as $k => $info) {
+            $cnt = $typeCounts[$k] ?? 0;
+            $installmentTypesData[$k] = [
+                'label' => $info['label'],
+                'color' => $info['color'],
+                'count' => $cnt,
+                'pct'   => round(($cnt / $totalTypesCount) * 100),
+            ];
+        }
+
         // ── អតិថិជនជិតដល់ថ្ងៃបង់ (៣ ថ្ងៃចុះក្រោម) ────────────────────────
         $upcomingDueInstallments = Installment::with('customer')
             ->where('status', 'active')
@@ -328,6 +354,7 @@ class DashboardController extends Controller
                 'pendingTrend',
                 'completedTrend',
                 'upcomingDueInstallments',
+                'installmentTypesData',
             ));
         }
 
@@ -348,6 +375,7 @@ class DashboardController extends Controller
             'monthlyIncome',
             'monthlyCollection',
             'installmentStatus',
+            'installmentTypesData',
             'recentCustomers',
             'recentPayments',
             'directSalesTotal',

@@ -118,6 +118,9 @@
         <form method="POST" action="<?php echo e(route('installments.update', $installment)); ?>" id="editInstallmentForm">
             <?php echo csrf_field(); ?>
             <?php echo method_field('PUT'); ?>
+            <?php
+                $isKm = app()->getLocale() === 'km';
+            ?>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 
@@ -194,7 +197,9 @@
                                     ?>
                                     <input type="number" step="0.01" min="0" name="total_price" id="totalPrice"
                                            value="<?php echo e(number_format((float)$initialTotalPrice, 2, '.', '')); ?>"
-                                           required class="ic-input pl-9 font-bold text-slate-900" placeholder="0.00">
+                                           required readonly
+                                           class="ic-input pl-9 font-bold text-slate-900 bg-slate-100/80 cursor-not-allowed select-none"
+                                           placeholder="0.00" title="តម្លៃនេះត្រូវបានកំណត់ដោយស្វ័យប្រវត្តិតាមទំនិញ (Read-only)">
                                 </div>
                                 <?php $__errorArgs = ['total_price'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -252,6 +257,38 @@ $message = $__bag->first($__errorArgs[0]); ?>
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
+                            </div>
+
+                            <!-- Interest Type Selector -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
+                                    ប្រភេទនៃការបង់រំលស់ / Installment Repayment Type <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fas fa-hand-holding-usd ic-field-icon"></i>
+                                    <select name="interest_type" id="interestType" class="ic-input pl-9 font-semibold text-slate-800">
+                                        <option value="flat" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'flat' ? 'selected' : ''); ?>>
+                                            <?php echo e($isKm ? 'រំលស់ការប្រាក់ថេរ — ការប្រាក់ថេររហូតដល់ផុតកិច្ចសន្យា' : 'Flat Rate — Fixed interest throughout'); ?>
+
+                                        </option>
+                                        <option value="declining" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'declining' ? 'selected' : ''); ?>>
+                                            <?php echo e($isKm ? 'រំលស់ដើមថេរ ថយការប្រាក់ — ប្រាក់ដើមស្មើគ្នា ការប្រាក់ថយចុះ' : 'Declining Balance — Equal principal, declining interest'); ?>
+
+                                        </option>
+                                        <option value="amortization" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'amortization' ? 'selected' : ''); ?>>
+                                            <?php echo e($isKm ? 'រំលស់ស្មើប្រចាំខែ — បង់ថេរស្មើគ្នារៀងរាល់ខែ' : 'Amortization / Annuity — Fixed total monthly payment'); ?>
+
+                                        </option>
+                                        <option value="bullet" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'bullet' ? 'selected' : ''); ?>>
+                                            <?php echo e($isKm ? 'បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ — រាល់ខែបង់តែការប្រាក់' : 'Bullet Payment — Interest only, balloon payment at end'); ?>
+
+                                        </option>
+                                        <option value="zero_interest" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'zero_interest' ? 'selected' : ''); ?>>
+                                            <?php echo e($isKm ? 'រំលស់ការប្រាក់ ០% — គ្មានការប្រាក់' : '0% Interest — No interest'); ?>
+
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
 
                             <!-- Duration -->
@@ -427,6 +464,8 @@ unset($__errorArgs, $__bag); ?>
     const metaCustomerName = document.getElementById('metaCustomerName');
     const metaProductName = document.getElementById('metaProductName');
 
+    const interestTypeSelect = document.getElementById('interestType');
+
     const exchangeRate = <?php echo e($exchangeRate ?? 4100); ?>;
     const taxEnabled = <?php echo e(\App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false'); ?>;
     const defaultTaxRate = <?php echo e((float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0)); ?>;
@@ -438,8 +477,23 @@ unset($__errorArgs, $__bag); ?>
     function calculateInstallment() {
         const subtotalInput = parseFloat(totalPriceInput.value) || 0;
         const downPayment = parseFloat(downPaymentInput.value) || 0;
-        const interestRate = parseFloat(interestRateInput.value) || 0;
+        let interestRate = parseFloat(interestRateInput.value) || 0;
         const duration = parseInt(durationInput.value) || 1;
+        const interestType = interestTypeSelect ? interestTypeSelect.value : 'flat';
+
+        if (interestType === 'zero_interest') {
+            interestRate = 0;
+            if (interestRateInput) {
+                interestRateInput.value = '0.00';
+                interestRateInput.readOnly = true;
+                interestRateInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+            }
+        } else {
+            if (interestRateInput) {
+                interestRateInput.readOnly = false;
+                interestRateInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
+        }
 
         const selectedProductOption = productSelect.options[productSelect.selectedIndex];
         const isTaxable = selectedProductOption ? selectedProductOption.getAttribute('data-taxable') === '1' : false;
@@ -465,9 +519,52 @@ unset($__errorArgs, $__bag); ?>
         }
 
         const principal = Math.max(0, totalPrice - downPayment);
-        const monthlyInterest = duration > 0 ? ((principal * interestRate / 100) / 12) : 0;
-        const monthlyPayment = duration > 0 ? ((principal / duration) + monthlyInterest) : 0;
-        const remaining = (monthlyPayment * duration);
+        const monthlyRate = (interestRate / 100) / 12;
+
+        let monthlyPayment = 0;
+        let monthlyInterest = 0;
+        let totalInterest = 0;
+        let remaining = 0;
+
+        if (interestType === 'zero_interest') {
+            monthlyPayment = duration > 0 ? (principal / duration) : 0;
+            monthlyInterest = 0;
+            totalInterest = 0;
+            remaining = principal;
+        } else if (interestType === 'flat') {
+            monthlyInterest = duration > 0 ? (principal * monthlyRate) : 0;
+            monthlyPayment = duration > 0 ? ((principal / duration) + monthlyInterest) : 0;
+            totalInterest = monthlyInterest * duration;
+            remaining = principal + totalInterest;
+        } else if (interestType === 'declining') {
+            const basePrincipal = duration > 0 ? (principal / duration) : 0;
+            monthlyInterest = principal * monthlyRate;
+            monthlyPayment = basePrincipal + monthlyInterest;
+
+            let balance = principal;
+            for (let m = 1; m <= duration; m++) {
+                const interest = balance * monthlyRate;
+                totalInterest += interest;
+                balance = Math.max(0, balance - basePrincipal);
+            }
+            remaining = principal + totalInterest;
+        } else if (interestType === 'amortization') {
+            if (monthlyRate > 0 && duration > 0) {
+                const factor = Math.pow(1 + monthlyRate, duration);
+                monthlyPayment = principal * (monthlyRate * factor) / (factor - 1);
+            } else {
+                monthlyPayment = duration > 0 ? (principal / duration) : 0;
+            }
+            monthlyInterest = principal * monthlyRate;
+            remaining = monthlyPayment * duration;
+            totalInterest = Math.max(0, remaining - principal);
+        } else if (interestType === 'bullet') {
+            monthlyInterest = principal * monthlyRate;
+            monthlyPayment = duration === 1 ? (principal + monthlyInterest) : monthlyInterest;
+            totalInterest = monthlyInterest * duration;
+            remaining = principal + totalInterest;
+        }
+
         const monthlyKhr = monthlyPayment * exchangeRate;
 
         previewSubtotal.innerText = formatCurrency(subtotalInput);
@@ -488,7 +585,7 @@ unset($__errorArgs, $__bag); ?>
         }
     }
 
-    [totalPriceInput, downPaymentInput, interestRateInput, durationInput, productSelect, customerSelect].forEach(el => {
+    [totalPriceInput, downPaymentInput, interestRateInput, durationInput, productSelect, customerSelect, interestTypeSelect].forEach(el => {
         if (el) el.addEventListener('input', calculateInstallment);
         if (el) el.addEventListener('change', calculateInstallment);
     });

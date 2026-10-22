@@ -550,6 +550,15 @@
                             <div class="info-label" lang="km">{{ $L('ប្រាក់កក់', 'Down Payment') }}:</div>
                             <div class="info-value">{{ format_currency($installment->down_payment) }}</div>
                         </div>
+                        @php
+                            $types = \App\Services\InstallmentCalculationService::getTypes();
+                            $typeKey = $installment->interest_type ?? 'flat';
+                            $typeName = $isKm ? ($types[$typeKey]['name_km'] ?? 'ការប្រាក់ថេរ (Flat Rate)') : ($types[$typeKey]['name_en'] ?? 'Flat Rate');
+                        @endphp
+                        <div class="info-row">
+                            <div class="info-label" lang="km">{{ $L('ប្រភេទរំលស់', 'Plan Type') }}:</div>
+                            <div class="info-value" style="font-weight: bold; color: #1e40af;">{{ $typeName }}</div>
+                        </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('អត្រាការប្រាក់', 'Interest Rate') }}:</div>
                             <div class="info-value">{{ number_format($installment->interest_rate, 2) }}% {{ __('app.per_year') }}</div>

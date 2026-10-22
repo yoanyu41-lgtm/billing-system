@@ -152,6 +152,7 @@
                     <tr>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.invoice_number')); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.type')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(app()->getLocale() === 'km' ? 'ប្រភេទគម្រោង' : 'Plan Type'); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.customer_name')); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.amount')); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.status')); ?></th>
@@ -194,6 +195,9 @@
                                     <?php echo e(__('app.direct')); ?>
 
                                 </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-medium">
+                                —
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                 <?php echo e($invoice->customer_name ?: ($invoice->customer?->name ?? __('app.walk_in_customer'))); ?>
@@ -242,6 +246,44 @@
                                     </span>
                                 <?php endif; ?>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <?php
+                                    $inst = $invoice->payment?->installment;
+                                    $planKey = $inst?->interest_type ?? 'flat';
+                                    $isKm = app()->getLocale() === 'km';
+                                    $planBadges = [
+                                        'flat' => [
+                                            'label' => $isKm ? 'ការប្រាក់ថេរ' : 'Flat Rate',
+                                            'class' => 'bg-blue-50 text-blue-700 border-blue-200'
+                                        ],
+                                        'declining' => [
+                                            'label' => $isKm ? 'ដើមថេរ ថយការប្រាក់' : 'Declining',
+                                            'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        ],
+                                        'amortization' => [
+                                            'label' => $isKm ? 'រំលស់ស្មើប្រចាំខែ' : 'Amortization',
+                                            'class' => 'bg-purple-50 text-purple-700 border-purple-200'
+                                        ],
+                                        'bullet' => [
+                                            'label' => $isKm ? 'បង់តែការប្រាក់' : 'Bullet',
+                                            'class' => 'bg-amber-50 text-amber-800 border-amber-200'
+                                        ],
+                                        'zero_interest' => [
+                                            'label' => $isKm ? 'ការប្រាក់ ០%' : '0% Interest',
+                                            'class' => 'bg-rose-50 text-rose-700 border-rose-200'
+                                        ],
+                                    ];
+                                    $pb = $planBadges[$planKey] ?? $planBadges['flat'];
+                                ?>
+                                <?php if($inst): ?>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border <?php echo e($pb['class']); ?>">
+                                        <?php echo e($pb['label']); ?>
+
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-gray-400">—</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                 <?php echo e($invoice->payment?->installment?->customer?->name ?? 'N/A'); ?>
 
@@ -272,7 +314,7 @@
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="7" class="px-6 py-6 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-6 text-center text-gray-500">
                             <?php echo e(__('app.no_invoices')); ?>
 
                         </td>

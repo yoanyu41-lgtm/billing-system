@@ -249,6 +249,21 @@ unset($__errorArgs, $__bag); ?>
                                     <span class="text-xs text-gray-400 block font-semibold"><?php echo e(number_format(round($installment->down_payment * $exchangeRate))); ?> ៛</span>
                                 </td>
                             </tr>
+                            <?php
+                                $types = \App\Services\InstallmentCalculationService::getTypes();
+                                $typeKey = $installment->interest_type ?? 'flat';
+                                $isKm = app()->getLocale() === 'km';
+                                $typeName = $isKm ? ($types[$typeKey]['name_km'] ?? 'ការប្រាក់ថេរ (Flat Rate)') : ($types[$typeKey]['name_en'] ?? 'Flat Rate');
+                            ?>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e($isKm ? 'ប្រភេទរំលស់' : 'Installment Plan Type'); ?></td>
+                                <td class="px-5 py-3.5 text-right font-bold text-indigo-700">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                        <?php echo e($typeName); ?>
+
+                                    </span>
+                                </td>
+                            </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e(__('app.interest_rate')); ?></td>
                                 <td class="px-5 py-3.5 text-right font-bold text-gray-900"><?php echo e($installment->interest_rate); ?>%</td>
@@ -465,7 +480,7 @@ unset($__errorArgs, $__bag); ?>
                         </div>
                     </div>
 
-                    <!-- Amount and Date -->
+                    <!-- Amount, Penalty, and Date -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"><?php echo e(__('app.amount')); ?> (USD)</label>
@@ -476,19 +491,43 @@ unset($__errorArgs, $__bag); ?>
                                 step="0.01" 
                                 min="0.01" 
                                 required 
+                                oninput="updateModalTotal()"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold"
                             >
                         </div>
                         <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                                <?php echo e(__('app.penalty_fee') ?? 'ប្រាក់ពិន័យ'); ?> (USD)
+                            </label>
+                            <input 
+                                type="number" 
+                                name="penalty_amount" 
+                                id="modalPenaltyInput" 
+                                step="0.01" 
+                                min="0" 
+                                value="0.00"
+                                oninput="updateModalTotal()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm font-semibold text-red-600"
+                            >
+                            <span class="text-[11px] text-gray-400 mt-0.5 block" id="modalPenaltyDaysHint"></span>
+                        </div>
+                        <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"><?php echo e(__('app.payment_date')); ?></label>
                             <input 
                                 type="date" 
                                 name="payment_date" 
+                                id="modalPaymentDateInput"
                                 value="<?php echo e(now()->toDateString()); ?>" 
                                 required 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                             >
                         </div>
+                    </div>
+
+                    <!-- Total payment summary in modal -->
+                    <div class="flex justify-between items-center px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold">
+                        <span class="text-slate-600"><?php echo e(app()->getLocale() === 'km' ? 'ទឹកប្រាក់សរុបរួមទាំងប្រាក់ពិន័យ:' : 'Total with Penalty:'); ?></span>
+                        <span class="text-sm font-bold text-indigo-700" id="modalTotalWithPenalty">$0.00</span>
                     </div>
 
                     <!-- Payment Method selector -->
@@ -565,10 +604,56 @@ unset($__errorArgs, $__bag); ?>
 </div>
 
 <script>
-    function openRecordPaymentModal(month, amount, dueDate) {
+    function updateModalTotal() {
+        const amt = parseFloat(document.getElementById('modalAmountInput').value) || 0;
+        const pen = parseFloat(document.getElementById('modalPenaltyInput').value) || 0;
+        const total = amt + pen;
+        document.getElementById('modalTotalWithPenalty').innerText = '$' + total.toFixed(2);
+    }
+
+    function openRecordPaymentModal(month, amount, dueDateStr) {
         document.getElementById('modalMonthVal').innerText = month;
         document.getElementById('modalMonthLabel').innerText = "<?php echo e(__('app.installment_month')); ?> " + month;
-        document.getElementById('modalAmountInput').value = amount;
+        document.getElementById('modalAmountInput').value = parseFloat(amount).toFixed(2);
+        
+        // Calculate penalty based on due date vs today
+        const dueDate = new Date(dueDateStr);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        dueDate.setHours(0,0,0,0);
+
+        let penalty = 0;
+        let daysLate = 0;
+
+        if (today > dueDate) {
+            const diffTime = Math.abs(today - dueDate);
+            daysLate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Standard system penalty rule:
+            // <= 5 days: $0 (Grace period)
+            // 6-15 days: $5/day
+            // > 15 days: $10/day
+            if (daysLate > 15) {
+                penalty = daysLate * 10.00;
+            } else if (daysLate > 5) {
+                penalty = daysLate * 5.00;
+            }
+        }
+
+        const penaltyInput = document.getElementById('modalPenaltyInput');
+        penaltyInput.value = penalty.toFixed(2);
+
+        const hint = document.getElementById('modalPenaltyDaysHint');
+        if (daysLate > 0) {
+            hint.innerText = (daysLate > 5) 
+                ? 'យឺតយ៉ាវ ' + daysLate + ' ថ្ងៃ (ពិន័យ: $' + penalty.toFixed(2) + ')' 
+                : 'យឺតយ៉ាវ ' + daysLate + ' ថ្ងៃ (នៅក្នុងអំឡុងពេលអនុគ្រោះ ៥ ថ្ងៃ គ្មានការពិន័យ)';
+            hint.className = (daysLate > 5) ? 'text-[11px] text-red-500 font-semibold mt-0.5 block' : 'text-[11px] text-amber-600 mt-0.5 block';
+        } else {
+            hint.innerText = '';
+        }
+
+        updateModalTotal();
         
         const modal = document.getElementById('recordPaymentModal');
         modal.classList.remove('hidden');

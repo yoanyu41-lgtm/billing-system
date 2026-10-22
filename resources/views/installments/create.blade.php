@@ -139,15 +139,29 @@
         position: sticky;
         top: 5.5rem;
     }
-    .ic-calc-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.6rem 0;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 0.85rem;
+    /* ─── Plan Cards ─── */
+    .plan-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #ffffff;
+        position: relative;
     }
-    .ic-calc-row:last-of-type { border-bottom: none; }
+    .plan-card:hover {
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .plan-card.active {
+        border-color: #4f46e5;
+        background: #f5f3ff;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+    .plan-card .plan-radio {
+        accent-color: #4f46e5;
+    }
 </style>
 
 <div class="ic-page-bg px-4 py-8">
@@ -264,8 +278,8 @@
                                 <div class="relative">
                                     <span class="ic-prefix">$</span>
                                     <input type="number" step="0.01" min="0" name="total_price" id="totalPrice"
-                                           value="{{ old('total_price') }}" required
-                                           class="ic-input ic-input-with-prefix font-bold text-slate-900 {{ $errors->has('total_price') ? 'ic-has-error' : '' }}"
+                                           value="{{ old('total_price') }}" required readonly
+                                           class="ic-input ic-input-with-prefix font-bold text-slate-900 bg-slate-100/80 cursor-not-allowed select-none {{ $errors->has('total_price') ? 'ic-has-error' : '' }}"
                                            placeholder="0.00">
                                 </div>
                                 @error('total_price')
@@ -307,6 +321,65 @@
                                 @enderror
                             </div>
 
+                            <!-- Interest Type Selector (Visual Interactive Cards) -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide" lang="km">
+                                    <i class="fas fa-layer-group text-indigo-600 mr-1"></i>
+                                    ជ្រើសរើសប្រភេទគម្រោងបង់រំលស់ / Repayment Plan Type <span class="text-red-500">*</span>
+                                </label>
+                                
+                                <input type="hidden" name="interest_type" id="interestType" value="{{ old('interest_type', 'flat') }}">
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-2" id="planCardsContainer">
+                                    <!-- Plan 1: Flat Rate -->
+                                    <div class="plan-card {{ old('interest_type', 'flat') === 'flat' ? 'active' : '' }}" onclick="selectPlan('flat', this)">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-black shrink-0">1</span>
+                                            <span class="font-bold text-slate-900 text-xs">រំលស់ការប្រាក់ថេរ (Flat Rate)</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Plan 2: Declining Balance -->
+                                    <div class="plan-card {{ old('interest_type') === 'declining' ? 'active' : '' }}" onclick="selectPlan('declining', this)">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0">2</span>
+                                            <span class="font-bold text-slate-900 text-xs">រំលស់ដើមថេរ ថយការប្រាក់ (Declining Balance)</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Plan 3: Amortization -->
+                                    <div class="plan-card {{ old('interest_type') === 'amortization' ? 'active' : '' }}" onclick="selectPlan('amortization', this)">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-black shrink-0">3</span>
+                                            <span class="font-bold text-slate-900 text-xs">រំលស់ស្មើប្រចាំខែ (Amortization / Annuity)</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Plan 4: Bullet Payment -->
+                                    <div class="plan-card {{ old('interest_type') === 'bullet' ? 'active' : '' }}" onclick="selectPlan('bullet', this)">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-black shrink-0">4</span>
+                                            <span class="font-bold text-slate-900 text-xs">បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ (Bullet Payment)</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Plan 5: 0% Interest -->
+                                    <div class="plan-card {{ old('interest_type') === 'zero_interest' ? 'active' : '' }}" onclick="selectPlan('zero_interest', this)">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black shrink-0">5</span>
+                                            <span class="font-bold text-slate-900 text-xs">រំលស់ការប្រាក់ ០% (0% Interest)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-xs flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-indigo-500"></i>
+                                    <span class="text-slate-600 font-medium" id="interestTypeDesc" lang="km">
+                                        * គណនាការប្រាក់ថេរលើប្រាក់ដើមដំបូងរហូតដល់ផុតកិច្ចសន្យា
+                                    </span>
+                                </div>
+                            </div>
+
                             <!-- Duration -->
                             <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
@@ -319,6 +392,18 @@
                                            placeholder="12">
                                     <span class="ic-suffix">{{ __('app.months') ?? 'mo' }}</span>
                                 </div>
+                                
+                                <!-- Quick Duration Buttons -->
+                                <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                                    <span class="text-[11px] font-medium text-slate-400 mr-1" lang="km">រហ័ស:</span>
+                                    @foreach([3, 6, 9, 12, 18, 24] as $m)
+                                    <button type="button" onclick="setQuickDuration({{ $m }})"
+                                            class="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition cursor-pointer">
+                                        {{ $m }} ខែ
+                                    </button>
+                                    @endforeach
+                                </div>
+
                                 @error('duration_months')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
@@ -468,11 +553,57 @@
         return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    const interestTypeInput = document.getElementById('interestType');
+    const interestTypeDesc = document.getElementById('interestTypeDesc');
+
+    function selectPlan(type, el) {
+        if (interestTypeInput) {
+            interestTypeInput.value = type;
+        }
+        document.querySelectorAll('.plan-card').forEach(card => card.classList.remove('active'));
+        if (el) {
+            el.classList.add('active');
+        }
+        calculateInstallment();
+    }
+
+    function setQuickDuration(months) {
+        if (durationInput) {
+            durationInput.value = months;
+            calculateInstallment();
+        }
+    }
+
     function calculateInstallment() {
         const subtotalInput = parseFloat(totalPriceInput.value) || 0;
         const downPayment = parseFloat(downPaymentInput.value) || 0;
-        const interestRate = parseFloat(interestRateInput.value) || 0;
+        let interestRate = parseFloat(interestRateInput.value) || 0;
         const duration = parseInt(durationInput.value) || 1;
+        const interestType = interestTypeInput ? interestTypeInput.value : 'flat';
+
+        if (interestType === 'zero_interest') {
+            interestRate = 0;
+            if (interestRateInput) {
+                interestRateInput.value = 0;
+                interestRateInput.disabled = true;
+            }
+        } else {
+            if (interestRateInput) {
+                interestRateInput.disabled = false;
+            }
+        }
+
+        // Update description note
+        if (interestTypeDesc) {
+            const descriptions = {
+                'flat': '* គណនាការប្រាក់ថេរលើប្រាក់ដើមដំបូងរហូតដល់ផុតកិច្ចសន្យា',
+                'declining': '* ប្រាក់ដើមបង់ស្មើគ្នារៀងរាល់ខែ ការប្រាក់ថយចុះជាលំដាប់តាមសមតុល្យជាក់ស្តែង',
+                'amortization': '* ទឹកប្រាក់ត្រូវបង់សរុបស្មើគ្នាជារៀងរាល់ខែ (PMT) ការប្រាក់ថយចុះ ប្រាក់ដើមកើនឡើង',
+                'bullet': '* រៀងរាល់ខែបង់តែការប្រាក់សុទ្ធ ខែចុងក្រោយបង់ផ្តាច់ប្រាក់ដើមទាំងអស់',
+                'zero_interest': '* គ្មានការប្រាក់ (0%) ចែកប្រាក់ដើមស្មើគ្នាតាមចំនួនខែ'
+            };
+            interestTypeDesc.innerText = descriptions[interestType] || '';
+        }
 
         let taxAmount = 0;
         let taxRate = 0;
@@ -493,19 +624,62 @@
         }
 
         const principal = Math.max(0, totalPrice - downPayment);
-        const monthlyInterest = duration > 0 ? ((principal * interestRate / 100) / 12) : 0;
-        const monthlyPayment = duration > 0 ? ((principal / duration) + monthlyInterest) : 0;
-        const remaining = (monthlyPayment * duration);
-        const monthlyKhr = monthlyPayment * exchangeRate;
+        const monthlyRate = (interestRate / 100) / 12;
+
+        let firstMonthPayment = 0;
+        let firstMonthInterest = 0;
+        let totalInterest = 0;
+        let totalRemaining = 0;
+
+        if (interestType === 'zero_interest') {
+            firstMonthPayment = duration > 0 ? (principal / duration) : 0;
+            firstMonthInterest = 0;
+            totalInterest = 0;
+            totalRemaining = principal;
+        } else if (interestType === 'flat') {
+            firstMonthInterest = duration > 0 ? (principal * monthlyRate) : 0;
+            firstMonthPayment = duration > 0 ? ((principal / duration) + firstMonthInterest) : 0;
+            totalInterest = firstMonthInterest * duration;
+            totalRemaining = principal + totalInterest;
+        } else if (interestType === 'declining') {
+            const basePrincipal = duration > 0 ? (principal / duration) : 0;
+            firstMonthInterest = principal * monthlyRate;
+            firstMonthPayment = basePrincipal + firstMonthInterest;
+
+            let balance = principal;
+            for (let m = 1; m <= duration; m++) {
+                const interest = balance * monthlyRate;
+                totalInterest += interest;
+                balance = Math.max(0, balance - basePrincipal);
+            }
+            totalRemaining = principal + totalInterest;
+        } else if (interestType === 'amortization') {
+            if (monthlyRate > 0 && duration > 0) {
+                const factor = Math.pow(1 + monthlyRate, duration);
+                firstMonthPayment = principal * (monthlyRate * factor) / (factor - 1);
+            } else {
+                firstMonthPayment = duration > 0 ? (principal / duration) : 0;
+            }
+            firstMonthInterest = principal * monthlyRate;
+            totalRemaining = firstMonthPayment * duration;
+            totalInterest = Math.max(0, totalRemaining - principal);
+        } else if (interestType === 'bullet') {
+            firstMonthInterest = principal * monthlyRate;
+            firstMonthPayment = duration === 1 ? (principal + firstMonthInterest) : firstMonthInterest;
+            totalInterest = firstMonthInterest * duration;
+            totalRemaining = principal + totalInterest;
+        }
+
+        const monthlyKhr = firstMonthPayment * exchangeRate;
 
         previewSubtotal.innerText = formatCurrency(subtotalInput);
         previewTax.innerText = formatCurrency(taxAmount);
         previewTotal.innerText = formatCurrency(totalPrice);
         previewDownPayment.innerText = formatCurrency(downPayment);
         previewPrincipal.innerText = formatCurrency(principal);
-        previewInterest.innerText = formatCurrency(monthlyInterest);
-        previewRemaining.innerText = formatCurrency(remaining);
-        previewMonthly.innerText = formatCurrency(monthlyPayment) + ' / ខែ';
+        previewInterest.innerText = formatCurrency(firstMonthInterest);
+        previewRemaining.innerText = formatCurrency(totalRemaining);
+        previewMonthly.innerText = formatCurrency(firstMonthPayment) + ' / ខែ';
         previewMonthlyKhr.innerText = '≈ ' + Math.round(monthlyKhr).toLocaleString('en-US') + ' KHR';
     }
 

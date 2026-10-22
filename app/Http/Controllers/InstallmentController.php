@@ -89,6 +89,7 @@ class InstallmentController extends Controller
             'total_price' => 'required|numeric|min:0',
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
+            'interest_type' => 'nullable|string|in:flat,declining,amortization,bullet,zero_interest',
             'duration_months' => 'required|integer|min:1',
         ]);
 
@@ -125,16 +126,18 @@ class InstallmentController extends Controller
         } else {
             $totalPrice = $subtotalBeforeTax;
         }
-        $downPayment = $request->down_payment;
-        $interestRate = $request->interest_rate ?? 0;
-        $duration = $request->duration_months;
+        $downPayment = (float) $request->down_payment;
+        $interestRate = (float) ($request->interest_rate ?? 0);
+        $interestType = $request->interest_type ?: \App\Services\InstallmentCalculationService::TYPE_FLAT;
+        $duration = (int) $request->duration_months;
 
-        $principal = $totalPrice - $downPayment;
-        $monthlyInterest = ($principal * $interestRate / 100) / 12;
-        $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
-        $remainingBalance = round($monthlyPayment * $duration, 2);
+        $principal = max($totalPrice - $downPayment, 0);
+        $preview = \App\Services\InstallmentCalculationService::calculatePreview($principal, $interestRate, $duration, $interestType);
 
-        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $duration, $monthlyPayment, $remainingBalance) {
+        $monthlyPayment = $preview['first_month_payment'];
+        $remainingBalance = $preview['total_repayment'];
+
+        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $interestType, $duration, $monthlyPayment, $remainingBalance) {
             $inst = Installment::create([
                 'customer_id' => $request->customer_id,
                 'product_id' => $request->product_id,
@@ -144,6 +147,7 @@ class InstallmentController extends Controller
                 'tax_amount' => $taxAmount,
                 'down_payment' => $downPayment,
                 'interest_rate' => $interestRate,
+                'interest_type' => $interestType,
                 'duration_months' => $duration,
                 'monthly_payment' => $monthlyPayment,
                 'remaining_balance' => $remainingBalance,
@@ -370,6 +374,7 @@ class InstallmentController extends Controller
             'total_price' => 'required|numeric|min:0',
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
+            'interest_type' => 'nullable|string|in:flat,declining,amortization,bullet,zero_interest',
             'duration_months' => 'required|integer|min:1',
             'status' => 'required|in:active,cancelled,completed,paid',
             'first_payment_date' => 'nullable|date',
@@ -402,15 +407,16 @@ class InstallmentController extends Controller
         }
         $downPayment = (float) $request->down_payment;
         $interestRate = (float) ($request->interest_rate ?? 0);
+        $interestType = $request->interest_type ?: ($installment->interest_type ?? \App\Services\InstallmentCalculationService::TYPE_FLAT);
         $duration = (int) $request->duration_months;
 
-        $principal = $totalPrice - $downPayment;
-        $monthlyInterest = ($principal * $interestRate / 100) / 12;
-        $monthlyPayment = round(($principal / $duration) + $monthlyInterest, 2);
+        $principal = max($totalPrice - $downPayment, 0);
+        $preview = \App\Services\InstallmentCalculationService::calculatePreview($principal, $interestRate, $duration, $interestType);
+        $monthlyPayment = $preview['first_month_payment'];
         
         // Calculate remaining balance based on actual payments recorded or contract terms
         $totalPaid = $installment->payments()->where('status', 'approved')->sum('amount');
-        $totalContractValue = round($downPayment + ($monthlyPayment * $duration), 2);
+        $totalContractValue = round($downPayment + $preview['total_repayment'], 2);
         $remainingBalance = in_array($request->status, ['cancelled', 'completed', 'paid']) ? 0 : max(0, round($totalContractValue - $downPayment - $totalPaid, 2));
 
         $updateData = [
@@ -420,6 +426,7 @@ class InstallmentController extends Controller
             'tax_amount' => $taxAmount,
             'down_payment' => $downPayment,
             'interest_rate' => $interestRate,
+            'interest_type' => $interestType,
             'duration_months' => $duration,
             'monthly_payment' => $monthlyPayment,
             'remaining_balance' => $remainingBalance,
@@ -652,21 +659,24 @@ class InstallmentController extends Controller
         $contractTerms = \App\Models\ContractTerm::where('is_active', true)
             ->orderBy('sort_order')->orderBy('id')->get();
         
-        // Calculate payment schedule
+        // Calculate payment schedule using calculation service
+        $principalBase = max($installment->total_price - $installment->down_payment, 0);
+        $contractSchedule = \App\Services\InstallmentCalculationService::generateSchedule(
+            $principalBase,
+            (float) $installment->interest_rate,
+            $installment->duration_months,
+            $installment->interest_type ?? \App\Services\InstallmentCalculationService::TYPE_FLAT,
+            \Carbon\Carbon::parse($installment->created_at)
+        );
+
         $paymentSchedule = [];
-        $currentDate = \Carbon\Carbon::parse($installment->created_at);
-        
-        for ($i = 1; $i <= $installment->duration_months; $i++) {
-            $dueDate = $currentDate->copy()->addMonths($i);
-            $principal = round(($installment->total_price - $installment->down_payment) / $installment->duration_months, 2);
-            $interest = round((($installment->total_price - $installment->down_payment) * $installment->interest_rate / 100) / 12, 2);
-            
+        foreach ($contractSchedule as $row) {
             $paymentSchedule[] = [
-                'month' => $i,
-                'date' => $dueDate->format('d/m/Y'),
-                'principal' => $principal,
-                'interest' => $interest,
-                'total' => round($principal + $interest, 2),
+                'month'     => $row['month'],
+                'date'      => \Carbon\Carbon::parse($row['due_date'])->format('d/m/Y'),
+                'principal' => $row['principal'],
+                'interest'  => $row['interest'],
+                'total'     => $row['total'],
             ];
         }
         
@@ -814,20 +824,23 @@ class InstallmentController extends Controller
         $contractTerms = \App\Models\ContractTerm::where('is_active', true)
             ->orderBy('sort_order')->orderBy('id')->get();
         
+        $principalBase = max($installment->total_price - $installment->down_payment, 0);
+        $contractSchedule = \App\Services\InstallmentCalculationService::generateSchedule(
+            $principalBase,
+            (float) $installment->interest_rate,
+            $installment->duration_months,
+            $installment->interest_type ?? \App\Services\InstallmentCalculationService::TYPE_FLAT,
+            \Carbon\Carbon::parse($installment->created_at)
+        );
+
         $paymentSchedule = [];
-        $currentDate = \Carbon\Carbon::parse($installment->created_at);
-        
-        for ($i = 1; $i <= $installment->duration_months; $i++) {
-            $dueDate = $currentDate->copy()->addMonths($i);
-            $principal = round(($installment->total_price - $installment->down_payment) / $installment->duration_months, 2);
-            $interest = round((($installment->total_price - $installment->down_payment) * $installment->interest_rate / 100) / 12, 2);
-            
+        foreach ($contractSchedule as $row) {
             $paymentSchedule[] = [
-                'month' => $i,
-                'date' => $dueDate->format('d/m/Y'),
-                'principal' => $principal,
-                'interest' => $interest,
-                'total' => round($principal + $interest, 2),
+                'month'     => $row['month'],
+                'date'      => \Carbon\Carbon::parse($row['due_date'])->format('d/m/Y'),
+                'principal' => $row['principal'],
+                'interest'  => $row['interest'],
+                'total'     => $row['total'],
             ];
         }
 

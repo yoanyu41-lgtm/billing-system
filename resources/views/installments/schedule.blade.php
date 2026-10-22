@@ -81,7 +81,7 @@
 
     <!-- Customer / Product summary (Screen dashboard) -->
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-print">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.customer') ?? 'Customer' }}</div>
                 <div class="text-sm font-semibold text-gray-800">{{ $installment->customer?->name ?? 'N/A' }}</div>
@@ -89,6 +89,20 @@
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.product_details') }}</div>
                 <div class="text-sm font-semibold text-gray-800">{{ $installment->product?->name ?? 'N/A' }}</div>
+            </div>
+            <div>
+                @php
+                    $isKm = app()->getLocale() === 'km';
+                    $types = \App\Services\InstallmentCalculationService::getTypes();
+                    $typeKey = $installment->interest_type ?? 'flat';
+                    $typeName = $isKm ? ($types[$typeKey]['name_km'] ?? 'រំលស់ការប្រាក់ថេរ') : ($types[$typeKey]['name_en'] ?? 'Flat Rate');
+                @endphp
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ $isKm ? 'ប្រភេទរំលស់' : 'Installment Type' }}</div>
+                <div class="text-sm font-semibold text-indigo-700">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {{ $typeName }}
+                    </span>
+                </div>
             </div>
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.duration') }}</div>
@@ -199,6 +213,10 @@
                         <div class="flex justify-between gap-3">
                             <span class="text-gray-500 font-medium">កាលបរិច្ឆេទ:</span>
                             <span class="font-bold text-gray-800">{{ $installment->created_at?->format('d/m/Y') ?? date('d/m/Y') }}</span>
+                        </div>
+                        <div class="flex justify-between gap-3 pt-0.5 border-t border-indigo-100/60 mt-0.5">
+                            <span class="text-gray-500 font-medium">ប្រភេទរំលស់:</span>
+                            <span class="font-bold text-indigo-900">{{ $typeName }}</span>
                         </div>
                     </div>
                 </div>
