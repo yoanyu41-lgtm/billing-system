@@ -70,7 +70,7 @@ class Installment extends Model
         $principalBase = max($this->total_price - $this->down_payment, 0);
         $duration = max($this->duration_months, 1);
         $monthlyPrincipal = $principalBase / $duration;
-        $monthlyInterest = ($principalBase * $this->interest_rate / 100) / 12;
+        $monthlyInterest = $principalBase * $this->interest_rate / 100;
         $amountDue = $monthlyPrincipal + $monthlyInterest;
 
         // Total of normal approved payments already made (exclude settlement payments).
@@ -360,19 +360,50 @@ class Installment extends Model
             return 0;
         }
 
-        $monthly = (float) $this->monthly_payment;
-        if ($monthly <= 0) {
-            $principalBase = max((float) $this->total_price - (float) $this->down_payment, 0);
-            $monthly = $principalBase / $duration;
+        // If no payment has been made yet, remaining months equals the full duration
+        $paid = (float) $this->payments()->where('status', 'approved')->sum('amount');
+        if ($paid <= 0.01) {
+            return $duration;
         }
 
-        if ($monthly <= 0) {
-            return 0;
+        // Check against payment schedule to get exact remaining unpaid months
+        try {
+            $schedule = $this->getPaymentSchedule();
+            $unpaidCount = count(array_filter($schedule, fn($row) => $row['status'] !== 'paid' && empty($row['is_settlement'])));
+            return min($unpaidCount, $duration);
+        } catch (\Throwable $e) {
+            $monthly = (float) $this->monthly_payment;
+            if ($monthly <= 0) {
+                $principalBase = max((float) $this->total_price - (float) $this->down_payment, 0);
+                $monthly = $principalBase / $duration;
+            }
+            if ($monthly <= 0) {
+                return $duration;
+            }
+            $paidMonths = (int) floor(round($paid / $monthly, 2));
+            return max(0, $duration - $paidMonths);
+        }
+    }
+
+    /**
+     * Get accurate monthly payment based on interest type schedule
+     */
+    public function getMonthlyPaymentAttribute($value): float
+    {
+        $type = $this->attributes['interest_type'] ?? 'flat';
+        if ($type === \App\Services\InstallmentCalculationService::TYPE_AMORTIZATION) {
+            $principal = max(((float) ($this->attributes['total_price'] ?? 0)) - ((float) ($this->attributes['down_payment'] ?? 0)), 0);
+            $rate = (float) ($this->attributes['interest_rate'] ?? 0);
+            $duration = max((int) ($this->attributes['duration_months'] ?? 1), 1);
+            $monthlyRate = $rate / 100;
+            if ($monthlyRate > 0) {
+                $factor = pow(1 + $monthlyRate, $duration);
+                return round($principal * ($monthlyRate * $factor) / ($factor - 1), 2);
+            }
+            return round($principal / $duration, 2);
         }
 
-        $months = (int) ceil(round((float) $this->remaining_balance / $monthly, 2));
-
-        return min(max($months, 0), $duration);
+        return (float) ($value ?? 0);
     }
 
     /**

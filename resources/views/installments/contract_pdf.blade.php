@@ -129,7 +129,7 @@
                 <div class="box" style="height: 120px;">
                     <h3>ព័ត៌មានហិរញ្ញវត្ថុ (FINANCIALS)</h3>
                     <table class="info-table">
-                        <tr><td class="label">តម្លៃសរុប</td><td>: <b>${{ number_format($installment->total_price, 2) }}</b> ({{ $formatRiel($installment->total_price) }})</td></tr>
+                        <tr><td class="label">តម្លៃសរុប</td><td>: <b>${{ number_format($installment->total_price, 2) }}</b></td></tr>
                         <tr><td class="label">ប្រាក់កក់មុន</td><td>: ${{ number_format($installment->down_payment, 2) }}</td></tr>
                         <tr><td class="label">ប្រាក់ដើមបង់រំលស់</td><td>: ${{ number_format($installment->total_price - $installment->down_payment, 2) }}</td></tr>
                         <tr><td class="label">ការបង់ប្រចាំខែ</td><td>: <b style="color: #1e40af;">${{ number_format($installment->monthly_payment, 2) }} / ខែ</b></td></tr>
@@ -146,10 +146,9 @@
             <tr>
                 <th style="width: 40px;">ខែទី</th>
                 <th>ថ្ងៃត្រូវបង់ប្រាក់</th>
-                <th class="right">ប្រាក់ដើម (USD)</th>
-                <th class="right">ការប្រាក់ (USD)</th>
-                <th class="right">ទឹកប្រាក់សរុបត្រូវបង់ (USD)</th>
-                <th class="right">ទឹកប្រាក់ត្រូវបង់ជារៀល (KHR)</th>
+                <th class="right">ប្រាក់ដើម ($)</th>
+                <th class="right">ការប្រាក់ ($)</th>
+                <th class="right">ទឹកប្រាក់សរុបត្រូវបង់ ($)</th>
             </tr>
         </thead>
         <tbody>
@@ -160,7 +159,6 @@
                 <td class="right">${{ number_format($row['principal'], 2) }}</td>
                 <td class="right">${{ number_format($row['interest'], 2) }}</td>
                 <td class="right" style="font-weight: bold; color: #1e40af;">${{ number_format($row['total'], 2) }}</td>
-                <td class="right" style="font-weight: bold; color: #1e40af;">{{ $formatRiel($row['total']) }}</td>
             </tr>
             @endforeach
         </tbody>

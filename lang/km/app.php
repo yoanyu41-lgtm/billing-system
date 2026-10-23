@@ -699,7 +699,7 @@ return [
     'estimated_monthly_payment' => 'ការទូទាត់ប្រចាំខែប៉ាន់ស្មាន',
     'formula'               => 'រូបមន្ត',
     'formula_principal'     => 'ប្រាក់ដើម = តម្លៃ - ប្រាក់កក់',
-    'formula_interest'      => 'ការប្រាក់/ខែ = (ប្រាក់ដើម × អត្រា / 100) / 12',
+    'formula_interest'      => 'ការប្រាក់/ខែ = ប្រាក់ដើម × អត្រាការប្រាក់ប្រចាំខែ / 100',
     'formula_payment'       => 'ការទូទាត់/ខែ = (ប្រាក់ដើម / ខែ) + ការប្រាក់/ខែ',
     'per_year'              => 'ក្នុងមួយឆ្នាំ',
     'years_old'             => 'ឆ្នាំ',
@@ -945,7 +945,7 @@ return [
     // ── Installment Interest Types ──
     'interest_type_flat'           => 'ការប្រាក់ថេរ',
     'interest_type_declining'      => 'ដើមថេរ ថយការប្រាក់',
-    'interest_type_amortization'   => 'រំលស់ស្មើប្រចាំខែ',
+    'interest_type_amortization'   => 'ការរំលស់ថយដើមថយការ',
     'interest_type_bullet'         => 'បង់តែការប្រាក់',
     'interest_type_zero_interest'  => 'ការប្រាក់ ០%',
 ];

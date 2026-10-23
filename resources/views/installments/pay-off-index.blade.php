@@ -212,12 +212,7 @@
         const exchangeRate = {{ $exchangeRate }};
         
         if (label) {
-            if (currency === 'KHR') {
-                const khrVal = Math.round(total * exchangeRate);
-                label.textContent = khrVal.toLocaleString('en-US') + ' ៛';
-            } else {
-                label.textContent = '$' + total.toFixed(2);
-            }
+            label.textContent = '$' + total.toFixed(2);
         }
     }
 

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-4 py-8 max-w-7xl">
+<div class="w-full px-4 sm:px-6 py-6">
     <!-- Header -->
     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
@@ -74,13 +74,14 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.customer') }}</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.product') }}</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រភេទរំលស់' : 'Installment Type' }}</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.monthly_payment') }}</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.duration') }}</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.remaining_balance') }}</th>
-                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.customer') }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.product') }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រភេទរំលស់' : 'Installment Type' }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ app()->getLocale() === 'km' ? 'អត្រាការប្រាក់' : 'Interest Rate' }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.monthly_payment') }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.duration') }}</th>
+                        <th class="px-3.5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.remaining_balance') }}</th>
+                        <th class="px-3.5 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -90,7 +91,7 @@
                         $isPaidOff = !$isCancelled && (($installment->remaining_balance <= 0) || in_array($installment->status, ['completed', 'paid', 'paid_off']));
                     @endphp
                     <tr class="hover:bg-gray-50 transition duration-150">
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3.5 py-3 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900">{{ $installment->customer?->name ?? 'N/A' }}</div>
                             <div class="flex items-center gap-1.5 mt-0.5">
                                 <span class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</span>
@@ -105,12 +106,12 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                        <td class="px-3.5 py-3 text-sm font-medium text-gray-900">
+                            <div class="max-w-[140px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
                                 {{ $installment->product?->name ?? 'N/A' }}
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3.5 py-3 whitespace-nowrap">
                             @php
                                 $isKm = app()->getLocale() === 'km';
                                 $typeKey = $installment->interest_type ?? 'flat';
@@ -124,7 +125,7 @@
                                         'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     ],
                                     'amortization' => [
-                                        'label' => $isKm ? 'រំលស់ស្មើប្រចាំខែ' : 'Amortization',
+                                        'label' => $isKm ? 'ការរំលស់ថយដើមថយការ' : 'Amortization',
                                         'class' => 'bg-purple-50 text-purple-700 border-purple-200'
                                     ],
                                     'bullet' => [
@@ -138,12 +139,15 @@
                                 ];
                                 $cfg = $badgeConfig[$typeKey] ?? $badgeConfig['flat'];
                             @endphp
-                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg border {{ $cfg['class'] }}">
+                            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-lg border {{ $cfg['class'] }}">
                                 {{ $cfg['label'] }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->monthly_payment) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3.5 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            {{ number_format($installment->interest_rate, 2) }}%
+                        </td>
+                        <td class="px-3.5 py-3 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->monthly_payment) }}</td>
+                        <td class="px-3.5 py-3 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</div>
                             <div class="text-xs mt-0.5 font-medium">
                                 @if($isCancelled)
@@ -164,13 +168,13 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $isCancelled ? 'text-slate-400' : ($isPaidOff ? 'text-emerald-600' : 'text-amber-700') }}">
+                        <td class="px-3.5 py-3 whitespace-nowrap text-sm font-bold {{ $isCancelled ? 'text-slate-400' : ($isPaidOff ? 'text-emerald-600' : 'text-amber-700') }}">
                             {{ format_currency($installment->remaining_balance) }}
                             @if($isCancelled)
                                 <span class="text-[11px] text-rose-500 font-medium block">({{ __('app.cancelled') }})</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td class="px-3.5 py-3 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end gap-1.5">
                                 @if($isCancelled)
                                     <span class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
@@ -181,9 +185,9 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                     </a>
                                 @else
-                                    <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 {{ $isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600' }} text-white font-medium px-4 py-2 rounded-lg transition duration-150 shadow-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        {{ __('app.payment_schedule') }}
+                                    <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-1.5 {{ $isPaidOff ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600' }} text-white font-medium px-3.5 py-2 rounded-lg transition duration-150 shadow-sm text-xs" title="{{ __('app.payment_schedule') }}">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        <span>{{ app()->getLocale() === 'km' ? 'កាលវិភាគ' : 'Schedule' }}</span>
                                     </a>
                                 @endif
                             </div>

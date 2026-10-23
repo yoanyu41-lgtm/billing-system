@@ -561,7 +561,7 @@
                         </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('អត្រាការប្រាក់', 'Interest Rate') }}:</div>
-                            <div class="info-value">{{ number_format($installment->interest_rate, 2) }}% {{ __('app.per_year') }}</div>
+                            <div class="info-value">{{ number_format($installment->interest_rate, 2) }}% {{ $L('ក្នុងមួយខែ', 'per month') }}</div>
                         </div>
                         <div class="info-row">
                             <div class="info-label" lang="km">{{ $L('រយៈពេល', 'Duration') }}:</div>

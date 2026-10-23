@@ -678,7 +678,7 @@ return [
     'estimated_monthly_payment' => 'Estimated Monthly Payment',
     'formula'               => 'Formula',
     'formula_principal'     => 'Principal = Price - Down Payment',
-    'formula_interest'      => 'Interest/Month = (Principal × Rate / 100) / 12',
+    'formula_interest'      => 'Interest/Month = Principal × Monthly Rate / 100',
     'formula_payment'       => 'Payment/Month = (Principal / Months) + Interest/Month',
     'per_year'              => 'per year',
     'years_old'             => 'years old',

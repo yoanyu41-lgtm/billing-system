@@ -10,23 +10,30 @@
     $companyAddressKm = $settings['company_address_km'] ?? $companyAddress;
     $companyEmail = $settings['company_email'] ?? '';
     $companyLogo = !empty($settings['company_logo']) ? asset('storage/' . $settings['company_logo']) : null;
+    $isKm = app()->getLocale() === 'km';
+    $types = \App\Services\InstallmentCalculationService::getTypes();
+    $typeKey = $installment->interest_type ?? 'flat';
+    $typeName = $isKm ? ($types[$typeKey]['name_km'] ?? 'រំលស់ការប្រាក់ថេរ') : ($types[$typeKey]['name_en'] ?? 'Flat Rate');
 @endphp
 <style>
 @media print {
     /* Main print resets */
     .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
     body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
-    @page { size: A4 portrait; margin: 6mm 8mm 6mm 8mm; }
+    @page { size: A4 portrait; margin: 5mm 6mm 5mm 6mm; }
     
     /* Remove card styling for clean print */
     .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-    .print-header { border-bottom: 2px solid #1e1b4b !important; padding-bottom: 6px !important; margin-bottom: 8px !important; }
+    .print-header { border-bottom: 2px solid #1e1b4b !important; padding-bottom: 4px !important; margin-bottom: 6px !important; }
     .schedule-table th, .schedule-table td { border: 1px solid #334155 !important; padding: 2px 4px !important; font-size: 8pt !important; line-height: 1.15 !important; }
     
     /* Force grid elements inside print-area to remain side-by-side in print */
     .print-area .grid { display: grid !important; }
     .print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     .print-area .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+
+    /* Prevent breaking page inside signature or table */
+    .print-area, .schedule-table, .signature-section { page-break-inside: avoid !important; break-inside: avoid !important; }
 
     /* Hide app chrome & no-print sections */
     #sidebar, .topbar, .no-print, .no-print * { display: none !important; height: 0 !important; visibility: hidden !important; }
@@ -79,29 +86,48 @@
         </div>
     </div>
 
-    <!-- Customer / Product summary (Screen dashboard) -->
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-print">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+    <!-- Customer / Product & Financial summary (Screen dashboard) -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6 no-print space-y-5">
+        <!-- ជួរទី ១: ព័ត៌មានអតិថិជន និងផលិតផល -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-5 border-b border-gray-100">
             <div>
-                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.customer') ?? 'Customer' }}</div>
-                <div class="text-sm font-semibold text-gray-800">{{ $installment->customer?->name ?? 'N/A' }}</div>
-            </div>
-            <div>
-                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.product_details') }}</div>
-                <div class="text-sm font-semibold text-gray-800">{{ $installment->product?->name ?? 'N/A' }}</div>
-            </div>
-            <div>
-                @php
-                    $isKm = app()->getLocale() === 'km';
-                    $types = \App\Services\InstallmentCalculationService::getTypes();
-                    $typeKey = $installment->interest_type ?? 'flat';
-                    $typeName = $isKm ? ($types[$typeKey]['name_km'] ?? 'រំលស់ការប្រាក់ថេរ') : ($types[$typeKey]['name_en'] ?? 'Flat Rate');
-                @endphp
-                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ $isKm ? 'ប្រភេទរំលស់' : 'Installment Type' }}</div>
-                <div class="text-sm font-semibold text-indigo-700">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {{ $typeName }}
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">{{ __('app.customer') ?? 'Customer' }}</div>
+                <div class="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs shrink-0 font-bold">
+                        <i class="fas fa-user"></i>
                     </span>
+                    <span>{{ $installment->customer?->name ?? 'N/A' }}</span>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">{{ __('app.product_details') }}</div>
+                <div class="text-base font-bold text-gray-900 leading-snug break-words flex items-start gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">
+                        <i class="fas fa-laptop"></i>
+                    </span>
+                    <span>{{ $installment->product?->name ?? 'N/A' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ជួរទី ២: ព័ត៌មានហិរញ្ញវត្ថុទាំង ៦ សមតុល្យស្អាត -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5" lang="km">តម្លៃទំនិញសរុប</div>
+                <div class="text-sm font-bold text-gray-900">{{ format_currency($installment->total_price) }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5" lang="km">ប្រាក់កក់</div>
+                <div class="text-sm font-bold text-emerald-600">{{ format_currency($installment->down_payment) }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5" lang="km">ប្រាក់ដើមរំលស់</div>
+                <div class="text-sm font-bold text-indigo-900">{{ format_currency(max((float)$installment->total_price - (float)$installment->down_payment, 0)) }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ $isKm ? 'អត្រាការប្រាក់' : 'Interest Rate' }}</div>
+                <div class="text-sm font-bold text-gray-900">
+                    {{ number_format($installment->interest_rate, 2) }}%
                 </div>
             </div>
             <div>
@@ -121,7 +147,7 @@
             </div>
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.monthly_payment') }}</div>
-                <div class="text-sm font-semibold text-indigo-700">{{ format_currency($installment->monthly_payment) }}</div>
+                <div class="text-base font-extrabold text-indigo-600">{{ format_currency($schedule[0]['amount'] ?? $installment->monthly_payment) }}</div>
             </div>
         </div>
     </div>
@@ -160,63 +186,113 @@
     <!-- Schedule table & Official Print Container -->
     <div class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 print-area">
         <!-- ══════════ OFFICIAL PRINT/PDF HEADER (Visible only in Print / PDF) ══════════ -->
-        <div class="hidden print:block print-only-element border-b-2 border-indigo-900 pb-4 mb-5 print-header">
-            <div class="flex flex-row items-center justify-between gap-4">
+        <div class="hidden print:block print-only-element border-b-2 border-indigo-900 pb-3 mb-4 print-header">
+            <!-- Top: Brand & Main Document Title -->
+            <div class="flex flex-row items-center justify-between gap-4 pb-2 mb-3 border-b border-gray-200">
                 <!-- Shop Logo & Details -->
-                <div class="flex items-center gap-3.5">
+                <div class="flex items-center gap-3">
                     @if($companyLogo)
-                        <img src="{{ $companyLogo }}" alt="Logo" class="w-16 h-16 object-contain rounded-xl border border-gray-200 p-1 bg-white shrink-0">
+                        <img src="{{ $companyLogo }}" alt="Logo" class="w-14 h-14 object-contain rounded-lg border border-gray-200 p-0.5 bg-white shrink-0">
                     @else
-                        <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-700 to-blue-600 text-white flex items-center justify-center text-xl font-black shrink-0 shadow-sm">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-tr from-indigo-700 to-blue-600 text-white flex items-center justify-center text-lg font-black shrink-0">
                             {{ mb_substr($companyNameKm ?: $companyName, 0, 1, 'UTF-8') }}
                         </div>
                     @endif
                     <div>
-                        <h1 class="text-xl font-extrabold text-gray-900 leading-tight" lang="km">
+                        <h1 class="text-lg font-extrabold text-gray-900 leading-tight" lang="km">
                             {{ $companyNameKm ?: $companyName }}
                         </h1>
-                        <p class="text-xs font-bold text-indigo-700 uppercase tracking-wide">
+                        <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wide">
                             {{ $companyName ?: 'CityTech Computer' }}
                         </p>
-                        <div class="text-[11px] text-gray-600 mt-1 space-y-0.5">
+                        <div class="text-[10px] text-gray-600 space-y-0.5 mt-0.5">
                             @if($companyAddressKm || $companyAddress)
-                                <p class="flex items-center gap-1">
-                                    <i class="fas fa-location-dot text-indigo-500 text-[10px]"></i>
-                                    <span>{{ app()->getLocale() === 'km' ? ($companyAddressKm ?: $companyAddress) : ($companyAddress ?: $companyAddressKm) }}</span>
-                                </p>
+                                <p>{{ app()->getLocale() === 'km' ? ($companyAddressKm ?: $companyAddress) : ($companyAddress ?: $companyAddressKm) }}</p>
                             @endif
                             <p class="flex items-center gap-3">
-                                @if($companyPhone)
-                                    <span><i class="fas fa-phone text-indigo-500 text-[10px]"></i> {{ $companyPhone }}</span>
-                                @endif
-                                @if($companyEmail)
-                                    <span><i class="fas fa-envelope text-indigo-500 text-[10px]"></i> {{ $companyEmail }}</span>
-                                @endif
+                                @if($companyPhone)<span>ទូរស័ព្ទ: {{ $companyPhone }}</span>@endif
+                                @if($companyEmail)<span>អ៊ីមែល: {{ $companyEmail }}</span>@endif
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Document Metadata -->
+                <!-- Document Title & Contract # -->
                 <div class="text-right">
-                    <h2 class="text-lg font-bold text-indigo-900 uppercase tracking-wide" lang="km">
+                    <h2 class="text-base font-black text-indigo-900 uppercase tracking-wide" lang="km">
                         កាលវិភាគបង់ប្រាក់
                     </h2>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                         PAYMENT SCHEDULE
                     </p>
-                    <div class="mt-2 inline-block bg-indigo-50/70 border border-indigo-100 rounded-lg px-3 py-1.5 text-xs text-left">
-                        <div class="flex justify-between gap-3">
-                            <span class="text-gray-500 font-medium">លេខកិច្ចសន្យា:</span>
-                            <span class="font-bold text-indigo-950">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</span>
+                    <div class="mt-1 text-xs">
+                        <span class="text-gray-500 font-medium">កិច្ចសន្យា:</span>
+                        <span class="font-extrabold text-indigo-950 font-mono">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</span>
+                        <span class="mx-1 text-gray-300">|</span>
+                        <span class="text-gray-500 font-medium">កាលបរិច្ឆេទ:</span>
+                        <span class="font-bold text-gray-800">{{ $installment->created_at?->format('d/m/Y') ?? date('d/m/Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clean Borderless Information Layout for Print / PDF (No outer/inner boxes) -->
+            <div class="grid grid-cols-2 gap-8 text-xs mt-3 pt-2 print:grid print:grid-cols-2 print:gap-8">
+                <!-- Column 1: Customer & Product Information -->
+                <div class="space-y-2">
+                    <div class="border-b border-gray-300 pb-1 flex items-center justify-between" lang="km">
+                        <span class="text-xs uppercase font-extrabold text-indigo-950">ព័ត៌មានអតិថិជន និងទំនិញ</span>
+                        <span class="text-[10px] text-gray-500 font-normal">CUSTOMER & PRODUCT</span>
+                    </div>
+                    
+                    <div class="space-y-1.5 pt-0.5">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-gray-500 font-medium w-36 shrink-0">ឈ្មោះអតិថិជន / Name:</span>
+                            <span class="font-bold text-gray-900 text-sm">{{ $installment->customer?->name ?? 'N/A' }}</span>
                         </div>
-                        <div class="flex justify-between gap-3">
-                            <span class="text-gray-500 font-medium">កាលបរិច្ឆេទ:</span>
-                            <span class="font-bold text-gray-800">{{ $installment->created_at?->format('d/m/Y') ?? date('d/m/Y') }}</span>
+                        @if($installment->customer?->phone)
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-gray-500 font-medium w-36 shrink-0">លេខទូរស័ព្ទ / Phone:</span>
+                            <span class="font-semibold text-gray-800">{{ $installment->customer?->phone }}</span>
                         </div>
-                        <div class="flex justify-between gap-3 pt-0.5 border-t border-indigo-100/60 mt-0.5">
-                            <span class="text-gray-500 font-medium">ប្រភេទរំលស់:</span>
-                            <span class="font-bold text-indigo-900">{{ $typeName }}</span>
+                        @endif
+                        <div class="flex items-start gap-2 pt-1 border-t border-gray-100">
+                            <span class="text-gray-500 font-medium w-36 shrink-0">ទំនិញ / Product:</span>
+                            <span class="font-bold text-gray-900 leading-snug break-words">{{ $installment->product?->name ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Financial Terms -->
+                <div class="space-y-2">
+                    <div class="border-b border-gray-300 pb-1 flex items-center justify-between" lang="km">
+                        <span class="text-xs uppercase font-extrabold text-indigo-950">លក្ខខណ្ឌហិរញ្ញវត្ថុ</span>
+                        <span class="text-[10px] text-gray-600 font-semibold">{{ $typeName }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-0.5">
+                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
+                            <span class="text-gray-500">តម្លៃសរុប (Total):</span>
+                            <span class="font-bold text-gray-900">{{ format_currency($installment->total_price) }}</span>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
+                            <span class="text-gray-500">អត្រាការប្រាក់ (Rate):</span>
+                            <span class="font-bold text-gray-900">{{ number_format($installment->interest_rate, 2) }}%</span>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
+                            <span class="text-gray-500">ប្រាក់កក់ (Down):</span>
+                            <span class="font-bold text-emerald-700">{{ format_currency($installment->down_payment) }}</span>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
+                            <span class="text-gray-500">រយៈពេល (Duration):</span>
+                            <span class="font-bold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</span>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
+                            <span class="text-gray-500">ប្រាក់ដើមរំលស់ (Base):</span>
+                            <span class="font-bold text-indigo-950">{{ format_currency(max((float)$installment->total_price - (float)$installment->down_payment, 0)) }}</span>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-indigo-200 pb-1">
+                            <span class="text-indigo-950 font-bold">បង់ប្រចាំខែ (Monthly):</span>
+                            <span class="font-black text-indigo-900 text-sm">{{ format_currency($schedule[0]['amount'] ?? $installment->monthly_payment) }}</span>
                         </div>
                     </div>
                 </div>
@@ -228,18 +304,33 @@
             <table class="min-w-full border-collapse schedule-table">
                 <thead class="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ល.រ<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ខែទី<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
                         <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">កាលបរិច្ឆេទបង់ប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Payment Date</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ទឹកប្រាក់សរុបត្រូវបង់<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Interests</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Principals</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">សមតុល្យប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Outstanding Principals</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">សមតុល្យបំណុល<br><span class="font-normal text-[11px] text-slate-400">Outstanding Debts</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.status') }}</th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមប្រចាំខែ<br><span class="font-normal text-[11px] text-slate-400">Monthly Principal</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់ប្រចាំខែ<br><span class="font-normal text-[11px] text-slate-400">Monthly Interest</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ត្រូវបង់សរុប<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមនៅសល់<br><span class="font-normal text-[11px] text-slate-400">Remaining Principal</span></th>
+                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">{{ __('app.status') }}</th>
                         <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">{{ __('app.actions') }}</th>
+                        <th class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider w-28" lang="km">ផ្សេងៗ<br><span class="font-normal text-[11px] text-slate-400">Remarks</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 bg-white">
+                    @php
+                        $initialPrincipalBase = max((float)$installment->total_price - (float)$installment->down_payment, 0);
+                    @endphp
+                    {{-- Row 0: Initial Principal Balance (ដូចក្នុងតារាង Excel) --}}
+                    <tr class="bg-slate-50/60 font-semibold text-slate-500 text-xs">
+                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400">-</td>
+                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400">{{ $installment->created_at?->format('d/m/Y') ?? '-' }}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-4 py-2 text-right font-bold text-slate-900">{{ format_currency($initialPrincipalBase) }}</td>
+                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400 no-print">ចាប់ផ្តើម</td>
+                        <td class="border border-gray-200 px-4 py-2 text-center no-print text-slate-400">—</td>
+                        <td class="hidden print:table-cell border border-gray-200 px-4 py-2 text-center text-slate-400"></td>
+                    </tr>
                     @foreach($schedule as $row)
                     <tr class="hover:bg-slate-50/80 transition duration-150">
                         <td class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
@@ -247,12 +338,11 @@
                             <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
                             <span class="text-slate-400 text-xs block font-medium">({{ $row['day'] }})</span>
                         </td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
                         <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap">
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-semibold text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap no-print">
                             @if($row['status'] === 'cancelled')
                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                                     <i class="fas fa-times-circle mr-1 self-center"></i> {{ __('app.cancelled') }}
@@ -306,47 +396,45 @@
                                 <span class="text-xs text-slate-400 font-bold">—</span>
                             @endif
                         </td>
+                        {{-- ប្រអប់ទទេសម្រាប់កត់ចំណាំពេល Print --}}
+                        <td class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center"></td>
                     </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="bg-slate-50 border-t-2 border-gray-300 font-bold">
                     <tr>
                         <td colspan="2" class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-indigo-700 font-black text-base">{{ format_currency($summary['total_scheduled']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
                         <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center text-gray-400">-</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center text-gray-400">-</td>
-                        <td class="border border-gray-200 px-4 py-3.5"></td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right text-indigo-700 font-black text-base">{{ format_currency($summary['total_scheduled']) }}</td>
+                        <td class="border border-gray-200 px-4 py-3.5 text-right font-bold text-emerald-700 text-sm">$0.00</td>
                         <td class="border border-gray-200 px-4 py-3.5 no-print"></td>
+                        <td class="border border-gray-200 px-4 py-3.5 no-print"></td>
+                        <td class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
         <p class="text-right text-xs text-gray-500 mt-2">
-            *{{ session('display_currency', 'USD') === 'KHR' ? (__('app.amounts_in_khr') ?? 'Amounts in KHR') : __('app.amounts_in_usd') }}
+            *{{ __('app.amounts_in_usd') }}
         </p>
 
-        <!-- Customer Service note -->
-        <div class="mt-6 text-sm text-gray-600 space-y-1">
-            <p lang="km">ប្រសិនបើអតិថិជនមានចម្ងល់លើកាលវិភាគបង់ប្រាក់នេះ សូមធ្វើការទាក់ទងមកកាន់ផ្នែកសេវាកម្មអតិថិជន។</p>
-            <p>If you have any inquiry on this Payment Schedule, please contact our Customer Service.</p>
-        </div>
+
 
         <!-- Signature / Thumbprint section -->
-        <div class="mt-10 pt-6 border-t border-gray-200">
-            <p class="text-sm text-gray-700 mb-1" lang="km">បានឃើញនិងយល់ព្រមលើកាលវិភាគបង់ប្រាក់នេះ៖</p>
-            <p class="text-sm text-gray-700 mb-8">Seen and Agreed on This Payment Schedule:</p>
+        <div class="mt-4 pt-3 border-t border-gray-200 signature-section">
+            <p class="text-xs text-gray-700 mb-0.5" lang="km">បានឃើញនិងយល់ព្រមលើកាលវិភាគបង់ប្រាក់នេះ៖</p>
+            <p class="text-[11px] text-gray-500 mb-2">Seen and Agreed on This Payment Schedule:</p>
 
-            <div class="flex flex-col items-end gap-1 max-w-sm ml-auto">
-                <div class="w-full border-b border-dotted border-gray-400 h-16 flex items-end justify-center">
-                    <span class="text-xs text-gray-400 mb-1" lang="km">ស្នាមមេដៃ / Thumbprint</span>
+            <div class="flex flex-col items-end gap-1 max-w-xs ml-auto">
+                <div class="w-full border-b border-dotted border-gray-400 h-10 flex items-end justify-center">
+                    <span class="text-[11px] text-gray-400 mb-0.5" lang="km">ស្នាមមេដៃ / Thumbprint</span>
                 </div>
-                <div class="w-full flex justify-between text-sm text-gray-700 mt-2">
+                <div class="w-full flex justify-between text-xs text-gray-700 mt-1.5">
                     <span lang="km">ឈ្មោះ / Name:</span>
                     <span class="font-semibold border-b border-dotted border-gray-400 flex-1 ml-2 text-center">{{ $installment->customer?->name ?? '' }}</span>
                 </div>
-                <div class="w-full flex justify-between text-sm text-gray-700 mt-3">
+                <div class="w-full flex justify-between text-xs text-gray-700 mt-1.5">
                     <span lang="km">កាលបរិច្ឆេទ / Date:</span>
                     <span class="border-b border-dotted border-gray-400 flex-1 ml-2"></span>
                 </div>
@@ -412,7 +500,8 @@
                                 step="0.01" 
                                 min="0.01" 
                                 required 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-semibold"
+                                readonly
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100/90 text-gray-800 font-bold text-sm cursor-not-allowed select-none focus:outline-none"
                             >
                         </div>
                         <div>

@@ -1487,33 +1487,6 @@
             <div class="topbar-spacer"></div>
 
             
-            <div class="flex items-center gap-3 mr-2" style="font-family: inherit;">
-                <!-- Currency Toggle Buttons -->
-                <div class="flex items-center bg-gray-100 rounded-lg p-1 text-xs border border-gray-200">
-                    <span class="text-gray-500 font-semibold px-2 hidden md:inline"><?php echo e(__('app.currency')); ?>:</span>
-                    <a href="<?php echo e(route('currency.switch', 'USD')); ?>" class="px-2.5 py-1 rounded-md font-bold transition <?php echo e(session('display_currency', 'USD') === 'USD' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 hover:text-blue-600'); ?>" style="text-decoration: none;">
-                        USD $
-                    </a>
-                    <span class="text-gray-400 px-0.5"><i class="fas fa-arrows-alt-h"></i></span>
-                    <a href="<?php echo e(route('currency.switch', 'KHR')); ?>" class="px-2.5 py-1 rounded-md font-bold transition <?php echo e(session('display_currency', 'USD') === 'KHR' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-600 hover:text-emerald-600'); ?>" style="text-decoration: none;">
-                        KHR ៛
-                    </a>
-                </div>
-
-                <!-- Exchange Rate Display -->
-                <?php
-                    $rateValue = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
-                ?>
-                <div class="hidden lg:flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-700">
-                    <span class="font-medium text-gray-500"><?php echo e(__('app.exchange_rate')); ?>:</span>
-                    <span class="font-bold text-gray-800">1 USD = <?php echo e(number_format($rateValue)); ?> KHR</span>
-                    <a href="<?php echo e(route('admin.settings.index')); ?>" class="text-gray-400 hover:text-blue-600 transition" title="Change Exchange Rate">
-                        <i class="fas fa-sync-alt"></i>
-                    </a>
-                </div>
-            </div>
-
-            
             <div style="position:relative; display:none !important;" id="theme-switcher">
                 <button onclick="toggleThemeMenu()" style="
                     display:flex; align-items:center; justify-content:center;

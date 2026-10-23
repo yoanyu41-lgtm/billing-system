@@ -28,6 +28,7 @@
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 {{ __('app.print_contract') }}
             </a>
+
             @if($installment->status === 'completed' || $installment->remaining_balance <= 0)
             <a href="{{ route('installments.clearance', $installment) }}" target="_blank" class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -210,35 +211,23 @@
                             @if($installment->tax_amount > 0)
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.subtotal') }}</td>
-                                <td class="px-5 py-3.5 text-right">
-                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</span>
-                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round(($installment->subtotal_before_tax ?? $installment->total_price) * $exchangeRate)) }} ៛</span>
-                                </td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->subtotal_before_tax ?? $installment->total_price, 2) }}</td>
                             </tr>
                             @php
                                 $taxLabel = \App\Models\Setting::where('key', 'tax_label')->value('value') ?? 'VAT';
                             @endphp
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.tax') }} {{ $taxLabel }} ({{ $installment->tax_rate }}%)</td>
-                                <td class="px-5 py-3.5 text-right">
-                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->tax_amount, 2) }}</span>
-                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->tax_amount * $exchangeRate)) }} ៛</span>
-                                </td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->tax_amount, 2) }}</td>
                             </tr>
                             @endif
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.total_price') }}</td>
-                                <td class="px-5 py-3.5 text-right">
-                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->total_price, 2) }}</span>
-                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->total_price * $exchangeRate)) }} ៛</span>
-                                </td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->total_price, 2) }}</td>
                             </tr>
                             <tr class="hover:bg-gray-50/70">
                                 <td class="px-5 py-3.5 text-gray-500 font-medium">{{ __('app.down_payment') }}</td>
-                                <td class="px-5 py-3.5 text-right">
-                                    <span class="font-bold text-gray-900 block">${{ number_format($installment->down_payment, 2) }}</span>
-                                    <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($installment->down_payment * $exchangeRate)) }} ៛</span>
-                                </td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">${{ number_format($installment->down_payment, 2) }}</td>
                             </tr>
                             @php
                                 $types = \App\Services\InstallmentCalculationService::getTypes();
@@ -271,14 +260,12 @@
                                 <td class="px-5 py-3.5 text-indigo-700 font-semibold">{{ __('app.monthly_payment') }}</td>
                                 <td class="px-5 py-3.5 text-right">
                                     <span class="font-extrabold text-indigo-700 text-base block">${{ number_format($installment->monthly_payment, 2) }}</span>
-                                    <span class="text-xs text-indigo-500 block font-semibold">{{ number_format(round($installment->monthly_payment * $exchangeRate)) }} ៛</span>
                                 </td>
                             </tr>
                             <tr class="bg-amber-50/60 hover:bg-amber-50">
                                 <td class="px-5 py-3.5 text-amber-800 font-semibold">{{ __('app.remaining_balance') }}</td>
                                 <td class="px-5 py-3.5 text-right">
                                     <span class="font-extrabold text-amber-800 text-base block">${{ number_format($installment->remaining_balance, 2) }}</span>
-                                    <span class="text-xs text-amber-600 block font-semibold">{{ number_format(round($installment->remaining_balance * $exchangeRate)) }} ៛</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -316,113 +303,7 @@
         </div>
     </div>
 
-    <!-- Payment Schedule section -->
-    <div class="mt-8 bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-            <div>
-                <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-                    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base shadow-sm border border-indigo-100">
-                        <i class="fas fa-calendar-alt"></i>
-                    </span>
-                    <span>{{ __('app.payment_schedule') }}</span>
-                </h3>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1">តារាងកាលវិភាគបង់ប្រាក់ប្រចាំខែ និងស្ថានភាពនៃការទូទាត់</p>
-            </div>
-            <a href="{{ route('installments.schedule', $installment) }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl text-sm transition shadow-sm" style="text-decoration: none;">
-                <i class="fas fa-print"></i>
-                <span>{{ app()->getLocale() === 'km' ? 'មើលកាលវិភាគបោះពុម្ព' : 'View Printable Schedule' }}</span>
-            </a>
-        </div>
-
-        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-xs">
-            <table class="min-w-full border-collapse">
-                <thead class="bg-slate-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ល.រ<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
-                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទបង់ប្រាក់' : 'Payment Date' }}</th>
-                        <th class="px-5 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់ត្រូវបង់' : 'Total Payment' }}</th>
-                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ការប្រាក់' : 'Interests' }}</th>
-                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'ប្រាក់ដើម' : 'Principals' }}</th>
-                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'សមតុល្យប្រាក់ដើម' : 'Outstanding Principals' }}</th>
-                        <th class="px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider">{{ app()->getLocale() === 'km' ? 'សមតុល្យបំណុល' : 'Outstanding Debts' }}</th>
-                        <th class="px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.status') }}</th>
-                        <th class="px-5 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">{{ __('app.actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @foreach($schedule as $row)
-                    <tr class="hover:bg-slate-50/80 transition duration-150">
-                        <td class="px-4 py-4 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
-                        <td class="px-4 py-4 text-center text-slate-800 whitespace-nowrap text-sm">
-                            <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
-                            <span class="text-slate-400 text-xs block mt-0.5 font-medium">({{ $row['day'] }})</span>
-                        </td>
-                        <td class="px-5 py-4 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount'], $exchangeRate) }}</td>
-                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest'], $exchangeRate) }}</td>
-                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal'], $exchangeRate) }}</td>
-                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_principal'], $exchangeRate) }}</td>
-                        <td class="px-4 py-4 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['outstanding_debt'], $exchangeRate) }}</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            @if($row['status'] === 'cancelled')
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                    <i class="fas fa-times-circle mr-1 self-center"></i> {{ __('app.cancelled') }}
-                                </span>
-                            @elseif($row['status'] === 'paid')
-                                @if(!empty($row['is_settlement']))
-                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                                        <i class="fas fa-check-double mr-1 self-center"></i> {{ app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Payoff' }}
-                                    </span>
-                                @else
-                                    <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <i class="fas fa-check-circle mr-1 self-center"></i> {{ __('app.paid') }}
-                                    </span>
-                                @endif
-                            @elseif($row['status'] === 'overdue')
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                    <i class="fas fa-exclamation-triangle mr-1 self-center"></i> {{ __('app.overdue') }}
-                                </span>
-                            @else
-                                <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                    <i class="fas fa-clock mr-1 self-center"></i> {{ __('app.pending') }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-5 py-4 text-center whitespace-nowrap">
-                            @if($row['status'] !== 'paid' && $row['status'] !== 'cancelled')
-                            <div class="flex items-center justify-center gap-2">
-                                {{-- Send QR via Telegram - Opens QR Picker Modal --}}
-                                @if(empty($installment->customer?->telegram_id))
-                                    <span class="px-3 py-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1.5 cursor-not-allowed font-medium" title="{{ __('app.telegram_id_missing') }}">
-                                        <i class="fab fa-telegram-plane"></i>
-                                        <span>{{ __('app.send_qr_telegram') }}</span>
-                                    </span>
-                                @else
-                                    <button type="button"
-                                        onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
-                                        class="px-3 py-2 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs"
-                                        title="{{ __('app.send_qr_telegram') }}">
-                                        <i class="fab fa-telegram-plane"></i>
-                                        <span>{{ __('app.send_qr_telegram') }}</span>
-                                    </button>
-                                @endif
-
-                                {{-- Record Payment --}}
-                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-3 py-2 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1.5 transition font-bold shadow-2xs" title="{{ __('app.record_payment') }}">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                    <span>{{ __('app.record_payment') }}</span>
-                                </button>
-                            </div>
-                            @else
-                                <span class="text-xs text-slate-400 font-bold">—</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
     </div>
-</div>
 
 <!-- Record Payment Modal -->
 <div id="recordPaymentModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

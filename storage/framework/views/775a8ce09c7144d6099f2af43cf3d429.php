@@ -361,51 +361,76 @@
         
         <div class="card">
             <div class="card-title">
-                <span style="color:#6366f1;"><?php echo e(__('app.recent_payments')); ?></span>
-                <a href="<?php echo e(route('payments.index')); ?>" class="btn-viewall" style="background:#8b5cf6;"><?php echo e(__('app.view_all')); ?></a>
+                <span style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:16px;">⚠️</span>
+                    <span style="color:#ef4444;font-weight:700;">
+                        <?php echo e(app()->getLocale() === 'km' ? 'អតិថិជនបង់យឺត' : 'Overdue Customers'); ?>
+
+                    </span>
+                </span>
+                <?php $overdueCount = count($overdueInstallments ?? []); ?>
+                <?php if($overdueCount > 0): ?>
+                <span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid #fca5a5;">
+                    <?php echo e($overdueCount); ?> <?php echo e(app()->getLocale() === 'km' ? 'នាក់' : 'overdue'); ?>
+
+                </span>
+                <?php endif; ?>
             </div>
-            <div style="overflow-x:auto;">
-                <table class="tbl">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th><?php echo e(__('app.invoice_no')); ?></th>
-                            <th><?php echo e(__('app.customers')); ?></th>
-                            <th><?php echo e(__('app.amount')); ?></th>
-                            <th><?php echo e(__('app.date')); ?></th>
-                            <th><?php echo e(__('app.payment_method')); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php $__empty_1 = true; $__currentLoopData = $recentPayments ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $payment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
-                            <td style="color:#94a3b8;"><?php echo e($i+1); ?></td>
-                            <td class="mono" style="color:#6366f1;"><?php echo e($payment->invoice_no ?? 'INV-'.str_pad($payment->id,5,'0',STR_PAD_LEFT)); ?></td>
-                            <td style="font-weight:600;"><?php echo e($payment->installment?->customer?->name); ?></td>
-                            <td>
-                                <span class="font-semibold text-gray-900">$<?php echo e(number_format($payment->amount, 2)); ?></span>
-                            </td>
-                            <td><?php echo e($payment->created_at->format('d M Y')); ?></td>
-                            <td>
-                                <?php
-                                    $m = strtolower($payment->paymentMethod?->name ?? 'other');
-                                    $cls = match(true) {
-                                        str_contains($m,'qr')     => 'qr',
-                                        str_contains($m,'aba')    => 'aba',
-                                        str_contains($m,'credit') => 'cc',
-                                        str_contains($m,'wing')   => 'wing',
-                                        default => 'other'
-                                    };
-                                ?>
-                                <span class="pill pill-<?php echo e($cls); ?>"><?php echo e($payment->paymentMethod?->name ?? 'Other'); ?></span>
-                            </td>
-                        </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px 0;"><?php echo e(__('app.no_data')); ?></td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+
+            <?php if(($overdueInstallments ?? collect())->isEmpty()): ?>
+                <div style="text-align:center;padding:32px 0;color:#94a3b8;">
+                    <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+                    <div style="font-size:13px;font-weight:500;">
+                        <?php echo e(app()->getLocale() === 'km' ? 'មិនមានអតិថិជនបង់យឺតទេ' : 'No overdue customers found'); ?>
+
+                    </div>
+                </div>
+            <?php else: ?>
+                <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+                    <?php $__currentLoopData = $overdueInstallments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $inst): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <a href="<?php echo e(route('installments.show', $inst->id)); ?>"
+                       style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(254,242,242,0.60);border:1px solid #fecaca;text-decoration:none;transition:box-shadow .15s;"
+                       onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.10)'" onmouseout="this.style.boxShadow='none'">
+
+                        
+                        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0;">
+                            <?php echo e(mb_substr($inst->customer?->name ?? '?', 0, 1)); ?>
+
+                        </div>
+
+                        
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;color:#1e293b;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <?php echo e($inst->customer?->name ?? '—'); ?>
+
+                            </div>
+                            <div style="font-size:11px;color:#64748b;margin-top:1px;">
+                                <?php if($inst->customer?->phone): ?>
+                                    <span><?php echo e($inst->customer->phone); ?> · </span>
+                                <?php endif; ?>
+                                <span style="font-weight:600;color:#b91c1c;"><?php echo e(\Carbon\Carbon::parse($inst->next_due_date)->format('d M Y')); ?></span>
+                            </div>
+                        </div>
+
+                        
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-weight:700;color:#b91c1c;font-size:13px;">$<?php echo e(number_format($inst->monthly_payment ?? 0, 2)); ?></div>
+                            <span style="display:inline-block;margin-top:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">
+                                <?php echo e(app()->getLocale() === 'km' ? 'យឺត ' . ($inst->days_overdue ?? 0) . ' ថ្ងៃ' : ($inst->days_overdue ?? 0) . 'd overdue'); ?>
+
+                            </span>
+                        </div>
+                    </a>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </div>
+
+                <div style="margin-top:10px;">
+                    <a href="<?php echo e(route('installments.index', ['status' => 'overdue'])); ?>" class="btn-viewall" style="background:#ef4444;">
+                        <?php echo e(app()->getLocale() === 'km' ? 'មើលទាំងអស់' : 'View All Overdue'); ?>
+
+                    </a>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 

@@ -236,11 +236,10 @@ class DashboardController extends Controller
             ->toArray();
 
         $typesDef = [
-            'flat'          => ['label' => 'ការប្រាក់ថេរ',        'color' => '#3b82f6'], // blue
-            'declining'     => ['label' => 'ដើមថេរ ថយការប្រាក់',   'color' => '#10b981'], // emerald green
-            'amortization'  => ['label' => 'បង់ស្មើប្រចាំខែ',       'color' => '#8b5cf6'], // purple
-            'bullet'        => ['label' => 'បង់តែការប្រាក់',       'color' => '#f59e0b'], // amber orange
-            'zero_interest' => ['label' => 'ការប្រាក់ ០%',        'color' => '#e11d48'], // rose red/pink (distinct from emerald green)
+            'flat'          => ['label' => 'ការប្រាក់ថេរ',          'color' => '#3b82f6'], // blue
+            'amortization'  => ['label' => 'ការរំលស់ថយដើមថយការ',    'color' => '#8b5cf6'], // purple
+            'bullet'        => ['label' => 'បង់តែការប្រាក់',         'color' => '#f59e0b'], // amber orange
+            'zero_interest' => ['label' => 'ការប្រាក់ ០%',          'color' => '#e11d48'], // rose red
         ];
 
         $totalTypesCount = max(array_sum($typeCounts), 1);
@@ -256,7 +255,7 @@ class DashboardController extends Controller
         }
 
         // ── អតិថិជនជិតដល់ថ្ងៃបង់ (៣ ថ្ងៃចុះក្រោម) ────────────────────────
-        $upcomingDueInstallments = Installment::with('customer')
+        $upcomingDueInstallments = Installment::with(['customer', 'product'])
             ->where('status', 'active')
             ->where('remaining_balance', '>', 0)
             ->where('next_due_date', '>=', \Carbon\Carbon::today())
@@ -266,6 +265,20 @@ class DashboardController extends Controller
             ->map(function ($inst) {
                 $inst->days_left = (int) \Carbon\Carbon::today()
                     ->diffInDays(\Carbon\Carbon::parse($inst->next_due_date)->startOfDay());
+                return $inst;
+            });
+
+        // ── អតិថិជនបង់យឺត (ហួសកាលកំណត់ / Overdue Customers) ─────────────
+        $overdueInstallments = Installment::with(['customer', 'product'])
+            ->where('status', 'active')
+            ->where('remaining_balance', '>', 0)
+            ->where('next_due_date', '<', \Carbon\Carbon::today())
+            ->orderBy('next_due_date', 'asc')
+            ->take(10)
+            ->get()
+            ->map(function ($inst) {
+                $inst->days_overdue = (int) \Carbon\Carbon::parse($inst->next_due_date)
+                    ->diffInDays(\Carbon\Carbon::today());
                 return $inst;
             });
 
@@ -354,6 +367,7 @@ class DashboardController extends Controller
                 'pendingTrend',
                 'completedTrend',
                 'upcomingDueInstallments',
+                'overdueInstallments',
                 'installmentTypesData',
             ));
         }

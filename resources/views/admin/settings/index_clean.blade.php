@@ -293,25 +293,16 @@
                         </div>
                     </div>
 
-                    <!-- Exchange Rate & Tax Card -->
+                    <!-- VAT / Tax Card -->
                     <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 space-y-4">
+                        <input type="hidden" name="exchange_rate" value="{{ $settings['exchange_rate'] ?? '4000' }}">
                         <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2 border-b border-slate-100 pb-3">
-                            <span>💱</span>
-                            <span>{{ __('app.exchange_rate') }} & {{ __('app.tax') }}</span>
+                            <span class="text-indigo-600 font-extrabold text-sm px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded-lg">VAT</span>
+                            <span>{{ app()->getLocale() === 'km' ? 'ពន្ធ VAT (Tax)' : 'VAT / Tax Settings' }}</span>
                         </h2>
 
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">
-                                    {{ __('app.exchange_rate') }} (1 USD = KHR)
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="exchange_rate" value="{{ $settings['exchange_rate'] ?? '4100' }}" step="1" class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 pl-3.5 pr-12 py-2.5 focus:ring-2 focus:ring-indigo-500">
-                                    <span class="absolute right-3 top-2.5 text-xs font-bold text-slate-400">៛/USD</span>
-                                </div>
-                            </div>
-
-                            <div class="pt-2 border-t border-slate-100">
                                 <label class="flex items-center space-x-2.5 cursor-pointer">
                                     <input type="checkbox" name="tax_enabled" value="1" {{ ($settings['tax_enabled'] ?? '0') === '1' ? 'checked' : '' }} class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
                                     <span class="text-xs font-semibold text-slate-800">{{ __('app.enable_tax_system') }}</span>
@@ -320,12 +311,12 @@
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">{{ __('app.tax_rate') }} (%)</label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">{{ app()->getLocale() === 'km' ? 'អត្រា VAT (%)' : 'VAT Rate (%)' }}</label>
                                     <input type="number" name="default_tax_rate" value="{{ $settings['default_tax_rate'] ?? '10' }}" step="0.1" class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3 py-2">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">{{ __('app.tax_number') }}</label>
-                                    <input type="text" name="tax_number" value="{{ $settings['tax_number'] ?? '' }}" class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3 py-2">
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">{{ app()->getLocale() === 'km' ? 'លេខ VAT' : 'VAT Number' }}</label>
+                                    <input type="text" name="tax_number" value="{{ $settings['tax_number'] ?? '' }}" class="w-full text-xs sm:text-sm rounded-xl border border-slate-300 px-3 py-2" placeholder="VAT-xxxx">
                                 </div>
                             </div>
                         </div>

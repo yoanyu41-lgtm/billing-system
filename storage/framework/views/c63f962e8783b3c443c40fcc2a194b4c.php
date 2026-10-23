@@ -239,7 +239,7 @@ unset($__errorArgs, $__bag); ?>
                             <!-- Interest Rate -->
                             <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
-                                    <?php echo e(__('app.interest_rate')); ?> (%)
+                                    <?php echo e(__('app.interest_rate')); ?> (% / <?php echo e(__('app.duration_unit')); ?>)
                                 </label>
                                 <div class="relative">
                                     <i class="fas fa-percent ic-field-icon"></i>
@@ -271,12 +271,8 @@ unset($__errorArgs, $__bag); ?>
                                             <?php echo e($isKm ? 'រំលស់ការប្រាក់ថេរ — ការប្រាក់ថេររហូតដល់ផុតកិច្ចសន្យា' : 'Flat Rate — Fixed interest throughout'); ?>
 
                                         </option>
-                                        <option value="declining" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'declining' ? 'selected' : ''); ?>>
-                                            <?php echo e($isKm ? 'រំលស់ដើមថេរ ថយការប្រាក់ — ប្រាក់ដើមស្មើគ្នា ការប្រាក់ថយចុះ' : 'Declining Balance — Equal principal, declining interest'); ?>
-
-                                        </option>
                                         <option value="amortization" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'amortization' ? 'selected' : ''); ?>>
-                                            <?php echo e($isKm ? 'រំលស់ស្មើប្រចាំខែ — បង់ថេរស្មើគ្នារៀងរាល់ខែ' : 'Amortization / Annuity — Fixed total monthly payment'); ?>
+                                            <?php echo e($isKm ? 'ការរំលស់ថយដើមថយការ — បង់ថេរស្មើគ្នារៀងរាល់ខែ' : 'Declining Balance / EMI — Fixed total monthly payment'); ?>
 
                                         </option>
                                         <option value="bullet" <?php echo e(old('interest_type', $installment->interest_type ?? 'flat') === 'bullet' ? 'selected' : ''); ?>>
@@ -420,7 +416,6 @@ unset($__errorArgs, $__bag); ?>
                                 ប្រាក់រំលស់ប្រចាំខែ / Monthly Payment
                             </span>
                             <div class="text-2xl font-black text-indigo-700" id="previewMonthly">$0.00</div>
-                            <div class="text-[11px] font-semibold text-slate-500 mt-1" id="previewMonthlyKhr">≈ 0 KHR</div>
                         </div>
 
                         <div class="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200/60 text-[11px] text-slate-500 leading-relaxed space-y-1">
@@ -460,7 +455,6 @@ unset($__errorArgs, $__bag); ?>
     const previewInterest = document.getElementById('previewInterest');
     const previewRemaining = document.getElementById('previewRemaining');
     const previewMonthly = document.getElementById('previewMonthly');
-    const previewMonthlyKhr = document.getElementById('previewMonthlyKhr');
     const metaCustomerName = document.getElementById('metaCustomerName');
     const metaProductName = document.getElementById('metaProductName');
 
@@ -519,7 +513,7 @@ unset($__errorArgs, $__bag); ?>
         }
 
         const principal = Math.max(0, totalPrice - downPayment);
-        const monthlyRate = (interestRate / 100) / 12;
+        const monthlyRate = interestRate / 100;
 
         let monthlyPayment = 0;
         let monthlyInterest = 0;
@@ -565,8 +559,6 @@ unset($__errorArgs, $__bag); ?>
             remaining = principal + totalInterest;
         }
 
-        const monthlyKhr = monthlyPayment * exchangeRate;
-
         previewSubtotal.innerText = formatCurrency(subtotalInput);
         previewTax.innerText = formatCurrency(taxAmount);
         previewTotal.innerText = formatCurrency(totalPrice);
@@ -575,7 +567,6 @@ unset($__errorArgs, $__bag); ?>
         previewInterest.innerText = formatCurrency(monthlyInterest);
         previewRemaining.innerText = formatCurrency(remaining);
         previewMonthly.innerText = formatCurrency(monthlyPayment) + ' / ខែ';
-        previewMonthlyKhr.innerText = '≈ ' + Math.round(monthlyKhr).toLocaleString('en-US') + ' KHR';
 
         if (customerSelect.options[customerSelect.selectedIndex]) {
             metaCustomerName.innerText = customerSelect.options[customerSelect.selectedIndex].text.split('(')[0].trim();

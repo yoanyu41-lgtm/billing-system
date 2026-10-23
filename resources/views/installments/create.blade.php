@@ -307,7 +307,7 @@
                             <!-- Interest Rate -->
                             <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
-                                    {{ __('app.interest_rate') }} (%)
+                                    {{ __('app.interest_rate') }} (% / {{ __('app.duration_unit') }})
                                 </label>
                                 <div class="relative">
                                     <input type="number" step="0.01" min="0" name="interest_rate" id="interestRate"
@@ -339,19 +339,19 @@
                                         </div>
                                     </div>
 
-                                    <!-- Plan 2: Declining Balance -->
-                                    <div class="plan-card {{ old('interest_type') === 'declining' ? 'active' : '' }}" onclick="selectPlan('declining', this)">
+                                    <!-- Plan 2: Amortization / Declining Balance EMI -->
+                                    <div class="plan-card {{ old('interest_type') === 'amortization' ? 'active' : '' }}" onclick="selectPlan('amortization', this)">
                                         <div class="flex items-center gap-2.5">
-                                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0">2</span>
-                                            <span class="font-bold text-slate-900 text-xs">រំលស់ដើមថេរ ថយការប្រាក់ (Declining Balance)</span>
+                                            <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-black shrink-0">2</span>
+                                            <span class="font-bold text-slate-900 text-xs">ការរំលស់ថយដើមថយការ (Declining Balance / EMI)</span>
                                         </div>
                                     </div>
 
-                                    <!-- Plan 3: Amortization -->
-                                    <div class="plan-card {{ old('interest_type') === 'amortization' ? 'active' : '' }}" onclick="selectPlan('amortization', this)">
+                                    <!-- Plan 3: 0% Interest -->
+                                    <div class="plan-card {{ old('interest_type') === 'zero_interest' ? 'active' : '' }}" onclick="selectPlan('zero_interest', this)">
                                         <div class="flex items-center gap-2.5">
-                                            <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-black shrink-0">3</span>
-                                            <span class="font-bold text-slate-900 text-xs">រំលស់ស្មើប្រចាំខែ (Amortization / Annuity)</span>
+                                            <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black shrink-0">3</span>
+                                            <span class="font-bold text-slate-900 text-xs">រំលស់ការប្រាក់ ០% (0% Interest)</span>
                                         </div>
                                     </div>
 
@@ -360,14 +360,6 @@
                                         <div class="flex items-center gap-2.5">
                                             <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-black shrink-0">4</span>
                                             <span class="font-bold text-slate-900 text-xs">បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ (Bullet Payment)</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Plan 5: 0% Interest -->
-                                    <div class="plan-card {{ old('interest_type') === 'zero_interest' ? 'active' : '' }}" onclick="selectPlan('zero_interest', this)">
-                                        <div class="flex items-center gap-2.5">
-                                            <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black shrink-0">5</span>
-                                            <span class="font-bold text-slate-900 text-xs">រំលស់ការប្រាក់ ០% (0% Interest)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -491,12 +483,6 @@
                             ប្រាក់រំលស់ប្រចាំខែ / Monthly Payment
                         </span>
                         <div class="text-2xl font-black text-indigo-700" id="previewMonthly">$0.00</div>
-                        <div class="text-[11px] font-semibold text-slate-500 mt-1" id="previewMonthlyKhr">≈ 0 KHR</div>
-                    </div>
-
-                    <div class="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200/60 text-[11px] text-slate-500 leading-relaxed">
-                        <i class="fas fa-info-circle text-indigo-500 mr-1"></i>
-                        <span lang="km">អត្រាប្តូរប្រាក់បច្ចុប្បន្ន: 1 USD = {{ number_format($exchangeRate ?? 4100) }} KHR</span>
                     </div>
                 </div>
             </div>
@@ -547,7 +533,6 @@
     const previewInterest = document.getElementById('previewInterest');
     const previewRemaining = document.getElementById('previewRemaining');
     const previewMonthly = document.getElementById('previewMonthly');
-    const previewMonthlyKhr = document.getElementById('previewMonthlyKhr');
 
     function formatCurrency(val) {
         return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -624,7 +609,7 @@
         }
 
         const principal = Math.max(0, totalPrice - downPayment);
-        const monthlyRate = (interestRate / 100) / 12;
+        const monthlyRate = interestRate / 100;
 
         let firstMonthPayment = 0;
         let firstMonthInterest = 0;
@@ -670,8 +655,6 @@
             totalRemaining = principal + totalInterest;
         }
 
-        const monthlyKhr = firstMonthPayment * exchangeRate;
-
         previewSubtotal.innerText = formatCurrency(subtotalInput);
         previewTax.innerText = formatCurrency(taxAmount);
         previewTotal.innerText = formatCurrency(totalPrice);
@@ -680,7 +663,6 @@
         previewInterest.innerText = formatCurrency(firstMonthInterest);
         previewRemaining.innerText = formatCurrency(totalRemaining);
         previewMonthly.innerText = formatCurrency(firstMonthPayment) + ' / ខែ';
-        previewMonthlyKhr.innerText = '≈ ' + Math.round(monthlyKhr).toLocaleString('en-US') + ' KHR';
     }
 
     function escapeHtml(str) {

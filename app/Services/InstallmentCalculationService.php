@@ -24,13 +24,8 @@ class InstallmentCalculationService
                 'name_en' => 'Flat Rate',
                 'desc_km' => 'ការប្រាក់ស្មើគ្នា និងប្រាក់ដើមស្មើគ្នារៀងរាល់ខែ',
             ],
-            self::TYPE_DECLINING => [
-                'name_km' => 'រំលស់ដើមថេរ ថយការប្រាក់',
-                'name_en' => 'Declining Balance',
-                'desc_km' => 'ប្រាក់ដើមស្មើគ្នា ការប្រាក់ថយចុះតាមប្រាក់ដើមនៅសល់',
-            ],
             self::TYPE_AMORTIZATION => [
-                'name_km' => 'រំលស់ស្មើប្រចាំខែ',
+                'name_km' => 'ការរំលស់ថយដើមថយការ',
                 'name_en' => 'Amortization (Annuity)',
                 'desc_km' => 'ទឹកប្រាក់បង់សរុបថេរស្មើគ្នាជារៀងរាល់ខែ (តាមបែបធនាគារ)',
             ],
@@ -92,7 +87,7 @@ class InstallmentCalculationService
             $annualRate = 0;
         }
 
-        $monthlyRate = ($annualRate / 100) / 12;
+        $monthlyRate = $annualRate / 100;
         $schedule = [];
         $balance = $principal;
 
@@ -177,13 +172,13 @@ class InstallmentCalculationService
                 break;
 
             // -------------------------------------------------------------
-            // ៥. 0% Interest (គ្មានការប្រាក់ - បង់ដើមថេរស្មើគ្នាគ្រប់ខែ)
+            // ៥. 0% Interest (គ្មានការប្រាក់)
             // -------------------------------------------------------------
             case self::TYPE_ZERO_INTEREST:
                 $basePrincipal = round($principal / $duration, 2);
                 for ($m = 1; $m <= $duration; $m++) {
-                    $p = $basePrincipal;
-                    $balance = ($m === $duration) ? 0.00 : round(max($balance - $p, 0), 2);
+                    $p = ($m === $duration) ? $balance : $basePrincipal;
+                    $balance = round(max($balance - $p, 0), 2);
 
                     $schedule[] = [
                         'month'     => $m,
@@ -202,7 +197,7 @@ class InstallmentCalculationService
             case self::TYPE_FLAT:
             default:
                 $basePrincipal = round($principal / $duration, 2);
-                $monthlyInterest = round(($principal * $annualRate / 100) / 12, 2);
+                $monthlyInterest = round($principal * $annualRate / 100, 2);
                 $monthlyTotal = round($basePrincipal + $monthlyInterest, 2);
 
                 for ($m = 1; $m <= $duration; $m++) {
