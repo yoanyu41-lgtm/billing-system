@@ -731,7 +731,7 @@ return [
     'completed_invoices'    => 'វិក្កយបត្រទូទាត់បញ្ចប់',
     
     // ── Telegram QR and Direct Payment Slip Upload ──
-    'send_qr_telegram'      => 'ផ្ញើ QR តាម Telegram',
+    'send_qr_telegram'      => 'Telegram',
     'record_payment'        => 'កត់ត្រាការទូទាត់',
     'upload_customer_slip'  => 'បញ្ចូលបង្កាន់ដៃអតិថិជន',
     'confirm_and_approve'   => 'បញ្ជាក់ & អនុម័ត',

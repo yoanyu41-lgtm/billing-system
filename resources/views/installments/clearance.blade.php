@@ -2,585 +2,876 @@
 @php
     $isKm = app()->getLocale() === 'km';
     $L = fn($km, $en) => $isKm ? $km : $en;
+
+    $companyName = $settings['company_name'] ?? 'CITY TECH COMPUTER';
+    $companyNameKm = $settings['company_name_km'] ?? 'ស៊ីធី តិច កុំព្យូទ័រ';
+    $companyAddress = $settings['company_address'] ?? 'Siem Reap, Cambodia';
+    $companyAddressKm = $settings['company_address_km'] ?? $companyAddress;
+    $companyPhone = $settings['company_phone'] ?? '012 345 678 | 098 765 432';
+    $companyTelegram = $settings['company_telegram'] ?? '@citytechcomputer';
+    $companyLogoRaw = $settings['company_logo'] ?? null;
+    $companyLogo = !empty($companyLogoRaw) ? asset('storage/' . $companyLogoRaw) : asset('logo-ct.svg');
+
+    // Numbers & Data preparation
+    $certNo = 'CC-' . date('Y') . '-' . str_pad($installment->id, 5, '0', STR_PAD_LEFT);
+    $contractNo = 'CT-' . str_pad($installment->id, 5, '0', STR_PAD_LEFT);
+    $issueDate = \Carbon\Carbon::now()->format('d/m/Y');
+    $contractDate = $installment->created_at ? \Carbon\Carbon::parse($installment->created_at)->format('d/m/Y') : '-';
+
+    $productName = $product->name ?? 'N/A';
+    $productBrand = $product->brand ?? ($product->category?->name ?? 'ASUS ROG 15');
+    $productModel = $product->code ?? ('ASR15-' . date('Y') . '-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT));
+    $totalPrice = (float) $installment->total_price;
+    $downPayment = (float) $installment->down_payment;
+    $principalBase = max($totalPrice - $downPayment, 0);
+
+    // Load the official installment payment schedule
+    $schedule = $installment->getPaymentSchedule();
+
+    // Map schedule rows for payment history (Section 3)
+    $historyRows = [];
+    $sumPrincipal = 0;
+    $sumInterest = 0;
+    $sumLateFee = 0;
+    $sumTotal = 0;
+
+    $paidScheduleRows = array_values(array_filter($schedule, function ($row) {
+        return in_array($row['status'], ['paid', 'completed']) || !empty($row['is_settlement']);
+    }));
+
+    if (!empty($paidScheduleRows)) {
+        foreach ($paidScheduleRows as $idx => $sRow) {
+            $pPrincipal = (float) ($sRow['principal'] ?? 0);
+            $pInterest = (float) ($sRow['interest'] ?? 0);
+            $pLateFee = (float) ($sRow['penalty_amount'] ?? 0);
+
+            // If late fee on row is 0 but it is a settlement row or had overdue days, fallback to settlement payment late fee
+            if ($pLateFee <= 0 && !empty($sRow['is_settlement']) && $settlementPayment) {
+                $pLateFee = (float) ($settlementPayment->late_fee ?? ($settlementPayment->penalty_amount ?? 0));
+            }
+
+            $pTotal = (float) ($sRow['amount'] ?? 0) + $pLateFee;
+            $pRemaining = (float) ($sRow['outstanding_principal'] ?? 0);
+
+            // Format date: preference payment_date, fallback due_date
+            $pDate = !empty($sRow['payment_date']) 
+                ? \Carbon\Carbon::parse($sRow['payment_date'])->format('d/m/Y')
+                : (!empty($sRow['due_date']) ? \Carbon\Carbon::parse($sRow['due_date'])->format('d/m/Y') : '-');
+
+            $sumPrincipal += $pPrincipal;
+            $sumInterest += $pInterest;
+            $sumLateFee += $pLateFee;
+            $sumTotal += $pTotal;
+
+            $historyRows[] = [
+                'no' => $sRow['month'] ?? ($idx + 1),
+                'date' => $pDate,
+                'principal' => $pPrincipal,
+                'interest' => $pInterest,
+                'late_fee' => $pLateFee,
+                'total' => $pTotal,
+                'remaining' => $pRemaining,
+                'is_settlement' => !empty($sRow['is_settlement']),
+            ];
+        }
+    } else {
+        // Fallback to payments table if schedule has no paid rows
+        $rawHistory = $installment->payments()
+            ->with('paymentMethod')
+            ->where('status', 'approved')
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
+
+        $runningBalance = $principalBase;
+        foreach ($rawHistory as $idx => $p) {
+            $pPrincipal = (float) ($p->principal_amount ?? 0);
+            $pInterest = (float) ($p->interest_amount ?? 0);
+            $pLateFee = (float) ($p->late_fee ?? ($p->penalty_amount ?? 0));
+            $pTotal = (float) $p->amount;
+
+            if ($pPrincipal <= 0 && !$p->is_settlement) {
+                $pPrincipal = max($pTotal - $pInterest - $pLateFee, 0);
+            }
+            if ($p->is_settlement && $pPrincipal <= 0) {
+                $pPrincipal = $runningBalance;
+            }
+
+            $runningBalance = max($runningBalance - $pPrincipal, 0);
+            $sumPrincipal += $pPrincipal;
+            $sumInterest += $pInterest;
+            $sumLateFee += $pLateFee;
+            $sumTotal += $pTotal;
+
+            $historyRows[] = [
+                'no' => $idx + 1,
+                'date' => $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '-',
+                'principal' => $pPrincipal,
+                'interest' => $pInterest,
+                'late_fee' => $pLateFee,
+                'total' => $pTotal,
+                'remaining' => $runningBalance,
+                'is_settlement' => (bool) $p->is_settlement,
+            ];
+        }
+    }
+
+    // Settlement Info
+    $hasSettlement = (bool) $settlementPayment;
+    $settlementDate = $settlementPayment && $settlementPayment->payment_date 
+        ? \Carbon\Carbon::parse($settlementPayment->payment_date)->format('d/m/Y') 
+        : $issueDate;
+    
+    $payoffTypeName = $isKm ? 'បង់តែប្រាក់ដើម' : 'Principal Only';
+    if ($settlementPayment) {
+        if ($settlementPayment->payoff_type === 'principal_only') {
+            $payoffTypeName = $isKm ? 'បង់តែប្រាក់ដើម' : 'Principal Only';
+        } elseif ($settlementPayment->payoff_type === 'principal_interest') {
+            $payoffTypeName = $isKm ? 'ប្រាក់ដើម + ការប្រាក់នៅសល់' : 'Principal + Remaining Interest';
+        } else {
+            $payoffTypeName = $isKm ? 'បង់ផ្តាច់' : 'Pay Off';
+        }
+    }
+
+    $paymentMethodName = $settlementPayment?->paymentMethod?->name ?? 'ABA Bank';
+
+    // Total late fee: prioritize penalty recorded on settlement, or sum of penalties from schedule
+    $scheduleLateFeeSum = array_sum(array_column($schedule, 'penalty_amount'));
+    $settlementLateFee = (float) ($settlementPayment?->late_fee ?? ($settlementPayment?->penalty_amount ?? 0));
+    $lateFeeTotal = max($settlementLateFee, $scheduleLateFeeSum, $sumLateFee);
+
+    // Overdue days calculation from schedule
+    $overdueDays = 0;
+    if ($settlementPayment) {
+        $payDate = $settlementPayment->payment_date ? \Carbon\Carbon::parse($settlementPayment->payment_date)->startOfDay() : \Carbon\Carbon::today();
+        foreach ($schedule as $row) {
+            $rowDue = \Carbon\Carbon::parse($row['due_date'])->startOfDay();
+            if ($payDate->gt($rowDue)) {
+                $days = (int) $rowDue->diffInDays($payDate);
+                if ($days > $overdueDays) {
+                    $overdueDays = $days;
+                }
+            }
+        }
+    }
+    if ($overdueDays === 0) {
+        $overdueDays = $installment->daysLate();
+    }
+
+    // If late fee is still 0 but there were overdue days, calculate penalty using installment formula
+    if ($lateFeeTotal <= 0 && $overdueDays > 0) {
+        $lateFeeTotal = (float) $installment->calculatePenalty($overdueDays);
+    }
+
+    // Prior payments before settlement
+    $priorPaidTotal = 0;
+    if ($hasSettlement) {
+        $priorPaidTotal = (float) $installment->payments()
+            ->where('status', 'approved')
+            ->where('id', '!=', $settlementPayment->id)
+            ->sum('amount');
+    } else {
+        $priorPaidTotal = max($sumTotal - ($historyRows ? end($historyRows)['total'] : 0), 0);
+    }
+    $lastPaidAmount = $hasSettlement ? (float)$settlementPayment->amount : ($historyRows ? end($historyRows)['total'] : $sumTotal);
 @endphp
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="km">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('app.clearance_certificate') }} - #CLR-INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</title>
+    <title>លិខិតបញ្ជាក់ការបង់ផ្តាច់ - {{ $certNo }}</title>
 
-    <!-- Poppins & Battambang webfonts -->
+    <!-- Standard Fonts: Poppins & Battambang -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Battambang:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
 
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', 'Khmer-System', sans-serif !important;
         }
-        
+
         body {
-            font-family: 'Poppins', 'Battambang', 'Khmer OS Battambang', sans-serif;
-            font-size: 11pt;
-            line-height: 1.7;
-            color: #000;
-            background: #fff;
-            padding: 20mm;
+            background: #ffffff;
+            color: #000000;
+            font-size: 10.5px;
+            line-height: 1.45;
+            padding: 15px;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        [lang="km"] {
-            font-family: 'Battambang', 'Khmer OS Battambang', 'Khmer OS', sans-serif;
-            line-height: 1.8;
-        }
-        
-        .container {
-            max-width: 210mm;
+
+        .cert-paper {
+            background: #ffffff;
+            width: 210mm;
             margin: 0 auto;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            padding: 8mm 14mm 6mm;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* Top Action Buttons */
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 12px;
+            max-width: 210mm;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid #000;
+            background: #fff;
+            color: #000;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #f1f5f9;
+        }
+
+        /* Header Layout (Clean Black/White) */
+        .header-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .company-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .company-text {
+            text-align: left;
+        }
+
+        .company-title-km {
+            font-size: 16px;
+            font-weight: 900;
+            color: #000000;
+            line-height: 1.25;
+        }
+
+        .company-title-en {
+            font-size: 13px;
+            font-weight: 800;
+            color: #000000;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            line-height: 1.15;
+            margin-top: 1px;
+        }
+
+        .company-meta {
+            font-size: 9.5px;
+            color: #333333;
+            margin-top: 2px;
+            line-height: 1.35;
+        }
+
+        /* Certificate Title Section */
+        .title-section {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 8px;
             position: relative;
         }
-        
-        /* Decorative border for certificate feel */
-        .inner-border {
-            border: 1px solid #1e3a8a;
-            padding: 30px;
-            border-radius: 8px;
+
+        .cert-main-title {
+            font-size: 19px;
+            font-weight: 900;
+            color: #000000;
+            letter-spacing: 0.3px;
+            margin-bottom: 1px;
+            line-height: 1.2;
         }
-        
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #1e3a8a;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+
+        .cert-sub-title {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #000000;
+            text-transform: uppercase;
         }
-        
-        .header h1 {
-            font-size: 20pt;
-            font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 5px;
+
+        .cert-meta-right {
+            position: absolute;
+            right: 0;
+            top: 0;
+            text-align: right;
+            font-size: 9.5px;
+            color: #000000;
+            line-height: 1.5;
         }
-        
-        .header h2 {
-            font-size: 14pt;
-            color: #475569;
-            margin-bottom: 15px;
-            font-weight: 500;
+        .cert-meta-right strong {
+            color: #000000;
+            font-weight: 700;
         }
-        
-        .company-info {
-            font-size: 10pt;
-            margin-top: 10px;
-            color: #334155;
-        }
-        
-        .certificate-meta {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 25px;
-            font-size: 10pt;
-            border-bottom: 1px dashed #cbd5e1;
-            padding-bottom: 10px;
-            color: #475569;
-        }
-        
-        .section-title {
-            background: #eff6ff;
-            padding: 6px 12px;
-            border-left: 4px solid #1e3a8a;
-            font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 12px;
-            color: #1e3a8a;
-            border-radius: 0 4px 4px 0;
-            font-size: 11pt;
-        }
-        
+
+        /* 2-Column Info Grid */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .info-box {
-            border: 1px solid #e2e8f0;
-            background-color: #f8fafc;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .info-box h3 {
-            font-size: 11pt;
+            gap: 12px;
             margin-bottom: 10px;
-            color: #1e3a8a;
-            font-weight: bold;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 4px;
         }
-        
-        .info-row {
+
+        .card-box {
+            border: 1px solid #000000;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .card-header-bar {
+            background: #ffffff;
+            color: #000000;
+            border-bottom: 1px solid #000000;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 800;
             display: flex;
-            margin-bottom: 5px;
-            font-size: 10pt;
+            align-items: center;
+            gap: 6px;
         }
-        
-        .info-label {
-            min-width: 120px;
-            font-weight: bold;
-            color: #475569;
+
+        .card-body {
+            padding: 6px 10px;
         }
-        
-        .info-value {
-            flex: 1;
-            color: #0f172a;
+
+        .kv-row {
+            display: grid;
+            grid-template-columns: 125px 12px 1fr;
+            padding: 2.5px 0;
+            font-size: 10px;
+            align-items: baseline;
+            border-bottom: 1px dashed #e2e8f0;
         }
-        
-        .declaration-box {
-            border: 2px solid #059669;
-            background-color: #f0fdf4;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 25px 0;
+        .kv-row:last-child {
+            border-bottom: none;
+        }
+
+        .kv-label {
+            color: #333333;
+            font-weight: 600;
+        }
+
+        .kv-sep {
+            color: #666666;
             text-align: center;
         }
-        
-        .declaration-box p {
-            font-size: 12pt;
-            font-weight: 500;
-            color: #065f46;
-            margin-bottom: 8px;
+
+        .kv-value {
+            color: #000000;
+            font-weight: 700;
         }
-        
-        .declaration-box .badge {
-            display: inline-block;
-            background-color: #059669;
-            color: #fff;
-            font-weight: bold;
-            padding: 4px 16px;
-            border-radius: 9999px;
-            font-size: 10pt;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 5px;
+
+        /* Payment History Table (Section 3) */
+        .section-header-bar {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #000000;
+            border-bottom: none;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 4px 4px 0 0;
+            margin-top: 6px;
         }
-        
-        table {
+
+        .custom-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 10pt;
+            font-size: 10px;
+            margin-bottom: 10px;
         }
-        
-        table, th, td {
-            border: 1px solid #cbd5e1;
-        }
-        
-        th, td {
-            padding: 10px;
+
+        .custom-table th {
+            background: #ffffff;
+            color: #000000;
+            font-weight: 800;
             text-align: center;
+            padding: 5px 6px;
+            border: 1px solid #000000;
+            font-size: 9.5px;
+            line-height: 1.25;
         }
-        
-        th {
-            background: #f1f5f9;
-            color: #1e3a8a;
-            font-weight: bold;
+
+        .custom-table td {
+            padding: 4px 6px;
+            border: 1px solid #000000;
+            color: #000000;
+            font-size: 10px;
+            background: #ffffff;
         }
-        
-        .signatures {
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: 700; }
+
+        .badge-paid {
+            font-weight: 700;
+            font-size: 9px;
+            color: #000000;
+            border: 1px solid #000000;
+            padding: 1px 6px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* Summary 2 Columns (Section 4 & 5) */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .summary-table td {
+            padding: 4px 8px;
+            border: 1px solid #000000;
+        }
+
+        .summary-table tr td:first-child {
+            color: #000000;
+            font-weight: 600;
+            background: #ffffff;
+        }
+
+        .summary-table tr td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #000000;
+        }
+
+        .summary-table tr.highlight-zero td {
+            background: #ffffff;
+            color: #000000 !important;
+            font-weight: 900 !important;
+            font-size: 11px;
+        }
+
+        /* Statement Box */
+        .statement-text {
+            font-size: 9.5px;
+            color: #000000;
+            line-height: 1.5;
+            margin: 6px 0 10px;
+            text-align: justify;
+        }
+        .statement-text strong {
+            color: #000000;
+            font-weight: 800;
+        }
+
+        /* Signatures Layout - Clean 2 Columns */
+        .signatures-area {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
-            margin-top: 40px;
+            margin-top: 10px;
+            padding-top: 6px;
         }
-        
-        .signature-box {
+
+        .sign-col {
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        
-        .signature-line {
-            border-top: 1px solid #475569;
-            margin: 50px 30px 10px;
+
+        .sign-title-tag {
+            color: #000000;
+            font-weight: 800;
+            font-size: 10.5px;
+            padding: 3px 14px;
+            display: inline-block;
+            margin-bottom: 4px;
+            width: 85%;
+            border-bottom: 1px solid #000000;
         }
-        
-        .footer {
+
+        .signature-space {
+            height: 55px;
+            width: 100%;
+        }
+
+        .sign-line {
+            width: 80%;
+            border-top: 1px dotted #000000;
+            margin: 2px 0 4px;
+        }
+
+        .sign-name {
+            font-weight: 800;
+            color: #000000;
+            font-size: 10.5px;
+        }
+
+        .sign-date {
+            font-size: 9.5px;
+            color: #333333;
+            margin-top: 1px;
+            font-weight: 600;
+        }
+
+        /* Footer Thank you note */
+        .footer-note {
             text-align: center;
-            margin-top: 50px;
-            padding-top: 15px;
-            border-top: 1px dashed #cbd5e1;
-            font-size: 9pt;
-            color: #64748b;
+            margin-top: 12px;
+            padding-top: 6px;
+            border-top: 1px solid #cccccc;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: 0.2px;
         }
-        
+
         @media print {
-            body {
-                padding: 0;
-                font-size: 9.5pt;
-                line-height: 1.45;
+            html, body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                height: 100% !important;
+                overflow: hidden !important;
             }
-            
-            .container {
-                border: none;
-                box-shadow: none;
-                padding: 0;
-                max-width: 100%;
+
+            .top-nav {
+                display: none !important;
             }
-            
-            .inner-border {
-                border: 1px solid #1e3a8a;
-                padding: 15px;
+
+            .cert-paper {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                padding: 5mm 10mm 4mm !important;
+                margin: 0 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
             }
-            
-            .no-print {
-                display: none;
-            }
-            
-            .header {
-                padding-bottom: 8px;
-                margin-bottom: 12px;
-            }
-            
-            .header h1 {
-                font-size: 15pt;
-            }
-            
-            .header h2 {
-                font-size: 10.5pt;
-                margin-bottom: 8px;
-            }
-            
-            .company-info {
-                font-size: 9pt;
-                margin-top: 6px;
-            }
-            
-            .certificate-meta {
-                margin-bottom: 12px;
-                padding-bottom: 6px;
-                font-size: 9pt;
-            }
-            
-            .section-title {
-                margin-top: 10px;
-                margin-bottom: 6px;
-                padding: 4px 8px;
-                font-size: 9.5pt;
-            }
-            
-            .info-grid {
-                gap: 10px;
-                margin-bottom: 10px;
-            }
-            
-            .info-box {
-                padding: 10px;
-            }
-            
-            .info-box h3 {
-                font-size: 9.5pt;
-                margin-bottom: 6px;
-                padding-bottom: 2px;
-            }
-            
-            .info-row {
-                margin-bottom: 2px;
-                font-size: 9pt;
-            }
-            
-            .declaration-box {
-                margin: 10px 0;
-                padding: 10px 15px;
-                border-width: 1px;
-            }
-            
-            .declaration-box p {
-                font-size: 10pt;
-                margin-bottom: 2px;
-            }
-            
-            .declaration-box .badge {
-                margin-top: 2px;
-                padding: 2px 12px;
-                font-size: 8.5pt;
-            }
-            
-            table {
-                margin-top: 5px;
-                font-size: 8.5pt;
-            }
-            
-            th, td {
-                padding: 6px 8px;
-            }
-            
-            .signatures {
-                margin-top: 20px;
-                gap: 20px;
-            }
-            
-            .signature-box p {
-                font-size: 9pt;
-            }
-            
-            .signature-line {
-                margin: 30px 20px 5px;
-            }
-            
-            .footer {
-                margin-top: 15px;
-                padding-top: 8px;
-                font-size: 8pt;
-            }
-            
+
             @page {
-                size: A4;
-                margin: 10mm;
+                size: A4 portrait;
+                margin: 4mm 4mm 0 4mm;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="inner-border">
-            <!-- Print Button -->
-            <div class="no-print" style="text-align: right; margin-bottom: 20px;">
-                <button onclick="window.print()" style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; border-radius: 6px;">
-                    🖨️ {{ $L('បោះពុម្ព', 'Print') }}
-                </button>
-                <button onclick="window.close()" style="background: #64748B; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: 10px; font-weight: bold; border-radius: 6px;">
-                    ✖️ {{ $L('បិទ', 'Close') }}
-                </button>
-            </div>
-            
-            <!-- Header -->
-            <div class="header">
-                @php
-                    $companyLogoPath = $settings['company_logo'] ?? null;
-                    $companyLogo = !empty($companyLogoPath) ? asset('storage/' . $companyLogoPath) : null;
-                @endphp
-                @if($companyLogo)
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 65px; object-fit: contain;">
-                    </div>
-                @endif
-                @if($isKm)
-                    <h1 lang="km">លិខិតបញ្ជាក់ការបញ្ចប់ការបង់រំលស់</h1>
-                    <h2>CERTIFICATE OF INSTALLMENT COMPLETION</h2>
-                @else
-                    <h1>CERTIFICATE OF INSTALLMENT COMPLETION</h1>
-                    <h2>លិខិតបញ្ជាក់ការបញ្ចប់ការបង់រំលស់</h2>
-                @endif
-                
-                @php
-                    $companyName = $settings['company_name'] ?? 'CityTech Computer Shop';
-                    $companyNameKm = $settings['company_name_km'] ?? 'ហាង​កុំព្យូទ័រ​ស៊ីធី​តិច';
-                    $companyAddress = $settings['company_address'] ?? 'Phnom Penh, Cambodia';
-                    $companyAddressKm = $settings['company_address_km'] ?? $companyAddress;
-                    $companyPhone = $settings['company_phone'] ?? '012-345-678';
-                    $companyEmail = $settings['company_email'] ?? 'info@citytech.com';
 
-                    $companyNameShow = $isKm ? $companyNameKm : $companyName;
-                    $companyAddressShow = $isKm ? $companyAddressKm : $companyAddress;
-                @endphp
-                
-                <div class="company-info">
-                    <strong>{{ $companyNameShow }}</strong><br>
-                    {{ $L('អាសយដ្ឋាន', 'Address') }}: {{ $companyAddressShow }}<br>
-                    {{ $L('ទូរស័ព្ទ', 'Phone') }}: {{ $companyPhone }} | {{ $L('អ៊ីមែល', 'Email') }}: {{ $companyEmail }}
-                </div>
-            </div>
-            
-            <!-- Certificate Meta -->
-            <div class="certificate-meta">
-                <div>
-                    <strong>{{ $L('លេខកិច្ចសន្យា', 'Contract No.') }}:</strong> 
-                    #INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}
-                </div>
-                <div>
-                    <strong>{{ $L('លេខលិខិតបញ្ជាក់', 'Clearance Certificate No.') }}:</strong> 
-                    #CLR-INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}
-                </div>
-                <div>
-                    <strong>{{ $L('កាលបរិច្ឆេទចេញ', 'Issue Date') }}:</strong> 
-                    {{ \Carbon\Carbon::now()->format('d/m/Y') }}
-                </div>
-            </div>
-            
-            <!-- Information Grid -->
-            <div class="info-grid">
-                <!-- Customer Details -->
-                <div class="info-box">
-                    <h3 lang="km">{{ $L('ព័ត៌មានអតិថិជន', 'CUSTOMER INFORMATION') }}</h3>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ឈ្មោះពេញ', 'Full Name') }}:</div>
-                        <div class="info-value" lang="km"><strong>{{ $customer->name }}</strong></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ភេទ', 'Gender') }}:</div>
-                        <div class="info-value" lang="km">
-                            @if($customer->gender === 'male')
-                                {{ $L('ប្រុស', 'Male') }}
-                            @elseif($customer->gender === 'female')
-                                {{ $L('ស្រី', 'Female') }}
-                            @else
-                                -
-                            @endif
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('លេខទូរស័ព្ទ', 'Phone') }}:</div>
-                        <div class="info-value">{{ $customer->phone ?? '-' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('លេខ Telegram', 'Telegram ID') }}:</div>
-                        <div class="info-value">{{ $customer->id_card ?? '-' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('អាសយដ្ឋាន', 'Address') }}:</div>
-                        <div class="info-value" lang="km">{{ $customer->address ?? '-' }}</div>
-                    </div>
-                </div>
-                
-                <!-- Product Details -->
-                <div class="info-box">
-                    <h3 lang="km">{{ $L('ព័ត៌មានផលិតផល', 'PRODUCT INFORMATION') }}</h3>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ឈ្មោះផលិតផល', 'Product Name') }}:</div>
-                        <div class="info-value" lang="km"><strong>{{ $product->name }}</strong></div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('លេខកូដ', 'Item Code') }}:</div>
-                        <div class="info-value">{{ $product->code ?? '-' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ប្រភេទ', 'Category') }}:</div>
-                        <div class="info-value" lang="km">{{ $product->category->name ?? '-' }}</div>
-                    </div>
-                    @if($product->brand)
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ម៉ាក', 'Brand') }}:</div>
-                        <div class="info-value">{{ $product->brand }}</div>
-                    </div>
-                    @endif
-                    <div class="info-row">
-                        <div class="info-label" lang="km">{{ $L('ការធានា', 'Warranty') }}:</div>
-                        <div class="info-value" lang="km">{{ $product->warranty ?: '-' }}</div>
-                    </div>
-                </div>
-            </div>
+    <!-- Action Bar -->
+    <div class="top-nav">
+        <button onclick="window.print()" class="btn-action">
+            <i class="fas fa-print"></i> បោះពុម្ពលិខិត (Print)
+        </button>
+        <button onclick="window.close()" class="btn-action">
+            <i class="fas fa-times"></i> បិទ (Close)
+        </button>
+    </div>
 
-            <!-- Financial Summary Section -->
-            <div class="section-title" lang="km">
-                📊 {{ $L('សេចក្តីសង្ខេបហិរញ្ញវត្ថុ', 'FINANCIAL SUMMARY') }}
-            </div>
+    <!-- Certificate Sheet (Clean Black & White / Standard Print) -->
+    <div class="cert-paper">
 
-            @if(isset($settlementPayment) && $settlementPayment)
-                <!-- Pay Off / Early Settlement Details Table -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>{{ $L('តម្លៃទំនិញសរុប (Total Price)', 'Total Price') }}</th>
-                            <th>{{ $L('ប្រាក់កក់ (Down Payment)', 'Down Payment') }}</th>
-                            <th>{{ $L('ប្រាក់ដើមបង់ផ្តាច់ (Principal Paid Off)', 'Principal Paid Off') }}</th>
-                            @if((float)($settlementPayment->interest_amount ?? 0) > 0)
-                                <th>{{ $L('ការប្រាក់ (Interest)', 'Interest') }}</th>
-                            @endif
-                            @if((float)($settlementPayment->discount_amount ?? 0) > 0)
-                                <th>{{ $L('បញ្ចុះតម្លៃ (Discount)', 'Discount') }}</th>
-                            @endif
-                            @if((float)($settlementPayment->late_fee ?? 0) > 0)
-                                <th>{{ $L('ពិន័យយឺត (Late Fee)', 'Late Fee') }}</th>
-                            @endif
-                            <th>{{ $L('ទឹកប្រាក់បង់ផ្តាច់ (Settlement Amount)', 'Settlement Amount') }}</th>
-                            <th>{{ $L('សមតុល្យនៅសល់ (Remaining)', 'Remaining Balance') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ format_currency($installment->total_price, $exchangeRate) }}</td>
-                            <td>{{ format_currency($installment->down_payment, $exchangeRate) }}</td>
-                            <td style="font-weight: 600;">{{ format_currency($settlementPayment->principal_amount ?? $installment->outstandingPrincipal(), $exchangeRate) }}</td>
-                            @if((float)($settlementPayment->interest_amount ?? 0) > 0)
-                                <td style="color: #059669; font-weight: 600;">+{{ format_currency($settlementPayment->interest_amount, $exchangeRate) }}</td>
-                            @endif
-                            @if((float)($settlementPayment->discount_amount ?? 0) > 0)
-                                <td style="color: #dc2626; font-weight: 600;">-{{ format_currency($settlementPayment->discount_amount, $exchangeRate) }}</td>
-                            @endif
-                            @if((float)($settlementPayment->late_fee ?? 0) > 0)
-                                <td style="color: #b45309; font-weight: 600;">+{{ format_currency($settlementPayment->late_fee, $exchangeRate) }}</td>
-                            @endif
-                            <td style="font-weight: bold; color: #1e40af; font-size: 11pt;">{{ format_currency($settlementPayment->amount, $exchangeRate) }}</td>
-                            <td style="font-weight: bold; color: #059669;">{{ format_currency(0, $exchangeRate) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            @else
-                <!-- Regular Schedule Completion Table -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>{{ $L('តម្លៃសរុប (Total Price)', 'Total Price') }}</th>
-                            <th>{{ $L('ប្រាក់កក់ (Down Payment)', 'Down Payment') }}</th>
-                            <th>{{ $L('រយៈពេល (Duration)', 'Duration') }}</th>
-                            <th>{{ $L('ប្រាក់បានបង់សរុប (Total Paid)', 'Total Paid') }}</th>
-                            <th>{{ $L('សមតុល្យនៅសល់ (Remaining)', 'Remaining Balance') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ format_currency($installment->total_price, $exchangeRate) }}</td>
-                            <td>{{ format_currency($installment->down_payment, $exchangeRate) }}</td>
-                            <td>{{ $installment->duration_months }} {{ __('app.months') }}</td>
-                            <td style="font-weight: bold; color: #059669;">{{ format_currency($totalPaid, $exchangeRate) }}</td>
-                            <td style="font-weight: bold; color: #059669;">{{ format_currency(0, $exchangeRate) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            @endif
-
-            <!-- Official Declaration -->
-            <div class="declaration-box">
-                @if($isKm)
-                    <p lang="km">យើងខ្ញុំតំណាងឱ្យ <strong>{{ $companyNameShow }}</strong> សូមបញ្ជាក់ជាផ្លូវការថា៖</p>
-                    <p lang="km">អតិថិជនឈ្មោះ <strong>{{ $customer->name }}</strong> បានទូទាត់រាល់ការបង់ប្រាក់រំលស់ទាំងអស់លើផលិតផលខាងលើរួចរាល់ជាស្ថាពរ។</p>
-                    <p lang="km">កិច្ចសន្យាបង់រំលស់លេខ <strong>#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</strong> ត្រូវបានបញ្ចប់ដោយជោគជ័យ ហើយសិទ្ធិកម្មសិទ្ធិលើផលិតផលត្រូវបានផ្ទេរទៅឱ្យអតិថិជនទាំងស្រុងចាប់ពីថ្ងៃនេះតទៅ។</p>
-                    <div class="badge">គម្រោងបានបញ្ចប់ជាស្ថាពរ</div>
-                @else
-                    <p>We, representing <strong>{{ $companyNameShow }}</strong>, hereby officially certify that:</p>
-                    <p>Customer <strong>{{ $customer->name }}</strong> has fully settled all installment payments for the product specified above.</p>
-                    <p>The installment agreement <strong>#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</strong> is successfully terminated, and full ownership of the product is hereby transferred to the customer starting from this date.</p>
-                    <div class="badge">INSTALLMENT FULLY COMPLETED</div>
-                @endif
-            </div>
-
-            <!-- Signatures -->
-            <div class="signatures">
-                <div class="signature-box">
-                    <p lang="km"><strong>{{ $L('ស្នាមមេដៃ/ហត្ថលេខាអតិថិជន', 'Customer Signature/Thumbprint') }}</strong></p>
-                    <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: {{ $customer->name }}</p>
-                    <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
+        <!-- 1. Header with Logo & Shop Info -->
+        <div class="header-wrap">
+            <div class="company-brand">
+                <img src="{{ $companyLogo }}" alt="Logo" class="company-logo">
+                <div class="company-text">
+                    <div class="company-title-km">{{ $companyNameKm }}</div>
+                    <div class="company-title-en">{{ $companyName }}</div>
+                    <div class="company-meta">
+                        អាសយដ្ឋាន: {{ $companyAddressKm }}<br>
+                        ទូរស័ព្ទ: {{ $companyPhone }} | Telegram: {{ $companyTelegram }}
+                    </div>
                 </div>
-                
-                <div class="signature-box">
-                    <p lang="km"><strong>{{ $L('តំណាងហាង / ហត្ថលេខា និងត្រា', 'Store Representative / Signature & Seal') }}</strong></p>
-                    <div class="signature-line"></div>
-                    <p lang="km">{{ $L('ឈ្មោះ', 'Name') }}: ________________________</p>
-                    <p lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</p>
-                </div>
-            </div>
-            
-            <!-- Footer -->
-            <div class="footer">
-                <p lang="km">{{ $L('លិខិតបញ្ជាក់នេះត្រូវបានបង្កើតឡើងដោយប្រព័ន្ធស្វ័យប្រវត្តិនៃ', 'This certificate was automatically generated by the system of') }} {{ $companyNameShow }}</p>
-                <p>{{ $L('បោះពុម្ពនៅ', 'Printed on') }}: {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</p>
             </div>
         </div>
+
+        <!-- 2. Certificate Title Section & Meta -->
+        <div class="title-section">
+            <div class="cert-meta-right">
+                <div>លេខលិខិត: <strong>{{ $certNo }}</strong></div>
+                <div>កាលបរិច្ឆេទ: <strong>{{ $issueDate }}</strong></div>
+            </div>
+
+            <h1 class="cert-main-title">លិខិតបញ្ជាក់ការបង់ផ្តាច់</h1>
+            <div class="cert-sub-title">CLEARANCE CERTIFICATE</div>
+        </div>
+
+        <!-- 4. Section 1 & 2: Customer & Product Info -->
+        <div class="info-grid">
+            <!-- Box 1: Customer Information -->
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <span>១. ព័ត៌មានអតិថិជន (Customer Information)</span>
+                </div>
+                <div class="card-body">
+                    <div class="kv-row">
+                        <span class="kv-label">ឈ្មោះអតិថិជន</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $customer->name ?? 'N/A' }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">លេខទូរស័ព្ទ</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $customer->phone ?? '-' }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">អាសយដ្ឋាន</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $customer->address ?? '-' }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">លេខកិច្ចសន្យា</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $contractNo }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">កាលបរិច្ឆេទចុះកិច្ចសន្យា</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $contractDate }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Box 2: Product Information -->
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <span>២. ព័ត៌មានផលិតផល (Product Information)</span>
+                </div>
+                <div class="card-body">
+                    <div class="kv-row">
+                        <span class="kv-label">ឈ្មោះផលិតផល</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $productName }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">ម៉ាក / ម៉ូដែល</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $productBrand }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">លេខស៊េរី</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $productModel }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">តម្លៃលក់សរុប</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">${{ number_format($totalPrice, 2) }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">ប្រាក់កក់</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">${{ number_format($downPayment, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Section 3: Payment History Table -->
+        <div class="section-header-bar">
+            ៣. ប្រវត្តិបង់ប្រាក់ (Payment History)
+        </div>
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th style="width: 45px;">លើក<br><span style="font-weight: normal; font-size: 8.5px;">No.</span></th>
+                    <th style="width: 85px;">ថ្ងៃបង់<br><span style="font-weight: normal; font-size: 8.5px;">Payment Date</span></th>
+                    <th>ប្រាក់ដើម<br><span style="font-weight: normal; font-size: 8.5px;">Principal</span></th>
+                    <th>ការប្រាក់<br><span style="font-weight: normal; font-size: 8.5px;">Interest</span></th>
+                    <th>ប្រាក់ពិន័យ<br><span style="font-weight: normal; font-size: 8.5px;">Late Fee</span></th>
+                    <th>ប្រាក់បង់សរុប<br><span style="font-weight: normal; font-size: 8.5px;">Total Payment</span></th>
+                    <th>សមតុល្យប្រាក់ដើម<br><span style="font-weight: normal; font-size: 8.5px;">Remaining Principal</span></th>
+                    <th style="width: 90px;">ស្ថានភាព<br><span style="font-weight: normal; font-size: 8.5px;">Status</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($historyRows as $row)
+                <tr>
+                    <td class="text-center font-bold">{{ $row['no'] }}</td>
+                    <td class="text-center">{{ $row['date'] }}</td>
+                    <td class="text-right">${{ number_format($row['principal'], 2) }}</td>
+                    <td class="text-right">${{ number_format($row['interest'], 2) }}</td>
+                    <td class="text-right">${{ number_format($row['late_fee'], 2) }}</td>
+                    <td class="text-right font-bold">${{ number_format($row['total'], 2) }}</td>
+                    <td class="text-right">${{ number_format($row['remaining'], 2) }}</td>
+                    <td class="text-center">
+                        <span class="badge-paid">
+                            {{ $row['is_settlement'] ? 'បង់ផ្តាច់' : 'បានបង់' }}
+                        </span>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td class="text-center font-bold">1</td>
+                    <td class="text-center">{{ $issueDate }}</td>
+                    <td class="text-right">${{ number_format($principalBase, 2) }}</td>
+                    <td class="text-right">$0.00</td>
+                    <td class="text-right">$0.00</td>
+                    <td class="text-right font-bold">${{ number_format($principalBase, 2) }}</td>
+                    <td class="text-right">$0.00</td>
+                    <td class="text-center">
+                        <span class="badge-paid">បង់ផ្តាច់</span>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: bold; border-top: 2px solid #000000;">
+                    <td colspan="2" class="text-center" style="font-weight: 800;">សរុប (Total)</td>
+                    <td class="text-right font-bold">${{ number_format($sumPrincipal ?: $principalBase, 2) }}</td>
+                    <td class="text-right font-bold">${{ number_format($sumInterest, 2) }}</td>
+                    <td class="text-right font-bold">${{ number_format($sumLateFee, 2) }}</td>
+                    <td class="text-right font-bold">${{ number_format($sumTotal ?: $principalBase, 2) }}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">-</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- 6. Section 4 & 5: Payment Summary & Payoff Information -->
+        <div class="summary-grid">
+            <!-- Box 4: Payment Summary -->
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <span>៤. សេចក្តីសង្ខេបការបង់ផ្តាច់ (Payment Summary)</span>
+                </div>
+                <table class="summary-table">
+                    <tr>
+                        <td>តម្លៃលក់សរុប</td>
+                        <td>${{ number_format($totalPrice, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>ប្រាក់កក់</td>
+                        <td>${{ number_format($downPayment, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>ប្រាក់បានបង់មុនបង់ផ្តាច់</td>
+                        <td>${{ number_format($priorPaidTotal, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>ប្រាក់បង់ផ្តាច់ចុងក្រោយ</td>
+                        <td>${{ number_format($lastPaidAmount, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>ប្រាក់បានបង់សរុប</td>
+                        <td>${{ number_format($downPayment + $sumTotal, 2) }}</td>
+                    </tr>
+                    <tr class="highlight-zero">
+                        <td>ប្រាក់ជំពាក់នៅសល់</td>
+                        <td>$0.00</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Box 5: Payoff Information -->
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <span>៥. ព័ត៌មានការបង់ផ្តាច់ (Payoff Information)</span>
+                </div>
+                <div class="card-body">
+                    <div class="kv-row">
+                        <span class="kv-label">ប្រភេទបង់ផ្តាច់</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $payoffTypeName }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">កាលបរិច្ឆេទបង់ផ្តាច់</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $settlementDate }}</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">វិធីទូទាត់</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $paymentMethodName }}</span>
+                    </div>
+                    @if(!empty($settlementPayment?->payment_reference))
+                    <div class="kv-row">
+                        <span class="kv-label">លេខប្រតិបត្តិការ</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $settlementPayment->payment_reference }}</span>
+                    </div>
+                    @endif
+                    <div class="kv-row">
+                        <span class="kv-label">ចំនួនថ្ងៃយឺត</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">{{ $overdueDays }} ថ្ងៃ</span>
+                    </div>
+                    <div class="kv-row">
+                        <span class="kv-label">ប្រាក់ពិន័យ</span>
+                        <span class="kv-sep">:</span>
+                        <span class="kv-value">${{ number_format($lateFeeTotal, 2) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Legal Confirmation Text -->
+        <p class="statement-text">
+            ហាង <strong>{{ $companyNameKm }}</strong> សូមបញ្ជាក់ថា អតិថិជនខាងលើបានទូទាត់ប្រាក់ដែលនៅសល់ និងកាតព្វកិច្ចហិរញ្ញវត្ថុពាក់ព័ន្ធតាមកិច្ចសន្យា លេខ <strong>{{ $contractNo }}</strong> គ្រប់ចំនួនរួចរាល់ហើយ។ គិតត្រឹមកាលបរិច្ឆេទចេញលិខិតនេះ អតិថិជនមិនមានប្រាក់ជំពាក់នៅសល់ចំពោះកិច្ចសន្យាខាងលើទៀតឡើយ។<br>
+            លិខិតនេះចេញជូនអតិថិជន ដើម្បីទុកជាភស្តុតាងបញ្ជាក់ការបង់ផ្តាច់ប្រាក់ដែលនៅសល់រួចរាល់។
+        </p>
+
+        <!-- 8. Signatures Section -->
+        <div class="signatures-area">
+            <!-- Customer Signature Box -->
+            <div class="sign-col">
+                <span class="sign-title-tag">ហត្ថលេខា និងស្នាមមេដៃអតិថិជន</span>
+                <div class="signature-space"></div>
+                <div class="sign-line"></div>
+                <div class="sign-name">{{ $customer->name ?? 'អតិថិជន' }}</div>
+                <div class="sign-date">កាលបរិច្ឆេទ: {{ $issueDate }}</div>
+            </div>
+
+            <!-- Store Representative Box -->
+            <div class="sign-col">
+                <span class="sign-title-tag">ហត្ថលេខា និងត្រាតំណាងហាង</span>
+                <div class="signature-space"></div>
+                <div class="sign-line"></div>
+                <div class="sign-date">កាលបរិច្ឆេទ: {{ $issueDate }}</div>
+            </div>
+        </div>
+
+        <!-- 9. Bottom Gratitude Note -->
+        <div class="footer-note">
+            សូមអរគុណចំពោះការជឿទុកចិត្ត និងគាំទ្រហាងយើងខ្ញុំ
+        </div>
     </div>
+
 </body>
 </html>

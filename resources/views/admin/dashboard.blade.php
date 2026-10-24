@@ -393,7 +393,7 @@
                                 @if($inst->customer?->phone)
                                     <span>{{ $inst->customer->phone }} · </span>
                                 @endif
-                                <span style="font-weight:600;color:#b91c1c;">{{ \Carbon\Carbon::parse($inst->next_due_date)->format('d M Y') }}</span>
+                                <span style="font-weight:600;color:#b91c1c;">{{ \Carbon\Carbon::parse($inst->effective_due_date ?? $inst->next_due_date)->format('d M Y') }}</span>
                             </div>
                         </div>
 

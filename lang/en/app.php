@@ -710,7 +710,7 @@ return [
     'completed_invoices'    => 'Completed Invoices',
     
     // ── Telegram QR and Direct Payment Slip Upload ──
-    'send_qr_telegram'      => 'Send QR to Telegram',
+    'send_qr_telegram'      => 'Telegram',
     'record_payment'        => 'Record Payment',
     'upload_customer_slip'  => 'Upload Customer Slip',
     'confirm_and_approve'   => 'Confirm & Approve',

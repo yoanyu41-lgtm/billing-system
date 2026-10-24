@@ -175,7 +175,7 @@ class Installment extends Model
             $paymentPool[] = [
                 'id'             => $p->id,
                 'amount'         => (float) $p->amount,
-                'penalty_amount' => (float) ($p->penalty_amount ?? 0),
+                'penalty_amount' => (float) ($p->penalty_amount ?? ($p->late_fee ?? 0)),
                 'penalty_reason' => $p->title ?? null,
                 'date'           => \Carbon\Carbon::parse($p->payment_date),
             ];
@@ -220,7 +220,7 @@ class Installment extends Model
                             'principal'             => $principalPortion,
                             'interest'              => $rowInterest,
                             'amount'                => $amountDue,
-                            'penalty_amount'        => (float) ($matchedPayment->penalty_amount ?? 0),
+                            'penalty_amount'        => (float) ($matchedPayment->penalty_amount ?? ($matchedPayment->late_fee ?? 0)),
                             'penalty_reason'        => $matchedPayment?->title ?? null,
                             'payment_id'            => $matchedPayment?->id ?? null,
                             'payment_date'          => $matchedPayment ? \Carbon\Carbon::parse($matchedPayment->payment_date) : null,
@@ -248,7 +248,7 @@ class Installment extends Model
                     'principal'             => $payoffPrincipal,
                     'interest'              => $payoffInterest,
                     'amount'                => $payoffAmount,
-                    'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? 0),
+                    'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? ($settlementPayment->late_fee ?? 0)),
                     'penalty_reason'        => $settlementPayment->title ?? null,
                     'payment_id'            => $settlementPayment->id ?? null,
                     'payment_date'          => $settlementDate,
@@ -275,7 +275,7 @@ class Installment extends Model
                 'principal'             => $payoffPrincipal,
                 'interest'              => $payoffInterest,
                 'amount'                => $payoffAmount,
-                'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? 0),
+                'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? ($settlementPayment->late_fee ?? 0)),
                 'penalty_reason'        => $settlementPayment->title ?? null,
                 'payment_id'            => $settlementPayment->id ?? null,
                 'payment_date'          => $settlementDate,
@@ -380,7 +380,7 @@ class Installment extends Model
                             'principal'             => $payoffPrincipal,
                             'interest'              => $payoffInterest,
                             'amount'                => round($allocatedPool, 2),
-                            'penalty_amount'        => (float) ($matchedPayment?->penalty_amount ?? 0),
+                            'penalty_amount'        => (float) ($matchedPayment?->penalty_amount ?? ($matchedPayment?->late_fee ?? 0)),
                             'penalty_reason'        => $matchedPayment?->title ?? null,
                             'payment_id'            => $matchedPayment?->id ?? null,
                             'payment_date'          => $lastPaymentDate,
@@ -485,25 +485,26 @@ class Installment extends Model
 
     public function daysLate(): int
     {
-        if ($this->next_due_date) {
-            $dueDate = \Carbon\Carbon::parse($this->next_due_date)->startOfDay();
-            $today = \Carbon\Carbon::today();
-            if ($dueDate->gte($today)) {
-                return 0;
-            }
-            return (int) $dueDate->diffInDays($today);
-        }
-
-        // Fallback: check payment schedule if next_due_date is missing
+        // Check payment schedule to find the earliest unpaid/overdue installment month
         $schedule = $this->getPaymentSchedule();
         $today = \Carbon\Carbon::today();
+
         foreach ($schedule as $row) {
             if ($row['status'] !== 'paid') {
                 $dueDate = \Carbon\Carbon::parse($row['due_date'])->startOfDay();
                 if ($dueDate->lt($today)) {
                     return (int) $dueDate->diffInDays($today);
                 }
-                break;
+                // Earliest unpaid row is not past yet -> 0 days late
+                return 0;
+            }
+        }
+
+        // Fallback to next_due_date column if schedule is empty
+        if ($this->next_due_date) {
+            $dueDate = \Carbon\Carbon::parse($this->next_due_date)->startOfDay();
+            if ($dueDate->lt($today)) {
+                return (int) $dueDate->diffInDays($today);
             }
         }
 

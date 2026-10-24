@@ -87,23 +87,27 @@ class DashboardController extends Controller
                                 : 0.00;
         $netProfit           = max($combinedIncome - $totalExpense, 0);
 
+        $allActiveInstallments = Installment::with(['customer', 'product'])
+            ->where('status', 'active')
+            ->where('remaining_balance', '>', 0)
+            ->get();
+
+        // Filter active installments that are actually late using daysLate()
+        $overdueInstallmentsList = $allActiveInstallments->filter(function ($inst) {
+            return $inst->daysLate() > 0;
+        })->values();
+
+        $lateCustomers = $overdueInstallmentsList->count();
+        $overdueAmount = $overdueInstallmentsList->sum('remaining_balance');
+
         $activeInstallments = Installment::where('status', 'active')->count();
         $installmentDue     = Installment::where('status', 'active')->sum('remaining_balance');
-        $overdueAmount      = Installment::where('status', 'active')
-            ->where('next_due_date', '<', today())
-            ->where('remaining_balance', '>', 0)
-            ->sum('remaining_balance');
 
         // Payment stats
         $totalPayments       = Payment::count();
         $paymentsToday       = Payment::whereDate('created_at', today())->count();
         $pendingPayments     = Payment::where('status', 'pending')->count();
         $completedInstallments = Installment::where('status', 'completed')->count();
-
-        $lateCustomers = Installment::where('status', 'active')
-            ->where('next_due_date', '<', today())
-            ->where('remaining_balance', '>', 0)
-            ->count();
 
         // ── Dynamic Trend Calculations (Current Month vs. Previous Month) ──
         $calculateTrend = function ($current, $previous) {
@@ -210,17 +214,8 @@ class DashboardController extends Controller
 
         // ── Installment Status Donut ─────────────────────────
         $paidCount    = Installment::where('status', 'completed')->count();
-        $overdueCount = Installment::where('status', 'active')
-            ->where('next_due_date', '<', today())
-            ->where('remaining_balance', '>', 0)
-            ->count();
-        $ongoingCount = Installment::where('status', 'active')
-            ->where(function($q) {
-                $q->whereNull('next_due_date')
-                  ->orWhere('next_due_date', '>=', today())
-                  ->orWhere('remaining_balance', '<=', 0);
-            })
-            ->count();
+        $overdueCount = $lateCustomers;
+        $ongoingCount = max(Installment::where('status', 'active')->count() - $overdueCount, 0);
         $totalInst    = max($paidCount + $ongoingCount + $overdueCount, 1);
 
         $installmentStatus = [
@@ -269,18 +264,20 @@ class DashboardController extends Controller
             });
 
         // ── អតិថិជនបង់យឺត (ហួសកាលកំណត់ / Overdue Customers) ─────────────
-        $overdueInstallments = Installment::with(['customer', 'product'])
-            ->where('status', 'active')
-            ->where('remaining_balance', '>', 0)
-            ->where('next_due_date', '<', \Carbon\Carbon::today())
-            ->orderBy('next_due_date', 'asc')
-            ->take(10)
-            ->get()
-            ->map(function ($inst) {
-                $inst->days_overdue = (int) \Carbon\Carbon::parse($inst->next_due_date)
-                    ->diffInDays(\Carbon\Carbon::today());
-                return $inst;
-            });
+        $overdueInstallments = $overdueInstallmentsList->map(function ($inst) {
+            $days = $inst->daysLate();
+            $inst->days_overdue = $days;
+            
+            // Find the actual overdue due date from payment schedule
+            $schedule = $inst->getPaymentSchedule();
+            $unpaidRow = collect($schedule)->first(fn($row) => $row['status'] !== 'paid');
+            if ($unpaidRow && !empty($unpaidRow['due_date'])) {
+                $inst->effective_due_date = $unpaidRow['due_date']->toDateString();
+            } else {
+                $inst->effective_due_date = $inst->next_due_date;
+            }
+            return $inst;
+        })->sortByDesc('days_overdue')->take(10)->values();
 
         // ── Recent Customers (Checks both Installments & Direct Sales) ──
         $recentCustomers = Customer::with(['installments.product', 'sales.items.product'])

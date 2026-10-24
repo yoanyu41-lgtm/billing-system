@@ -113,6 +113,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end items-center gap-2">
+                                <a href="<?php echo e(route('installments.schedule', $installment)); ?>" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 transition shadow-xs" title="<?php echo e(__('app.payment_schedule')); ?>">
+                                    <i class="fas fa-eye text-sm"></i>
+                                </a>
                                 <a href="<?php echo e(route('installments.clearance', $installment)); ?>" target="_blank" class="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg transition duration-150 text-xs shadow-sm">
                                     <i class="fas fa-print"></i>
                                     <?php echo e(__('app.print_clearance')); ?>

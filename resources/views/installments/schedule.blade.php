@@ -310,7 +310,6 @@
                     <tr>
                         <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">លេខទី<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">ថ្ងៃត្រូវបង់<br><span class="font-normal text-[11px] text-slate-400">Due Date</span></th>
-                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">ថ្ងៃបង់ប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Payment Date</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Principal</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Interest</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ពិន័យ<br><span class="font-normal text-[11px] text-slate-400">Late Fee</span></th>
@@ -329,7 +328,6 @@
                     <tr class="bg-slate-50/60 font-semibold text-slate-500 text-xs">
                         <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">{{ $installment->created_at?->format('d/m/Y') ?? '-' }}</td>
-                        <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
@@ -349,13 +347,6 @@
                         <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 whitespace-nowrap text-sm">
                             <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
                             <span class="text-slate-400 text-xs block font-medium">({{ $row['day'] }})</span>
-                        </td>
-                        <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 whitespace-nowrap text-sm">
-                            @if(!empty($row['payment_date']))
-                                <span class="font-semibold text-slate-700">{{ $row['payment_date']->format('d/m/Y') }}</span>
-                            @else
-                                <span class="text-slate-400 font-medium">-</span>
-                            @endif
                         </td>
                         <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
                         <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
@@ -448,7 +439,7 @@
                 </tbody>
                 <tfoot class="bg-slate-50 border-t-2 border-gray-300 font-bold">
                     <tr>
-                        <td colspan="3" class="border border-gray-200 px-3 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
+                        <td colspan="2" class="border border-gray-200 px-3 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right font-black text-sm {{ ($summary['total_penalty'] ?? 0) > 0 ? 'text-red-600' : 'text-slate-400' }}">

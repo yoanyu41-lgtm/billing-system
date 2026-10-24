@@ -294,6 +294,11 @@ class InstallmentController extends Controller
             $installment->is_payoff_eligible = ($minMonth <= 0) || ($paidMonths >= $minMonth);
             $installment->payoff_min_required_month = $minMonth;
 
+            // Overdue days & late fee calculation for Pay Off
+            $daysLate = $installment->daysLate();
+            $installment->overdue_days = $daysLate;
+            $installment->calculated_late_fee = $daysLate > 0 ? (float) $installment->calculatePenalty($daysLate) : 0.00;
+
             return $installment;
         });
 
@@ -957,10 +962,19 @@ class InstallmentController extends Controller
 
         // Check if there is an early settlement (Pay Off) payment
         $settlementPayment = $installment->payments()
+            ->with('paymentMethod')
             ->where('status', 'approved')
             ->where('is_settlement', true)
             ->latest('payment_date')
             ->first();
+
+        // Payment History for table 3
+        $paymentHistory = $installment->payments()
+            ->with('paymentMethod')
+            ->where('status', 'approved')
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
 
         return view('installments.clearance', compact(
             'installment',
@@ -970,6 +984,7 @@ class InstallmentController extends Controller
             'totalInterest',
             'totalPrincipal',
             'settlementPayment',
+            'paymentHistory',
             'settings',
             'exchangeRate'
         ));

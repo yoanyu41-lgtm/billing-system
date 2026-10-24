@@ -157,7 +157,6 @@ class LatePaymentController extends Controller
             if ($result['ok']) {
                 $installment->update([
                     'last_reminder_sent_at' => now(),
-                    'next_due_date' => Carbon::parse($installment->next_due_date)->addMonth()->toDateString(),
                 ]);
                 $sent++;
             }
