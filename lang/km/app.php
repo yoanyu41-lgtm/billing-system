@@ -536,6 +536,7 @@ return [
 
     // ── Settings ──
     'general_settings'      => 'ការកំណត់ទូទៅ',
+    'installment_settings'  => 'ការកំណត់បង់រំលស់',
     'company_name'          => 'ឈ្មោះក្រុមហ៊ុន',
     'company_address'       => 'អាសយដ្ឋានក្រុមហ៊ុន',
     'currency'              => 'រូបិយប័ណ្ណ',
@@ -770,6 +771,7 @@ return [
     'clearance_sub'         => 'មើល និងបោះពុម្ពលិខិតបញ្ជាក់ការបង់ដាច់សម្រាប់គម្រោងដែលបានបញ្ចប់។',
 
     // ── Late Payments ──
+    'late_customers'        => 'អតិថិជនបង់យឺត',
     'remaining_balance'     => 'តុល្យភាពប្រាក់នៅសល់',
     'send_reminder'         => 'ផ្ញើការរំលឹក',
     'send_due_date_reminders_today' => 'ផ្ញើសាររំលឹកថ្ងៃកំណត់បង់ប្រាក់ (ថ្ងៃនេះ)',

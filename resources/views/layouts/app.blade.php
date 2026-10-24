@@ -1087,8 +1087,8 @@
 
             {{-- Installments Dropdown --}}
             @if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.view'))
-            <div class="sb-dropdown {{ request()->routeIs('installments.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown {{ request()->routeIs('installments.*') || request()->routeIs('late-payments.*') ? 'open' : '' }}">
+                <div class="sb-dropdown-toggle {{ request()->routeIs('installments.*') || request()->routeIs('late-payments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>{{ __('app.installment_plans') }}</span>
                     <i class="fas fa-chevron-down"></i>
@@ -1108,6 +1108,9 @@
                     </a>
                     <a href="{{ route('installments.clearance-index') }}" class="{{ request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : '' }}">
                         <i class="fas fa-certificate"></i> {{ __('app.clearance_certificates') }}
+                    </a>
+                    <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
+                        <i class="fas fa-user-clock"></i> {{ __('app.late_customers') ?? 'អតិថិជនបង់យឺត' }}
                     </a>
                 </div>
             </div>
@@ -1181,23 +1184,12 @@
             </div>
             @endif
 
-            {{-- Payment Dropdown --}}
+            {{-- Payment Menu --}}
             @if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.view'))
-            <div class="sb-dropdown {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : '' }}">
-                <div class="sb-dropdown-toggle {{ request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
-                    <i class="fas fa-money-check-alt"></i>
-                    <span>{{ __('app.payments') }}</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="sb-dropdown-menu">
-                    <a href="{{ route('payments.index') }}" class="{{ request()->routeIs('payments.index') ? 'active' : '' }}">
-                        <i class="fas fa-list"></i> {{ __('app.all_payments') }}
-                    </a>
-                    <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
-                        <i class="fas fa-exclamation-circle"></i> {{ __('app.late_payments') }}
-                    </a>
-                </div>
-            </div>
+            <a href="{{ route('payments.index') }}" class="sb-item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                <i class="fas fa-money-check-alt"></i>
+                <span>{{ __('app.payments') }}</span>
+            </a>
             @endif
 
             {{-- Product Management --}}
@@ -1303,7 +1295,10 @@
                     </a>
                     @endif
                     @if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage'))
-                    <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.settings.installment') }}" class="{{ request()->routeIs('admin.settings.installment') ? 'active' : '' }}">
+                        <i class="fas fa-hand-holding-usd"></i> {{ __('app.installment_settings') }}
+                    </a>
+                    <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.index') ? 'active' : '' }}">
                         <i class="fas fa-sliders-h"></i> {{ __('app.general_settings') }}
                     </a>
                     <a href="{{ route('customers.trash') }}" class="{{ request()->routeIs('customers.trash') ? 'active' : '' }}">

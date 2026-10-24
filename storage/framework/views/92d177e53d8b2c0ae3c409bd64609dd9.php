@@ -1090,8 +1090,8 @@
 
             
             <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('installments.view')): ?>
-            <div class="sb-dropdown <?php echo e(request()->routeIs('installments.*') ? 'open' : ''); ?>">
-                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('installments.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
+            <div class="sb-dropdown <?php echo e(request()->routeIs('installments.*') || request()->routeIs('late-payments.*') ? 'open' : ''); ?>">
+                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('installments.*') || request()->routeIs('late-payments.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span><?php echo e(__('app.installment_plans')); ?></span>
                     <i class="fas fa-chevron-down"></i>
@@ -1115,6 +1115,10 @@
                     </a>
                     <a href="<?php echo e(route('installments.clearance-index')); ?>" class="<?php echo e(request()->routeIs('installments.clearance-index') || request()->routeIs('installments.clearance') ? 'active' : ''); ?>">
                         <i class="fas fa-certificate"></i> <?php echo e(__('app.clearance_certificates')); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('late-payments.index')); ?>" class="<?php echo e(request()->routeIs('late-payments.*') ? 'active' : ''); ?>">
+                        <i class="fas fa-user-clock"></i> <?php echo e(__('app.late_customers') ?? 'អតិថិជនបង់យឺត'); ?>
 
                     </a>
                 </div>
@@ -1196,23 +1200,10 @@
 
             
             <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('payments.view')): ?>
-            <div class="sb-dropdown <?php echo e(request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'open' : ''); ?>">
-                <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('payments.*') || request()->routeIs('late-payments.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
-                    <i class="fas fa-money-check-alt"></i>
-                    <span><?php echo e(__('app.payments')); ?></span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="sb-dropdown-menu">
-                    <a href="<?php echo e(route('payments.index')); ?>" class="<?php echo e(request()->routeIs('payments.index') ? 'active' : ''); ?>">
-                        <i class="fas fa-list"></i> <?php echo e(__('app.all_payments')); ?>
-
-                    </a>
-                    <a href="<?php echo e(route('late-payments.index')); ?>" class="<?php echo e(request()->routeIs('late-payments.*') ? 'active' : ''); ?>">
-                        <i class="fas fa-exclamation-circle"></i> <?php echo e(__('app.late_payments')); ?>
-
-                    </a>
-                </div>
-            </div>
+            <a href="<?php echo e(route('payments.index')); ?>" class="sb-item <?php echo e(request()->routeIs('payments.*') ? 'active' : ''); ?>">
+                <i class="fas fa-money-check-alt"></i>
+                <span><?php echo e(__('app.payments')); ?></span>
+            </a>
             <?php endif; ?>
 
             
@@ -1333,7 +1324,11 @@
                     </a>
                     <?php endif; ?>
                     <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('settings.manage')): ?>
-                    <a href="<?php echo e(route('admin.settings.index')); ?>" class="<?php echo e(request()->routeIs('admin.settings.*') ? 'active' : ''); ?>">
+                    <a href="<?php echo e(route('admin.settings.installment')); ?>" class="<?php echo e(request()->routeIs('admin.settings.installment') ? 'active' : ''); ?>">
+                        <i class="fas fa-hand-holding-usd"></i> <?php echo e(__('app.installment_settings')); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('admin.settings.index')); ?>" class="<?php echo e(request()->routeIs('admin.settings.index') ? 'active' : ''); ?>">
                         <i class="fas fa-sliders-h"></i> <?php echo e(__('app.general_settings')); ?>
 
                     </a>

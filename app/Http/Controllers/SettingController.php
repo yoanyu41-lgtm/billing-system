@@ -14,6 +14,47 @@ class SettingController extends Controller
         return view('admin.settings.index_clean', compact('settings'));
     }
 
+    public function installmentIndex()
+    {
+        $settings = Setting::pluck('value', 'key')->toArray();
+        return view('admin.settings.installment', compact('settings'));
+    }
+
+    public function updateInstallmentSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'payoff_interest_mode' => 'nullable|string|in:one_month,all_remaining_months',
+            'payoff_min_month' => 'nullable|integer|min:0',
+            'late_fee_method' => 'nullable|string|in:fixed,percentage',
+            'late_fee_type' => 'nullable|string',
+            'late_fee_rate' => 'nullable|numeric|min:0',
+            'late_fee_amount' => 'nullable|numeric|min:0',
+            'late_fee_frequency' => 'nullable|string|in:one_time,daily',
+            'late_grace_period_days' => 'nullable|integer|min:0',
+            'auto_calculate_late_fee' => 'nullable|string',
+            'telegram_late_reminder' => 'nullable|string',
+            'admin_approval_late_fee' => 'nullable|string',
+        ]);
+
+        $validated['auto_calculate_late_fee'] = $request->has('auto_calculate_late_fee') ? '1' : '0';
+        $validated['telegram_late_reminder'] = $request->has('telegram_late_reminder') ? '1' : '0';
+        $validated['admin_approval_late_fee'] = $request->has('admin_approval_late_fee') ? '1' : '0';
+
+        if (!empty($validated['late_fee_rate'])) {
+            $validated['late_fee_amount'] = $validated['late_fee_rate'];
+        } elseif (!empty($validated['late_fee_amount'])) {
+            $validated['late_fee_rate'] = $validated['late_fee_amount'];
+        }
+
+        foreach ($validated as $key => $val) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $val ?? '']);
+        }
+
+        return redirect()->back()->with('success', app()->getLocale() === 'km' 
+            ? 'ការកំណត់បង់រំលស់ត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ' 
+            : 'Installment settings updated successfully.');
+    }
+
     public function update(Request $request)
     {
         $data = $request->only([
@@ -74,6 +115,7 @@ class SettingController extends Controller
             'default_tax_rate' => 'nullable|numeric|min:0|max:100',
             'tax_label' => 'nullable|string|max:255',
             'tax_number' => 'nullable|string|max:255',
+            'payoff_interest_mode' => 'nullable|string|in:one_month,all_remaining_months',
         ]);
 
         // Handle logo upload
@@ -154,6 +196,7 @@ class SettingController extends Controller
             'default_tax_rate' => $validated['default_tax_rate'] ?? '10',
             'tax_label' => $validated['tax_label'] ?? 'VAT',
             'tax_number' => $validated['tax_number'] ?? '',
+            'payoff_interest_mode' => $validated['payoff_interest_mode'] ?? 'one_month',
         ];
 
         foreach ($settingsData as $key => $value) {

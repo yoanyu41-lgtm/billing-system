@@ -478,26 +478,70 @@
             <div class="section-title" lang="km">
                 📊 {{ $L('សេចក្តីសង្ខេបហិរញ្ញវត្ថុ', 'FINANCIAL SUMMARY') }}
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>{{ $L('តម្លៃសរុប (Total Price)', 'Total Price') }}</th>
-                        <th>{{ $L('ប្រាក់កក់ (Down Payment)', 'Down Payment') }}</th>
-                        <th>{{ $L('រយៈពេល (Duration)', 'Duration') }}</th>
-                        <th>{{ $L('ប្រាក់បានបង់សរុប (Total Paid)', 'Total Paid') }}</th>
-                        <th>{{ $L('សមតុល្យនៅសល់ (Remaining)', 'Remaining Balance') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ format_currency($installment->total_price, $exchangeRate) }}</td>
-                        <td>{{ format_currency($installment->down_payment, $exchangeRate) }}</td>
-                        <td>{{ $installment->duration_months }} {{ __('app.months') }}</td>
-                        <td style="font-weight: bold; color: #059669;">{{ format_currency($totalPaid, $exchangeRate) }}</td>
-                        <td style="font-weight: bold; color: #b45309;">{{ format_currency($installment->remaining_balance, $exchangeRate) }}</td>
-                    </tr>
-                </tbody>
-            </table>
+
+            @if(isset($settlementPayment) && $settlementPayment)
+                <!-- Pay Off / Early Settlement Details Table -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{ $L('តម្លៃទំនិញសរុប (Total Price)', 'Total Price') }}</th>
+                            <th>{{ $L('ប្រាក់កក់ (Down Payment)', 'Down Payment') }}</th>
+                            <th>{{ $L('ប្រាក់ដើមបង់ផ្តាច់ (Principal Paid Off)', 'Principal Paid Off') }}</th>
+                            @if((float)($settlementPayment->interest_amount ?? 0) > 0)
+                                <th>{{ $L('ការប្រាក់ (Interest)', 'Interest') }}</th>
+                            @endif
+                            @if((float)($settlementPayment->discount_amount ?? 0) > 0)
+                                <th>{{ $L('បញ្ចុះតម្លៃ (Discount)', 'Discount') }}</th>
+                            @endif
+                            @if((float)($settlementPayment->late_fee ?? 0) > 0)
+                                <th>{{ $L('ពិន័យយឺត (Late Fee)', 'Late Fee') }}</th>
+                            @endif
+                            <th>{{ $L('ទឹកប្រាក់បង់ផ្តាច់ (Settlement Amount)', 'Settlement Amount') }}</th>
+                            <th>{{ $L('សមតុល្យនៅសល់ (Remaining)', 'Remaining Balance') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ format_currency($installment->total_price, $exchangeRate) }}</td>
+                            <td>{{ format_currency($installment->down_payment, $exchangeRate) }}</td>
+                            <td style="font-weight: 600;">{{ format_currency($settlementPayment->principal_amount ?? $installment->outstandingPrincipal(), $exchangeRate) }}</td>
+                            @if((float)($settlementPayment->interest_amount ?? 0) > 0)
+                                <td style="color: #059669; font-weight: 600;">+{{ format_currency($settlementPayment->interest_amount, $exchangeRate) }}</td>
+                            @endif
+                            @if((float)($settlementPayment->discount_amount ?? 0) > 0)
+                                <td style="color: #dc2626; font-weight: 600;">-{{ format_currency($settlementPayment->discount_amount, $exchangeRate) }}</td>
+                            @endif
+                            @if((float)($settlementPayment->late_fee ?? 0) > 0)
+                                <td style="color: #b45309; font-weight: 600;">+{{ format_currency($settlementPayment->late_fee, $exchangeRate) }}</td>
+                            @endif
+                            <td style="font-weight: bold; color: #1e40af; font-size: 11pt;">{{ format_currency($settlementPayment->amount, $exchangeRate) }}</td>
+                            <td style="font-weight: bold; color: #059669;">{{ format_currency(0, $exchangeRate) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            @else
+                <!-- Regular Schedule Completion Table -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{ $L('តម្លៃសរុប (Total Price)', 'Total Price') }}</th>
+                            <th>{{ $L('ប្រាក់កក់ (Down Payment)', 'Down Payment') }}</th>
+                            <th>{{ $L('រយៈពេល (Duration)', 'Duration') }}</th>
+                            <th>{{ $L('ប្រាក់បានបង់សរុប (Total Paid)', 'Total Paid') }}</th>
+                            <th>{{ $L('សមតុល្យនៅសល់ (Remaining)', 'Remaining Balance') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ format_currency($installment->total_price, $exchangeRate) }}</td>
+                            <td>{{ format_currency($installment->down_payment, $exchangeRate) }}</td>
+                            <td>{{ $installment->duration_months }} {{ __('app.months') }}</td>
+                            <td style="font-weight: bold; color: #059669;">{{ format_currency($totalPaid, $exchangeRate) }}</td>
+                            <td style="font-weight: bold; color: #059669;">{{ format_currency(0, $exchangeRate) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            @endif
 
             <!-- Official Declaration -->
             <div class="declaration-box">

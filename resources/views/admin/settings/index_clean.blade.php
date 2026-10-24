@@ -123,6 +123,10 @@
                     <span>💳</span>
                     <span>{{ __('app.payment_method') }}</span>
                 </button>
+                <a href="{{ route('admin.settings.installment') }}" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-150 flex items-center space-x-2 text-slate-600 hover:text-emerald-700 hover:bg-white/60">
+                    <span>💰</span>
+                    <span>{{ __('app.installment_settings') }}</span>
+                </a>
             </div>
         </div>
     </div>
@@ -321,6 +325,8 @@
                             </div>
                         </div>
                     </div>
+
+
 
                     <!-- Telegram Bot Integration Card -->
                     <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 space-y-4">

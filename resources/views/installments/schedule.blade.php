@@ -70,6 +70,10 @@
                     <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
                         <i class="fas fa-ban mr-1"></i> {{ __('app.cancelled') }}
                     </span>
+                @elseif(in_array($installment->status, ['completed', 'paid', 'paid_off']) || $installment->remaining_balance <= 0)
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                        <i class="fas fa-check-double mr-1"></i> {{ app()->getLocale() === 'km' ? 'បានបង់ផ្តាច់' : 'Paid Off' }}
+                    </span>
                 @endif
             </div>
             <p class="text-sm text-gray-500 mt-1">{{ __('app.payment_schedule_sub') }}</p>
@@ -147,7 +151,7 @@
             </div>
             <div>
                 <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.monthly_payment') }}</div>
-                <div class="text-base font-extrabold text-indigo-600">{{ format_currency($schedule[0]['amount'] ?? $installment->monthly_payment) }}</div>
+                <div class="text-base font-extrabold text-indigo-600">{{ format_currency($installment->monthly_payment) }}</div>
             </div>
         </div>
     </div>
@@ -304,15 +308,17 @@
             <table class="min-w-full border-collapse schedule-table">
                 <thead class="bg-slate-50 border-b border-gray-200">
                     <tr>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">ខែទី<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">កាលបរិច្ឆេទបង់ប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Payment Date</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមប្រចាំខែ<br><span class="font-normal text-[11px] text-slate-400">Monthly Principal</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់ប្រចាំខែ<br><span class="font-normal text-[11px] text-slate-400">Monthly Interest</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ត្រូវបង់សរុប<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមនៅសល់<br><span class="font-normal text-[11px] text-slate-400">Remaining Principal</span></th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">{{ __('app.status') }}</th>
-                        <th class="border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">{{ __('app.actions') }}</th>
-                        <th class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider w-28" lang="km">ផ្សេងៗ<br><span class="font-normal text-[11px] text-slate-400">Remarks</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider">លេខទី<br><span class="font-normal text-[11px] text-slate-400">No.</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">ថ្ងៃត្រូវបង់<br><span class="font-normal text-[11px] text-slate-400">Due Date</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">ថ្ងៃបង់ប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Payment Date</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Principal</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Interest</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ពិន័យ<br><span class="font-normal text-[11px] text-slate-400">Late Fee</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់បង់សរុប<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមនៅសល់<br><span class="font-normal text-[11px] text-slate-400">Remaining Principal</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">ស្ថានភាព<br><span class="font-normal text-[11px] text-slate-400">Status</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">សកម្មភាព<br><span class="font-normal text-[11px] text-slate-400">Action</span></th>
+                        <th class="hidden print:table-cell border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider w-28" lang="km">ផ្សេងៗ<br><span class="font-normal text-[11px] text-slate-400">Remarks</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 bg-white">
@@ -321,28 +327,57 @@
                     @endphp
                     {{-- Row 0: Initial Principal Balance (ដូចក្នុងតារាង Excel) --}}
                     <tr class="bg-slate-50/60 font-semibold text-slate-500 text-xs">
-                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400">-</td>
-                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400">{{ $installment->created_at?->format('d/m/Y') ?? '-' }}</td>
-                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
-                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
-                        <td class="border border-gray-200 px-4 py-2 text-right text-slate-400">-</td>
-                        <td class="border border-gray-200 px-4 py-2 text-right font-bold text-slate-900">{{ format_currency($initialPrincipalBase) }}</td>
-                        <td class="border border-gray-200 px-4 py-2 text-center text-slate-400 no-print">ចាប់ផ្តើម</td>
-                        <td class="border border-gray-200 px-4 py-2 text-center no-print text-slate-400">—</td>
-                        <td class="hidden print:table-cell border border-gray-200 px-4 py-2 text-center text-slate-400"></td>
+                        <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">{{ $installment->created_at?->format('d/m/Y') ?? '-' }}</td>
+                        <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right font-bold text-slate-900">{{ format_currency($initialPrincipalBase) }}</td>
+                        <td class="border border-gray-200 px-3 py-2 text-center text-slate-400 no-print">ចាប់ផ្តើម</td>
+                        <td class="border border-gray-200 px-3 py-2 text-center no-print text-slate-400">—</td>
+                        <td class="hidden print:table-cell border border-gray-200 px-3 py-2 text-center text-slate-400"></td>
                     </tr>
                     @foreach($schedule as $row)
+                    @php
+                        $rowPenalty = (float) ($row['penalty_amount'] ?? 0);
+                        $rowTotalPayment = (float) $row['amount'] + $rowPenalty;
+                    @endphp
                     <tr class="hover:bg-slate-50/80 transition duration-150">
-                        <td class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 whitespace-nowrap text-sm">
+                        <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 font-bold text-sm">{{ $row['month'] }}</td>
+                        <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 whitespace-nowrap text-sm">
                             <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
                             <span class="text-slate-400 text-xs block font-medium">({{ $row['day'] }})</span>
                         </td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right font-black text-slate-900 text-base">{{ format_currency($row['amount']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-700 font-semibold text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center whitespace-nowrap no-print">
+                        <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 whitespace-nowrap text-sm">
+                            @if(!empty($row['payment_date']))
+                                <span class="font-semibold text-slate-700">{{ $row['payment_date']->format('d/m/Y') }}</span>
+                            @else
+                                <span class="text-slate-400 font-medium">-</span>
+                            @endif
+                        </td>
+                        <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
+                        <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
+                        <td class="border border-gray-200 px-3 py-3 text-right whitespace-nowrap text-sm">
+                            @if($rowPenalty > 0)
+                                <div class="flex flex-col items-end">
+                                    <span class="text-red-600 font-black">{{ format_currency($rowPenalty) }}</span>
+                                    @if(!empty($row['penalty_reason']))
+                                        <span class="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded max-w-[130px] truncate" title="{{ $row['penalty_reason'] }}">
+                                            {{ $row['penalty_reason'] }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="text-slate-400 font-medium">$0.00</span>
+                            @endif
+                        </td>
+                        <td class="border border-gray-200 px-3 py-3 text-right font-black text-slate-900 text-base">
+                            {{ format_currency($rowTotalPayment) }}
+                        </td>
+                        <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-semibold text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
+                        <td class="border border-gray-200 px-3 py-3 text-center whitespace-nowrap no-print">
                             @if($row['status'] === 'cancelled')
                                 <span class="px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                                     <i class="fas fa-times-circle mr-1 self-center"></i> {{ __('app.cancelled') }}
@@ -367,50 +402,65 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-center no-print whitespace-nowrap">
-                            @if($row['status'] !== 'paid' && $row['status'] !== 'cancelled')
-                            <div class="flex items-center justify-center gap-1.5">
-                                {{-- Send QR via Telegram --}}
-                                @if(empty($installment->customer?->telegram_id))
-                                    <span class="px-2.5 py-1.5 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1 cursor-not-allowed font-medium" title="{{ __('app.telegram_id_missing') }}">
-                                        <i class="fab fa-telegram-plane"></i>
-                                        <span>{{ __('app.send_qr_telegram') }}</span>
-                                    </span>
+                        <td class="border border-gray-200 px-3 py-3 text-center no-print whitespace-nowrap">
+                            @if($row['status'] === 'paid')
+                                @if(!empty($row['payment_id']))
+                                    <a href="{{ route('payments.show', $row['payment_id']) }}" 
+                                       class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 inline-flex items-center justify-center transition shadow-xs" 
+                                       title="{{ __('app.view') ?? 'មើលព័ត៌មានលម្អិត' }}">
+                                        <i class="fas fa-eye text-sm"></i>
+                                    </a>
                                 @else
-                                    <button type="button" 
-                                        onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
-                                        class="px-2.5 py-1.5 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1 transition font-bold" 
-                                        title="{{ __('app.send_qr_telegram') }}">
-                                        <i class="fab fa-telegram-plane"></i>
-                                        <span>{{ __('app.send_qr_telegram') }}</span>
-                                    </button>
+                                    <span class="text-xs text-slate-400 font-bold">—</span>
                                 @endif
+                            @elseif($row['status'] !== 'cancelled')
+                                <div class="flex items-center justify-center gap-1.5">
+                                    {{-- Send QR via Telegram --}}
+                                    @if(empty($installment->customer?->telegram_id))
+                                        <span class="px-2.5 py-1.5 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl inline-flex items-center gap-1 cursor-not-allowed font-medium" title="{{ __('app.telegram_id_missing') }}">
+                                            <i class="fab fa-telegram-plane"></i>
+                                            <span>{{ __('app.send_qr_telegram') }}</span>
+                                        </span>
+                                    @else
+                                        <button type="button" 
+                                            onclick="openTelegramQrModal({{ $row['month'] }}, '{{ number_format($row['amount'], 2) }}', '{{ $row['due_date']->toDateString() }}')"
+                                            class="px-2.5 py-1.5 text-xs text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 cursor-pointer flex items-center gap-1 transition font-bold" 
+                                            title="{{ __('app.send_qr_telegram') }}">
+                                            <i class="fab fa-telegram-plane"></i>
+                                            <span>{{ __('app.send_qr_telegram') }}</span>
+                                        </button>
+                                    @endif
 
-                                {{-- Record Payment --}}
-                                <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2.5 py-1.5 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                    <span>{{ __('app.record_payment') }}</span>
-                                </button>
-                            </div>
+                                    {{-- Record Payment --}}
+                                    <button type="button" onclick="openRecordPaymentModal({{ $row['month'] }}, {{ $row['amount'] }}, '{{ $row['due_date']->toDateString() }}')" class="px-2.5 py-1.5 text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 cursor-pointer flex items-center gap-1 transition font-bold" title="{{ __('app.record_payment') }}">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                        <span>{{ __('app.record_payment') }}</span>
+                                    </button>
+                                </div>
                             @else
                                 <span class="text-xs text-slate-400 font-bold">—</span>
                             @endif
                         </td>
                         {{-- ប្រអប់ទទេសម្រាប់កត់ចំណាំពេល Print --}}
-                        <td class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center"></td>
+                        <td class="hidden print:table-cell border border-gray-200 px-3 py-3 text-center"></td>
                     </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="bg-slate-50 border-t-2 border-gray-300 font-bold">
                     <tr>
-                        <td colspan="2" class="border border-gray-200 px-4 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right text-indigo-700 font-black text-base">{{ format_currency($summary['total_scheduled']) }}</td>
-                        <td class="border border-gray-200 px-4 py-3.5 text-right font-bold text-emerald-700 text-sm">$0.00</td>
-                        <td class="border border-gray-200 px-4 py-3.5 no-print"></td>
-                        <td class="border border-gray-200 px-4 py-3.5 no-print"></td>
-                        <td class="hidden print:table-cell border border-gray-200 px-4 py-3.5 text-center"></td>
+                        <td colspan="3" class="border border-gray-200 px-3 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
+                        <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
+                        <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
+                        <td class="border border-gray-200 px-3 py-3.5 text-right font-black text-sm {{ ($summary['total_penalty'] ?? 0) > 0 ? 'text-red-600' : 'text-slate-400' }}">
+                            {{ format_currency($summary['total_penalty'] ?? 0) }}
+                        </td>
+                        <td class="border border-gray-200 px-3 py-3.5 text-right text-indigo-700 font-black text-base">
+                            {{ format_currency(($summary['total_scheduled'] ?? 0) + ($summary['total_penalty'] ?? 0)) }}
+                        </td>
+                        <td class="border border-gray-200 px-3 py-3.5 text-right font-bold text-emerald-700 text-sm">$0.00</td>
+                        <td class="border border-gray-200 px-3 py-3.5 no-print"></td>
+                        <td class="border border-gray-200 px-3 py-3.5 no-print"></td>
+                        <td class="hidden print:table-cell border border-gray-200 px-3 py-3.5 text-center"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -489,7 +539,7 @@
                         </div>
                     </div>
 
-                    <!-- Amount and Date -->
+                    <!-- Amount, Penalty, and Date -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">{{ __('app.amount') }} (USD)</label>
@@ -501,10 +551,39 @@
                                 min="0.01" 
                                 required 
                                 readonly
+                                oninput="updateScheduleModalTotal()"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100/90 text-gray-800 font-bold text-sm cursor-not-allowed select-none focus:outline-none"
                             >
                         </div>
                         <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                                {{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }} (USD)
+                            </label>
+                            <input 
+                                type="number" 
+                                name="penalty_amount" 
+                                id="modalPenaltyInput" 
+                                step="0.01" 
+                                min="0" 
+                                value="0.00"
+                                oninput="updateScheduleModalTotal()"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm font-semibold text-red-600"
+                            >
+                            <span class="text-[11px] text-gray-400 mt-0.5 block" id="modalPenaltyDaysHint"></span>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
+                                {{ app()->getLocale() === 'km' ? 'មូលហេតុពិន័យ / ចំណាំ' : 'Penalty Reason / Notes' }}
+                            </label>
+                            <input 
+                                type="text" 
+                                name="notes" 
+                                id="modalPenaltyReasonInput" 
+                                placeholder="{{ app()->getLocale() === 'km' ? 'ឧទាហរណ៍៖ យឺតយ៉ាវ ៥ ថ្ងៃ ឬ ការផាកពិន័យកិច្ចសន្យា...' : 'e.g. Overdue 5 days, contract late fee...' }}" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                        </div>
+                        <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">{{ __('app.payment_date') }}</label>
                             <input 
                                 type="date" 
@@ -514,6 +593,12 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                             >
                         </div>
+                    </div>
+
+                    <!-- Total payment summary in modal -->
+                    <div class="flex justify-between items-center px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold">
+                        <span class="text-slate-600">{{ app()->getLocale() === 'km' ? 'ទឹកប្រាក់សរុបរួមទាំងប្រាក់ពិន័យ:' : 'Total with Penalty:' }}</span>
+                        <span class="text-sm font-bold text-indigo-700" id="modalScheduleTotalWithPenalty">$0.00</span>
                     </div>
 
                     <!-- Payment Method selector -->
@@ -731,11 +816,59 @@
 </script>
 
 <script>
-    function openRecordPaymentModal(month, amount, dueDate) {
+    function updateScheduleModalTotal() {
+        const amt = parseFloat(document.getElementById('modalAmountInput').value) || 0;
+        const pen = parseFloat(document.getElementById('modalPenaltyInput').value) || 0;
+        const total = amt + pen;
+        const totalEl = document.getElementById('modalScheduleTotalWithPenalty');
+        if (totalEl) totalEl.innerText = '$' + total.toFixed(2);
+    }
+
+    function openRecordPaymentModal(month, amount, dueDateStr) {
         document.getElementById('modalMonthVal').innerText = month;
         document.getElementById('modalMonthLabel').innerText = "{{ __('app.installment_month') }} " + month;
-        document.getElementById('modalAmountInput').value = amount;
+        document.getElementById('modalAmountInput').value = parseFloat(amount).toFixed(2);
         
+        // Calculate penalty based on due date vs today
+        let penalty = 0;
+        let daysLate = 0;
+        if (dueDateStr) {
+            const dueDate = new Date(dueDateStr);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            dueDate.setHours(0,0,0,0);
+
+            if (today > dueDate) {
+                const diffTime = Math.abs(today - dueDate);
+                daysLate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                // If late, default $10.00 penalty or rate
+                if (daysLate > 0) {
+                    penalty = 10.00;
+                }
+            }
+        }
+
+        const penaltyInput = document.getElementById('modalPenaltyInput');
+        if (penaltyInput) penaltyInput.value = penalty.toFixed(2);
+
+        const reasonInput = document.getElementById('modalPenaltyReasonInput');
+        if (reasonInput) {
+            reasonInput.value = daysLate > 0 ? ('យឺតយ៉ាវ ' + daysLate + ' ថ្ងៃ') : '';
+        }
+
+        const hint = document.getElementById('modalPenaltyDaysHint');
+        if (hint) {
+            if (daysLate > 0) {
+                hint.innerText = 'យឺតយ៉ាវ ' + daysLate + ' ថ្ងៃ';
+                hint.className = 'text-[11px] text-red-500 font-semibold mt-0.5 block';
+            } else {
+                hint.innerText = '';
+            }
+        }
+
+        updateScheduleModalTotal();
+
         const modal = document.getElementById('recordPaymentModal');
         modal.classList.remove('hidden');
     }

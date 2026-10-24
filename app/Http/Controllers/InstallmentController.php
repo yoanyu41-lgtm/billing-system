@@ -251,9 +251,49 @@ class InstallmentController extends Controller
 
         $installments = $query->latest('id')->paginate(10)->withQueryString();
 
-        // Pre-compute payoff (outstanding principal) for each plan.
-        $installments->getCollection()->transform(function ($installment) {
+        $defaultInterestMode = \App\Models\Setting::where('key', 'payoff_interest_mode')->value('value') ?? 'one_month';
+
+        // Pre-compute payoff (outstanding principal), scheduled remaining, and interest options for each plan.
+        $installments->getCollection()->transform(function ($installment) use ($defaultInterestMode) {
             $installment->payoff_amount = $installment->outstandingPrincipal();
+
+            // Calculate exact remaining balance from payment schedule (matches schedule page)
+            $schedule = $installment->getPaymentSchedule();
+            $totalScheduled = round(array_sum(array_column($schedule, 'amount')), 2);
+            $totalPaid = (float) $installment->payments()
+                ->where('status', 'approved')
+                ->sum('amount');
+
+            $installment->scheduled_remaining = ($installment->remaining_balance <= 0 || in_array($installment->status, ['completed', 'paid']))
+                ? 0.00
+                : round(max($totalScheduled - $totalPaid, 0), 2);
+
+            // Compute:
+            // 1. One month interest based on current outstanding principal
+            $monthlyRate = (float) ($installment->interest_rate ?? 0);
+            $oneMonthInterest = round($installment->payoff_amount * $monthlyRate / 100, 2);
+
+            // 2. Total interest for all unpaid remaining scheduled months
+            $allRemainingInterest = 0.00;
+            foreach ($schedule as $row) {
+                if ($row['status'] !== 'paid') {
+                    $allRemainingInterest += (float) ($row['interest'] ?? 0);
+                }
+            }
+            $allRemainingInterest = round($allRemainingInterest, 2);
+
+            $installment->interest_one_month = $oneMonthInterest;
+            $installment->interest_all_remaining = $allRemainingInterest;
+            $installment->default_interest_amount = ($defaultInterestMode === 'all_remaining_months')
+                ? $allRemainingInterest
+                : $oneMonthInterest;
+
+            // Check minimum eligible month condition
+            $minMonth = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+            $paidMonths = $installment->paid_months;
+            $installment->is_payoff_eligible = ($minMonth <= 0) || ($paidMonths >= $minMonth);
+            $installment->payoff_min_required_month = $minMonth;
+
             return $installment;
         });
 
@@ -286,7 +326,7 @@ class InstallmentController extends Controller
         }
         $suggestions = collect($suggestions)->unique('label')->values()->all();
 
-        return view('installments.pay-off-index', compact('installments', 'paymentMethods', 'suggestions'));
+        return view('installments.pay-off-index', compact('installments', 'paymentMethods', 'suggestions', 'defaultInterestMode'));
     }
 
     public function payOff(Request $request, Installment $installment)
@@ -298,11 +338,26 @@ class InstallmentController extends Controller
                 ->with('error', __('app.installment_not_active'));
         }
 
+        // Validate minimum paid month rule
+        $minMonth = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+        $paidMonths = $installment->paid_months;
+        if ($minMonth > 0 && $paidMonths < $minMonth) {
+            $msg = app()->getLocale() === 'km'
+                ? "អតិថិជនមិនទាន់អាចបង់ផ្តាច់បានទេ! តាមគោលការណ៍ត្រូវបង់យ៉ាងតិច {$minMonth} ខែជាមុនសិន (បច្ចុប្បន្នបង់បាន {$paidMonths} ខែ)។"
+                : "Not eligible for early payoff yet! Policy requires minimum {$minMonth} months paid (currently {$paidMonths} months).";
+            return redirect()->back()->with('error', $msg);
+        }
+
         $request->validate([
             'payment_method_id' => 'required|exists:payment_methods,id',
             'payment_date'      => 'required|date',
             'title'             => 'nullable|string|max:255',
+            'payoff_type'       => 'nullable|in:principal_only,principal_interest',
             'interest_rate'     => 'nullable|numeric|min:0|max:100',
+            'interest_amount'   => 'nullable|numeric|min:0',
+            'discount'          => 'nullable|numeric|min:0',
+            'late_fee'          => 'nullable|numeric|min:0',
+            'payment_reference' => 'nullable|string|max:255',
         ]);
 
         $principal = $installment->outstandingPrincipal();
@@ -312,18 +367,41 @@ class InstallmentController extends Controller
                 ->with('error', __('app.nothing_to_pay_off'));
         }
 
-        // Optional extra interest applied on the outstanding principal at settlement.
-        $interestRate = (float) ($request->interest_rate ?? 0);
-        $payoffAmount = round($principal + ($principal * $interestRate / 100), 2);
+        $payoffType = $request->payoff_type ?? 'principal_only';
+        $interestRate = 0.0;
+        $interestAmount = 0.0;
+
+        if ($payoffType === 'principal_interest') {
+            $interestRate = (float) ($request->interest_rate ?? 0);
+            if ($request->filled('interest_amount')) {
+                $interestAmount = (float) $request->interest_amount;
+            } elseif ($interestRate > 0) {
+                $interestAmount = round($principal * $interestRate / 100, 2);
+            }
+        }
+
+        $discount = (float) ($request->discount ?? 0);
+        $lateFee = (float) ($request->late_fee ?? 0);
+
+        // Calculate total payoff: Principal + Interest - Discount + Late Fee
+        $subtotal = $principal + $interestAmount;
+        $payoffAmount = round(max($subtotal - $discount + $lateFee, 0), 2);
 
         // Record the settlement as an approved payment.
         $payment = Payment::create([
             'installment_id'    => $installment->id,
             'payment_method_id' => $request->payment_method_id,
             'amount'            => $payoffAmount,
+            'penalty_amount'    => $lateFee,
             'payment_date'      => $request->payment_date,
             'status'            => 'approved',
             'is_settlement'     => true,
+            'payoff_type'       => $payoffType,
+            'principal_amount'  => $principal,
+            'interest_amount'   => $interestAmount,
+            'discount_amount'   => $discount,
+            'late_fee'          => $lateFee,
+            'payment_reference' => $request->payment_reference,
             'title'             => $request->title,
             'interest_rate'     => $interestRate,
             'approved_by'       => auth()->id(),
@@ -640,6 +718,7 @@ class InstallmentController extends Controller
             'total_scheduled'   => $totalScheduled,
             'total_principal'   => round(array_sum(array_column($schedule, 'principal')), 2),
             'total_interest'    => round(array_sum(array_column($schedule, 'interest')), 2),
+            'total_penalty'     => round(array_sum(array_column($schedule, 'penalty_amount')), 2),
             'total_paid'        => round((float) $totalPaid, 2),
             'remaining'         => ($installment->remaining_balance <= 0 || in_array($installment->status, ['completed', 'paid'])) ? 0.00 : round(max($totalScheduled - (float) $totalPaid, 0), 2),
             'paid_count'        => count(array_filter($schedule, fn ($row) => $row['status'] === 'paid')),
@@ -876,6 +955,13 @@ class InstallmentController extends Controller
         $totalInterest = array_sum(array_column($schedule, 'interest'));
         $totalPrincipal = array_sum(array_column($schedule, 'principal'));
 
+        // Check if there is an early settlement (Pay Off) payment
+        $settlementPayment = $installment->payments()
+            ->where('status', 'approved')
+            ->where('is_settlement', true)
+            ->latest('payment_date')
+            ->first();
+
         return view('installments.clearance', compact(
             'installment',
             'customer',
@@ -883,6 +969,7 @@ class InstallmentController extends Controller
             'totalPaid',
             'totalInterest',
             'totalPrincipal',
+            'settlementPayment',
             'settings',
             'exchangeRate'
         ));

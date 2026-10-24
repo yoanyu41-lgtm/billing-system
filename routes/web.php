@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
     // Late Payments
     Route::get('late-payments', [LatePaymentController::class, 'index'])->name('late-payments.index');
     Route::post('late-payments/{installment}/remind', [LatePaymentController::class, 'sendReminder'])->name('late-payments.remind');
+    Route::post('late-payments/{installment}/apply-fee', [LatePaymentController::class, 'applyFee'])->name('late-payments.apply-fee');
     Route::post('late-payments/due-reminders', [LatePaymentController::class, 'sendDueDateReminders'])->name('late-payments.due-reminders');
 
     // Notifications
@@ -250,6 +251,8 @@ Route::middleware('auth')->group(function () {
 
         // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::get('settings/installment', [SettingController::class, 'installmentIndex'])->name('settings.installment');
+        Route::post('settings/installment', [SettingController::class, 'updateInstallmentSettings'])->name('settings.installment.update');
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings/company', [SettingController::class, 'updateCompanySettings'])->name('settings.company.update');
         Route::post('settings/qr/{key}', [SettingController::class, 'updateQrSetting'])->name('settings.qr.update');

@@ -159,18 +159,12 @@
                 <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-500" lang="km">{{ $L('ទឹកប្រាក់បង់រំលស់', 'Installment Amount') }}</span>
-                        <div class="text-right">
-                            <span class="font-bold text-gray-900 block">: ${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
-                            <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
-                        </div>
+                        <span class="font-bold text-gray-900">: ${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
                     </div>
                     @if($invoice->payment && $invoice->payment->penalty_amount > 0)
                     <div class="flex items-center justify-between text-red-600">
                         <span class="font-medium" lang="km">{{ $L('ប្រាក់ពិន័យ', 'Penalty Fee') }}</span>
-                        <div class="text-right">
-                            <span class="font-bold block">: ${{ number_format($invoice->payment->penalty_amount, 2) }}</span>
-                            <span class="text-xs block font-semibold">{{ number_format(round($invoice->payment->penalty_amount * $exchangeRate)) }} ៛</span>
-                        </div>
+                        <span class="font-bold">: ${{ number_format($invoice->payment->penalty_amount, 2) }}</span>
                     </div>
                     @endif
                     @php
@@ -178,10 +172,7 @@
                     @endphp
                     <div class="flex items-center justify-between font-bold border-t border-gray-100 pt-2">
                         <span class="text-gray-700" lang="km">{{ $L('ទឹកប្រាក់បានបង់សរុប', 'Total Paid') }}</span>
-                        <div class="text-right">
-                            <span class="font-bold text-gray-900 block">: ${{ number_format($totalPaid, 2) }}</span>
-                            <span class="text-xs text-gray-500 block font-semibold">{{ number_format(round($totalPaid * $exchangeRate)) }} ៛</span>
-                        </div>
+                        <span class="font-bold text-gray-900">: ${{ number_format($totalPaid, 2) }}</span>
                     </div>
                     <div class="flex items-center justify-between rounded-lg bg-emerald-600 text-white px-4 py-2 mt-2">
                         <span class="text-sm font-semibold" lang="km">{{ $L('ស្ថានភាព', 'Status') }} :</span>
@@ -230,18 +221,12 @@
             <tfoot>
                 <tr class="bg-blue-50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L('តម្លៃរង (Subtotal)', 'Subtotal') }}</td>
-                    <td class="px-3 py-2 text-right">
-                        <span class="font-semibold text-gray-900 block">${{ number_format($invoice->payment?->amount ?? 0, 2) }}</span>
-                        <span class="text-xs text-gray-500 block font-medium">{{ number_format(round(($invoice->payment?->amount ?? 0) * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right font-semibold text-gray-900">${{ number_format($invoice->payment?->amount ?? 0, 2) }}</td>
                 </tr>
                 @if($invoice->payment && $invoice->payment->penalty_amount > 0)
                 <tr class="bg-red-50/50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-red-700" lang="km">{{ $L('ប្រាក់ពិន័យ (Penalty Fee)', 'Penalty Fee') }}</td>
-                    <td class="px-3 py-2 text-right text-red-600">
-                        <span class="font-semibold block">${{ number_format($invoice->payment->penalty_amount, 2) }}</span>
-                        <span class="text-xs block font-medium">{{ number_format(round($invoice->payment->penalty_amount * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right text-red-600 font-semibold">${{ number_format($invoice->payment->penalty_amount, 2) }}</td>
                 </tr>
                 @endif
                 @php
@@ -249,17 +234,11 @@
                 @endphp
                 <tr class="bg-blue-100">
                     <td colspan="4" class="px-3 py-3 text-right font-bold text-blue-800" lang="km">{{ $L('តម្លៃសរុប', 'Total Amount') }}</td>
-                    <td class="px-3 py-3 text-right">
-                        <span class="text-lg font-extrabold text-blue-800 block">${{ number_format($grandTotalPaid, 2) }}</span>
-                        <span class="text-sm font-bold text-blue-700 block">{{ number_format(round($grandTotalPaid * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-3 text-right text-lg font-extrabold text-blue-800">${{ number_format($grandTotalPaid, 2) }}</td>
                 </tr>
                 <tr class="bg-amber-50">
                     <td colspan="4" class="px-3 py-2 text-right font-bold text-amber-800" lang="km">{{ $L('ទឹកប្រាក់នៅសល់ (Remaining)', 'Remaining Balance') }}</td>
-                    <td class="px-3 py-2 text-right">
-                        <span class="text-sm font-extrabold text-amber-800 block">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }}</span>
-                        <span class="text-xs text-amber-600 block font-semibold">{{ number_format(round(($invoice->payment?->installment?->remaining_balance ?? 0) * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right text-sm font-extrabold text-amber-800">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -275,7 +254,7 @@
                 <div class="space-y-1 text-xs text-gray-600">
                     <div class="flex gap-2">
                         <span class="text-gray-400 w-24" lang="km">{{ $L('ឈ្មោះ', 'Name') }}</span>
-                        <span class="font-semibold text-gray-800">: {{ $invoice->payment?->approvedBy?->name ?? ($invoice->payment?->installment?->user?->name ?? 'System Admin') }}</span>
+                        <span class="font-semibold text-gray-800">: ________________</span>
                     </div>
                     <div class="flex gap-2">
                         <span class="text-gray-400 w-24" lang="km">{{ $L('កាលបរិច្ឆេទ', 'Date') }}</span>

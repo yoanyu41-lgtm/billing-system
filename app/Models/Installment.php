@@ -64,28 +64,67 @@ class Installment extends Model
     /**
      * Outstanding principal balance (excludes future interest).
      * Used for early payoff (settlement) calculations.
+     * Matches the remaining principal from the actual payment schedule.
      */
     public function outstandingPrincipal(): float
     {
-        $principalBase = max($this->total_price - $this->down_payment, 0);
-        $duration = max($this->duration_months, 1);
-        $monthlyPrincipal = $principalBase / $duration;
-        $monthlyInterest = $principalBase * $this->interest_rate / 100;
-        $amountDue = $monthlyPrincipal + $monthlyInterest;
+        $principalBase = max((float)$this->total_price - (float)$this->down_payment, 0);
+        if ($principalBase <= 0) {
+            return 0.00;
+        }
 
-        // Total of normal approved payments already made (exclude settlement payments).
-        $paid = $this->payments()
+        if (in_array($this->status, ['completed', 'paid', 'paid_off'])) {
+            return 0.00;
+        }
+
+        $duration = max((int)$this->duration_months, 1);
+        $type = $this->interest_type ?? \App\Services\InstallmentCalculationService::TYPE_FLAT;
+        $startDate = \Carbon\Carbon::parse($this->created_at ?? now());
+
+        $baseSchedule = \App\Services\InstallmentCalculationService::generateSchedule(
+            $principalBase,
+            (float) $this->interest_rate,
+            $duration,
+            $type,
+            $startDate
+        );
+
+        // Total regular approved payments already made
+        $paid = (float) $this->payments()
             ->where('status', 'approved')
             ->where('is_settlement', false)
             ->sum('amount');
 
-        // How many monthly instalments those payments fully cover.
-        $paidMonths = $amountDue > 0 ? floor($paid / $amountDue) : 0;
-        $paidMonths = min($paidMonths, $duration);
+        if ($paid <= 0) {
+            return round($principalBase, 2);
+        }
 
-        $principalPaid = $monthlyPrincipal * $paidMonths;
+        // Allocate paid amount across the scheduled months to calculate remaining principal balance
+        $remainingPaid = $paid;
+        $lastBalance = $principalBase;
 
-        return round(max($principalBase - $principalPaid, 0), 2);
+        foreach ($baseSchedule as $row) {
+            $amountDue = (float) $row['total'];
+            $principalPortion = (float) $row['principal'];
+            $rowBalance = (float) $row['balance'];
+
+            if ($remainingPaid >= ($amountDue - 0.01)) {
+                // Fully covered month
+                $remainingPaid -= $amountDue;
+                $lastBalance = $rowBalance;
+            } elseif ($remainingPaid > 0) {
+                // Partial payment for this month: interest is paid first, remainder reduces principal
+                $interestPortion = (float) $row['interest'];
+                $principalPaidPortion = max($remainingPaid - $interestPortion, 0);
+                $lastBalance = max($lastBalance - $principalPaidPortion, 0);
+                $remainingPaid = 0;
+                break;
+            } else {
+                break;
+            }
+        }
+
+        return round(max($lastBalance, 0), 2);
     }
 
     /**
@@ -108,13 +147,21 @@ class Installment extends Model
         // Find if there is a settlement (payoff) payment
         $settlementPayment = $this->payments()
             ->where('status', 'approved')
-            ->where('is_settlement', true)
+            ->where(function ($q) {
+                $q->where('is_settlement', true)
+                  ->orWhereNotNull('payoff_type');
+            })
+            ->latest('payment_date')
             ->first();
 
         // Regular approved payments (excluding settlement)
         $approvedPayments = $this->payments()
             ->where('status', 'approved')
-            ->where('is_settlement', false)
+            ->when($settlementPayment, function ($q) use ($settlementPayment) {
+                $q->where('id', '!=', $settlementPayment->id);
+            }, function ($q) {
+                $q->where('is_settlement', false);
+            })
             ->orderBy('payment_date', 'asc')
             ->orderBy('id', 'asc')
             ->get();
@@ -126,8 +173,11 @@ class Installment extends Model
         $paymentPool = [];
         foreach ($approvedPayments as $p) {
             $paymentPool[] = [
-                'amount' => (float) $p->amount,
-                'date'   => \Carbon\Carbon::parse($p->payment_date),
+                'id'             => $p->id,
+                'amount'         => (float) $p->amount,
+                'penalty_amount' => (float) ($p->penalty_amount ?? 0),
+                'penalty_reason' => $p->title ?? null,
+                'date'           => \Carbon\Carbon::parse($p->payment_date),
             ];
         }
         $poolIndex = 0;
@@ -137,82 +187,98 @@ class Installment extends Model
 
         $schedule = [];
 
+        $isCancelled = ($this->status === 'cancelled');
+        $isFullyPaid = !$isCancelled && (($this->remaining_balance <= 0) || in_array($this->status, ['completed', 'paid', 'paid_off']));
+
+        // If there's an explicit settlement payment OR if fully paid early
         if ($settlementPayment) {
-            // Case 1: Early Payoff occurred
-            // First, generate rows for all regular monthly payments already made
-            $remainingRegular = $regularPaid;
-            $monthIndex = 1;
+            $settlementDate = \Carbon\Carbon::parse($settlementPayment->payment_date);
 
-            for ($i = 1; $i <= $duration; $i++) {
-                $dueDate = $startDate->copy()->addMonths($i);
-                $rowCalc = $baseSchedule[$i - 1] ?? null;
-                $principalPortion = $rowCalc ? $rowCalc['principal'] : round($principalBase / $duration, 2);
-                $rowInterest = $rowCalc ? $rowCalc['interest'] : 0.00;
-                $amountDue = $rowCalc ? $rowCalc['total'] : round($principalPortion + $rowInterest, 2);
+            // If there were regular payments made before payoff, generate regular rows first
+            if ($approvedPayments->isNotEmpty()) {
+                $allocatedPool = $regularPaid;
+                $rowMonth = 1;
+                for ($i = 1; $i <= $duration; $i++) {
+                    $dueDate = $startDate->copy()->addMonths($i);
+                    $rowCalc = $baseSchedule[$i - 1] ?? null;
+                    $principalPortion = $rowCalc ? $rowCalc['principal'] : round($principalBase / $duration, 2);
+                    $rowInterest = $rowCalc ? $rowCalc['interest'] : 0.00;
+                    $amountDue = $rowCalc ? $rowCalc['total'] : round($principalPortion + $rowInterest, 2);
 
-                // If regular payments cover this month
-                if ($remainingRegular >= ($amountDue - 0.01)) {
-                    $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
-                    $outstandingPrincipal = $rowCalc ? (float) $rowCalc['balance'] : round(max($outstandingPrincipal - $principalPortion, 0), 2);
-                    
-                    $futureInterest = 0.0;
-                    for ($k = $i; $k < $duration; $k++) {
-                        $futureInterest += (float) ($baseSchedule[$k]['interest'] ?? 0);
+                    if ($allocatedPool >= ($amountDue - 0.01)) {
+                        $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
+                        $outstandingPrincipal = $rowCalc ? (float) $rowCalc['balance'] : round(max($outstandingPrincipal - $principalPortion, 0), 2);
+                        $allocatedPool = round($allocatedPool - $amountDue, 2);
+
+                        $matchedPayment = $approvedPayments[$i - 1] ?? null;
+
+                        $schedule[] = [
+                            'month'                 => $i,
+                            'due_date'              => $dueDate,
+                            'scheduled_date'        => $dueDate,
+                            'day'                   => $dueDate->format('D'),
+                            'principal'             => $principalPortion,
+                            'interest'              => $rowInterest,
+                            'amount'                => $amountDue,
+                            'penalty_amount'        => (float) ($matchedPayment->penalty_amount ?? 0),
+                            'penalty_reason'        => $matchedPayment?->title ?? null,
+                            'payment_id'            => $matchedPayment?->id ?? null,
+                            'payment_date'          => $matchedPayment ? \Carbon\Carbon::parse($matchedPayment->payment_date) : null,
+                            'outstanding_principal' => $outstandingPrincipal,
+                            'outstanding_debt'      => $outstandingPrincipal,
+                            'paid'                  => $amountDue,
+                            'status'                => 'paid',
+                            'is_settlement'         => false,
+                        ];
+                        $rowMonth = $i + 1;
+                    } else {
+                        break;
                     }
-                    $outstandingDebt = $outstandingPrincipal <= 0 ? 0.00 : round($outstandingPrincipal + $futureInterest, 2);
-                    $remainingRegular = round($remainingRegular - $amountDue, 2);
-
-                    // Determine actual payment date from payment pool
-                    $needed = $amountDue;
-                    $actualPaymentDate = null;
-                    while ($poolIndex < count($paymentPool) && $needed > 0.009) {
-                        $avail = $paymentPool[$poolIndex]['amount'];
-                        $take = min($avail, $needed);
-                        $needed -= $take;
-                        $paymentPool[$poolIndex]['amount'] -= $take;
-                        $actualPaymentDate = $paymentPool[$poolIndex]['date'];
-                        if ($paymentPool[$poolIndex]['amount'] <= 0.009) {
-                            $poolIndex++;
-                        }
-                    }
-
-                    $displayDate = $actualPaymentDate ?: $dueDate;
-
-                    $schedule[] = [
-                        'month'                 => $i,
-                        'due_date'              => $displayDate,
-                        'scheduled_date'        => $dueDate,
-                        'day'                   => $displayDate->format('D'),
-                        'principal'             => $principalPortion,
-                        'interest'              => $monthlyInterest,
-                        'amount'                => $amountDue,
-                        'outstanding_principal' => $outstandingPrincipal,
-                        'outstanding_debt'      => $outstandingDebt,
-                        'paid'                  => $amountDue,
-                        'status'                => 'paid',
-                        'is_settlement'         => false,
-                    ];
-                    $monthIndex = $i + 1;
-                } else {
-                    $monthIndex = $i;
-                    break;
                 }
+
+                $payoffAmount = (float) $settlementPayment->amount;
+                $payoffPrincipal = (float) ($settlementPayment->principal_amount ?? $outstandingPrincipal);
+                $payoffInterest = (float) ($settlementPayment->interest_amount ?? round(max($payoffAmount - $payoffPrincipal, 0), 2));
+
+                $schedule[] = [
+                    'month'                 => $rowMonth,
+                    'due_date'              => $settlementDate,
+                    'scheduled_date'        => $startDate->copy()->addMonths($rowMonth),
+                    'day'                   => $settlementDate->format('D'),
+                    'principal'             => $payoffPrincipal,
+                    'interest'              => $payoffInterest,
+                    'amount'                => $payoffAmount,
+                    'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? 0),
+                    'penalty_reason'        => $settlementPayment->title ?? null,
+                    'payment_id'            => $settlementPayment->id ?? null,
+                    'payment_date'          => $settlementDate,
+                    'outstanding_principal' => 0.00,
+                    'outstanding_debt'      => 0.00,
+                    'paid'                  => $payoffAmount,
+                    'status'                => 'paid',
+                    'is_settlement'         => true,
+                ];
+
+                return $schedule;
             }
 
-            // Now append the settlement (payoff) row with its actual settlement date
+            // If no prior monthly payments, only payoff row on month 1
             $payoffAmount = (float) $settlementPayment->amount;
-            $settlementDate = \Carbon\Carbon::parse($settlementPayment->payment_date);
-            $payoffPrincipal = $outstandingPrincipal;
-            $payoffInterest = round(max($payoffAmount - $payoffPrincipal, 0), 2);
+            $payoffPrincipal = (float) ($settlementPayment->principal_amount ?? $principalBase);
+            $payoffInterest = (float) ($settlementPayment->interest_amount ?? round(max($payoffAmount - $payoffPrincipal, 0), 2));
 
             $schedule[] = [
-                'month'                 => $monthIndex,
+                'month'                 => 1,
                 'due_date'              => $settlementDate,
                 'scheduled_date'        => $settlementDate,
                 'day'                   => $settlementDate->format('D'),
                 'principal'             => $payoffPrincipal,
                 'interest'              => $payoffInterest,
                 'amount'                => $payoffAmount,
+                'penalty_amount'        => (float) ($settlementPayment->penalty_amount ?? 0),
+                'penalty_reason'        => $settlementPayment->title ?? null,
+                'payment_id'            => $settlementPayment->id ?? null,
+                'payment_date'          => $settlementDate,
                 'outstanding_principal' => 0.00,
                 'outstanding_debt'      => 0.00,
                 'paid'                  => $payoffAmount,
@@ -220,15 +286,118 @@ class Installment extends Model
                 'is_settlement'         => true,
             ];
 
-            // Stop here! No future rows beyond payoff date.
             return $schedule;
         }
 
-        // Case 2: Normal installment (active, completed, or cancelled)
-        $isCancelled = ($this->status === 'cancelled');
-        $isFullyPaid = !$isCancelled && (($this->remaining_balance <= 0) || in_array($this->status, ['completed', 'paid', 'paid_off']));
-        $lastApprovedDate = $approvedPayments->last()?->payment_date ? \Carbon\Carbon::parse($approvedPayments->last()->payment_date) : null;
+        // Case 2: Early payoff or completion without is_settlement flag
+        if ($isFullyPaid) {
+            $lastApprovedPayment = $approvedPayments->last();
+            $lastPaymentDate = $lastApprovedPayment?->payment_date 
+                ? \Carbon\Carbon::parse($lastApprovedPayment->payment_date) 
+                : $startDate->copy()->addMonth();
 
+            // Count distinct payment dates in approved payments
+            $distinctDates = $approvedPayments->pluck('payment_date')->unique()->count();
+
+            // If all payments occurred on one day or it was paid off in lump sum early
+            if ($distinctDates <= 1 || $approvedPayments->count() < $duration) {
+                // If paid in a single payment or single day, show single payoff row
+                if ($distinctDates <= 1) {
+                    $totalPaidAmt = (float) $approvedPayments->sum('amount');
+                    $paidPrincipal = min($totalPaidAmt, $principalBase);
+                    $paidInterest = round(max($totalPaidAmt - $paidPrincipal, 0), 2);
+                    $totalPenalty = (float) $approvedPayments->sum('penalty_amount');
+                    $penaltyReason = $lastApprovedPayment?->title;
+
+                    $schedule[] = [
+                        'month'                 => 1,
+                        'due_date'              => $lastPaymentDate,
+                        'scheduled_date'        => $startDate->copy()->addMonth(),
+                        'day'                   => $lastPaymentDate->format('D'),
+                        'principal'             => $paidPrincipal,
+                        'interest'              => $paidInterest,
+                        'amount'                => $totalPaidAmt,
+                        'penalty_amount'        => $totalPenalty,
+                        'penalty_reason'        => $penaltyReason,
+                        'payment_id'            => $lastApprovedPayment?->id ?? null,
+                        'payment_date'          => $lastPaymentDate,
+                        'outstanding_principal' => 0.00,
+                        'outstanding_debt'      => 0.00,
+                        'paid'                  => $totalPaidAmt,
+                        'status'                => 'paid',
+                        'is_settlement'         => true,
+                    ];
+                    return $schedule;
+                }
+
+                // If multiple months were paid on different dates, show regular months and last month as payoff
+                $allocatedPool = $regularPaid;
+                for ($i = 1; $i <= $duration; $i++) {
+                    $dueDate = $startDate->copy()->addMonths($i);
+                    $rowCalc = $baseSchedule[$i - 1] ?? null;
+                    $principalPortion = $rowCalc ? $rowCalc['principal'] : round($principalBase / $duration, 2);
+                    $rowInterest = $rowCalc ? $rowCalc['interest'] : 0.00;
+                    $amountDue = $rowCalc ? $rowCalc['total'] : round($principalPortion + $rowInterest, 2);
+
+                    if ($allocatedPool > ($amountDue + 0.01) && $i < $duration) {
+                        // Regular prior month
+                        $accumulatedPrincipal = round($accumulatedPrincipal + $principalPortion, 2);
+                        $outstandingPrincipal = $rowCalc ? (float) $rowCalc['balance'] : round(max($outstandingPrincipal - $principalPortion, 0), 2);
+                        $allocatedPool = round($allocatedPool - $amountDue, 2);
+
+                        $matchedPayment = $approvedPayments[$i - 1] ?? null;
+
+                        $schedule[] = [
+                            'month'                 => $i,
+                            'due_date'              => $dueDate,
+                            'scheduled_date'        => $dueDate,
+                            'day'                   => $dueDate->format('D'),
+                            'principal'             => $principalPortion,
+                            'interest'              => $rowInterest,
+                            'amount'                => $amountDue,
+                            'penalty_amount'        => (float) ($matchedPayment->penalty_amount ?? 0),
+                            'penalty_reason'        => $matchedPayment?->title ?? null,
+                            'payment_id'            => $matchedPayment?->id ?? null,
+                            'payment_date'          => $matchedPayment ? \Carbon\Carbon::parse($matchedPayment->payment_date) : null,
+                            'outstanding_principal' => $outstandingPrincipal,
+                            'outstanding_debt'      => $outstandingPrincipal,
+                            'paid'                  => $amountDue,
+                            'status'                => 'paid',
+                            'is_settlement'         => false,
+                        ];
+                    } else {
+                        // This is the payoff row
+                        $payoffPrincipal = $outstandingPrincipal;
+                        $payoffInterest = round(max($allocatedPool - $payoffPrincipal, 0), 2);
+
+                        $matchedPayment = $approvedPayments[$i - 1] ?? $lastApprovedPayment;
+
+                        $schedule[] = [
+                            'month'                 => $i,
+                            'due_date'              => $lastPaymentDate,
+                            'scheduled_date'        => $dueDate,
+                            'day'                   => $lastPaymentDate->format('D'),
+                            'principal'             => $payoffPrincipal,
+                            'interest'              => $payoffInterest,
+                            'amount'                => round($allocatedPool, 2),
+                            'penalty_amount'        => (float) ($matchedPayment?->penalty_amount ?? 0),
+                            'penalty_reason'        => $matchedPayment?->title ?? null,
+                            'payment_id'            => $matchedPayment?->id ?? null,
+                            'payment_date'          => $lastPaymentDate,
+                            'outstanding_principal' => 0.00,
+                            'outstanding_debt'      => 0.00,
+                            'paid'                  => round($allocatedPool, 2),
+                            'status'                => 'paid',
+                            'is_settlement'         => true,
+                        ];
+                        break;
+                    }
+                }
+                return $schedule;
+            }
+        }
+
+        // Case 3: Standard active / cancelled installment (full duration)
         for ($i = 1; $i <= $duration; $i++) {
             $dueDate = $startDate->copy()->addMonths($i);
             $rowCalc = $baseSchedule[$i - 1] ?? null;
@@ -246,56 +415,63 @@ class Installment extends Model
             }
             $outstandingDebt = $outstandingPrincipal <= 0 ? 0.00 : round($outstandingPrincipal + $futureInterest, 2);
 
-            // Determine how much is paid for this row and actual payment date
+            // Determine how much is paid for this row
             $needed = $amountDue;
-            $actualPaymentDate = null;
             $allocated = 0;
+            $allocatedPaymentIds = [];
+            $allocatedPenalty = 0.0;
+            $allocatedReasons = [];
+            $lastAllocDate = null;
 
             while ($poolIndex < count($paymentPool) && $needed > 0.009) {
                 $avail = $paymentPool[$poolIndex]['amount'];
                 $take = min($avail, $needed);
                 $allocated += $take;
                 $needed -= $take;
+                
+                if (!in_array($paymentPool[$poolIndex]['id'], $allocatedPaymentIds)) {
+                    $allocatedPaymentIds[] = $paymentPool[$poolIndex]['id'];
+                    $allocatedPenalty += (float) $paymentPool[$poolIndex]['penalty_amount'];
+                    if (!empty($paymentPool[$poolIndex]['penalty_reason'])) {
+                        $allocatedReasons[] = $paymentPool[$poolIndex]['penalty_reason'];
+                    }
+                    $lastAllocDate = $paymentPool[$poolIndex]['date'];
+                }
+
                 $paymentPool[$poolIndex]['amount'] -= $take;
-                $actualPaymentDate = $paymentPool[$poolIndex]['date'];
                 if ($paymentPool[$poolIndex]['amount'] <= 0.009) {
                     $poolIndex++;
                 }
             }
 
-            if ($isFullyPaid) {
-                $status = 'paid';
-                $allocated = $amountDue;
-                $displayDate = $actualPaymentDate ?: ($lastApprovedDate ?: $dueDate);
-            } elseif ($isCancelled) {
+            if ($isCancelled) {
                 if ($allocated >= ($amountDue - 0.01)) {
                     $status = 'paid';
-                    $displayDate = $actualPaymentDate ?: $dueDate;
                 } else {
                     $status = 'cancelled';
-                    $displayDate = $dueDate;
                 }
             } else {
                 if ($allocated >= ($amountDue - 0.01)) {
                     $status = 'paid';
-                    $displayDate = $actualPaymentDate ?: $dueDate;
                 } elseif ($dueDate->isPast()) {
                     $status = 'overdue';
-                    $displayDate = $dueDate;
                 } else {
                     $status = 'pending';
-                    $displayDate = $dueDate;
                 }
             }
 
             $schedule[] = [
                 'month'                 => $i,
-                'due_date'              => $displayDate,
+                'due_date'              => $dueDate,
                 'scheduled_date'        => $dueDate,
-                'day'                   => $displayDate->format('D'),
+                'day'                   => $dueDate->format('D'),
                 'principal'             => $principalPortion,
                 'interest'              => $rowInterest,
                 'amount'                => $amountDue,
+                'penalty_amount'        => round($allocatedPenalty, 2),
+                'penalty_reason'        => !empty($allocatedReasons) ? implode(', ', array_unique($allocatedReasons)) : null,
+                'payment_id'            => !empty($allocatedPaymentIds) ? end($allocatedPaymentIds) : null,
+                'payment_date'          => $lastAllocDate,
                 'outstanding_principal' => $outstandingPrincipal,
                 'outstanding_debt'      => $outstandingDebt,
                 'paid'                  => round($allocated, 2),
@@ -334,16 +510,47 @@ class Installment extends Model
         return 0;
     }
 
-    public function calculatePenalty(): float
+    public function calculatePenalty(?int $customDays = null, ?string $customMethod = null, ?float $customRate = null, ?string $customFrequency = null): float
     {
-        $days = $this->daysLate();
-        if ($days <= 5) {
+        $days = $customDays !== null ? $customDays : $this->daysLate();
+        if ($days <= 0) {
             return 0.00;
         }
-        if ($days <= 15) {
-            return round($days * 5.00, 2);
+
+        $gracePeriod = (int) (\App\Models\Setting::where('key', 'late_grace_period_days')->value('value') ?? 0);
+        $effectiveDays = max(0, $days - $gracePeriod);
+        if ($effectiveDays <= 0) {
+            return 0.00;
         }
-        return round($days * 10.00, 2);
+
+        $method = $customMethod ?? (\App\Models\Setting::where('key', 'late_fee_method')->value('value') 
+            ?? \App\Models\Setting::where('key', 'late_fee_type')->value('value') 
+            ?? 'fixed');
+
+        $rate = $customRate !== null ? $customRate : (float) (\App\Models\Setting::where('key', 'late_fee_rate')->value('value') 
+            ?? \App\Models\Setting::where('key', 'late_fee_amount')->value('value') 
+            ?? 0);
+
+        $frequency = $customFrequency ?? (\App\Models\Setting::where('key', 'late_fee_frequency')->value('value') ?? 'daily');
+
+        if ($method === 'percentage') {
+            // Calculated on overdue monthly payment amount, not total principal
+            $overdueBase = (float) ($this->monthly_payment ?: 0);
+            if ($overdueBase <= 0) {
+                $overdueBase = (float) $this->remaining_balance;
+            }
+            $fee = ($overdueBase * ($rate / 100));
+            if ($frequency === 'daily') {
+                $fee *= $effectiveDays;
+            }
+            return round(max($fee, 0), 2);
+        }
+
+        // Default to fixed amount
+        if ($frequency === 'daily') {
+            return round(max($effectiveDays * $rate, 0), 2);
+        }
+        return round(max($rate, 0), 2);
     }
 
     /**

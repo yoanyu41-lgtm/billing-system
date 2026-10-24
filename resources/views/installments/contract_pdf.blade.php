@@ -56,10 +56,6 @@
         $companyAddress = $settings['company_address_km'] ?? $settings['company_address'] ?? '';
         $companyEmail = $settings['company_email'] ?? '';
         $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
-        
-        $formatRiel = function($usdAmount) use ($exchangeRate) {
-            return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
-        };
     @endphp
 
     {{-- Header --}}

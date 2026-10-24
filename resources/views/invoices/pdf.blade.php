@@ -64,9 +64,6 @@
         $companyEmail = $settings['company_email'] ?? '';
         
         $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
-        $formatRiel = function($usdAmount) use ($exchangeRate) {
-            return number_format(round($usdAmount * $exchangeRate)) . ' ៛';
-        };
     @endphp
 
     {{-- Header --}}
@@ -109,14 +106,14 @@
             <td style="width: 50%; vertical-align: top;">
                 <div class="section-title">ព័ត៌មានការទូទាត់</div>
                 <table class="info" style="width: 100%;">
-                    <tr><td style="color:#6b7280;">ទឹកប្រាក់បង់រំលស់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr><td style="color:#6b7280;">ទឹកប្រាក់បង់រំលស់</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }}</td></tr>
                     @if($invoice->payment && $invoice->payment->penalty_amount > 0)
-                    <tr style="color: #dc2626;"><td style="color: #dc2626;">ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }} / <span style="font-weight: bold;">{{ $formatRiel($invoice->payment->penalty_amount) }}</span></td></tr>
+                    <tr style="color: #dc2626;"><td style="color: #dc2626;">ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }}</td></tr>
                     @endif
                     @php
                         $totalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
                     @endphp
-                    <tr style="font-weight: bold;"><td style="color:#1f2937;">ទឹកប្រាក់បានបង់សរុប</td><td class="right">${{ number_format($totalPaid, 2) }} / <span style="color: #1d4ed8;">{{ $formatRiel($totalPaid) }}</span></td></tr>
+                    <tr style="font-weight: bold;"><td style="color:#1f2937;">ទឹកប្រាក់បានបង់សរុប</td><td class="right">${{ number_format($totalPaid, 2) }}</td></tr>
                 </table>
                 <div class="status">
                     @if($isSettlement)
@@ -164,15 +161,15 @@
             <td style="width: 50%;"></td>
             <td style="width: 50%;">
                 <table class="totals" style="width: 100%;">
-                    <tr><td>សរុបរង</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }} / <span style="color: #1d4ed8; font-weight: bold;">{{ $formatRiel($invoice->payment?->amount ?? 0) }}</span></td></tr>
+                    <tr><td>សរុបរង</td><td class="right">${{ number_format($invoice->payment?->amount ?? 0, 2) }}</td></tr>
                     @if($invoice->payment && $invoice->payment->penalty_amount > 0)
-                    <tr style="color: #b91c1c;"><td>ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }} / <span style="font-weight: bold;">{{ $formatRiel($invoice->payment->penalty_amount) }}</span></td></tr>
+                    <tr style="color: #b91c1c;"><td>ប្រាក់ពិន័យ</td><td class="right">${{ number_format($invoice->payment->penalty_amount, 2) }}</td></tr>
                     @endif
                     @php
                         $grandTotalPaid = ($invoice->payment?->amount ?? 0) + ($invoice->payment?->penalty_amount ?? 0);
                     @endphp
-                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($grandTotalPaid, 2) }} / <span>{{ $formatRiel($grandTotalPaid) }}</span></td></tr>
-                    <tr class="remaining"><td>ប្រាក់នៅសល់</td><td class="right">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }} / <span>{{ $formatRiel($invoice->payment?->installment?->remaining_balance ?? 0) }}</span></td></tr>
+                    <tr class="grand"><td>ចំនួនសរុប</td><td class="right">${{ number_format($grandTotalPaid, 2) }}</td></tr>
+                    <tr class="remaining"><td>ប្រាក់នៅសល់</td><td class="right">${{ number_format($invoice->payment?->installment?->remaining_balance ?? 0, 2) }}</td></tr>
                 </table>
             </td>
         </tr>
@@ -183,7 +180,7 @@
         <tr>
             <td style="width: 50%; vertical-align: bottom;">
                 <div style="color:#6b7280;">ចេញដោយ</div>
-                <div>ឈ្មោះ: {{ $invoice->payment?->approvedBy?->name ?? ($invoice->payment?->installment?->user?->name ?? 'System Admin') }}</div>
+                <div>ឈ្មោះ: ________________</div>
                 <div>កាលបរិច្ឆេទ: {{ $invoice->created_at?->format('d-m-Y') }}</div>
             </td>
             <td style="width: 50%;" class="center">

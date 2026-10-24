@@ -520,6 +520,7 @@ return [
 
     // ── Settings ──
     'general_settings'      => 'General Settings',
+    'installment_settings'  => 'Installment Settings',
     'company_name'          => 'Company Name',
     'company_address'       => 'Company Address',
     'currency'              => 'Currency',
@@ -749,6 +750,7 @@ return [
     'clearance_sub'         => 'View and print clearance certificates for completed installment plans.',
 
     // ── Late Payments ──
+    'late_customers'        => 'Late Customers',
     'remaining_balance'     => 'Remaining Balance',
     'send_reminder'         => 'Send Reminder',
     'send_due_date_reminders_today' => 'Send Due-Date Reminders (Today)',

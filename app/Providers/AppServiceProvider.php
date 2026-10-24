@@ -52,6 +52,29 @@ class AppServiceProvider extends ServiceProvider
                     $table->string('interest_type', 30)->default('flat')->after('interest_rate');
                 });
             }
+
+            if (Schema::hasTable('payments')) {
+                Schema::table('payments', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    if (!Schema::hasColumn('payments', 'payoff_type')) {
+                        $table->string('payoff_type', 30)->nullable()->after('is_settlement');
+                    }
+                    if (!Schema::hasColumn('payments', 'principal_amount')) {
+                        $table->decimal('principal_amount', 10, 2)->nullable()->after('payoff_type');
+                    }
+                    if (!Schema::hasColumn('payments', 'interest_amount')) {
+                        $table->decimal('interest_amount', 10, 2)->nullable()->after('principal_amount');
+                    }
+                    if (!Schema::hasColumn('payments', 'discount_amount')) {
+                        $table->decimal('discount_amount', 10, 2)->default(0)->after('interest_amount');
+                    }
+                    if (!Schema::hasColumn('payments', 'late_fee')) {
+                        $table->decimal('late_fee', 10, 2)->default(0)->after('discount_amount');
+                    }
+                    if (!Schema::hasColumn('payments', 'payment_reference')) {
+                        $table->string('payment_reference')->nullable()->after('late_fee');
+                    }
+                });
+            }
         } catch (\Exception $e) {
             // Ignore
         }

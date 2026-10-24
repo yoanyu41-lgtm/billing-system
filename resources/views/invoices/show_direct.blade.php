@@ -133,17 +133,11 @@
                 <div class="space-y-2 text-sm">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-500" lang="km">{{ $L('តម្លៃសរុប', 'Total Amount') }}</span>
-                        <div class="text-right">
-                            <span class="font-bold text-gray-900 block">: ${{ number_format($sale->total, 2) }}</span>
-                            <span class="text-xs text-gray-400 block font-semibold">{{ number_format(round($sale->total * $exchangeRate)) }} ៛</span>
-                        </div>
+                        <span class="font-bold text-gray-900">: ${{ number_format($sale->total, 2) }}</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-gray-500" lang="km">{{ $L('ប្រាក់បានបង់', 'Paid Amount') }}</span>
-                        <div class="text-right">
-                            <span class="font-bold text-emerald-600 block">: ${{ number_format($sale->total, 2) }}</span>
-                            <span class="text-xs text-emerald-500/70 block font-semibold">{{ number_format(round($sale->total * $exchangeRate)) }} ៛</span>
-                        </div>
+                        <span class="font-bold text-emerald-600">: ${{ number_format($sale->total, 2) }}</span>
                     </div>
                     <div class="flex items-center justify-between rounded-lg bg-emerald-600 text-white px-4 py-2 mt-2">
                         <span class="text-sm font-semibold" lang="km">{{ $L('ស្ថានភាព', 'Status') }} :</span>
@@ -178,18 +172,12 @@
             <tfoot>
                 <tr class="bg-blue-50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L('តម្លៃរង (Subtotal)', 'Subtotal') }}</td>
-                    <td class="px-3 py-2 text-right">
-                        <span class="font-semibold text-gray-900 block">${{ number_format($sale->subtotal, 2) }}</span>
-                        <span class="text-xs text-gray-500 block font-medium">{{ number_format(round($sale->subtotal * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right font-semibold text-gray-900">${{ number_format($sale->subtotal, 2) }}</td>
                 </tr>
                 @if($sale->discount > 0)
                 <tr class="bg-blue-50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L('បញ្ចុះតម្លៃ', 'Discount') }}</td>
-                    <td class="px-3 py-2 text-right">
-                        <span class="font-semibold text-red-500 block">- ${{ number_format($sale->discount, 2) }}</span>
-                        <span class="text-xs text-red-400 block font-medium">- {{ number_format(round($sale->discount * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right font-semibold text-red-500">- ${{ number_format($sale->discount, 2) }}</td>
                 </tr>
                 @endif
                 @if($sale->tax_amount > 0)
@@ -200,18 +188,12 @@
                 @endphp
                 <tr class="bg-blue-50">
                     <td colspan="4" class="px-3 py-2 text-right font-semibold text-gray-700" lang="km">{{ $L("ពន្ធ {$taxLabel} ({$defaultTaxRate}%)", "{$taxLabel} Tax ({$defaultTaxRate}%)") }}</td>
-                    <td class="px-3 py-2 text-right">
-                        <span class="font-semibold text-gray-900 block">${{ number_format($sale->tax_amount, 2) }}</span>
-                        <span class="text-xs text-gray-500 block font-medium">{{ number_format(round($sale->tax_amount * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-2 text-right font-semibold text-gray-900">${{ number_format($sale->tax_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="bg-blue-100">
                     <td colspan="4" class="px-3 py-3 text-right font-bold text-blue-800" lang="km">{{ $L('តម្លៃសរុប', 'Total Amount') }}</td>
-                    <td class="px-3 py-3 text-right">
-                        <span class="text-lg font-extrabold text-blue-800 block">${{ number_format($sale->total, 2) }}</span>
-                        <span class="text-sm font-bold text-blue-700 block">{{ number_format(round($sale->total * $exchangeRate)) }} ៛</span>
-                    </td>
+                    <td class="px-3 py-3 text-right text-lg font-extrabold text-blue-800">${{ number_format($sale->total, 2) }}</td>
                 </tr>
             </tfoot>
         </table>

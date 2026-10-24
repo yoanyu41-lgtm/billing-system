@@ -36,8 +36,8 @@
 
             {{-- 5. Late Payments & Penalty Fee --}}
             <a href="{{ route('late-payments.index') }}" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 text-rose-700 font-semibold text-xs px-3 py-2 rounded-xl border border-rose-200 shadow-sm transition whitespace-nowrap shrink-0">
-                <i class="fas fa-exclamation-triangle text-rose-600"></i>
-                <span>{{ __('app.late_payments') }} ({{ __('app.penalty_fee') ?? 'ប្រាក់ពិន័យ' }})</span>
+                <i class="fas fa-user-clock text-rose-600"></i>
+                <span>{{ __('app.late_customers') ?? 'អតិថិជនបង់យឺត' }}</span>
             </a>
         </div>
     </div>

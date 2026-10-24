@@ -127,9 +127,6 @@
                         <h2 class="text-4xl font-black text-slate-900 tracking-tight">
                             ${{ number_format($payment->amount + $payment->penalty_amount, 2) }}
                         </h2>
-                        <span class="inline-block px-3 py-1 bg-slate-50 border border-slate-150 text-slate-600 rounded-lg text-xs font-bold mt-2">
-                            {{ number_format(round(($payment->amount + $payment->penalty_amount) * $exchangeRate)) }} ៛
-                        </span>
                     </div>
                     
                     <!-- Breakdown Section -->
@@ -254,6 +251,22 @@
                         @endif
                     </div>
                 </div>
+
+                <!-- Penalty Reason / Notes Section -->
+                @if($payment->title && $methodKey !== 'credit_card')
+                <div class="pt-6 border-t border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fas fa-file-lines text-slate-400 text-lg"></i>
+                        <span>{{ $L('មូលហេតុពិន័យ / ចំណាំ', 'Penalty Reason / Notes') }}</span>
+                    </h3>
+                    <div class="text-sm font-semibold text-slate-800 bg-amber-50/40 border border-amber-200/60 p-4 rounded-xl flex items-center gap-3">
+                        <i class="fas fa-circle-exclamation text-amber-500 text-lg"></i>
+                        <div class="leading-relaxed text-slate-700">
+                            {{ $payment->title }}
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- CC Details if CC payment -->
                 @if($payment->title && $methodKey === 'credit_card')

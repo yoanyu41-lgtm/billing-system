@@ -12,7 +12,7 @@ class LatePaymentController extends Controller
     public function __construct(private readonly TelegramService $telegramService)
     {
     }
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $query = Installment::has('customer')->has('product')->with('customer', 'product')
@@ -23,13 +23,63 @@ class LatePaymentController extends Controller
             $query->where('created_by', $user->id);
         }
 
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('id_card', 'like', "%{$search}%");
+                })->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            });
+        }
+
         $allActive = $query->get();
 
-        $lateInstallments = $allActive->filter(function ($installment) {
-            return $installment->daysLate() > 0;
+        $lateInstallments = $allActive->filter(function ($installment) use ($request) {
+            $days = $installment->daysLate();
+            if ($days <= 0) return false;
+
+            if ($request->filled('days_range')) {
+                if ($request->days_range === '1-7' && ($days < 1 || $days > 7)) return false;
+                if ($request->days_range === '8-15' && ($days < 8 || $days > 15)) return false;
+                if ($request->days_range === '16+' && $days < 16) return false;
+            }
+
+            return true;
         })->values();
 
-        return view('late-payments.index', compact('lateInstallments'));
+        $products = \App\Models\Product::orderBy('name')->get();
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        return view('late-payments.index', compact('lateInstallments', 'products', 'settings'));
+    }
+
+    public function applyFee(Request $request, Installment $installment)
+    {
+        $validated = $request->validate([
+            'late_fee_method' => 'required|in:fixed,percentage',
+            'days_late' => 'required|integer|min:0',
+            'rate_or_amount' => 'required|numeric|min:0',
+            'late_fee' => 'required|numeric|min:0',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        // Automatically store as note or prepare for payment collection
+        return redirect()->route('payments.create', [
+            'installment_id' => $installment->id,
+            'penalty_amount' => $validated['late_fee'],
+            'note' => $validated['note'] ?? ("ប្រាក់ពិន័យបង់យឺត " . $validated['days_late'] . " ថ្ងៃ"),
+        ])->with('success', app()->getLocale() === 'km' 
+            ? 'បានគណនាប្រាក់ពិន័យ $' . number_format($validated['late_fee'], 2) . ' រួចរាល់! សូមទទួលការទូទាត់។' 
+            : 'Late fee $' . number_format($validated['late_fee'], 2) . ' applied! Proceed to collect payment.');
     }
 
     public function sendReminder(Request $request, Installment $installment)
