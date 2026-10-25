@@ -26,4 +26,20 @@
     <a href="{{ route('admin.reports.profit') }}" class="pb-2.5 transition whitespace-nowrap no-underline {{ request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent' }}">
         {{ app()->getLocale() === 'km' ? 'ចំណូល/ចំណេញ' : 'Profit / Income' }}
     </a>
+
+    <a href="{{ route('admin.reports.return') }}" class="pb-2.5 transition whitespace-nowrap no-underline {{ request()->routeIs('admin.reports.return') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent' }}">
+        {{ app()->getLocale() === 'km' ? 'ដកហូតទំនិញ' : 'Returns' }}
+    </a>
+
+    <a href="{{ route('admin.reports.overdue') }}" class="pb-2.5 transition whitespace-nowrap no-underline {{ request()->routeIs('admin.reports.overdue') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent' }}">
+        {{ app()->getLocale() === 'km' ? 'បង់យឺត/ហួសកំណត់' : 'Overdue' }}
+    </a>
+
+    <a href="{{ route('admin.reports.settlement') }}" class="pb-2.5 transition whitespace-nowrap no-underline {{ request()->routeIs('admin.reports.settlement') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent' }}">
+        {{ app()->getLocale() === 'km' ? 'បង់ផ្តាច់' : 'Pay-Off' }}
+    </a>
+
+    <a href="{{ route('admin.reports.guarantor') }}" class="pb-2.5 transition whitespace-nowrap no-underline {{ request()->routeIs('admin.reports.guarantor') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent' }}">
+        {{ app()->getLocale() === 'km' ? 'អ្នកធានា' : 'Guarantors' }}
+    </a>
 </div>

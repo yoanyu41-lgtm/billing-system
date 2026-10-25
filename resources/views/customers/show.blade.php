@@ -333,7 +333,7 @@
                         <div class="flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="font-semibold text-gray-800">{{ $inst->product->name ?? 'N/A' }}</span>
-                                @php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','cancelled'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold']; @endphp
+                                @php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','returned'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold','cancelled'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold']; @endphp
                                 <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $sc[$inst->status] ?? 'bg-gray-100 text-gray-500' }}">
                                     {{ __('app.' . $inst->status) }}
                                 </span>

@@ -144,13 +144,18 @@
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                                     {{ __('app.completed') }}
                                 </span>
+                            @elseif($installment->status === 'returned')
+                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                                    <i class="fas fa-undo-alt text-[10px]"></i>
+                                    {{ __('app.returned') }}
+                                </span>
                             @elseif($installment->status === 'cancelled')
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
                                     {{ __('app.cancelled') }}
                                 </span>
                             @else
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
-                                    {{ $installment->status }}
+                                    {{ __('app.' . $installment->status) !== 'app.' . $installment->status ? __('app.' . $installment->status) : $installment->status }}
                                 </span>
                             @endif
                         </td>

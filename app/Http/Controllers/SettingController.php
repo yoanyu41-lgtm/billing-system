@@ -23,6 +23,7 @@ class SettingController extends Controller
     public function updateInstallmentSettings(Request $request)
     {
         $validated = $request->validate([
+            'default_payoff_type' => 'nullable|string|in:principal_only,principal_interest',
             'payoff_interest_mode' => 'nullable|string|in:one_month,all_remaining_months',
             'payoff_min_month' => 'nullable|integer|min:0',
             'late_fee_method' => 'nullable|string|in:fixed,percentage',

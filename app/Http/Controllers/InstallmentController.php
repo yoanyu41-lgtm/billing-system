@@ -89,7 +89,7 @@ class InstallmentController extends Controller
             'total_price' => 'required|numeric|min:0',
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
-            'interest_type' => 'nullable|string|in:flat,declining,amortization,bullet,zero_interest',
+            'interest_type' => 'nullable|string|in:flat,declining,amortization,zero_interest',
             'duration_months' => 'required|integer|min:1',
         ]);
 
@@ -252,6 +252,7 @@ class InstallmentController extends Controller
         $installments = $query->latest('id')->paginate(10)->withQueryString();
 
         $defaultInterestMode = \App\Models\Setting::where('key', 'payoff_interest_mode')->value('value') ?? 'one_month';
+        $defaultPayoffType = \App\Models\Setting::where('key', 'default_payoff_type')->value('value') ?? 'principal_only';
 
         // Pre-compute payoff (outstanding principal), scheduled remaining, and interest options for each plan.
         $installments->getCollection()->transform(function ($installment) use ($defaultInterestMode) {
@@ -331,7 +332,7 @@ class InstallmentController extends Controller
         }
         $suggestions = collect($suggestions)->unique('label')->values()->all();
 
-        return view('installments.pay-off-index', compact('installments', 'paymentMethods', 'suggestions', 'defaultInterestMode'));
+        return view('installments.pay-off-index', compact('installments', 'paymentMethods', 'suggestions', 'defaultInterestMode', 'defaultPayoffType'));
     }
 
     public function payOff(Request $request, Installment $installment)
@@ -431,7 +432,7 @@ class InstallmentController extends Controller
             route('installments.show', $installment)
         );
 
-        return redirect()->route('installments.show', $installment)
+        return redirect()->route('installments.clearance', $installment)
             ->with('success', __('app.pay_off_success', ['amount' => number_format($payoffAmount, 2)]));
     }
 
@@ -457,7 +458,7 @@ class InstallmentController extends Controller
             'total_price' => 'required|numeric|min:0',
             'down_payment' => 'required|numeric|min:0|lte:total_price',
             'interest_rate' => 'nullable|numeric|min:0',
-            'interest_type' => 'nullable|string|in:flat,declining,amortization,bullet,zero_interest',
+            'interest_type' => 'nullable|string|in:flat,declining,amortization,zero_interest',
             'duration_months' => 'required|integer|min:1',
             'status' => 'required|in:active,cancelled,completed,paid',
             'first_payment_date' => 'nullable|date',
@@ -789,8 +790,8 @@ class InstallmentController extends Controller
             'contract_signed_by' => auth()->user()->name,
         ]);
         
-        return redirect()->route('installments.show', $installment)
-            ->with('success', 'Contract uploaded successfully.');
+        return redirect()->back()
+            ->with('success', app()->getLocale() === 'km' ? 'បានបញ្ចូលឯកសារកិច្ចសន្យាដោយជោគជ័យ។' : 'Contract uploaded successfully.');
     }
 
     public function downloadContract(Installment $installment)
@@ -826,8 +827,8 @@ class InstallmentController extends Controller
             ]);
         }
         
-        return redirect()->route('installments.show', $installment)
-            ->with('success', 'Contract deleted successfully.');
+        return redirect()->back()
+            ->with('success', app()->getLocale() === 'km' ? 'បានលុបឯកសារកិច្ចសន្យាដោយជោគជ័យ។' : 'Contract deleted successfully.');
     }
 
     public function sendTelegramQr(Installment $installment, $month)
@@ -1091,5 +1092,181 @@ class InstallmentController extends Controller
         
         $installment->forceDelete();
         return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment permanently deleted.');
+    }
+
+    public function returnIndex(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->hasRole('Admin') && !$user->can('installments.view')) {
+            abort(403);
+        }
+
+        $search = $request->get('search');
+
+        $query = Installment::with(['customer', 'product', 'user', 'returnedByUser'])
+            ->where('status', 'returned');
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $query->where('created_by', $user->id);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('customer', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%" . ltrim($search, '0') . "%");
+            });
+        }
+
+        $installments = $query->latest('returned_at')->latest('id')->paginate(10)->withQueryString();
+        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
+
+        $returnedCount = $installments->total();
+
+        // Active installments available to return (for the + Add Return modal)
+        $availableInstallmentsQuery = Installment::with(['customer', 'product'])
+            ->whereIn('status', ['active', 'ongoing'])
+            ->where('remaining_balance', '>', 0);
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $availableInstallmentsQuery->where('created_by', $user->id);
+        }
+        $availableInstallments = $availableInstallmentsQuery->latest('id')->get();
+
+        return view('installments.return-index', compact('installments', 'exchangeRate', 'returnedCount', 'availableInstallments'));
+    }
+
+    public function processReturn(Request $request, Installment $installment)
+    {
+        Gate::authorize('manage-installment', $installment);
+
+        if ($installment->status === 'returned') {
+            return redirect()->back()->with('error', app()->getLocale() === 'km' 
+                ? 'កិច្ចសន្យានេះត្រូវបានដកហូត/ប្រគល់ទំនិញរួចរាល់ហើយ!' 
+                : 'This installment plan has already been returned/repossessed.');
+        }
+
+        $request->validate([
+            'return_date'    => 'required|date',
+            'return_reason'  => 'nullable|string|max:1000',
+            'restock'        => 'nullable|boolean',
+        ]);
+
+        $restock = $request->boolean('restock', true);
+        $returnDate = $request->return_date ? \Carbon\Carbon::parse($request->return_date) : now();
+        $reason = $request->return_reason;
+
+        // Auto ensure columns exist in installments table before starting transaction (DDL causes implicit commit)
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
+            try {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE installments MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'active'");
+            } catch (\Throwable $e) {}
+
+            try {
+                \Illuminate\Support\Facades\Schema::table('installments', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
+                        $table->dateTime('returned_at')->nullable()->after('status');
+                    }
+                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_by')) {
+                        $table->unsignedBigInteger('returned_by')->nullable()->after('returned_at');
+                    }
+                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'return_reason')) {
+                        $table->text('return_reason')->nullable()->after('returned_by');
+                    }
+                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'return_restock')) {
+                        $table->boolean('return_restock')->default(true)->after('return_reason');
+                    }
+                });
+            } catch (\Throwable $e) {}
+        }
+
+        DB::transaction(function () use ($installment, $restock, $returnDate, $reason) {
+            // 1. Update installment status
+            $installmentData = [
+                'status'            => 'returned',
+                'remaining_balance' => 0.00,
+            ];
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
+                $installmentData['returned_at']    = $returnDate;
+                $installmentData['returned_by']    = auth()->id();
+                $installmentData['return_reason']  = $reason;
+                $installmentData['return_restock'] = $restock;
+            }
+
+            $installment->update($installmentData);
+
+            // 2. Put product back to stock if requested
+            if ($restock && $installment->product_id) {
+                $product = Product::find($installment->product_id);
+                if ($product) {
+                    $product->increment('stock', 1);
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'type'       => 'in',
+                        'quantity'   => 1,
+                        'related_id' => $installment->id,
+                        'note'       => 'Return/Repossess Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ($reason ? ' - ' . $reason : ''),
+                    ]);
+                }
+            }
+
+            // 3. System Notification
+            \App\Models\Notification::createSystemNotification(
+                'installment', 'Product Returned / Repossessed',
+                'Customer ' . ($installment->customer?->name ?? 'N/A') . ' returned item for Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                'undo', 'amber',
+                route('installments.show', $installment)
+            );
+        });
+
+        $msg = app()->getLocale() === 'km' 
+            ? 'បានទទួលទំនិញមកវិញ និងបិទបញ្ចប់កិច្ចសន្យាដោយជោគជ័យ' . ($restock ? ' (ទំនិញត្រូវបានបញ្ចូលក្នុងស្តុកវិញ)' : '') 
+            : 'Product returned successfully and contract closed' . ($restock ? ' (Item restored to stock)' : '');
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    public function printReturnCertificate(Installment $installment)
+    {
+        Gate::authorize('manage-installment', $installment);
+
+        if ($installment->status !== 'returned') {
+            $errorMsg = app()->getLocale() === 'km' 
+                ? 'កិច្ចសន្យានេះមិនមែនជាប្រភេទដកហូត ឬប្រគល់ទំនិញមកវិញឡើយ។' 
+                : 'This installment plan has not been returned.';
+            return redirect()->route('installments.show', $installment)->with('error', $errorMsg);
+        }
+
+        $installment->load(['customer', 'product', 'returnedByUser', 'payments' => function ($q) {
+            $q->where('status', 'approved')->orderBy('payment_date')->orderBy('id');
+        }]);
+
+        $customer = $installment->customer;
+        $product = $installment->product;
+
+        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+
+        // Sum of all approved payments before return
+        $totalPaid = $installment->payments->sum('amount');
+
+        // Payment Schedule to compare
+        $schedule = $installment->getPaymentSchedule();
+
+        return view('installments.return-certificate', compact(
+            'installment',
+            'customer',
+            'product',
+            'totalPaid',
+            'schedule',
+            'settings',
+            'exchangeRate'
+        ));
     }
 }

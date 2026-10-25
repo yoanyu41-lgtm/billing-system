@@ -595,10 +595,13 @@
 
     <!-- Action Bar -->
     <div class="top-nav">
+        <a href="{{ route('installments.pay-off-index') }}" class="btn-action">
+            <i class="fas fa-arrow-left"></i> ត្រឡប់ក្រោយ (Back)
+        </a>
         <button onclick="window.print()" class="btn-action">
-            <i class="fas fa-print"></i> បោះពុម្ពលិខិត (Print)
+            <i class="fas fa-print"></i> បោះពុម្ព (Print)
         </button>
-        <button onclick="window.close()" class="btn-action">
+        <button onclick="window.history.length > 1 ? window.history.back() : window.close()" class="btn-action">
             <i class="fas fa-times"></i> បិទ (Close)
         </button>
     </div>

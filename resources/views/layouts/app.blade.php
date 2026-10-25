@@ -1112,6 +1112,9 @@
                     <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
                         <i class="fas fa-user-clock"></i> {{ __('app.late_customers') ?? 'អតិថិជនបង់យឺត' }}
                     </a>
+                    <a href="{{ route('installments.return-index') }}" class="{{ request()->routeIs('installments.return-index') ? 'active' : '' }}">
+                        <i class="fas fa-undo-alt"></i> {{ app()->getLocale() === 'km' ? 'ដកហូត / ប្រគល់ទំនិញវិញ' : 'Product Returns' }}
+                    </a>
                 </div>
             </div>
             @endif
@@ -1257,6 +1260,18 @@
                     </a>
                     <a href="{{ route('admin.reports.profit') }}" class="{{ request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
                         <i class="fas fa-chart-line"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ចំណូល/ចំណេញ' : 'Profit / Income Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.return') }}" class="{{ request()->routeIs('admin.reports.return') ? 'active' : '' }}">
+                        <i class="fas fa-undo-alt"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ដកហូតទំនិញ' : 'Return Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.overdue') }}" class="{{ request()->routeIs('admin.reports.overdue') ? 'active' : '' }}">
+                        <i class="fas fa-clock-rotate-left"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់យឺត/ហួសកំណត់' : 'Overdue Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.settlement') }}" class="{{ request()->routeIs('admin.reports.settlement') ? 'active' : '' }}">
+                        <i class="fas fa-hand-holding-usd"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់ផ្តាច់' : 'Pay-Off Report' }}
+                    </a>
+                    <a href="{{ route('admin.reports.guarantor') }}" class="{{ request()->routeIs('admin.reports.guarantor') ? 'active' : '' }}">
+                        <i class="fas fa-user-shield"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍អ្នកធានា' : 'Guarantor Report' }}
                     </a>
                 </div>
             </div>

@@ -252,9 +252,6 @@
                                         <option value="amortization" {{ old('interest_type', $installment->interest_type ?? 'flat') === 'amortization' ? 'selected' : '' }}>
                                             {{ $isKm ? 'ការរំលស់ថយដើមថយការ — បង់ថេរស្មើគ្នារៀងរាល់ខែ' : 'Declining Balance / EMI — Fixed total monthly payment' }}
                                         </option>
-                                        <option value="bullet" {{ old('interest_type', $installment->interest_type ?? 'flat') === 'bullet' ? 'selected' : '' }}>
-                                            {{ $isKm ? 'បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ — រាល់ខែបង់តែការប្រាក់' : 'Bullet Payment — Interest only, balloon payment at end' }}
-                                        </option>
                                         <option value="zero_interest" {{ old('interest_type', $installment->interest_type ?? 'flat') === 'zero_interest' ? 'selected' : '' }}>
                                             {{ $isKm ? 'រំលស់ការប្រាក់ ០% — គ្មានការប្រាក់' : '0% Interest — No interest' }}
                                         </option>

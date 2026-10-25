@@ -18,6 +18,10 @@
         'payment' => 'របាយការណ៍ការទូទាត់',
         'expense' => 'របាយការណ៍ចំណាយ',
         'profit', 'income' => 'របាយការណ៍ប្រាក់ចំណេញ',
+        'overdue' => 'របាយការណ៍បង់យឺត / ហួសកាលកំណត់',
+        'return' => 'របាយការណ៍ដកហូត / យកទំនិញវិញ',
+        'settlement' => 'របាយការណ៍បង់ផ្តាច់',
+        'guarantor' => 'របាយការណ៍អ្នកធានា',
         default => 'របាយការណ៍ការលក់'
     };
     $reportTitleEn = match($type) {
@@ -27,6 +31,10 @@
         'payment' => 'PAYMENT TRANSACTIONS REPORT',
         'expense' => 'EXPENSE REPORT',
         'profit', 'income' => 'PROFIT & INCOME REPORT',
+        'overdue' => 'OVERDUE & AGING REPORT',
+        'return' => 'PRODUCT RETURN REPORT',
+        'settlement' => 'SETTLEMENT / PAY-OFF REPORT',
+        'guarantor' => 'GUARANTOR REPORT',
         default => 'SALES TRANSACTIONS REPORT'
     };
 @endphp
@@ -470,6 +478,163 @@
                     </tr>
                 </tfoot>
                 @endif
+            </table>
+
+        @elseif($type === 'overdue')
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">ល.រ</th>
+                        <th style="width: 75px;">កិច្ចសន្យា</th>
+                        <th>អតិថិជន</th>
+                        <th style="width: 90px;">លេខទូរស័ព្ទ</th>
+                        <th>មុខទំនិញ</th>
+                        <th style="width: 75px;">ថ្ងៃត្រូវបង់</th>
+                        <th style="width: 65px;">ចំនួនថ្ងៃយឺត</th>
+                        <th style="width: 75px;">ប្រាក់ត្រូវបង់/ខែ</th>
+                        <th style="width: 65px;">ប្រាក់ពិន័យ</th>
+                        <th style="width: 80px;">នៅសល់សរុប</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($overdueList as $i => $item)
+                    <tr>
+                        <td class="center">{{ $i + 1 }}</td>
+                        <td class="center font-bold">#INS-{{ str_pad($item->installment->id, 3, '0', STR_PAD_LEFT) }}</td>
+                        <td style="font-weight: 700;">{{ $item->customer?->name ?? 'N/A' }}</td>
+                        <td class="center">{{ $item->customer?->phone ?? '-' }}</td>
+                        <td>{{ $item->product?->name ?? 'N/A' }}</td>
+                        <td class="center font-semibold" style="color: #dc2626;">{{ $item->due_date->format('d/m/Y') }}</td>
+                        <td class="center font-bold" style="color: #ea580c;">{{ $item->days_overdue }} ថ្ងៃ</td>
+                        <td class="right font-semibold">${{ number_format($item->monthly_amount, 2) }}</td>
+                        <td class="right font-bold" style="color: #ea580c;">+${{ number_format($item->penalty, 2) }}</td>
+                        <td class="right font-black" style="color: #dc2626;">${{ number_format($item->remaining, 2) }}</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="10" class="center" style="padding: 18px; color: #94a3b8;">មិនមានអតិថិជនយឺតការបង់ប្រាក់ទេ</td></tr>
+                    @endforelse
+                </tbody>
+                @if(count($overdueList ?? []) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="7" class="right">សរុបរួម:</td>
+                        <td class="right font-bold"></td>
+                        <td class="right font-black" style="color: #ea580c;">+${{ number_format($totalLateFee ?? 0, 2) }}</td>
+                        <td class="right font-black" style="color: #dc2626;">${{ number_format($totalOverdueBalance ?? 0, 2) }}</td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+
+        @elseif($type === 'return')
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">ល.រ</th>
+                        <th style="width: 75px;">កិច្ចសន្យា</th>
+                        <th>អតិថិជន</th>
+                        <th style="width: 90px;">លេខទូរស័ព្ទ</th>
+                        <th>ទំនិញដកហូត</th>
+                        <th style="width: 80px;">ថ្ងៃដកហូត</th>
+                        <th style="width: 85px;">បុគ្គលិកទទួល</th>
+                        <th style="width: 80px;">ចូលស្តុកវិញ</th>
+                        <th>មូលហេតុ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($returnList as $i => $ret)
+                    <tr>
+                        <td class="center">{{ $i + 1 }}</td>
+                        <td class="center font-bold">#INS-{{ str_pad($ret->id, 3, '0', STR_PAD_LEFT) }}</td>
+                        <td style="font-weight: 700;">{{ $ret->customer?->name ?? 'N/A' }}</td>
+                        <td class="center">{{ $ret->customer?->phone ?? '-' }}</td>
+                        <td>{{ $ret->product?->name ?? 'N/A' }}</td>
+                        <td class="center">{{ $ret->returned_at ? $ret->returned_at->format('d/m/Y') : '-' }}</td>
+                        <td class="center">{{ $ret->user?->name ?? 'Admin' }}</td>
+                        <td class="center">{{ $ret->return_restock ? 'បានចូលស្តុក' : 'មិនចូល' }}</td>
+                        <td>{{ $ret->return_reason ?? '-' }}</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="9" class="center" style="padding: 18px; color: #94a3b8;">មិនមានទិន្នន័យដកហូតទំនិញទេ</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+        @elseif($type === 'settlement')
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">ល.រ</th>
+                        <th style="width: 75px;">កិច្ចសន្យា</th>
+                        <th>អតិថិជន</th>
+                        <th style="width: 90px;">លេខទូរស័ព្ទ</th>
+                        <th>មុខទំនិញ</th>
+                        <th style="width: 80px;">ថ្ងៃបង់ផ្តាច់</th>
+                        <th style="width: 80px;">ប្រាក់ដើមបង់ផ្តាច់</th>
+                        <th style="width: 65px;">ប្រាក់ពិន័យ</th>
+                        <th style="width: 85px;">សរុបបង់ផ្តាច់</th>
+                        <th style="width: 70px;">ស្ថានភាព</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($settlements as $i => $s)
+                    <tr>
+                        <td class="center">{{ $i + 1 }}</td>
+                        <td class="center font-bold">#INS-{{ str_pad($s->installment_id, 3, '0', STR_PAD_LEFT) }}</td>
+                        <td style="font-weight: 700;">{{ $s->customer?->name ?? 'N/A' }}</td>
+                        <td class="center">{{ $s->customer?->phone ?? '-' }}</td>
+                        <td>{{ $s->product?->name ?? 'N/A' }}</td>
+                        <td class="center">{{ $s->payment_date }}</td>
+                        <td class="right font-bold">${{ number_format($s->principal, 2) }}</td>
+                        <td class="right font-bold" style="color: #ea580c;">${{ number_format($s->penalty_amount, 2) }}</td>
+                        <td class="right font-black" style="color: #16a34a;">${{ number_format($s->total_amount, 2) }}</td>
+                        <td class="center" style="color: #16a34a; font-weight: 700;">បានបង់ផ្តាច់</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="10" class="center" style="padding: 18px; color: #94a3b8;">មិនមានទិន្នន័យបង់ផ្តាច់ទេ</td></tr>
+                    @endforelse
+                </tbody>
+                @if(count($settlements ?? []) > 0)
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6" class="right">សរុបរួម:</td>
+                        <td class="right font-bold">${{ number_format(collect($settlements)->sum('principal'), 2) }}</td>
+                        <td class="right font-bold" style="color: #ea580c;">${{ number_format(collect($settlements)->sum('penalty_amount'), 2) }}</td>
+                        <td class="right font-black" style="color: #16a34a;">${{ number_format(collect($settlements)->sum('total_amount'), 2) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+
+        @elseif($type === 'guarantor')
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">ល.រ</th>
+                        <th>ឈ្មោះអ្នកធានា</th>
+                        <th style="width: 90px;">លេខទូរស័ព្ទ</th>
+                        <th style="width: 90px;">អត្តសញ្ញាណប័ណ្ណ</th>
+                        <th>ទំនាក់ទំនង</th>
+                        <th>អតិថិជនធានា</th>
+                        <th>អាសយដ្ឋាន</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($guarantorList as $i => $g)
+                    <tr>
+                        <td class="center">{{ $i + 1 }}</td>
+                        <td style="font-weight: 700;">{{ $g->name }}</td>
+                        <td class="center font-bold">{{ $g->phone ?? '-' }}</td>
+                        <td class="center">{{ $g->id_card ?? '-' }}</td>
+                        <td class="center">{{ $g->relationship ?: 'អ្នកធានា' }}</td>
+                        <td style="font-weight: 700;">{{ $g->customer?->name ?? 'N/A' }}</td>
+                        <td>{{ $g->address ?? '-' }}</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="7" class="center" style="padding: 18px; color: #94a3b8;">មិនមានទិន្នន័យអ្នកធានាទេ</td></tr>
+                    @endforelse
+                </tbody>
             </table>
 
         @else

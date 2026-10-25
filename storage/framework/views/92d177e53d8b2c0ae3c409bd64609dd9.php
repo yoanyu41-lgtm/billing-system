@@ -1121,6 +1121,10 @@
                         <i class="fas fa-user-clock"></i> <?php echo e(__('app.late_customers') ?? 'អតិថិជនបង់យឺត'); ?>
 
                     </a>
+                    <a href="<?php echo e(route('installments.return-index')); ?>" class="<?php echo e(request()->routeIs('installments.return-index') ? 'active' : ''); ?>">
+                        <i class="fas fa-undo-alt"></i> <?php echo e(app()->getLocale() === 'km' ? 'ដកហូត / ប្រគល់ទំនិញវិញ' : 'Product Returns'); ?>
+
+                    </a>
                 </div>
             </div>
             <?php endif; ?>
@@ -1282,6 +1286,22 @@
                     </a>
                     <a href="<?php echo e(route('admin.reports.profit')); ?>" class="<?php echo e(request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : ''); ?>">
                         <i class="fas fa-chart-line"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ចំណូល/ចំណេញ' : 'Profit / Income Report'); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('admin.reports.return')); ?>" class="<?php echo e(request()->routeIs('admin.reports.return') ? 'active' : ''); ?>">
+                        <i class="fas fa-undo-alt"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ដកហូតទំនិញ' : 'Return Report'); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('admin.reports.overdue')); ?>" class="<?php echo e(request()->routeIs('admin.reports.overdue') ? 'active' : ''); ?>">
+                        <i class="fas fa-clock-rotate-left"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍បង់យឺត/ហួសកំណត់' : 'Overdue Report'); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('admin.reports.settlement')); ?>" class="<?php echo e(request()->routeIs('admin.reports.settlement') ? 'active' : ''); ?>">
+                        <i class="fas fa-hand-holding-usd"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍បង់ផ្តាច់' : 'Pay-Off Report'); ?>
+
+                    </a>
+                    <a href="<?php echo e(route('admin.reports.guarantor')); ?>" class="<?php echo e(request()->routeIs('admin.reports.guarantor') ? 'active' : ''); ?>">
+                        <i class="fas fa-user-shield"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍អ្នកធានា' : 'Guarantor Report'); ?>
 
                     </a>
                 </div>

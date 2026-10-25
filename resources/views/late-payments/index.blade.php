@@ -117,7 +117,20 @@
                             {{ $idx + 1 }}
                         </td>
                         <td class="px-5 py-4 whitespace-nowrap">
-                            <div class="font-bold text-slate-900">{{ $installment->customer?->name ?? 'N/A' }}</div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-slate-900">{{ $installment->customer?->name ?? 'N/A' }}</span>
+                                @if(!empty($installment->customer?->telegram_id))
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200" title="បានភ្ជាប់ Telegram (ID: {{ $installment->customer->telegram_id }})">
+                                        <i class="fab fa-telegram-plane text-sky-500"></i>
+                                        <span>ភ្ជាប់រួច</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-400" title="មិនទាន់ភ្ជាប់ Telegram">
+                                        <i class="fab fa-telegram text-slate-400"></i>
+                                        <span>មិនទាន់ភ្ជាប់</span>
+                                    </span>
+                                @endif
+                            </div>
                             <div class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
                                 <i class="fas fa-phone-alt text-[10px] text-slate-400"></i>
                                 <span>{{ $installment->customer?->phone ?? 'គ្មានលេខទូរស័ព្ទ' }}</span>
@@ -150,34 +163,28 @@
                             </span>
                         </td>
                         <td class="px-5 py-4 whitespace-nowrap text-right space-x-1.5">
-                            <!-- ពិនិត្យលម្អិត (Schedule / Detail View) -->
-                            <a href="{{ route('installments.schedule', $installment) }}"
-                               class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs transition border border-blue-200 shadow-2xs">
-                                <i class="fas fa-eye text-xs"></i>
-                                <span>{{ app()->getLocale() === 'km' ? 'ពិនិត្យលម្អិត' : 'View' }}</span>
-                            </a>
-
-                            <!-- ៤. ប៊ូតុង ដាក់ពិន័យ (Open Modal) -->
-                            <button type="button" onclick="openPenaltyModal({{ $installment->id }})"
-                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs transition shadow-2xs">
-                                <i class="fas fa-coins text-xs"></i>
-                                <span>{{ app()->getLocale() === 'km' ? 'ដាក់ពិន័យ' : 'Apply Fee' }}</span>
-                            </button>
-
                             <!-- Collect Payment Direct Button -->
                             <a href="{{ route('payments.create', ['installment_id' => $installment->id, 'penalty_amount' => $calculatedFee]) }}"
                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition shadow-2xs"
-                               title="{{ app()->getLocale() === 'km' ? 'ទទួលប្រាក់ពីអតិថិជន' : 'Collect Payment' }}">
+                               title="{{ app()->getLocale() === 'km' ? 'ទូទាត់ប្រាក់ពីអតិថិជន' : 'Make Payment' }}">
                                 <i class="fas fa-cash-register text-xs"></i>
-                                <span>{{ app()->getLocale() === 'km' ? 'ទទួលប្រាក់' : 'Collect' }}</span>
+                                <span>{{ app()->getLocale() === 'km' ? 'ទូទាត់' : 'Pay' }}</span>
                             </a>
 
                             <!-- Telegram Reminder Button -->
+                            @if(!empty($installment->customer?->telegram_id))
                             <button type="button" onclick="document.getElementById('remind-modal-{{ $installment->id }}').classList.remove('hidden')"
-                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
-                                    title="{{ app()->getLocale() === 'km' ? 'ផ្ញើសាររំលឹក' : 'Notify Telegram' }}">
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-200 transition"
+                                    title="{{ app()->getLocale() === 'km' ? 'ផ្ញើសាររំលឹកតាម Telegram' : 'Notify Telegram' }}">
                                 <i class="fab fa-telegram-plane"></i>
                             </button>
+                            @else
+                            <button type="button" disabled
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-300 cursor-not-allowed border border-slate-200"
+                                    title="{{ app()->getLocale() === 'km' ? 'អតិថិជនមិនទាន់បានភ្ជាប់ Telegram ទេ' : 'Telegram not connected' }}">
+                                <i class="fab fa-telegram-plane"></i>
+                            </button>
+                            @endif
                         </td>
                     </tr>
                     @empty

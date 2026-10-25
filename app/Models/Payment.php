@@ -40,7 +40,7 @@ class Payment extends Model
 
     public function installment()
     {
-        return $this->belongsTo(Installment::class);
+        return $this->belongsTo(Installment::class)->withTrashed();
     }
 
     public function paymentMethod()

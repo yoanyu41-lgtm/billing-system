@@ -160,6 +160,7 @@ return [
     'rejected'              => 'Rejected',
     'completed'             => 'Completed',
     'cancelled'             => 'Cancelled',
+    'returned'              => 'Returned',
     'overdue'               => 'Overdue',
     'paid'                  => 'Paid',
     'unpaid'                => 'Unpaid',

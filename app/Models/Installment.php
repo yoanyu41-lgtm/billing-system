@@ -28,6 +28,10 @@ class Installment extends Model
         'signed_contract',
         'contract_signed_at',
         'contract_signed_by',
+        'returned_at',
+        'returned_by',
+        'return_reason',
+        'return_restock',
     ];
 
     protected $attributes = [
@@ -36,6 +40,8 @@ class Installment extends Model
 
     protected $casts = [
         'contract_signed_at' => 'datetime',
+        'returned_at' => 'datetime',
+        'return_restock' => 'boolean',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'subtotal_before_tax' => 'decimal:2',
@@ -54,6 +60,11 @@ class Installment extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function returnedByUser()
+    {
+        return $this->belongsTo(User::class, 'returned_by');
     }
 
     public function payments()

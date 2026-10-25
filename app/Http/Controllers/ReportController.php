@@ -782,6 +782,260 @@ class ReportController extends Controller
     }
 
     /**
+     * 10. Product Return Report (របាយការណ៍ដកហូត / យកទំនិញមកវិញ)
+     */
+    public function returnReport(Request $request)
+    {
+        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+        $search = trim($request->search ?? '');
+
+        $query = Installment::with(['customer', 'product', 'returnedByUser', 'payments' => function($q) {
+            $q->where('status', 'approved');
+        }])
+        ->where('status', 'returned')
+        ->where(function($q) use ($startDate, $endDate) {
+            $q->whereBetween(DB::raw('COALESCE(DATE(returned_at), DATE(updated_at))'), [$startDate, $endDate]);
+        });
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('customer', function($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%" . ltrim($search, '0') . "%");
+            });
+        }
+
+        $returns = $query->latest('returned_at')->latest('updated_at')->get();
+
+        $totalReturned = $returns->count();
+        $totalRestocked = $returns->where('return_restock', 1)->count();
+        $totalNotRestocked = $totalReturned - $totalRestocked;
+        
+        $totalContractValue = $returns->sum('total_price');
+        $totalPaidBeforeReturn = 0;
+        foreach ($returns as $r) {
+            $totalPaidBeforeReturn += (float)$r->down_payment + (float)$r->payments->sum('amount');
+        }
+        $totalVoidedBalance = max($totalContractValue - $totalPaidBeforeReturn, 0);
+
+        return view('admin.reports.return', compact(
+            'returns', 'startDate', 'endDate', 'filter', 'search',
+            'totalReturned', 'totalRestocked', 'totalNotRestocked',
+            'totalContractValue', 'totalPaidBeforeReturn', 'totalVoidedBalance'
+        ));
+    }
+
+    /**
+     * 11. Overdue & Aging Report (របាយការណ៍បង់យឺត / ហួសកាលកំណត់)
+     */
+    public function overdueReport(Request $request)
+    {
+        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+        $agingFilter = $request->aging; // '1-7', '8-30', '30+'
+
+        $query = Installment::with(['customer', 'product', 'payments'])
+            ->whereIn('status', ['active', 'ongoing'])
+            ->where('remaining_balance', '>', 0)
+            ->whereNotNull('next_due_date')
+            ->whereDate('next_due_date', '<', today());
+
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $query->whereBetween(DB::raw('DATE(next_due_date)'), [$startDate, $endDate]);
+        }
+
+        $installments = $query->get();
+
+        $overdueList = collect();
+        $bucket1To7 = 0;
+        $bucket8To30 = 0;
+        $bucket30Plus = 0;
+        $totalLateFee = 0;
+        $totalOverdueBalance = 0;
+
+        foreach ($installments as $inst) {
+            $dueDate = Carbon::parse($inst->next_due_date);
+            $daysOverdue = max((int) $dueDate->diffInDays(today(), false), 1);
+
+            if ($daysOverdue <= 7) {
+                $bucket = '1-7';
+                $bucket1To7++;
+            } elseif ($daysOverdue <= 30) {
+                $bucket = '8-30';
+                $bucket8To30++;
+            } else {
+                $bucket = '30+';
+                $bucket30Plus++;
+            }
+
+            if ($agingFilter && $agingFilter !== $bucket) {
+                continue;
+            }
+
+            // Estimate penalty or get logged penalty
+            $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+            $dailyPenaltyRate = (float)($settings['late_payment_penalty_percent'] ?? 0.5);
+            $fixedPenalty = (float)($settings['late_payment_fixed_penalty'] ?? 0);
+            $penalty = round($fixedPenalty + (($inst->monthly_payment * $dailyPenaltyRate / 100) * $daysOverdue), 2);
+
+            $totalLateFee += $penalty;
+            $totalOverdueBalance += (float)$inst->remaining_balance;
+
+            $overdueList->push((object)[
+                'installment'   => $inst,
+                'customer'      => $inst->customer,
+                'product'       => $inst->product,
+                'due_date'      => $dueDate,
+                'days_overdue'  => $daysOverdue,
+                'bucket'        => $bucket,
+                'monthly_amount'=> (float)$inst->monthly_payment,
+                'remaining'     => (float)$inst->remaining_balance,
+                'penalty'       => $penalty,
+            ]);
+        }
+
+        $overdueList = $overdueList->sortByDesc('days_overdue')->values();
+        $totalOverdueContracts = $installments->count();
+
+        return view('admin.reports.overdue', compact(
+            'overdueList', 'startDate', 'endDate', 'filter', 'agingFilter',
+            'totalOverdueContracts', 'bucket1To7', 'bucket8To30', 'bucket30Plus',
+            'totalLateFee', 'totalOverdueBalance'
+        ));
+    }
+
+    /**
+     * 12. Settlement / Pay-Off Report (របាយការណ៍បង់ផ្តាច់មុនកាលកំណត់)
+     */
+    public function settlementReport(Request $request)
+    {
+        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+        $search = trim($request->search ?? '');
+
+        // Retrieve settled/completed installments within the date range
+        $query = Installment::withTrashed()
+            ->with(['customer', 'product', 'payments' => function($q) {
+                $q->where('status', 'approved');
+            }, 'payments.paymentMethod', 'payments.receiver'])
+            ->where(function($q) {
+                $q->where('status', 'completed')
+                  ->orWhereHas('payments', function($pq) {
+                      $pq->where('status', 'approved')->where('is_settlement', true);
+                  });
+            })
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween(DB::raw('DATE(updated_at)'), [$startDate, $endDate])
+                  ->orWhereHas('payments', function($pq) use ($startDate, $endDate) {
+                      $pq->where('status', 'approved')
+                         ->where('is_settlement', true)
+                         ->whereBetween('payment_date', [$startDate, $endDate]);
+                  });
+            });
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->whereHas('customer', function($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })
+                ->orWhereHas('product', function($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%" . ltrim($search, '#INS-0') . "%");
+            });
+        }
+
+        $completedInstallments = $query->latest('updated_at')->get();
+
+        $settlements = collect();
+        $totalSettledAmount = 0;
+        $totalPenaltyCollected = 0;
+
+        foreach ($completedInstallments as $inst) {
+            // Find specific settlement payment if marked, or the last payment
+            $settlePay = $inst->payments->where('is_settlement', true)->last() 
+                         ?? $inst->payments->sortByDesc('payment_date')->first();
+
+            $principalAmount = $settlePay ? (float)($settlePay->principal_amount ?: $settlePay->amount) : (float)$inst->total_price;
+            $penaltyAmount = $settlePay ? (float)($settlePay->penalty_amount ?: ($settlePay->late_fee ?? 0)) : 0;
+            $settleDate = $settlePay && $settlePay->payment_date ? Carbon::parse($settlePay->payment_date)->format('d/m/Y') : $inst->updated_at->format('d/m/Y');
+            $totalPaid = $principalAmount + $penaltyAmount;
+
+            $totalSettledAmount += $principalAmount;
+            $totalPenaltyCollected += $penaltyAmount;
+
+            $settlements->push((object)[
+                'installment_id'  => $inst->id,
+                'installment'     => $inst,
+                'customer'        => $inst->customer,
+                'product'         => $inst->product,
+                'payment_date'    => $settleDate,
+                'principal'       => $principalAmount,
+                'penalty_amount'  => $penaltyAmount,
+                'total_amount'    => $totalPaid,
+                'payment_method'  => $settlePay?->paymentMethod?->name ?? 'Cash',
+                'status'          => 'Settled',
+            ]);
+        }
+
+        $totalSettlements = $settlements->count();
+
+        return view('admin.reports.settlement', compact(
+            'settlements', 'startDate', 'endDate', 'filter', 'search',
+            'totalSettlements', 'totalSettledAmount', 'totalPenaltyCollected'
+        ));
+    }
+
+    /**
+     * 13. Guarantor Report (របាយការណ៍អ្នកធានា)
+     */
+    public function guarantorReport(Request $request)
+    {
+        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+        $search = trim($request->search ?? '');
+
+        $query = \App\Models\Guarantor::with(['customer.installments' => function($q) {
+            $q->whereIn('status', ['active', 'ongoing', 'overdue']);
+        }]);
+
+        if ($request->filled('start_date') || $request->filled('end_date') || $request->filled('filter')) {
+            $query->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+        }
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($sub) use ($search) {
+                      $sub->where('name', 'like', "%{$search}%")
+                          ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $guarantors = $query->latest('id')->paginate(15)->withQueryString();
+
+        $totalGuarantors = \App\Models\Guarantor::count();
+        $activeGuaranteedContracts = Installment::whereIn('status', ['active', 'ongoing'])
+            ->whereHas('customer.guarantors')
+            ->count();
+        $overdueGuaranteedContracts = Installment::whereIn('status', ['active', 'ongoing'])
+            ->where('next_due_date', '<', today())
+            ->whereHas('customer.guarantors')
+            ->count();
+
+        return view('admin.reports.guarantor', compact(
+            'guarantors', 'search', 'startDate', 'endDate', 'filter', 'totalGuarantors', 'activeGuaranteedContracts', 'overdueGuaranteedContracts'
+        ));
+    }
+
+    /**
      * Printable Report Preview (Perfect Khmer Font Rendering via Browser)
      */
     public function printReport(Request $request, $type)
@@ -1055,6 +1309,124 @@ class ReportController extends Controller
             $data['grossProfit'] = $grossProfit;
             $data['totalExpenses'] = $expensesSum;
             $data['netIncome'] = $netIncome;
+
+        } elseif ($type === 'overdue') {
+            $agingFilter = $request->aging;
+            $installments = Installment::with(['customer', 'product'])
+                ->whereIn('status', ['active', 'ongoing', 'overdue'])
+                ->where('remaining_balance', '>', 0)
+                ->whereNotNull('next_due_date')
+                ->whereDate('next_due_date', '<', now()->toDateString())
+                ->get();
+
+            $overdueList = collect();
+            foreach ($installments as $inst) {
+                $dueDate = Carbon::parse($inst->next_due_date)->startOfDay();
+                $today = now()->startOfDay();
+                $daysOverdue = max((int)$dueDate->diffInDays($today, false), 0);
+
+                if ($agingFilter === '1-7' && ($daysOverdue < 1 || $daysOverdue > 7)) continue;
+                if ($agingFilter === '8-30' && ($daysOverdue < 8 || $daysOverdue > 30)) continue;
+                if ($agingFilter === '30+' && $daysOverdue <= 30) continue;
+
+                $penalty = round((float)$inst->monthly_payment * 0.05 * ceil($daysOverdue / 30), 2);
+
+                $overdueList->push((object)[
+                    'installment'   => $inst,
+                    'customer'      => $inst->customer,
+                    'product'       => $inst->product,
+                    'due_date'      => $dueDate,
+                    'days_overdue'  => $daysOverdue,
+                    'monthly_amount'=> (float)$inst->monthly_payment,
+                    'penalty'       => $penalty,
+                    'remaining'     => (float)$inst->remaining_balance,
+                ]);
+            }
+            $data['overdueList'] = $overdueList->sortByDesc('days_overdue')->values();
+            $data['totalOverdueBalance'] = $overdueList->sum('remaining');
+            $data['totalLateFee'] = $overdueList->sum('penalty');
+
+        } elseif ($type === 'return') {
+            $search = trim($request->search ?? '');
+            $query = Installment::withTrashed()
+                ->with(['customer', 'product', 'user', 'payments'])
+                ->where('status', 'returned')
+                ->whereBetween(DB::raw('COALESCE(DATE(returned_at), DATE(updated_at))'), [$startDate, $endDate]);
+
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->whereHas('customer', function($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
+                    })->orWhereHas('product', function($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%");
+                    });
+                });
+            }
+            $returnList = $query->latest('returned_at')->get();
+            $data['returnList'] = $returnList;
+            $data['totalReturnRefunded'] = $returnList->sum('total_price');
+
+        } elseif ($type === 'settlement') {
+            $search = trim($request->search ?? '');
+            $query = Installment::withTrashed()
+                ->with(['customer', 'product', 'payments' => function($q) {
+                    $q->where('status', 'approved');
+                }])
+                ->where(function($q) {
+                    $q->where('status', 'completed')
+                      ->orWhereHas('payments', function($pq) {
+                          $pq->where('status', 'approved')->where('is_settlement', true);
+                      });
+                })
+                ->where(function($q) use ($startDate, $endDate) {
+                    $q->whereBetween(DB::raw('DATE(updated_at)'), [$startDate, $endDate])
+                      ->orWhereHas('payments', function($pq) use ($startDate, $endDate) {
+                          $pq->where('status', 'approved')->where('is_settlement', true)->whereBetween('payment_date', [$startDate, $endDate]);
+                      });
+                });
+
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->whereHas('customer', function($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
+                    })->orWhereHas('product', function($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%");
+                    });
+                });
+            }
+            $settlements = collect();
+            foreach ($query->latest('updated_at')->get() as $inst) {
+                $settlePay = $inst->payments->where('is_settlement', true)->last() 
+                             ?? $inst->payments->sortByDesc('payment_date')->first();
+                $principal = $settlePay ? (float)($settlePay->principal_amount ?: $settlePay->amount) : (float)$inst->total_price;
+                $penalty = $settlePay ? (float)($settlePay->penalty_amount ?: ($settlePay->late_fee ?? 0)) : 0;
+                $settlements->push((object)[
+                    'installment_id' => $inst->id,
+                    'customer'       => $inst->customer,
+                    'product'        => $inst->product,
+                    'payment_date'   => $settlePay && $settlePay->payment_date ? Carbon::parse($settlePay->payment_date)->format('d/m/Y') : $inst->updated_at->format('d/m/Y'),
+                    'principal'      => $principal,
+                    'penalty_amount' => $penalty,
+                    'total_amount'   => $principal + $penalty,
+                ]);
+            }
+            $data['settlements'] = $settlements;
+
+        } elseif ($type === 'guarantor') {
+            $search = trim($request->search ?? '');
+            $query = \App\Models\Guarantor::with(['customer.installments' => function($q) {
+                $q->whereIn('status', ['active', 'ongoing', 'overdue']);
+            }]);
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('phone', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function($sub) use ($search) {
+                          $sub->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%");
+                      });
+                });
+            }
+            $data['guarantorList'] = $query->latest()->get();
 
         } else {
             // Default Sales report

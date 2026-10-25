@@ -31,6 +31,12 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span><?php echo e(__('app.clearance_certificates')); ?></span>
             </a>
+
+            
+            <a href="<?php echo e(route('installments.return-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-undo-alt text-rose-600"></i>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'ដកហូត / យកអីវ៉ាន់វិញ' : 'Returns'); ?></span>
+            </a>
         </div>
     </div>
 
@@ -88,12 +94,10 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.product')); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.duration')); ?></th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            <span lang="km">ទឹកប្រាក់នៅសល់តាមកាលវិភាគ</span>
-                            <span class="block text-[10px] text-gray-400 font-normal lowercase">(Scheduled Remaining)</span>
+                            <span lang="km">ទឹកប្រាក់នៅសល់</span>
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">
-                            <span lang="km">ប្រាក់ដើមត្រូវបង់ផ្តាច់</span>
-                            <span class="block text-[10px] text-amber-600 font-normal lowercase">(ប្រាក់ដើមនៅសល់)</span>
+                            <span lang="km">ប្រាក់ដើម</span>
                         </th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.actions')); ?></th>
                     </tr>
@@ -185,10 +189,13 @@
     ?>
     <div id="payoff-modal-<?php echo e($installment->id); ?>" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+            <?php
+                $isKm = app()->getLocale() === 'km';
+            ?>
             <!-- Modal Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <span>Pay Off — បង់ផ្តាច់</span>
+                    <span><?php echo e($isKm ? 'បង់ផ្តាច់' : 'Pay Off'); ?></span>
                 </h3>
                 <button type="button" onclick="closePayoffModal(<?php echo e($installment->id); ?>)" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -197,41 +204,42 @@
 
             <form method="POST" action="<?php echo e(route('installments.pay-off', $installment)); ?>" id="payoff-form-<?php echo e($installment->id); ?>" class="p-6 space-y-4">
                 <?php echo csrf_field(); ?>
+                <?php
+                    $initPayoffType = $defaultPayoffType ?? 'principal_only';
+                ?>
                 <input type="hidden" name="installment_id" value="<?php echo e($installment->id); ?>">
-                <input type="hidden" name="payoff_type" id="payoff_type_<?php echo e($installment->id); ?>" value="principal_only">
+                <input type="hidden" name="payoff_type" id="payoff_type_<?php echo e($installment->id); ?>" value="<?php echo e($initPayoffType); ?>">
 
-                <!-- Payoff Type Selection -->
+                <!-- Payoff Type Display (Configured from Settings) -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                        Payoff Type (ប្រភេទបង់ផ្តាច់)
-                    </label>
-                    <div class="space-y-2">
-                        <!-- Option 1: Principal Only -->
-                        <label onclick="switchPayoffType(<?php echo e($installment->id); ?>, 'principal_only')"
-                               class="payoff-type-card-<?php echo e($installment->id); ?> flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/60 cursor-pointer transition"
-                               data-type="principal_only">
-                            <input type="radio" name="payoff_type_radio_<?php echo e($installment->id); ?>" value="principal_only" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-                            <span class="text-sm font-bold text-slate-800">
-                                បង់តែប្រាក់ដើមនៅសល់ (Principal Only)
-                            </span>
-                        </label>
+                        <?php echo e($isKm ? 'ប្រភេទបង់ផ្តាច់' : 'Payoff Type'); ?>
 
-                        <!-- Option 2: Principal + Interest -->
-                        <label onclick="switchPayoffType(<?php echo e($installment->id); ?>, 'principal_interest')"
-                               class="payoff-type-card-<?php echo e($installment->id); ?> flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition"
-                               data-type="principal_interest">
-                            <input type="radio" name="payoff_type_radio_<?php echo e($installment->id); ?>" value="principal_interest" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500">
+                    </label>
+                    <?php if($initPayoffType === 'principal_interest'): ?>
+                        <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/60">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                             <span class="text-sm font-bold text-slate-800">
-                                ប្រាក់ដើម + ការប្រាក់ (Principal + Interest)
+                                <?php echo e($isKm ? 'ប្រាក់ដើម + ការប្រាក់' : 'Principal + Interest'); ?>
+
                             </span>
-                        </label>
-                    </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/60">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                            <span class="text-sm font-bold text-slate-800">
+                                <?php echo e($isKm ? 'បង់តែប្រាក់ដើមនៅសល់' : 'Principal Only'); ?>
+
+                            </span>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Outstanding Principal Card -->
                 <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl px-4 py-3 flex items-center justify-between">
                     <span class="text-xs sm:text-sm font-semibold text-slate-700">
-                        Outstanding Principal (ប្រាក់ដើមនៅសល់)
+                        <?php echo e($isKm ? 'ប្រាក់ដើមនៅសល់' : 'Outstanding Principal'); ?>
+
                     </span>
                     <span class="text-xl sm:text-2xl font-black text-amber-700">
                         $<?php echo e(number_format($principal, 2)); ?>
@@ -242,17 +250,25 @@
                 <!-- Title / Note -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">
-                        Title / Note (ចំណាំ)
+                        <?php echo e($isKm ? 'ចំណាំ' : 'Title / Note'); ?>
+
                     </label>
-                    <input type="text" name="title" placeholder="e.g. Early settlement, special discount..."
+                    <input type="text" name="title" placeholder="<?php echo e($isKm ? 'ឧ. ការបង់ផ្តាច់, បញ្ចុះតម្លៃពិសេស...' : 'e.g. Early settlement, special discount...'); ?>"
                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
 
-                <!-- Principal + Interest specific fields (hidden by default in Principal Only mode) -->
-                <div id="interest-fields-<?php echo e($installment->id); ?>" class="hidden grid grid-cols-2 gap-3">
+                <?php
+                    $isInitialInterest = ($initPayoffType === 'principal_interest');
+                    $initialInterestAmount = $isInitialInterest ? ($installment->default_interest_amount ?? $defaultAccruedInterest) : 0;
+                    $initialTotal = $principal + $initialInterestAmount + ($installment->calculated_late_fee ?? 0);
+                ?>
+
+                <!-- Principal + Interest specific fields (hidden when Principal Only) -->
+                <div id="interest-fields-<?php echo e($installment->id); ?>" class="<?php echo e($isInitialInterest ? '' : 'hidden'); ?> grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Interest Rate (%) (អត្រាការប្រាក់)
+                            <?php echo e($isKm ? 'អត្រាការប្រាក់ (%)' : 'Interest Rate (%)'); ?>
+
                         </label>
                         <div class="relative">
                             <input type="number" step="0.01" min="0" max="100" name="interest_rate"
@@ -265,7 +281,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Accrued Interest (ការប្រាក់ត្រូវបង់) ($)
+                            <?php echo e($isKm ? 'ការប្រាក់ត្រូវបង់ ($)' : 'Accrued Interest ($)'); ?>
+
                         </label>
                         <div class="relative">
                             <input type="number" step="0.01" min="0" name="interest_amount"
@@ -282,7 +299,8 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Discount (បញ្ចុះតម្លៃ) ($)
+                            <?php echo e($isKm ? 'បញ្ចុះតម្លៃ ($)' : 'Discount ($)'); ?>
+
                         </label>
                         <input type="number" step="0.01" min="0" name="discount"
                                id="discount_<?php echo e($installment->id); ?>"
@@ -293,11 +311,13 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-semibold text-slate-700">
-                                Late Fee (ពិន័យយឺត) ($)
+                                <?php echo e($isKm ? 'ប្រាក់ពិន័យ ($)' : 'Late Fee ($)'); ?>
+
                             </label>
                             <?php if(($installment->overdue_days ?? 0) > 0): ?>
                                 <span class="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                                    យឺត <?php echo e($installment->overdue_days); ?> ថ្ងៃ
+                                    <?php echo e($isKm ? 'យឺត ' . $installment->overdue_days . ' ថ្ងៃ' : $installment->overdue_days . ' days late'); ?>
+
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -309,11 +329,12 @@
                     </div>
                 </div>
 
-                <!-- Payment Method & Reference -->
+                <!-- Payment Method & Date -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Method (វិធីទូទាត់)
+                            <?php echo e($isKm ? 'វិធីទូទាត់' : 'Payment Method'); ?>
+
                         </label>
                         <select name="payment_method_id" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             <?php $__currentLoopData = $paymentMethods; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $method): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -323,54 +344,48 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Reference (លេខប្រតិបត្តិការ)
+                            <?php echo e($isKm ? 'ថ្ងៃទូទាត់' : 'Payment Date'); ?>
+
                         </label>
-                        <input type="text" name="payment_reference" placeholder="Transaction ID / Reference"
+                        <input type="date" name="payment_date" value="<?php echo e(now()->toDateString()); ?>" required
                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
 
-                <!-- Payment Date -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">
-                        Payment Date (ថ្ងៃទូទាត់)
-                    </label>
-                    <input type="date" name="payment_date" value="<?php echo e(now()->toDateString()); ?>" required
-                           class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
                 <!-- Payment Summary Box -->
-                <div id="summary-box-<?php echo e($installment->id); ?>" class="rounded-xl p-4 bg-blue-50/70 border border-blue-100 transition space-y-2">
-                    <div id="summary-title-<?php echo e($installment->id); ?>" class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
-                        Payment Summary (សរុបការទូទាត់)
+                <div id="summary-box-<?php echo e($installment->id); ?>" class="rounded-xl p-4 <?php echo e($isInitialInterest ? 'bg-emerald-50/70 border border-emerald-100' : 'bg-blue-50/70 border border-blue-100'); ?> transition space-y-2">
+                    <div id="summary-title-<?php echo e($installment->id); ?>" class="text-xs font-bold <?php echo e($isInitialInterest ? 'text-emerald-700' : 'text-blue-700'); ?> uppercase tracking-wider mb-2">
+                        <?php echo e($isKm ? 'សរុបការទូទាត់' : 'Payment Summary'); ?>
+
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>ប្រាក់ដើមនៅសល់ (Principal)</span>
+                        <span><?php echo e($isKm ? 'ប្រាក់ដើមនៅសល់' : 'Remaining Principal'); ?></span>
                         <span class="font-bold text-slate-900">$<?php echo e(number_format($principal, 2)); ?></span>
                     </div>
 
-                    <div id="summary-row-interest-<?php echo e($installment->id); ?>" class="hidden flex items-center justify-between text-xs text-slate-600">
-                        <span>ការប្រាក់ (Interest)</span>
-                        <span class="font-bold text-slate-900" id="summary-val-interest-<?php echo e($installment->id); ?>">$0.00</span>
+                    <div id="summary-row-interest-<?php echo e($installment->id); ?>" class="<?php echo e($isInitialInterest ? '' : 'hidden'); ?> flex items-center justify-between text-xs text-slate-600">
+                        <span><?php echo e($isKm ? 'ការប្រាក់' : 'Interest'); ?></span>
+                        <span class="font-bold text-slate-900" id="summary-val-interest-<?php echo e($installment->id); ?>">$<?php echo e(number_format($initialInterestAmount, 2)); ?></span>
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>បញ្ចុះតម្លៃ (Discount)</span>
+                        <span><?php echo e($isKm ? 'បញ្ចុះតម្លៃ' : 'Discount'); ?></span>
                         <span class="font-bold text-red-600" id="summary-val-discount-<?php echo e($installment->id); ?>">-$0.00</span>
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>ពិន័យយឺត (Late Fee)</span>
+                        <span><?php echo e($isKm ? 'ប្រាក់ពិន័យ' : 'Late Fee'); ?></span>
                         <span class="font-bold <?php echo e(($installment->calculated_late_fee ?? 0) > 0 ? 'text-red-600' : 'text-slate-900'); ?>" id="summary-val-latefee-<?php echo e($installment->id); ?>">$<?php echo e(number_format($installment->calculated_late_fee ?? 0, 2)); ?></span>
                     </div>
 
                     <div class="pt-2 border-t border-slate-200/80 flex items-baseline justify-between">
                         <span class="text-sm font-bold text-slate-800">
-                            Total Payoff Amount (សរុបត្រូវបង់)
+                            <?php echo e($isKm ? 'សរុបត្រូវបង់' : 'Total Payoff Amount'); ?>
+
                         </span>
-                        <span class="text-2xl font-black text-blue-700" id="summary-val-total-<?php echo e($installment->id); ?>">
-                            $<?php echo e(number_format($principal + ($installment->calculated_late_fee ?? 0), 2)); ?>
+                        <span class="text-2xl font-black <?php echo e($isInitialInterest ? 'text-emerald-700' : 'text-blue-700'); ?>" id="summary-val-total-<?php echo e($installment->id); ?>">
+                            $<?php echo e(number_format($initialTotal, 2)); ?>
 
                         </span>
                     </div>
@@ -380,11 +395,13 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button type="button" onclick="closePayoffModal(<?php echo e($installment->id); ?>)"
                             class="px-5 py-2.5 font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition text-sm">
-                        Cancel
+                        <?php echo e($isKm ? 'បោះបង់' : 'Cancel'); ?>
+
                     </button>
                     <button type="submit" id="btn-submit-<?php echo e($installment->id); ?>"
-                            class="px-6 py-2.5 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition text-sm flex items-center gap-2">
-                        Confirm Payoff
+                            class="px-6 py-2.5 font-bold text-white <?php echo e($isInitialInterest ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'); ?> rounded-xl shadow-md transition text-sm flex items-center gap-2">
+                        <?php echo e($isKm ? 'បញ្ជាក់ការបង់ផ្តាច់' : 'Confirm Payoff'); ?>
+
                     </button>
                 </div>
             </form>

@@ -158,6 +158,9 @@ Route::middleware('auth')->group(function () {
     Route::get('installments/{installment}/download-contract', [InstallmentController::class, 'downloadContract'])->name('installments.downloadContract');
     Route::delete('installments/{installment}/delete-contract', [InstallmentController::class, 'deleteContract'])->name('installments.deleteContract');
     Route::post('installments/{installment}/send-telegram-qr/{month}', [InstallmentController::class, 'sendTelegramQr'])->name('installments.send-telegram-qr');
+    Route::get('installment-returns', [InstallmentController::class, 'returnIndex'])->name('installments.return-index');
+    Route::post('installments/{installment}/return', [InstallmentController::class, 'processReturn'])->name('installments.return');
+    Route::get('installments/{installment}/return-certificate', [InstallmentController::class, 'printReturnCertificate'])->name('installments.return-certificate');
 
     // Wing Pay Browser Return
     Route::get('payments/wing-return', [PaymentController::class, 'wingReturn'])->name('payments.wing-return');
@@ -224,6 +227,10 @@ Route::middleware('auth')->group(function () {
         Route::post('expenses', [ReportController::class, 'storeExpense'])->name('expenses.store');
         Route::get('reports/income', [ReportController::class, 'income'])->name('reports.income');
         Route::get('reports/profit', [ReportController::class, 'profit'])->name('reports.profit');
+        Route::get('reports/return', [ReportController::class, 'returnReport'])->name('reports.return');
+        Route::get('reports/overdue', [ReportController::class, 'overdueReport'])->name('reports.overdue');
+        Route::get('reports/guarantor', [ReportController::class, 'guarantorReport'])->name('reports.guarantor');
+        Route::get('reports/settlement', [ReportController::class, 'settlementReport'])->name('reports.settlement');
         Route::get('reports/{type}/print', [ReportController::class, 'printReport'])->name('reports.print');
         Route::get('reports/{type}/export', [ReportController::class, 'exportPdf'])->name('reports.export');
         Route::get('reports/excel/export', [ReportController::class, 'exportExcel'])->name('reports.excel');

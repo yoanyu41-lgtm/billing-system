@@ -45,9 +45,10 @@
             
             <select name="status" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
                 <option value="">{{ app()->getLocale() === 'km' ? '-- ស្ថានភាពទាំងអស់ --' : '-- All Status --' }}</option>
-                <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Completed</option>
-                <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>{{ app()->getLocale() === 'km' ? 'កំពុងដំណើរការ (Active)' : 'Active' }}</option>
+                <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>{{ app()->getLocale() === 'km' ? 'បានបញ្ចប់ (Completed)' : 'Completed' }}</option>
+                <option value="returned" {{ $statusFilter === 'returned' ? 'selected' : '' }}>{{ app()->getLocale() === 'km' ? 'បានយកអីវ៉ាន់វិញ (Returned)' : 'Returned' }}</option>
+                <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>{{ app()->getLocale() === 'km' ? 'កំពុងរង់ចាំ (Pending)' : 'Pending' }}</option>
             </select>
 
             <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
@@ -196,6 +197,10 @@
                                 @if(strtolower($inst->status) === 'completed')
                                     <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
                                         {{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'Completed' }}
+                                    </span>
+                                @elseif(strtolower($inst->status) === 'returned')
+                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                        <i class="fas fa-undo-alt text-[9px] mr-0.5"></i> {{ app()->getLocale() === 'km' ? 'បានយកវិញ' : 'Returned' }}
                                     </span>
                                 @elseif(strtolower($inst->status) === 'overdue')
                                     <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#fee2e2] text-[#dc2626]">

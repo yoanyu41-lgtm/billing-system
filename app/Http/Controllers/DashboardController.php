@@ -233,7 +233,6 @@ class DashboardController extends Controller
         $typesDef = [
             'flat'          => ['label' => 'ការប្រាក់ថេរ',          'color' => '#3b82f6'], // blue
             'amortization'  => ['label' => 'ការរំលស់ថយដើមថយការ',    'color' => '#8b5cf6'], // purple
-            'bullet'        => ['label' => 'បង់តែការប្រាក់',         'color' => '#f59e0b'], // amber orange
             'zero_interest' => ['label' => 'ការប្រាក់ ០%',          'color' => '#e11d48'], // rose red
         ];
 

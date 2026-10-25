@@ -29,11 +29,6 @@ class InstallmentCalculationService
                 'name_en' => 'Amortization (Annuity)',
                 'desc_km' => 'ទឹកប្រាក់បង់សរុបថេរស្មើគ្នាជារៀងរាល់ខែ (តាមបែបធនាគារ)',
             ],
-            self::TYPE_BULLET => [
-                'name_km' => 'បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ',
-                'name_en' => 'Bullet / Balloon Payment',
-                'desc_km' => 'រៀងរាល់ខែបង់តែការប្រាក់ ហើយបង់ផ្តាច់ប្រាក់ដើមទាំងអស់នៅខែចុងក្រោយ',
-            ],
             self::TYPE_ZERO_INTEREST => [
                 'name_km' => 'រំលស់ការប្រាក់ ០%',
                 'name_en' => '0% Interest',

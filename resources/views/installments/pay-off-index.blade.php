@@ -33,6 +33,12 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span>{{ __('app.clearance_certificates') }}</span>
             </a>
+
+            {{-- 5. Return Customer --}}
+            <a href="{{ route('installments.return-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-undo-alt text-rose-600"></i>
+                <span>{{ app()->getLocale() === 'km' ? 'ដកហូត / យកអីវ៉ាន់វិញ' : 'Returns' }}</span>
+            </a>
         </div>
     </div>
 
@@ -88,12 +94,10 @@
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.product') }}</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.duration') }}</th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            <span lang="km">ទឹកប្រាក់នៅសល់តាមកាលវិភាគ</span>
-                            <span class="block text-[10px] text-gray-400 font-normal lowercase">(Scheduled Remaining)</span>
+                            <span lang="km">ទឹកប្រាក់នៅសល់</span>
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-amber-700 uppercase tracking-wider">
-                            <span lang="km">ប្រាក់ដើមត្រូវបង់ផ្តាច់</span>
-                            <span class="block text-[10px] text-amber-600 font-normal lowercase">(ប្រាក់ដើមនៅសល់)</span>
+                            <span lang="km">ប្រាក់ដើម</span>
                         </th>
                         <th class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ __('app.actions') }}</th>
                     </tr>
@@ -179,10 +183,13 @@
     @endphp
     <div id="payoff-modal-{{ $installment->id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 my-8">
+            @php
+                $isKm = app()->getLocale() === 'km';
+            @endphp
             <!-- Modal Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <span>Pay Off — បង់ផ្តាច់</span>
+                    <span>{{ $isKm ? 'បង់ផ្តាច់' : 'Pay Off' }}</span>
                 </h3>
                 <button type="button" onclick="closePayoffModal({{ $installment->id }})" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -191,41 +198,38 @@
 
             <form method="POST" action="{{ route('installments.pay-off', $installment) }}" id="payoff-form-{{ $installment->id }}" class="p-6 space-y-4">
                 @csrf
+                @php
+                    $initPayoffType = $defaultPayoffType ?? 'principal_only';
+                @endphp
                 <input type="hidden" name="installment_id" value="{{ $installment->id }}">
-                <input type="hidden" name="payoff_type" id="payoff_type_{{ $installment->id }}" value="principal_only">
+                <input type="hidden" name="payoff_type" id="payoff_type_{{ $installment->id }}" value="{{ $initPayoffType }}">
 
-                <!-- Payoff Type Selection -->
+                <!-- Payoff Type Display (Configured from Settings) -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                        Payoff Type (ប្រភេទបង់ផ្តាច់)
+                        {{ $isKm ? 'ប្រភេទបង់ផ្តាច់' : 'Payoff Type' }}
                     </label>
-                    <div class="space-y-2">
-                        <!-- Option 1: Principal Only -->
-                        <label onclick="switchPayoffType({{ $installment->id }}, 'principal_only')"
-                               class="payoff-type-card-{{ $installment->id }} flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/60 cursor-pointer transition"
-                               data-type="principal_only">
-                            <input type="radio" name="payoff_type_radio_{{ $installment->id }}" value="principal_only" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                    @if($initPayoffType === 'principal_interest')
+                        <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50/60">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                             <span class="text-sm font-bold text-slate-800">
-                                បង់តែប្រាក់ដើមនៅសល់ (Principal Only)
+                                {{ $isKm ? 'ប្រាក់ដើម + ការប្រាក់' : 'Principal + Interest' }}
                             </span>
-                        </label>
-
-                        <!-- Option 2: Principal + Interest -->
-                        <label onclick="switchPayoffType({{ $installment->id }}, 'principal_interest')"
-                               class="payoff-type-card-{{ $installment->id }} flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition"
-                               data-type="principal_interest">
-                            <input type="radio" name="payoff_type_radio_{{ $installment->id }}" value="principal_interest" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500">
+                        </div>
+                    @else
+                        <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50/60">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                             <span class="text-sm font-bold text-slate-800">
-                                ប្រាក់ដើម + ការប្រាក់ (Principal + Interest)
+                                {{ $isKm ? 'បង់តែប្រាក់ដើមនៅសល់' : 'Principal Only' }}
                             </span>
-                        </label>
-                    </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Outstanding Principal Card -->
                 <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl px-4 py-3 flex items-center justify-between">
                     <span class="text-xs sm:text-sm font-semibold text-slate-700">
-                        Outstanding Principal (ប្រាក់ដើមនៅសល់)
+                        {{ $isKm ? 'ប្រាក់ដើមនៅសល់' : 'Outstanding Principal' }}
                     </span>
                     <span class="text-xl sm:text-2xl font-black text-amber-700">
                         ${{ number_format($principal, 2) }}
@@ -235,17 +239,23 @@
                 <!-- Title / Note -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">
-                        Title / Note (ចំណាំ)
+                        {{ $isKm ? 'ចំណាំ' : 'Title / Note' }}
                     </label>
-                    <input type="text" name="title" placeholder="e.g. Early settlement, special discount..."
+                    <input type="text" name="title" placeholder="{{ $isKm ? 'ឧ. ការបង់ផ្តាច់, បញ្ចុះតម្លៃពិសេស...' : 'e.g. Early settlement, special discount...' }}"
                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
 
-                <!-- Principal + Interest specific fields (hidden by default in Principal Only mode) -->
-                <div id="interest-fields-{{ $installment->id }}" class="hidden grid grid-cols-2 gap-3">
+                @php
+                    $isInitialInterest = ($initPayoffType === 'principal_interest');
+                    $initialInterestAmount = $isInitialInterest ? ($installment->default_interest_amount ?? $defaultAccruedInterest) : 0;
+                    $initialTotal = $principal + $initialInterestAmount + ($installment->calculated_late_fee ?? 0);
+                @endphp
+
+                <!-- Principal + Interest specific fields (hidden when Principal Only) -->
+                <div id="interest-fields-{{ $installment->id }}" class="{{ $isInitialInterest ? '' : 'hidden' }} grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Interest Rate (%) (អត្រាការប្រាក់)
+                            {{ $isKm ? 'អត្រាការប្រាក់ (%)' : 'Interest Rate (%)' }}
                         </label>
                         <div class="relative">
                             <input type="number" step="0.01" min="0" max="100" name="interest_rate"
@@ -258,7 +268,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Accrued Interest (ការប្រាក់ត្រូវបង់) ($)
+                            {{ $isKm ? 'ការប្រាក់ត្រូវបង់ ($)' : 'Accrued Interest ($)' }}
                         </label>
                         <div class="relative">
                             <input type="number" step="0.01" min="0" name="interest_amount"
@@ -275,7 +285,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Discount (បញ្ចុះតម្លៃ) ($)
+                            {{ $isKm ? 'បញ្ចុះតម្លៃ ($)' : 'Discount ($)' }}
                         </label>
                         <input type="number" step="0.01" min="0" name="discount"
                                id="discount_{{ $installment->id }}"
@@ -286,11 +296,11 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-semibold text-slate-700">
-                                Late Fee (ពិន័យយឺត) ($)
+                                {{ $isKm ? 'ប្រាក់ពិន័យ ($)' : 'Late Fee ($)' }}
                             </label>
                             @if(($installment->overdue_days ?? 0) > 0)
                                 <span class="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-                                    យឺត {{ $installment->overdue_days }} ថ្ងៃ
+                                    {{ $isKm ? 'យឺត ' . $installment->overdue_days . ' ថ្ងៃ' : $installment->overdue_days . ' days late' }}
                                 </span>
                             @endif
                         </div>
@@ -302,11 +312,11 @@
                     </div>
                 </div>
 
-                <!-- Payment Method & Reference -->
+                <!-- Payment Method & Date -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Method (វិធីទូទាត់)
+                            {{ $isKm ? 'វិធីទូទាត់' : 'Payment Method' }}
                         </label>
                         <select name="payment_method_id" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             @foreach($paymentMethods as $method)
@@ -316,54 +326,45 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            Payment Reference (លេខប្រតិបត្តិការ)
+                            {{ $isKm ? 'ថ្ងៃទូទាត់' : 'Payment Date' }}
                         </label>
-                        <input type="text" name="payment_reference" placeholder="Transaction ID / Reference"
+                        <input type="date" name="payment_date" value="{{ now()->toDateString() }}" required
                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
 
-                <!-- Payment Date -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">
-                        Payment Date (ថ្ងៃទូទាត់)
-                    </label>
-                    <input type="date" name="payment_date" value="{{ now()->toDateString() }}" required
-                           class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
                 <!-- Payment Summary Box -->
-                <div id="summary-box-{{ $installment->id }}" class="rounded-xl p-4 bg-blue-50/70 border border-blue-100 transition space-y-2">
-                    <div id="summary-title-{{ $installment->id }}" class="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
-                        Payment Summary (សរុបការទូទាត់)
+                <div id="summary-box-{{ $installment->id }}" class="rounded-xl p-4 {{ $isInitialInterest ? 'bg-emerald-50/70 border border-emerald-100' : 'bg-blue-50/70 border border-blue-100' }} transition space-y-2">
+                    <div id="summary-title-{{ $installment->id }}" class="text-xs font-bold {{ $isInitialInterest ? 'text-emerald-700' : 'text-blue-700' }} uppercase tracking-wider mb-2">
+                        {{ $isKm ? 'សរុបការទូទាត់' : 'Payment Summary' }}
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>ប្រាក់ដើមនៅសល់ (Principal)</span>
+                        <span>{{ $isKm ? 'ប្រាក់ដើមនៅសល់' : 'Remaining Principal' }}</span>
                         <span class="font-bold text-slate-900">${{ number_format($principal, 2) }}</span>
                     </div>
 
-                    <div id="summary-row-interest-{{ $installment->id }}" class="hidden flex items-center justify-between text-xs text-slate-600">
-                        <span>ការប្រាក់ (Interest)</span>
-                        <span class="font-bold text-slate-900" id="summary-val-interest-{{ $installment->id }}">$0.00</span>
+                    <div id="summary-row-interest-{{ $installment->id }}" class="{{ $isInitialInterest ? '' : 'hidden' }} flex items-center justify-between text-xs text-slate-600">
+                        <span>{{ $isKm ? 'ការប្រាក់' : 'Interest' }}</span>
+                        <span class="font-bold text-slate-900" id="summary-val-interest-{{ $installment->id }}">${{ number_format($initialInterestAmount, 2) }}</span>
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>បញ្ចុះតម្លៃ (Discount)</span>
+                        <span>{{ $isKm ? 'បញ្ចុះតម្លៃ' : 'Discount' }}</span>
                         <span class="font-bold text-red-600" id="summary-val-discount-{{ $installment->id }}">-$0.00</span>
                     </div>
 
                     <div class="flex items-center justify-between text-xs text-slate-600">
-                        <span>ពិន័យយឺត (Late Fee)</span>
+                        <span>{{ $isKm ? 'ប្រាក់ពិន័យ' : 'Late Fee' }}</span>
                         <span class="font-bold {{ ($installment->calculated_late_fee ?? 0) > 0 ? 'text-red-600' : 'text-slate-900' }}" id="summary-val-latefee-{{ $installment->id }}">${{ number_format($installment->calculated_late_fee ?? 0, 2) }}</span>
                     </div>
 
                     <div class="pt-2 border-t border-slate-200/80 flex items-baseline justify-between">
                         <span class="text-sm font-bold text-slate-800">
-                            Total Payoff Amount (សរុបត្រូវបង់)
+                            {{ $isKm ? 'សរុបត្រូវបង់' : 'Total Payoff Amount' }}
                         </span>
-                        <span class="text-2xl font-black text-blue-700" id="summary-val-total-{{ $installment->id }}">
-                            ${{ number_format($principal + ($installment->calculated_late_fee ?? 0), 2) }}
+                        <span class="text-2xl font-black {{ $isInitialInterest ? 'text-emerald-700' : 'text-blue-700' }}" id="summary-val-total-{{ $installment->id }}">
+                            ${{ number_format($initialTotal, 2) }}
                         </span>
                     </div>
                 </div>
@@ -372,11 +373,11 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button type="button" onclick="closePayoffModal({{ $installment->id }})"
                             class="px-5 py-2.5 font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition text-sm">
-                        Cancel
+                        {{ $isKm ? 'បោះបង់' : 'Cancel' }}
                     </button>
                     <button type="submit" id="btn-submit-{{ $installment->id }}"
-                            class="px-6 py-2.5 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition text-sm flex items-center gap-2">
-                        Confirm Payoff
+                            class="px-6 py-2.5 font-bold text-white {{ $isInitialInterest ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700' }} rounded-xl shadow-md transition text-sm flex items-center gap-2">
+                        {{ $isKm ? 'បញ្ជាក់ការបង់ផ្តាច់' : 'Confirm Payoff' }}
                     </button>
                 </div>
             </form>

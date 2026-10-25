@@ -31,6 +31,12 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span><?php echo e(__('app.clearance_certificates')); ?></span>
             </a>
+
+            
+            <a href="<?php echo e(route('installments.return-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
+                <i class="fas fa-undo-alt text-rose-600"></i>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'ដកហូត / យកអីវ៉ាន់វិញ' : 'Returns'); ?></span>
+            </a>
         </div>
     </div>
 

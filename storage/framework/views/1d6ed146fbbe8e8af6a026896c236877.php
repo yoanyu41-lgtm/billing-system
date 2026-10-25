@@ -151,6 +151,12 @@
                                     <?php echo e(__('app.completed')); ?>
 
                                 </span>
+                            <?php elseif($installment->status === 'returned'): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                                    <i class="fas fa-undo-alt text-[10px]"></i>
+                                    <?php echo e(__('app.returned')); ?>
+
+                                </span>
                             <?php elseif($installment->status === 'cancelled'): ?>
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
                                     <?php echo e(__('app.cancelled')); ?>
@@ -158,7 +164,7 @@
                                 </span>
                             <?php else: ?>
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
-                                    <?php echo e($installment->status); ?>
+                                    <?php echo e(__('app.' . $installment->status) !== 'app.' . $installment->status ? __('app.' . $installment->status) : $installment->status); ?>
 
                                 </span>
                             <?php endif; ?>

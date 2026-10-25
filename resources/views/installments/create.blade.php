@@ -354,14 +354,6 @@
                                             <span class="font-bold text-slate-900 text-xs">រំលស់ការប្រាក់ ០% (0% Interest)</span>
                                         </div>
                                     </div>
-
-                                    <!-- Plan 4: Bullet Payment -->
-                                    <div class="plan-card {{ old('interest_type') === 'bullet' ? 'active' : '' }}" onclick="selectPlan('bullet', this)">
-                                        <div class="flex items-center gap-2.5">
-                                            <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-black shrink-0">4</span>
-                                            <span class="font-bold text-slate-900 text-xs">បង់តែការប្រាក់ បង់ផ្ដាច់ដើមខែចុងក្រោយ (Bullet Payment)</span>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-xs flex items-center gap-2">
