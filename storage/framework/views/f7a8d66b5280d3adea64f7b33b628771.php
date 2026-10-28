@@ -210,7 +210,7 @@
                         <th style="width: 30px;">ល.រ</th>
                         <th>ឈ្មោះអតិថិជន</th>
                         <th style="width: 90px;">លេខទូរស័ព្ទ</th>
-                        <th style="width: 75px;">កិច្ចសន្យា</th>
+                        <th style="width: 130px;">សេវាកម្ម / ប្រភេទ</th>
                         <th style="width: 90px;">ការទិញសរុប</th>
                         <th style="width: 85px;">បានបង់</th>
                         <th style="width: 85px;">នៅខ្វះ</th>
@@ -221,12 +221,13 @@
                     <?php $__empty_1 = true; $__currentLoopData = $customerList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <?php
                         $cStatus = strtolower($c->status ?? '') === 'active' ? 'សកម្ម' : 'បានបញ្ចប់';
+                        $typeLabels = collect($c->service_types ?? [])->pluck('label')->implode(', ');
                     ?>
                     <tr>
                         <td class="center"><?php echo e($i + 1); ?></td>
                         <td style="font-weight: 700;"><?php echo e($c->name); ?></td>
                         <td class="center"><?php echo e($c->phone); ?></td>
-                        <td class="center"><?php echo e($c->contracts); ?></td>
+                        <td class="center" style="font-size: 11px;"><?php echo e(!empty($typeLabels) ? $typeLabels : '—'); ?></td>
                         <td class="right" style="font-weight: 700;">$<?php echo e(number_format($c->total_purchase, 2)); ?></td>
                         <td class="right" style="color: #16a34a; font-weight: 700;">$<?php echo e(number_format($c->paid, 2)); ?></td>
                         <td class="right" style="color: #dc2626; font-weight: 700;">$<?php echo e(number_format($c->outstanding, 2)); ?></td>

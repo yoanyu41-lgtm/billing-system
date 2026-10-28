@@ -82,6 +82,7 @@
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.quantity')); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.supplier')); ?></th>
                         <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.note_reason')); ?></th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"><?php echo e(__('app.actions') ?? 'សកម្មភាព'); ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -114,15 +115,57 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             <?php echo e($movement->supplier->name ?? '—'); ?>
 
-                        </td>
                         <td class="px-6 py-4 text-sm text-gray-700">
                             <?php echo e($movement->note); ?>
 
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <div class="flex items-center justify-end gap-1.5">
+                                
+                                <button type="button" 
+                                    onclick="showMovementDetail({
+                                        date: '<?php echo e($movement->created_at->format('d M Y, H:i')); ?>',
+                                        product: '<?php echo e(addslashes($movement->product->name ?? 'N/A')); ?>',
+                                        code: '<?php echo e(addslashes($movement->product->code ?? '—')); ?>',
+                                        type: '<?php echo e(strtoupper($movement->type)); ?>',
+                                        qty: '<?php echo e($movement->type === 'in' ? '+' : '-'); ?><?php echo e($movement->quantity); ?>',
+                                        supplier: '<?php echo e(addslashes($movement->supplier->name ?? '—')); ?>',
+                                        note: '<?php echo e(addslashes($movement->note ?? '—')); ?>'
+                                    })"
+                                    class="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-800 rounded-lg transition" 
+                                    title="<?php echo e(__('app.view') ?? 'មើលលម្អិត'); ?>">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+
+                                <?php
+                                    $currentUser = auth()->user();
+                                    $isAdmin = $currentUser && (
+                                        strtolower($currentUser->role ?? '') === 'admin' 
+                                        || (method_exists($currentUser, 'hasRole') && ($currentUser->hasRole('Admin') || $currentUser->hasRole('admin')))
+                                    );
+                                ?>
+
+                                
+                                <?php if($isAdmin): ?>
+                                    <form action="<?php echo e(route('admin.stock-movements.destroy', $movement->id)); ?>" method="POST" class="inline-block" onsubmit="return confirm('<?php echo e(app()->getLocale() === 'km' ? 'តើអ្នកពិតជាចង់លុបប្រវត្តិនេះចេញមែនទេ?' : 'Are you sure you want to delete this movement record?'); ?>');">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                        <button type="submit" class="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-lg transition" title="<?php echo e(__('app.delete') ?? 'លុប'); ?>">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500"><?php echo e(__('app.no_movements')); ?></td>
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500"><?php echo e(__('app.no_movements')); ?></td>
                     </tr>
                     <?php endif; ?>
                 </tbody>
@@ -219,6 +262,81 @@
             }
         });
     });
+
+    function showMovementDetail(data) {
+        document.getElementById('modal-date').textContent = data.date;
+        document.getElementById('modal-product').textContent = data.product;
+        document.getElementById('modal-code').textContent = data.code;
+        document.getElementById('modal-type').textContent = data.type;
+        document.getElementById('modal-qty').textContent = data.qty;
+        document.getElementById('modal-supplier').textContent = data.supplier;
+        document.getElementById('modal-note').textContent = data.note;
+
+        const typeBadge = document.getElementById('modal-type');
+        if (data.type === 'IN') {
+            typeBadge.className = 'px-3 py-1 inline-flex text-xs font-bold rounded-full bg-emerald-100 text-emerald-800';
+            document.getElementById('modal-qty').className = 'text-base font-bold text-emerald-600';
+        } else {
+            typeBadge.className = 'px-3 py-1 inline-flex text-xs font-bold rounded-full bg-rose-100 text-rose-800';
+            document.getElementById('modal-qty').className = 'text-base font-bold text-rose-600';
+        }
+
+        document.getElementById('movementDetailModal').classList.remove('hidden');
+    }
+
+    function closeMovementDetail() {
+        document.getElementById('movementDetailModal').classList.add('hidden');
+    }
 </script>
+
+<!-- Movement Detail Modal -->
+<div id="movementDetailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/60">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-boxes-stacked text-indigo-600"></i>
+                <span><?php echo e(app()->getLocale() === 'km' ? 'ព័ត៌មានលម្អិតចលនាស្តុក' : 'Stock Movement Detail'); ?></span>
+            </h3>
+            <button type="button" onclick="closeMovementDetail()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo e(__('app.date')); ?></span>
+                <span id="modal-date" class="text-sm font-medium text-gray-800"></span>
+            </div>
+            <div class="flex justify-between items-start py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo e(__('app.product')); ?></span>
+                <div class="text-right">
+                    <div id="modal-product" class="text-sm font-bold text-gray-900"></div>
+                    <div id="modal-code" class="text-xs text-gray-500"></div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo e(__('app.type')); ?></span>
+                <span id="modal-type" class="px-2.5 py-1 text-xs font-bold rounded-full"></span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo e(__('app.quantity')); ?></span>
+                <span id="modal-qty" class="text-base font-bold"></span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-50">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider"><?php echo e(__('app.supplier')); ?></span>
+                <span id="modal-supplier" class="text-sm font-medium text-gray-800"></span>
+            </div>
+            <div class="py-2">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1.5"><?php echo e(__('app.note_reason')); ?></span>
+                <div id="modal-note" class="text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 whitespace-pre-line"></div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <button type="button" onclick="closeMovementDetail()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-semibold rounded-xl transition">
+                <?php echo e(__('app.close') ?? 'បិទ'); ?>
+
+            </button>
+        </div>
+    </div>
+</div>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH E:\billing-system\resources\views/admin/stock_movements/index.blade.php ENDPATH**/ ?>

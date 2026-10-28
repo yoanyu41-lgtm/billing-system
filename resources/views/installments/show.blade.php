@@ -24,40 +24,76 @@
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 {{ __('app.back') }}
             </a>
-            <a href="{{ route('installments.contract', $installment) }}" target="_blank" class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            @if($installment->status !== 'pending')
+            <a href="{{ route('installments.contract', $installment) }}" target="_blank" class="inline-flex items-center bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition duration-150">
+                <i class="fas fa-file-contract mr-2 text-indigo-400"></i>
                 {{ __('app.print_contract') }}
             </a>
+            @endif
 
             @if($installment->status === 'completed' || $installment->remaining_balance <= 0)
-            <a href="{{ route('installments.clearance', $installment) }}" target="_blank" class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <a href="{{ route('installments.clearance', $installment) }}" target="_blank" class="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition duration-150">
+                <i class="fas fa-certificate mr-2"></i>
                 {{ __('app.print_clearance') }}
             </a>
             @endif
 
-            @if($installment->status === 'returned')
-            <a href="{{ route('installments.return-certificate', $installment) }}" target="_blank" class="inline-flex items-center bg-rose-600 hover:bg-rose-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
-                <i class="fas fa-print mr-2 text-sm"></i>
-                {{ app()->getLocale() === 'km' ? 'លិខិតប្រគល់ទំនិញ' : 'Return Certificate' }}
-            </a>
-            @endif
-
-            @if($installment->status !== 'returned' && $installment->status !== 'cancelled' && $installment->remaining_balance > 0)
-            <button type="button" onclick="document.getElementById('modal-return-from-show').classList.remove('hidden')" class="inline-flex items-center bg-rose-600 hover:bg-rose-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
-                <i class="fas fa-undo-alt mr-2 text-sm"></i>
-                {{ app()->getLocale() === 'km' ? 'យកអីវ៉ាន់វិញ' : 'Return Item' }}
-            </button>
-            @endif
-
             @if(auth()->user()->role === 'admin')
-            <a href="{{ route('installments.edit', $installment) }}" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm transition duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <a href="{{ route('installments.edit', $installment) }}" class="inline-flex items-center bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition duration-150">
+                <i class="fas fa-edit mr-2 text-slate-500"></i>
                 {{ __('app.edit_plan') }}
             </a>
             @endif
         </div>
     </div>
+
+    @if($installment->status === 'pending')
+    <!-- Modern Elegant Pending Approval Card -->
+    <div class="mb-8 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-200/80 p-5 shadow-sm backdrop-blur-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20 text-xl">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h4 class="font-bold text-slate-900 text-base">
+                            {{ app()->getLocale() === 'km' ? 'គម្រោងបង់រំលស់កំពុងរង់ចាំការឯកភាពពី Admin' : 'Installment Plan Awaiting Admin Approval' }}
+                        </h4>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300/60">
+                            {{ app()->getLocale() === 'km' ? 'រង់ចាំពិនិត្យ' : 'Pending' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">
+                        {{ app()->getLocale() === 'km' ? 'គម្រោងនេះទើបតែបង្កើតថ្មី និងតម្រូវឱ្យ Admin ពិនិត្យឯកភាពជាផ្លូវការ មុនពេលចាប់ផ្តើមកិច្ចសន្យា និងទូទាត់ប្រាក់។' : 'This contract is awaiting admin review before becoming active for monthly payment collections.' }}
+                    </p>
+                </div>
+            </div>
+
+            @if(auth()->user()->role === 'admin')
+            <div class="flex items-center gap-2.5 shrink-0 self-end md:self-center">
+                {{-- Approve Button --}}
+                <form method="POST" action="{{ route('installments.approve', $installment) }}" class="inline-block" onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ឯកភាពគម្រោងបង់រំលស់នេះមែនទេ?' : 'Are you sure you want to approve this installment plan?' }}')">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-sm hover:shadow-md transition cursor-pointer">
+                        <i class="fas fa-check-circle text-sm"></i>
+                        <span>{{ app()->getLocale() === 'km' ? 'ឯកភាពគម្រោង (Approve)' : 'Approve Plan' }}</span>
+                    </button>
+                </form>
+
+                {{-- Reject Button --}}
+                <form method="POST" action="{{ route('installments.reject', $installment) }}" class="inline-block" onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់បដិសេធគម្រោងបង់រំលស់នេះ ហើយបញ្ចូលទំនិញចូលក្នុងស្តុកវិញមែនទេ?' : 'Are you sure you want to reject this plan and return item to stock?' }}')">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-bold rounded-xl text-xs shadow-xs hover:shadow-sm transition cursor-pointer">
+                        <i class="fas fa-times-circle text-sm"></i>
+                        <span>{{ app()->getLocale() === 'km' ? 'បដិសេធ (Reject)' : 'Reject Plan' }}</span>
+                    </button>
+                </form>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left: Customer & Product Info -->
@@ -200,15 +236,25 @@
                         <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">{{ __('app.plan_status') }}</span>
                         <div class="mt-1">
                             @if($installment->status === 'active' || $installment->status === 'ongoing')
-                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200">{{ __('app.active') }}</span>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-100 text-green-800 border border-green-200">
+                                    <i class="fas fa-check-circle mr-1 text-green-600"></i> {{ __('app.active') }}
+                                </span>
+                            @elseif($installment->status === 'pending')
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <i class="fas fa-clock mr-1 text-amber-600"></i> {{ __('app.pending') }}
+                                </span>
                             @elseif($installment->status === 'completed' || $installment->status === 'paid')
-                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">{{ __('app.completed') }}</span>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    <i class="fas fa-check-double mr-1 text-blue-600"></i> {{ __('app.completed') }}
+                                </span>
                             @elseif($installment->status === 'returned')
                                 <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-rose-100 text-rose-800 border border-rose-200">
                                     <i class="fas fa-undo-alt mr-1"></i> {{ app()->getLocale() === 'km' ? 'បានយកអីវ៉ាន់វិញ' : 'Returned' }}
                                 </span>
                             @elseif($installment->status === 'cancelled')
-                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200">{{ __('app.cancelled') }}</span>
+                                <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                    <i class="fas fa-times-circle mr-1 text-red-600"></i> {{ __('app.cancelled') }}
+                                </span>
                             @else
                                 <span class="px-3.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-800 border border-gray-200">{{ $installment->status }}</span>
                             @endif
@@ -593,85 +639,4 @@
         if (e.target === this) closeTelegramQrModal();
     });
 </script>
-
-<!-- Modal: Return Product from Show View -->
-<div id="modal-return-from-show" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 my-8">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-rose-50/50">
-            <h3 class="text-base font-bold text-rose-900 flex items-center gap-2">
-                <i class="fas fa-undo-alt text-rose-600"></i>
-                <span>{{ app()->getLocale() === 'km' ? 'ទទួលយកទំនិញមកវិញ (Return Customer)' : 'Return / Repossess Product' }}</span>
-            </h3>
-            <button type="button" onclick="document.getElementById('modal-return-from-show').classList.add('hidden')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
-                &times;
-            </button>
-        </div>
-
-        <form method="POST" action="{{ route('installments.return', $installment) }}" class="p-6 space-y-4">
-            @csrf
-
-            <!-- Info Preview Card -->
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-1.5">
-                <div class="flex justify-between">
-                    <span class="text-slate-500">{{ app()->getLocale() === 'km' ? 'អតិថិជន៖' : 'Customer:' }}</span>
-                    <span class="font-bold text-slate-800">{{ $installment->customer?->name ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500">{{ app()->getLocale() === 'km' ? 'ទំនិញ៖' : 'Product:' }}</span>
-                    <span class="font-bold text-slate-800">{{ $installment->product?->name ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between border-t border-slate-200/60 pt-1.5">
-                    <span class="text-slate-500">{{ app()->getLocale() === 'km' ? 'ប្រាក់នៅសល់មិនទាន់បង់៖' : 'Remaining Balance:' }}</span>
-                    <span class="font-black text-rose-600">${{ number_format($installment->remaining_balance, 2) }}</span>
-                </div>
-            </div>
-
-            <!-- Return Date -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">
-                    {{ app()->getLocale() === 'km' ? 'ថ្ងៃយកទំនិញមកវិញ' : 'Return Date' }} <span class="text-red-500">*</span>
-                </label>
-                <input type="date" name="return_date" value="{{ now()->toDateString() }}" required
-                       class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-            </div>
-
-            <!-- Restock Checkbox -->
-            <div class="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl">
-                <label class="flex items-start gap-2.5 cursor-pointer">
-                    <input type="checkbox" name="restock" value="1" checked class="mt-0.5 w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500">
-                    <div class="text-xs">
-                        <span class="font-bold text-emerald-900 block">{{ app()->getLocale() === 'km' ? 'បញ្ចូលទំនិញចូលក្នុងស្តុកវិញ (+1 Stock)' : 'Return item back to inventory (+1 Stock)' }}</span>
-                        <span class="text-emerald-700">{{ app()->getLocale() === 'km' ? 'ប្រព័ន្ធនឹងបូកចំនួនស្តុកទំនិញនេះចំនួន ១ ចូលក្នុងឃ្លាំងវិញដោយស្វ័យប្រវត្តិ។' : 'Automatically increments the product stock quantity by 1.' }}</span>
-                    </div>
-                </label>
-            </div>
-
-            <!-- Reason / Note -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">
-                    {{ app()->getLocale() === 'km' ? 'មូលហេតុនៃការយកទំនិញមកវិញ / កំណត់ចំណាំ' : 'Reason / Note' }}
-                </label>
-                <textarea name="return_reason" rows="3" placeholder="{{ app()->getLocale() === 'km' ? 'ឧ. អតិថិជនខ្វះលទ្ធភាពបង់បន្ត, ដកហូតទំនិញ, ទំនិញនៅមានគុណភាពល្អ...' : 'e.g. Customer unable to continue payment, repossessed...' }}"
-                          class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 focus:border-rose-500"></textarea>
-            </div>
-
-            <!-- Warning Notice -->
-            <div class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-start gap-2">
-                <i class="fas fa-exclamation-triangle mt-0.5"></i>
-                <span>{{ app()->getLocale() === 'km' ? 'ចំណាំ៖ នៅពេលបញ្ជាក់ កិច្ចសន្យានេះនឹងត្រូវបិទបញ្ចប់ (ស្ថានភាព ដកហូត/យកទំនិញវិញ) ហើយសមតុល្យនៅសល់នឹងក្លាយជា $0.00។' : 'Note: Submitting will close this installment contract with status "Returned" and clear remaining balance to $0.00.' }}</span>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onclick="document.getElementById('modal-return-from-show').classList.add('hidden')" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
-                    {{ app()->getLocale() === 'km' ? 'បោះបង់' : 'Cancel' }}
-                </button>
-                <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition flex items-center gap-1.5">
-                    <i class="fas fa-check"></i>
-                    <span>{{ app()->getLocale() === 'km' ? 'បញ្ជាក់ការយកអីវ៉ាន់វិញ' : 'Confirm Return' }}</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection

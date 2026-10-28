@@ -29,6 +29,11 @@
         <form method="POST" action="{{ route('register') }}">
             @csrf
 
+            {{-- Honeypot anti-spam (invisible to real users, filled by bots) --}}
+            <div style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;" aria-hidden="true">
+                <input type="text" name="system_security_check" tabindex="-1" autocomplete="off">
+            </div>
+
             <!-- Full Name -->
             <div class="form-group">
                 <label class="form-label">{{ __('app.full_name') }}</label>

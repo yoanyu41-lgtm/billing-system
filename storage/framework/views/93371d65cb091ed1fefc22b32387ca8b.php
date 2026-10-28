@@ -31,12 +31,6 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span><?php echo e(__('app.clearance_certificates')); ?></span>
             </a>
-
-            
-            <a href="<?php echo e(route('installments.return-index')); ?>" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
-                <i class="fas fa-undo-alt text-rose-600"></i>
-                <span><?php echo e(app()->getLocale() === 'km' ? 'ដកហូត / យកអីវ៉ាន់វិញ' : 'Returns'); ?></span>
-            </a>
         </div>
     </div>
 
@@ -167,10 +161,28 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="<?php echo e(route('installments.contract', $installment)); ?>" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg transition duration-150 text-xs shadow-sm">
-                                <i class="fas fa-print"></i>
-                                <span><?php echo e(__('app.view_contract')); ?></span>
-                            </a>
+                            <?php if($installment->status === 'pending'): ?>
+                                <div class="inline-flex items-center gap-1.5">
+                                    <?php if(auth()->user()->role === 'admin'): ?>
+                                        <form method="POST" action="<?php echo e(route('installments.approve', $installment)); ?>" class="inline-block" onsubmit="return confirm('<?php echo e(app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ឯកភាពគម្រោងបង់រំលស់នេះមែនទេ?' : 'Are you sure you want to approve this installment plan?'); ?>')">
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-lg transition duration-150 text-xs shadow-xs" title="<?php echo e(app()->getLocale() === 'km' ? 'ឯកភាពគម្រោង (Approve)' : 'Approve Plan'); ?>">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span><?php echo e(app()->getLocale() === 'km' ? 'ឯកភាព' : 'Approve'); ?></span>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 font-medium px-2.5 py-1.5 rounded-lg text-xs" title="<?php echo e(app()->getLocale() === 'km' ? 'រង់ចាំ Admin ឯកភាពសិនទើបអាចបោះពុម្ពបាន' : 'Pending approval'); ?>">
+                                        <i class="fas fa-lock text-[11px] text-amber-500"></i>
+                                        <span><?php echo e(app()->getLocale() === 'km' ? 'រង់ចាំឯកភាព' : 'Pending'); ?></span>
+                                    </span>
+                                </div>
+                            <?php else: ?>
+                                <a href="<?php echo e(route('installments.contract', $installment)); ?>" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg transition duration-150 text-xs shadow-sm">
+                                    <i class="fas fa-print"></i>
+                                    <span><?php echo e(__('app.view_contract')); ?></span>
+                                </a>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>

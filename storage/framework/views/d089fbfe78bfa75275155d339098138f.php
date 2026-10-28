@@ -72,6 +72,7 @@
                         <th class="px-5 py-3.5"><?php echo e(app()->getLocale() === 'km' ? 'អ្នកប្រើប្រាស់' : 'User'); ?></th>
                         <th class="px-5 py-3.5"><?php echo e(app()->getLocale() === 'km' ? 'អ៉ីមែល' : 'Email'); ?></th>
                         <th class="px-5 py-3.5"><?php echo e(app()->getLocale() === 'km' ? 'តួនាទី' : 'Role'); ?></th>
+                        <th class="px-5 py-3.5 text-center"><?php echo e(app()->getLocale() === 'km' ? 'ស្ថានភាព' : 'Status'); ?></th>
                         <th class="px-5 py-3.5 text-center"><?php echo e(app()->getLocale() === 'km' ? 'សកម្មភាព' : 'Actions'); ?></th>
                     </tr>
                 </thead>
@@ -129,9 +130,57 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-5 py-3.5 whitespace-nowrap text-center">
+                            <?php $uStatus = $user->status ?? 'active'; ?>
+                            <?php if($uStatus === 'active'): ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span><?php echo e(app()->getLocale() === 'km' ? 'សកម្ម (Active)' : 'Active'); ?></span>
+                                </span>
+                            <?php elseif($uStatus === 'pending'): ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs animate-pulse">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span><?php echo e(app()->getLocale() === 'km' ? 'រង់ចាំអនុម័ត (Pending)' : 'Pending'); ?></span>
+                                </span>
+                            <?php else: ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    <span><?php echo e(app()->getLocale() === 'km' ? 'បានផ្អាក (Suspended)' : 'Suspended'); ?></span>
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-3.5 whitespace-nowrap text-center">
                             <div class="flex items-center justify-center gap-2">
+                                <!-- Approve / Suspend Toggle Button -->
+                                <?php if($user->id !== auth()->id()): ?>
+                                    <?php if(($user->status ?? 'active') === 'pending'): ?>
+                                        <form method="POST" action="<?php echo e(route('admin.users.toggle-status', $user)); ?>" class="inline">
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1 cursor-pointer" title="Approve User">
+                                                <span>✓</span>
+                                                <span><?php echo e(app()->getLocale() === 'km' ? 'អនុម័ត' : 'Approve'); ?></span>
+                                            </button>
+                                        </form>
+                                    <?php elseif(($user->status ?? 'active') === 'active'): ?>
+                                        <form method="POST" action="<?php echo e(route('admin.users.toggle-status', $user)); ?>" class="inline" onsubmit="return confirm('តើអ្នកពិតជាចង់ផ្អាកគណនីនេះមែនទេ?')">
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs border border-slate-200 transition-all flex items-center gap-1 cursor-pointer" title="Suspend User">
+                                                <span>⏸</span>
+                                                <span><?php echo e(app()->getLocale() === 'km' ? 'ផ្អាក' : 'Suspend'); ?></span>
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form method="POST" action="<?php echo e(route('admin.users.toggle-status', $user)); ?>" class="inline">
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs border border-indigo-200 transition-all flex items-center gap-1 cursor-pointer" title="Activate User">
+                                                <span>▶</span>
+                                                <span><?php echo e(app()->getLocale() === 'km' ? 'បើកវិញ' : 'Activate'); ?></span>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
                                 <!-- Edit -->
-                                <a href="<?php echo e(route('admin.users.edit', $user)); ?>" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-200/80 transition-all flex items-center gap-1 cursor-pointer no-underline" title="<?php echo e(__('app.edit')); ?>">
+                                <a href="<?php echo e(route('admin.users.edit', $user)); ?>" class="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200/80 transition-all flex items-center gap-1 cursor-pointer no-underline" title="<?php echo e(__('app.edit')); ?>">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>កែប្រែ</span>
                                 </a>

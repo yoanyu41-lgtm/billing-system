@@ -442,7 +442,10 @@ class Installment extends Model
                 
                 if (!in_array($paymentPool[$poolIndex]['id'], $allocatedPaymentIds)) {
                     $allocatedPaymentIds[] = $paymentPool[$poolIndex]['id'];
-                    $allocatedPenalty += (float) $paymentPool[$poolIndex]['penalty_amount'];
+                    $penAmt = (float) ($paymentPool[$poolIndex]['penalty_amount'] ?? 0);
+                    $allocatedPenalty += $penAmt;
+                    // Penalty should only be credited once per payment, not repeated across multiple schedule rows
+                    $paymentPool[$poolIndex]['penalty_amount'] = 0.0;
                     if (!empty($paymentPool[$poolIndex]['penalty_reason'])) {
                         $allocatedReasons[] = $paymentPool[$poolIndex]['penalty_reason'];
                     }
@@ -471,6 +474,10 @@ class Installment extends Model
                 }
             }
 
+            // Only show penalty if this row was actually paid or is overdue (never on pending/future rows)
+            $rowPenaltyAmount = ($status === 'paid' || $status === 'overdue') ? round($allocatedPenalty, 2) : 0.00;
+            $rowPenaltyReason = ($status === 'paid' || $status === 'overdue') && !empty($allocatedReasons) ? implode(', ', array_unique($allocatedReasons)) : null;
+
             $schedule[] = [
                 'month'                 => $i,
                 'due_date'              => $dueDate,
@@ -479,8 +486,8 @@ class Installment extends Model
                 'principal'             => $principalPortion,
                 'interest'              => $rowInterest,
                 'amount'                => $amountDue,
-                'penalty_amount'        => round($allocatedPenalty, 2),
-                'penalty_reason'        => !empty($allocatedReasons) ? implode(', ', array_unique($allocatedReasons)) : null,
+                'penalty_amount'        => $rowPenaltyAmount,
+                'penalty_reason'        => $rowPenaltyReason,
                 'payment_id'            => !empty($allocatedPaymentIds) ? end($allocatedPaymentIds) : null,
                 'payment_date'          => $lastAllocDate,
                 'outstanding_principal' => $outstandingPrincipal,

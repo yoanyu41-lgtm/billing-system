@@ -1010,6 +1010,12 @@
             updateRiel(); updateDynamicQr(); updateCalculations(); validateAmount();
         });
 
+        if (penaltyInput) {
+            penaltyInput.addEventListener('input', function() {
+                updatePenaltyRiel(); updateDynamicQr(); updateCalculations();
+            });
+        }
+
         // Currency Toggle Logic
         const toggleUsd = id('toggleCurrencyUsd');
         const toggleKhr = id('toggleCurrencyKhr');
@@ -1184,12 +1190,14 @@
             const msg = id('qrInstructionMessage');
             if (!img) return;
             const staticSrc = img.getAttribute('data-static-src');
-            const val = parseFloat(amountInput.value) || 0;
+            const amountVal = parseFloat(amountInput.value) || 0;
+            const penaltyVal = penaltyInput ? (parseFloat(penaltyInput.value) || 0) : 0;
+            const totalVal = amountVal + penaltyVal;
 
             if (activeQrPayload && activeQrPayload.trim()) {
-                if (val > 0) {
-                    // Generate dynamic KHQR code with auto-calculated amount
-                    const dynamicPayload = buildDynamicKhqr(activeQrPayload.trim(), val, qrCurrencyMode);
+                if (totalVal > 0) {
+                    // Generate dynamic KHQR code with auto-calculated total amount (Amount + Penalty)
+                    const dynamicPayload = buildDynamicKhqr(activeQrPayload.trim(), totalVal, qrCurrencyMode);
                     img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(dynamicPayload)}`;
                 } else {
                     img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activeQrPayload.trim())}`;
@@ -1199,12 +1207,12 @@
             }
 
             if (msg) {
-                if (val > 0) {
-                    const usd = qrCurrencyMode === 'KHR' ? (val / exchangeRate) : val;
-                    const khr = qrCurrencyMode === 'KHR' ? val : Math.round(val * exchangeRate);
+                if (totalVal > 0) {
+                    const usd = qrCurrencyMode === 'KHR' ? (totalVal / exchangeRate) : totalVal;
+                    const khr = qrCurrencyMode === 'KHR' ? totalVal : Math.round(totalVal * exchangeRate);
                     msg.innerText = qrCurrencyMode === 'KHR' 
-                        ? `ទូទាត់ប្រាក់៖ ${Math.round(khr).toLocaleString()} ៛ ($${usd.toFixed(2)})`
-                        : `ទូទាត់ប្រាក់៖ $${usd.toFixed(2)} (${Math.round(khr).toLocaleString()} ៛)`;
+                        ? `ទូទាត់ប្រាក់សរុប៖ ${Math.round(khr).toLocaleString()} ៛ ($${usd.toFixed(2)})`
+                        : `ទូទាត់ប្រាក់សរុប៖ $${usd.toFixed(2)} (${Math.round(khr).toLocaleString()} ៛)`;
                 } else {
                     msg.innerText = '';
                 }

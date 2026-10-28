@@ -1121,10 +1121,6 @@
                         <i class="fas fa-user-clock"></i> <?php echo e(__('app.late_customers') ?? 'អតិថិជនបង់យឺត'); ?>
 
                     </a>
-                    <a href="<?php echo e(route('installments.return-index')); ?>" class="<?php echo e(request()->routeIs('installments.return-index') ? 'active' : ''); ?>">
-                        <i class="fas fa-undo-alt"></i> <?php echo e(app()->getLocale() === 'km' ? 'ដកហូត / ប្រគល់ទំនិញវិញ' : 'Product Returns'); ?>
-
-                    </a>
                 </div>
             </div>
             <?php endif; ?>
@@ -1252,7 +1248,7 @@
             <?php endif; ?>
 
             
-            <?php if(auth()->user()->hasRole('Admin') || auth()->user()->can('reports.view')): ?>
+            <?php if(auth()->user()->hasAnyRole(['Admin', 'Manager', 'Staff']) || in_array(strtolower(auth()->user()->role ?? ''), ['admin', 'manager', 'staff']) || auth()->user()->can('reports.view')): ?>
             <div class="sb-dropdown <?php echo e(request()->routeIs('admin.reports.*') ? 'open' : ''); ?>">
                 <div class="sb-dropdown-toggle <?php echo e(request()->routeIs('admin.reports.*') ? 'active' : ''); ?>" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-pie"></i>
@@ -1286,10 +1282,6 @@
                     </a>
                     <a href="<?php echo e(route('admin.reports.profit')); ?>" class="<?php echo e(request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : ''); ?>">
                         <i class="fas fa-chart-line"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ចំណូល/ចំណេញ' : 'Profit / Income Report'); ?>
-
-                    </a>
-                    <a href="<?php echo e(route('admin.reports.return')); ?>" class="<?php echo e(request()->routeIs('admin.reports.return') ? 'active' : ''); ?>">
-                        <i class="fas fa-undo-alt"></i> <?php echo e(app()->getLocale() === 'km' ? 'របាយការណ៍ដកហូតទំនិញ' : 'Return Report'); ?>
 
                     </a>
                     <a href="<?php echo e(route('admin.reports.overdue')); ?>" class="<?php echo e(request()->routeIs('admin.reports.overdue') ? 'active' : ''); ?>">

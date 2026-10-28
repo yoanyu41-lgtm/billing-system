@@ -207,7 +207,7 @@
                         <th style="width: 30px;">ល.រ</th>
                         <th>ឈ្មោះអតិថិជន</th>
                         <th style="width: 90px;">លេខទូរស័ព្ទ</th>
-                        <th style="width: 75px;">កិច្ចសន្យា</th>
+                        <th style="width: 130px;">សេវាកម្ម / ប្រភេទ</th>
                         <th style="width: 90px;">ការទិញសរុប</th>
                         <th style="width: 85px;">បានបង់</th>
                         <th style="width: 85px;">នៅខ្វះ</th>
@@ -218,12 +218,13 @@
                     @forelse($customerList as $i => $c)
                     @php
                         $cStatus = strtolower($c->status ?? '') === 'active' ? 'សកម្ម' : 'បានបញ្ចប់';
+                        $typeLabels = collect($c->service_types ?? [])->pluck('label')->implode(', ');
                     @endphp
                     <tr>
                         <td class="center">{{ $i + 1 }}</td>
                         <td style="font-weight: 700;">{{ $c->name }}</td>
                         <td class="center">{{ $c->phone }}</td>
-                        <td class="center">{{ $c->contracts }}</td>
+                        <td class="center" style="font-size: 11px;">{{ !empty($typeLabels) ? $typeLabels : '—' }}</td>
                         <td class="right" style="font-weight: 700;">${{ number_format($c->total_purchase, 2) }}</td>
                         <td class="right" style="color: #16a34a; font-weight: 700;">${{ number_format($c->paid, 2) }}</td>
                         <td class="right" style="color: #dc2626; font-weight: 700;">${{ number_format($c->outstanding, 2) }}</td>
@@ -664,7 +665,7 @@
                         <td class="center" style="font-weight: 700;">{{ $s->invoice_no }}</td>
                         <td class="center">{{ $s->date }}</td>
                         <td style="font-weight: 700;">{{ $s->customer }}</td>
-                        <td>{{ $s->product }}</td>
+                        <td style="max-width: 220px; line-height: 1.35; word-break: break-word;">{{ $s->product }}</td>
                         <td class="center font-bold">{{ $s->quantity }}</td>
                         <td class="right">${{ number_format($s->unit_price, 2) }}</td>
                         <td class="right">${{ number_format($s->discount, 2) }}</td>

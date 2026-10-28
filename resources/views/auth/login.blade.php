@@ -15,6 +15,15 @@
             <p style="color: var(--text-muted); font-size: 15px; margin: 0; font-weight: 500;">{{ __('app.login_details_prompt') }}</p>
         </div>
 
+        <!-- Session Status (e.g. Pending Approval Alert) -->
+        @if (session('status'))
+            <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 25px;">
+                <div style="color: #065f46; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle text-emerald-500"></i> {{ session('status') }}
+                </div>
+            </div>
+        @endif
+
         <!-- Validation Errors -->
         @if ($errors->any())
             <div style="background: rgba(220, 38, 38, 0.05); border-left: 4px solid var(--danger); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 25px;">

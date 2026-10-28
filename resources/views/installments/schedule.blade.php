@@ -18,25 +18,64 @@
 <style>
 @media print {
     /* Main print resets */
-    .main-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
-    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
-    @page { size: A4 portrait; margin: 5mm 6mm 5mm 6mm; }
+    html, body {
+        height: auto !important;
+        min-height: 0 !important;
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .main-wrapper, .container, main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+    }
+    @page { 
+        size: A4 portrait; 
+        margin: 6mm 8mm 6mm 8mm; 
+    }
     
     /* Remove card styling for clean print */
-    .print-area { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-    .print-header { border-bottom: 2px solid #1e1b4b !important; padding-bottom: 4px !important; margin-bottom: 6px !important; }
-    .schedule-table th, .schedule-table td { border: 1px solid #334155 !important; padding: 2px 4px !important; font-size: 8pt !important; line-height: 1.15 !important; }
+    .print-area { 
+        box-shadow: none !important; 
+        border: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+    }
+    .print-header { 
+        border-bottom: 2px solid #1e1b4b !important; 
+        padding-bottom: 4px !important; 
+        margin-bottom: 6px !important; 
+    }
+    .schedule-table th, .schedule-table td { 
+        border: 1px solid #334155 !important; 
+        padding: 2px 4px !important; 
+        font-size: 8pt !important; 
+        line-height: 1.15 !important; 
+    }
     
     /* Force grid elements inside print-area to remain side-by-side in print */
     .print-area .grid { display: grid !important; }
     .print-area .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
     .print-area .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 
-    /* Prevent breaking page inside signature or table */
-    .print-area, .schedule-table, .signature-section { page-break-inside: avoid !important; break-inside: avoid !important; }
+    /* Prevent breaking page inside table rows or signature */
+    .schedule-table tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+    .signature-section { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-    /* Hide app chrome & no-print sections */
-    #sidebar, .topbar, .no-print, .no-print * { display: none !important; height: 0 !important; visibility: hidden !important; }
+    /* Hide app chrome & no-print sections completely from layout flow */
+    #sidebar, .sidebar, aside, header, .topbar, .no-print { 
+        display: none !important; 
+        height: 0 !important; 
+        width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        visibility: hidden !important; 
+    }
 }
 
 /* PDF Export mode styles */
@@ -312,7 +351,7 @@
                         <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider" lang="km">ថ្ងៃត្រូវបង់<br><span class="font-normal text-[11px] text-slate-400">Due Date</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើម<br><span class="font-normal text-[11px] text-slate-400">Principal</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ការប្រាក់<br><span class="font-normal text-[11px] text-slate-400">Interest</span></th>
-                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ពិន័យ<br><span class="font-normal text-[11px] text-slate-400">Late Fee</span></th>
+                        <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider no-print" lang="km">ប្រាក់ពិន័យ<br><span class="font-normal text-[11px] text-slate-400">Late Fee</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់បង់សរុប<br><span class="font-normal text-[11px] text-slate-400">Total Payment</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-right font-bold text-slate-700 text-xs tracking-wider" lang="km">ប្រាក់ដើមនៅសល់<br><span class="font-normal text-[11px] text-slate-400">Remaining Principal</span></th>
                         <th class="border border-gray-200 px-3 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider no-print">ស្ថានភាព<br><span class="font-normal text-[11px] text-slate-400">Status</span></th>
@@ -330,7 +369,7 @@
                         <td class="border border-gray-200 px-3 py-2 text-center text-slate-400">{{ $installment->created_at?->format('d/m/Y') ?? '-' }}</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
-                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
+                        <td class="border border-gray-200 px-3 py-2 text-right text-slate-400 no-print">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right text-slate-400">-</td>
                         <td class="border border-gray-200 px-3 py-2 text-right font-bold text-slate-900">{{ format_currency($initialPrincipalBase) }}</td>
                         <td class="border border-gray-200 px-3 py-2 text-center text-slate-400 no-print">ចាប់ផ្តើម</td>
@@ -347,16 +386,22 @@
                         <td class="border border-gray-200 px-3 py-3 text-center text-slate-800 whitespace-nowrap text-sm">
                             <span class="font-semibold">{{ $row['due_date']->format('d/m/Y') }}</span>
                             <span class="text-slate-400 text-xs block font-medium">({{ $row['day'] }})</span>
+                            @if($row['status'] === 'paid' && !empty($row['payment_date']))
+                                <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fas fa-check text-[10px]"></i>
+                                    {{ app()->getLocale() === 'km' ? 'បង់នៅ:' : 'Paid:' }} {{ \Carbon\Carbon::parse($row['payment_date'])->format('d/m/Y') }}
+                                </span>
+                            @endif
                         </td>
                         <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['principal']) }}</td>
                         <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-medium text-sm">{{ format_currency($row['interest']) }}</td>
-                        <td class="border border-gray-200 px-3 py-3 text-right whitespace-nowrap text-sm">
+                        <td class="border border-gray-200 px-3 py-3 text-right whitespace-nowrap text-sm no-print">
                             @if($rowPenalty > 0)
                                 <div class="flex flex-col items-end">
                                     <span class="text-red-600 font-black">{{ format_currency($rowPenalty) }}</span>
                                     @if(!empty($row['penalty_reason']))
                                         <span class="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded max-w-[130px] truncate" title="{{ $row['penalty_reason'] }}">
-                                            {{ $row['penalty_reason'] }}
+                                             {{ $row['penalty_reason'] }}
                                         </span>
                                     @endif
                                 </div>
@@ -365,7 +410,8 @@
                             @endif
                         </td>
                         <td class="border border-gray-200 px-3 py-3 text-right font-black text-slate-900 text-base">
-                            {{ format_currency($rowTotalPayment) }}
+                            <span class="no-print">{{ format_currency($rowTotalPayment) }}</span>
+                            <span class="hidden print:inline">{{ format_currency($row['amount']) }}</span>
                         </td>
                         <td class="border border-gray-200 px-3 py-3 text-right text-slate-700 font-semibold text-sm">{{ format_currency($row['outstanding_principal']) }}</td>
                         <td class="border border-gray-200 px-3 py-3 text-center whitespace-nowrap no-print">
@@ -442,11 +488,12 @@
                         <td colspan="2" class="border border-gray-200 px-3 py-3.5 text-center text-slate-800 text-sm" lang="km">ទឹកប្រាក់សរុប<br><span class="font-normal text-xs text-slate-500">Total Amount</span></td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_principal']) }}</td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right text-slate-900 font-bold text-sm">{{ format_currency($summary['total_interest']) }}</td>
-                        <td class="border border-gray-200 px-3 py-3.5 text-right font-black text-sm {{ ($summary['total_penalty'] ?? 0) > 0 ? 'text-red-600' : 'text-slate-400' }}">
+                        <td class="border border-gray-200 px-3 py-3.5 text-right font-black text-sm no-print {{ ($summary['total_penalty'] ?? 0) > 0 ? 'text-red-600' : 'text-slate-400' }}">
                             {{ format_currency($summary['total_penalty'] ?? 0) }}
                         </td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right text-indigo-700 font-black text-base">
-                            {{ format_currency(($summary['total_scheduled'] ?? 0) + ($summary['total_penalty'] ?? 0)) }}
+                            <span class="no-print">{{ format_currency(($summary['total_scheduled'] ?? 0) + ($summary['total_penalty'] ?? 0)) }}</span>
+                            <span class="hidden print:inline">{{ format_currency($summary['total_scheduled'] ?? 0) }}</span>
                         </td>
                         <td class="border border-gray-200 px-3 py-3.5 text-right font-bold text-emerald-700 text-sm">$0.00</td>
                         <td class="border border-gray-200 px-3 py-3.5 no-print"></td>

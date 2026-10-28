@@ -301,11 +301,11 @@
             {{-- Tab Nav --}}
             <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-5" id="tab-nav">
                 @php
-                $activeTab = session('activeTab', 'installments');
+                $activeTab = session('activeTab', 'payments');
                 if(request()->has('tab')) $activeTab = request('tab');
+                if($activeTab === 'installments') $activeTab = 'payments';
                 @endphp
                 @foreach([
-                    ['id' => 'installments', 'label' => __('app.installment_plans'), 'count' => $installments->count()],
                     ['id' => 'payments',     'label' => __('app.payments'),           'count' => $payments->count()],
                     ['id' => 'guarantors',   'label' => __('app.guarantors'),         'count' => $guarantors->count()],
                     ['id' => 'credit',       'label' => __('app.credit_check'),       'count' => $creditChecks->count()],
@@ -325,69 +325,7 @@
                 @endforeach
             </div>
 
-            {{-- ── TAB: Installments ── --}}
-            <div id="tab-installments" class="{{ $activeTab !== 'installments' ? 'hidden' : '' }} space-y-3">
-                @forelse($installments as $inst)
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-gray-800">{{ $inst->product->name ?? 'N/A' }}</span>
-                                @php $sc = ['active'=>'bg-emerald-100 text-emerald-700','paid'=>'bg-blue-100 text-blue-700','overdue'=>'bg-red-100 text-red-600','returned'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold','cancelled'=>'bg-rose-100 text-rose-700 border border-rose-200 font-bold']; @endphp
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $sc[$inst->status] ?? 'bg-gray-100 text-gray-500' }}">
-                                    {{ __('app.' . $inst->status) }}
-                                </span>
-                            </div>
-                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
-                                <span>💵 {{ format_currency($inst->monthly_payment) }}/{{ __('app.months') }}</span>
-                                <span>📅 {{ $inst->duration_months }} {{ __('app.months') }}</span>
-                                @if($inst->status !== 'cancelled' && $inst->next_due_date)
-                                    <span class="{{ \Carbon\Carbon::parse($inst->next_due_date)->isPast() ? 'text-red-500 font-semibold' : '' }}">
-                                        🔔 {{ __('app.next_due_date') }}: {{ \Carbon\Carbon::parse($inst->next_due_date)->format('d M Y') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <div class="text-sm font-bold {{ $inst->status === 'cancelled' ? 'text-slate-400' : 'text-gray-800' }}">{{ format_currency($inst->remaining_balance) }}</div>
-                            <div class="text-xs {{ $inst->status === 'cancelled' ? 'text-rose-500 font-semibold' : 'text-gray-400' }}">
-                                {{ $inst->status === 'cancelled' ? __('app.cancelled') : __('app.remaining_balance') }}
-                            </div>
-                        </div>
-                    </div>
-                    @if($inst->total_price > 0)
-                    @php 
-                        $isCancelled = ($inst->status === 'cancelled');
-                        $pct = $isCancelled ? 0 : round(min((($inst->total_price - $inst->remaining_balance) / $inst->total_price) * 100, 100)); 
-                    @endphp
-                    <div class="mt-3">
-                        <div class="flex justify-between text-xs text-gray-400 mb-1">
-                            @if($isCancelled)
-                                <span class="text-rose-600 font-bold flex items-center gap-1">
-                                    <i class="fas fa-ban text-[10px]"></i> {{ __('app.cancelled') }}
-                                </span>
-                            @else
-                                <span>{{ $pct }}% {{ __('app.paid') }}</span>
-                            @endif
-                            <span>{{ __('app.total') }}: {{ format_currency($inst->total_price) }}</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                            @if($isCancelled)
-                                <div class="h-2 rounded-full bg-rose-400" style="width: 100%"></div>
-                            @else
-                                <div class="h-2 rounded-full {{ $pct >= 100 ? 'bg-emerald-500' : ($pct >= 50 ? 'bg-blue-500' : 'bg-amber-400') }}"
-                                     style="width: {{ $pct }}%"></div>
-                            @endif
-                        </div>
-                    </div>
-                    @endif
-                </div>
-                @empty
-                <div class="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400 text-sm">
-                    {{ __('app.no_installments') }}
-                </div>
-                @endforelse
-            </div>
+
 
             {{-- ── TAB: Payment History ── --}}
             <div id="tab-payments" class="{{ $activeTab !== 'payments' ? 'hidden' : '' }}">
@@ -838,27 +776,35 @@
 
 <script>
 function switchTab(id) {
-    ['installments','payments','guarantors','credit'].forEach(t => {
-        document.getElementById('tab-' + t).classList.add('hidden');
-        document.getElementById('tab-btn-' + t).classList.remove('bg-white','text-gray-800','shadow-sm');
-        document.getElementById('tab-btn-' + t).classList.add('text-gray-500');
+    ['payments','guarantors','credit'].forEach(t => {
+        const tabEl = document.getElementById('tab-' + t);
+        const btnEl = document.getElementById('tab-btn-' + t);
+        if (tabEl) tabEl.classList.add('hidden');
+        if (btnEl) {
+            btnEl.classList.remove('bg-white','text-gray-800','shadow-sm');
+            btnEl.classList.add('text-gray-500');
+        }
     });
-    document.getElementById('tab-' + id).classList.remove('hidden');
-    document.getElementById('tab-btn-' + id).classList.add('bg-white','text-gray-800','shadow-sm');
-    document.getElementById('tab-btn-' + id).classList.remove('text-gray-500');
+    const activeTabEl = document.getElementById('tab-' + id);
+    const activeBtnEl = document.getElementById('tab-btn-' + id);
+    if (activeTabEl) activeTabEl.classList.remove('hidden');
+    if (activeBtnEl) {
+        activeBtnEl.classList.add('bg-white','text-gray-800','shadow-sm');
+        activeBtnEl.classList.remove('text-gray-500');
+    }
 }
 
 function toggleSection(id) {
     const el = document.getElementById(id);
     const chevron = document.getElementById(id + '-chevron');
-    el.classList.toggle('hidden');
-    if (chevron) chevron.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    if (el) el.classList.toggle('hidden');
+    if (chevron && el) chevron.style.transform = el.classList.contains('hidden') ? '' : 'rotate(180deg)';
 }
 
 // Auto-open tab from URL fragment
 document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash.replace('#tab-', '');
-    if (['installments','payments','guarantors','credit'].includes(hash)) {
+    if (['payments','guarantors','credit'].includes(hash)) {
         switchTab(hash);
     }
 });

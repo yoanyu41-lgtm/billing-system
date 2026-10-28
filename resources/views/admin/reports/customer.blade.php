@@ -135,7 +135,7 @@
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wide">
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'អតិថិជន' : 'Customer' }}</th>
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'លេខទូរស័ព្ទ' : 'Phone' }}</th>
-                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ចំនួនកិច្ចសន្យា' : 'Contracts' }}</th>
+                            <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ប្រភេទសេវាកម្ម / បង់រំលស់' : 'Service / Installment Type' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ការទិញសរុប' : 'Total Purchase' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'បានបង់' : 'Paid' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'នៅខ្វះ' : 'Outstanding' }}</th>
@@ -151,8 +151,16 @@
                             <td class="py-3.5 px-4 text-slate-600 font-mono font-medium">
                                 {{ $c->phone }}
                             </td>
-                            <td class="py-3.5 px-4 text-center font-bold text-slate-800">
-                                {{ $c->contracts }}
+                            <td class="py-3.5 px-4 text-center">
+                                <div class="flex flex-wrap items-center justify-center gap-1">
+                                    @forelse($c->service_types ?? [] as $st)
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $st['class'] }}">
+                                            {{ $st['label'] }}
+                                        </span>
+                                    @empty
+                                        <span class="text-slate-400 text-xs">—</span>
+                                    @endforelse
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 text-right font-black text-slate-900">
                                 ${{ number_format($c->total_purchase, 2) }}
@@ -163,13 +171,13 @@
                             <td class="py-3.5 px-4 text-right font-black text-rose-600">
                                 ${{ number_format($c->outstanding, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-center">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 @if($c->status === 'Active')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'សកម្ម' : 'Active' }}
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'Completed' }}
                                     </span>
                                 @endif

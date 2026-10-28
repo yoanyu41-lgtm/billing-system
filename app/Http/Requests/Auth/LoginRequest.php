@@ -47,6 +47,11 @@ class LoginRequest extends FormRequest
 
             $remaining = RateLimiter::remaining($this->throttleKey(), 5);
 
+            // If 5 failed attempts reached, send alert to Admin via Telegram
+            if ($remaining === 0) {
+                $this->sendFailedLoginTelegramAlert();
+            }
+
             $message = trans('auth.failed');
             if ($remaining > 0 && $remaining <= 2) {
                 $warning = app()->getLocale() === 'km'
@@ -57,6 +62,27 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => $message,
+            ]);
+        }
+
+        $user = Auth::user();
+        if ($user && $user->status !== 'active') {
+            Auth::logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            if ($user->status === 'pending') {
+                $statusMessage = app()->getLocale() === 'km'
+                    ? 'គណនីរបស់អ្នកកំពុងស្ថិតក្នុងការរង់ចាំការអនុម័តពី Admin (Pending Approval)។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីបើកសិទ្ធិ។'
+                    : 'Your account is pending admin approval. Please contact the administrator to activate your account.';
+            } else {
+                $statusMessage = app()->getLocale() === 'km'
+                    ? 'គណនីរបស់អ្នកត្រូវបានផ្អាកដំណើរការ (Suspended)។ សូមទាក់ទងអ្នកគ្រប់គ្រង។'
+                    : 'Your account has been suspended or deactivated. Please contact the administrator.';
+            }
+
+            throw ValidationException::withMessages([
+                'email' => $statusMessage,
             ]);
         }
 
@@ -94,5 +120,43 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    /**
+     * Send alert to Admin via Telegram when 5 consecutive failed logins occur.
+     */
+    protected function sendFailedLoginTelegramAlert(): void
+    {
+        try {
+            $telegramToken = \App\Models\Setting::where('key', 'telegram_token')->value('value') ?: config('services.telegram.bot_token');
+            $adminUser = \App\Models\User::where('role', 'admin')->whereNotNull('telegram_id')->where('telegram_id', '!=', '')->first();
+            $adminChatId = env('TELEGRAM_ADMIN_CHAT_ID')
+                ?: ($adminUser?->telegram_id ?: \App\Models\Setting::where('key', 'telegram_chat_id')->value('value'));
+
+            if ($telegramToken && $adminChatId) {
+                $email = $this->input('email');
+                $ip = $this->ip();
+                $userAgent = substr($this->userAgent() ?? 'Unknown Device', 0, 100);
+                $time = now()->timezone('Asia/Phnom_Penh')->format('d-M-Y h:i:s A');
+
+                $msg = "🚨 <b>SECURITY ALERT: Failed Login Attempts!</b>\n\n"
+                     . "⚠️ <b>Warning:</b> Account login failed <b>5 times</b> and has been temporarily locked for 5 minutes.\n\n"
+                     . "📧 <b>Target Email:</b> {$email}\n"
+                     . "🌐 <b>IP Address:</b> {$ip}\n"
+                     . "💻 <b>Device/Browser:</b> {$userAgent}\n"
+                     . "🕒 <b>Time:</b> {$time}\n\n"
+                     . "🛑 <i>If this was not you or your staff, someone may be attempting a brute-force attack on your system!</i>";
+
+                \Illuminate\Support\Facades\Http::asForm()
+                    ->timeout(8)
+                    ->post("https://api.telegram.org/bot{$telegramToken}/sendMessage", [
+                        'chat_id' => $adminChatId,
+                        'text' => $msg,
+                        'parse_mode' => 'HTML',
+                    ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Telegram failed login alert error: ' . $e->getMessage());
+        }
     }
 }

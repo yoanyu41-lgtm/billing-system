@@ -47,6 +47,19 @@ class AppServiceProvider extends ServiceProvider
                     $table->timestamps();
                 });
             }
+            if (Schema::hasTable('users')) {
+                if (!Schema::hasColumn('users', 'status')) {
+                    Schema::table('users', function ($table) {
+                        $table->string('status', 20)->default('active')->after('role');
+                    });
+                }
+                if (!Schema::hasColumn('users', 'telegram_id')) {
+                    Schema::table('users', function ($table) {
+                        $table->string('telegram_id', 50)->nullable()->after('email');
+                    });
+                }
+            }
+
             if (Schema::hasTable('installments') && !Schema::hasColumn('installments', 'interest_type')) {
                 Schema::table('installments', function ($table) {
                     $table->string('interest_type', 30)->default('flat')->after('interest_rate');
@@ -237,7 +250,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('delete-installment', function ($user) {
-            return $user->can('installments.delete');
+            $role = strtolower($user->role ?? '');
+            $isAdminRole = method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('admin'));
+            return ($role === 'admin' || $isAdminRole) && $user->can('installments.delete');
         });
 
         // Payments Gate - Only Admin can approve payments

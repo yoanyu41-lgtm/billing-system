@@ -145,7 +145,7 @@
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold text-xs tracking-wide">
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'លេខកិច្ចសន្យា' : 'Contract Number' }}</th>
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'អតិថិជន' : 'Customer' }}</th>
-                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ទំនិញ' : 'Product' }}</th>
+                            <th class="py-3.5 px-4 font-bold" style="min-width: 160px; max-width: 240px;">{{ app()->getLocale() === 'km' ? 'ទំនិញ' : 'Product' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'តម្លៃសរុប' : 'Total Amount' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ប្រាក់កក់' : 'Down Payment' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'នៅសល់' : 'Remaining' }}</th>
@@ -166,48 +166,50 @@
                             <td class="py-3.5 px-4 font-semibold text-slate-900">
                                 {{ $inst->customer }}
                             </td>
-                            <td class="py-3.5 px-4 text-slate-700">
-                                {{ $inst->product }}
+                            <td class="py-3.5 px-4 text-slate-700" style="min-width: 160px; max-width: 240px; white-space: normal;">
+                                <div style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; word-break: break-word;" title="{{ $inst->product }}">
+                                    {{ $inst->product }}
+                                </div>
                             </td>
-                            <td class="py-3.5 px-4 text-right font-black text-slate-900">
+                            <td class="py-3.5 px-4 text-right font-black text-slate-900 whitespace-nowrap">
                                 ${{ number_format($inst->total_amount, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-right font-semibold text-slate-600">
+                            <td class="py-3.5 px-4 text-right font-semibold text-slate-600 whitespace-nowrap">
                                 ${{ number_format($inst->down_payment, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-right font-black text-rose-600">
+                            <td class="py-3.5 px-4 text-right font-black text-rose-600 whitespace-nowrap">
                                 ${{ number_format($inst->remaining, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-center font-medium text-slate-700">
+                            <td class="py-3.5 px-4 text-center font-medium text-slate-700 whitespace-nowrap">
                                 {{ $inst->duration }}
                             </td>
-                            <td class="py-3.5 px-4 text-right font-bold text-slate-800">
+                            <td class="py-3.5 px-4 text-right font-bold text-slate-800 whitespace-nowrap">
                                 ${{ number_format($inst->monthly_payment, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-center font-bold text-emerald-600">
+                            <td class="py-3.5 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
                                 {{ $inst->paid_months }}
                             </td>
-                            <td class="py-3.5 px-4 text-center font-bold text-amber-600">
+                            <td class="py-3.5 px-4 text-center font-bold text-amber-600 whitespace-nowrap">
                                 {{ $inst->remaining_months }}
                             </td>
-                            <td class="py-3.5 px-4 text-center text-slate-600 font-medium">
+                            <td class="py-3.5 px-4 text-center text-slate-600 font-medium whitespace-nowrap">
                                 {{ $inst->next_due_date }}
                             </td>
-                            <td class="py-3.5 px-4 text-center">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 @if(strtolower($inst->status) === 'completed')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'Completed' }}
                                     </span>
                                 @elseif(strtolower($inst->status) === 'returned')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 whitespace-nowrap">
                                         <i class="fas fa-undo-alt text-[9px] mr-0.5"></i> {{ app()->getLocale() === 'km' ? 'បានយកវិញ' : 'Returned' }}
                                     </span>
                                 @elseif(strtolower($inst->status) === 'overdue')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#fee2e2] text-[#dc2626]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#fee2e2] text-[#dc2626] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'ហួសកំណត់' : 'Overdue' }}
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'សកម្ម' : 'Active' }}
                                     </span>
                                 @endif

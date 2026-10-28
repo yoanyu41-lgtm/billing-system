@@ -33,12 +33,6 @@
                 <i class="fas fa-certificate text-amber-600"></i>
                 <span>{{ __('app.clearance_certificates') }}</span>
             </a>
-
-            {{-- 5. Return Customer --}}
-            <a href="{{ route('installments.return-index') }}" class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs px-3 py-2 rounded-xl border border-slate-200 shadow-sm transition whitespace-nowrap shrink-0">
-                <i class="fas fa-undo-alt text-rose-600"></i>
-                <span>{{ app()->getLocale() === 'km' ? 'ដកហូត / យកអីវ៉ាន់វិញ' : 'Returns' }}</span>
-            </a>
         </div>
     </div>
 
@@ -164,10 +158,28 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('installments.contract', $installment) }}" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg transition duration-150 text-xs shadow-sm">
-                                <i class="fas fa-print"></i>
-                                <span>{{ __('app.view_contract') }}</span>
-                            </a>
+                            @if($installment->status === 'pending')
+                                <div class="inline-flex items-center gap-1.5">
+                                    @if(auth()->user()->role === 'admin')
+                                        <form method="POST" action="{{ route('installments.approve', $installment) }}" class="inline-block" onsubmit="return confirm('{{ app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ឯកភាពគម្រោងបង់រំលស់នេះមែនទេ?' : 'Are you sure you want to approve this installment plan?' }}')">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-lg transition duration-150 text-xs shadow-xs" title="{{ app()->getLocale() === 'km' ? 'ឯកភាពគម្រោង (Approve)' : 'Approve Plan' }}">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span>{{ app()->getLocale() === 'km' ? 'ឯកភាព' : 'Approve' }}</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 font-medium px-2.5 py-1.5 rounded-lg text-xs" title="{{ app()->getLocale() === 'km' ? 'រង់ចាំ Admin ឯកភាពសិនទើបអាចបោះពុម្ពបាន' : 'Pending approval' }}">
+                                        <i class="fas fa-lock text-[11px] text-amber-500"></i>
+                                        <span>{{ app()->getLocale() === 'km' ? 'រង់ចាំឯកភាព' : 'Pending' }}</span>
+                                    </span>
+                                </div>
+                            @else
+                                <a href="{{ route('installments.contract', $installment) }}" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg transition duration-150 text-xs shadow-sm">
+                                    <i class="fas fa-print"></i>
+                                    <span>{{ __('app.view_contract') }}</span>
+                                </a>
+                            @endif
                         </td>
                     </tr>
                     @empty

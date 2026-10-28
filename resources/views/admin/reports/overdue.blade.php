@@ -22,19 +22,19 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs font-bold text-slate-600 mr-1">{{ app()->getLocale() === 'km' ? 'កម្រិតថ្ងៃយឺត៖' : 'Aging Bracket:' }}</span>
-                <a href="{{ route('admin.reports.overdue', ['start_date' => $startDate ?? '', 'end_date' => $endDate ?? '']) }}" 
+                <a href="{{ route('admin.reports.overdue', array_filter(['start_date' => request('start_date'), 'end_date' => request('end_date')])) }}" 
                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ empty($agingFilter) ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200' }}">
                     {{ app()->getLocale() === 'km' ? 'ទាំងអស់' : 'All' }}
                 </a>
-                <a href="{{ route('admin.reports.overdue', ['aging' => '1-7', 'start_date' => $startDate ?? '', 'end_date' => $endDate ?? '']) }}" 
+                <a href="{{ route('admin.reports.overdue', array_filter(['aging' => '1-7', 'start_date' => request('start_date'), 'end_date' => request('end_date')])) }}" 
                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($agingFilter ?? '') === '1-7' ? 'bg-amber-600 text-white border-amber-600' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' }}">
                     {{ app()->getLocale() === 'km' ? '១-៧ ថ្ងៃ' : '1-7 Days' }} ({{ $bucket1To7 }})
                 </a>
-                <a href="{{ route('admin.reports.overdue', ['aging' => '8-30', 'start_date' => $startDate ?? '', 'end_date' => $endDate ?? '']) }}" 
+                <a href="{{ route('admin.reports.overdue', array_filter(['aging' => '8-30', 'start_date' => request('start_date'), 'end_date' => request('end_date')])) }}" 
                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($agingFilter ?? '') === '8-30' ? 'bg-orange-600 text-white border-orange-600' : 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100' }}">
                     {{ app()->getLocale() === 'km' ? '៨-៣០ ថ្ងៃ' : '8-30 Days' }} ({{ $bucket8To30 }})
                 </a>
-                <a href="{{ route('admin.reports.overdue', ['aging' => '30+', 'start_date' => $startDate ?? '', 'end_date' => $endDate ?? '']) }}" 
+                <a href="{{ route('admin.reports.overdue', array_filter(['aging' => '30+', 'start_date' => request('start_date'), 'end_date' => request('end_date')])) }}" 
                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($agingFilter ?? '') === '30+' ? 'bg-rose-600 text-white border-rose-600' : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100' }}">
                     {{ app()->getLocale() === 'km' ? 'លើសពី ៣០ ថ្ងៃ' : '30+ Days' }} ({{ $bucket30Plus }})
                 </a>

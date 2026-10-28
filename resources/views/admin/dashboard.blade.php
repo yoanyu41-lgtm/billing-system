@@ -375,7 +375,7 @@
             @else
                 <div style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
                     @foreach($overdueInstallments as $inst)
-                    <a href="{{ route('installments.show', $inst->id) }}"
+                    <a href="{{ route('late-payments.index', ['search' => $inst->customer?->name]) }}"
                        style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(254,242,242,0.60);border:1px solid #fecaca;text-decoration:none;transition:box-shadow .15s;"
                        onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.10)'" onmouseout="this.style.boxShadow='none'">
 
@@ -409,7 +409,7 @@
                 </div>
 
                 <div style="margin-top:10px;">
-                    <a href="{{ route('installments.index', ['status' => 'overdue']) }}" class="btn-viewall" style="background:#ef4444;">
+                    <a href="{{ route('late-payments.index') }}" class="btn-viewall" style="background:#ef4444;">
                         {{ app()->getLocale() === 'km' ? 'មើលទាំងអស់' : 'View All Overdue' }}
                     </a>
                 </div>

@@ -1112,9 +1112,6 @@
                     <a href="{{ route('late-payments.index') }}" class="{{ request()->routeIs('late-payments.*') ? 'active' : '' }}">
                         <i class="fas fa-user-clock"></i> {{ __('app.late_customers') ?? 'អតិថិជនបង់យឺត' }}
                     </a>
-                    <a href="{{ route('installments.return-index') }}" class="{{ request()->routeIs('installments.return-index') ? 'active' : '' }}">
-                        <i class="fas fa-undo-alt"></i> {{ app()->getLocale() === 'km' ? 'ដកហូត / ប្រគល់ទំនិញវិញ' : 'Product Returns' }}
-                    </a>
                 </div>
             </div>
             @endif
@@ -1232,7 +1229,7 @@
             @endif
 
             {{-- Reports Dropdown --}}
-            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('reports.view'))
+            @if(auth()->user()->hasAnyRole(['Admin', 'Manager', 'Staff']) || in_array(strtolower(auth()->user()->role ?? ''), ['admin', 'manager', 'staff']) || auth()->user()->can('reports.view'))
             <div class="sb-dropdown {{ request()->routeIs('admin.reports.*') ? 'open' : '' }}">
                 <div class="sb-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" onclick="toggleDropdown(this)">
                     <i class="fas fa-chart-pie"></i>
@@ -1260,9 +1257,6 @@
                     </a>
                     <a href="{{ route('admin.reports.profit') }}" class="{{ request()->routeIs('admin.reports.profit') || request()->routeIs('admin.reports.income') || request()->routeIs('admin.reports.monthly') || request()->routeIs('admin.reports.yearly') ? 'active' : '' }}">
                         <i class="fas fa-chart-line"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ចំណូល/ចំណេញ' : 'Profit / Income Report' }}
-                    </a>
-                    <a href="{{ route('admin.reports.return') }}" class="{{ request()->routeIs('admin.reports.return') ? 'active' : '' }}">
-                        <i class="fas fa-undo-alt"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍ដកហូតទំនិញ' : 'Return Report' }}
                     </a>
                     <a href="{{ route('admin.reports.overdue') }}" class="{{ request()->routeIs('admin.reports.overdue') ? 'active' : '' }}">
                         <i class="fas fa-clock-rotate-left"></i> {{ app()->getLocale() === 'km' ? 'របាយការណ៍បង់យឺត/ហួសកំណត់' : 'Overdue Report' }}

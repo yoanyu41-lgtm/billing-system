@@ -34,11 +34,6 @@
 
     </a>
 
-    <a href="<?php echo e(route('admin.reports.return')); ?>" class="pb-2.5 transition whitespace-nowrap no-underline <?php echo e(request()->routeIs('admin.reports.return') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'); ?>">
-        <?php echo e(app()->getLocale() === 'km' ? 'ដកហូតទំនិញ' : 'Returns'); ?>
-
-    </a>
-
     <a href="<?php echo e(route('admin.reports.overdue')); ?>" class="pb-2.5 transition whitespace-nowrap no-underline <?php echo e(request()->routeIs('admin.reports.overdue') ? 'text-slate-900 border-b-2 border-slate-900 font-bold' : 'text-slate-500 hover:text-slate-900 border-b-2 border-transparent'); ?>">
         <?php echo e(app()->getLocale() === 'km' ? 'បង់យឺត/ហួសកំណត់' : 'Overdue'); ?>
 

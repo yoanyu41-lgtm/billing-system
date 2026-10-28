@@ -441,6 +441,9 @@ class ReportController extends Controller
 
         if ($statusFilter) {
             $query->where('status', $statusFilter);
+        } else {
+            // By default exclude cancelled and pending approval contracts from official report
+            $query->whereNotIn('status', ['cancelled', 'pending']);
         }
 
         $installments = $query->latest()->get();
@@ -449,7 +452,7 @@ class ReportController extends Controller
         $completedCount = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'completed')->count();
         $overdueCount = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'active')->where('next_due_date', '<', today())->count();
 
-        $totalOutstanding = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->whereIn('status', ['active', 'pending'])->sum('remaining_balance');
+        $totalOutstanding = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'active')->sum('remaining_balance');
         $totalCollected = Payment::whereBetween('payment_date', [$startDate, $endDate])->where('status', 'approved')->sum(DB::raw('amount + penalty_amount'));
 
         $installmentList = collect();
@@ -512,34 +515,98 @@ class ReportController extends Controller
             });
         }
 
+        // Filter only customers with activity in the selected date range:
+        // (Either registered, or made a direct purchase, or created an installment, or made an installment payment)
+        $query->where(function($q) use ($startDate, $endDate) {
+            $q->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+              ->orWhereHas('sales', function($sq) use ($startDate, $endDate) {
+                  $sq->whereBetween('sale_date', [$startDate, $endDate]);
+              })
+              ->orWhereHas('installments', function($iq) use ($startDate, $endDate) {
+                  $iq->whereNotIn('status', ['cancelled', 'pending'])
+                     ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+              })
+              ->orWhereHas('installments.payments', function($pq) use ($startDate, $endDate) {
+                  $pq->where('status', 'approved')
+                     ->whereBetween('payment_date', [$startDate, $endDate]);
+              });
+        });
+
         $customers = $query->get();
 
         $totalCustomers = Customer::count();
         $newCustomers = Customer::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count();
         $activeCustomers = Customer::whereHas('installments', function($q) {
-            $q->where('remaining_balance', '>', 0);
+            $q->where('status', 'active')
+              ->where('remaining_balance', '>', 0);
         })->count();
         $completedCustomers = max($totalCustomers - $activeCustomers, 0);
 
         $customerList = collect();
 
         foreach ($customers as $c) {
-            $contractCount = $c->installments->count();
-            $totalPurchase = $c->installments->sum('total_price');
-            $directSalesVal = Sale::where('customer_id', $c->id)->sum('total');
+            $validInstallments = $c->installments->whereNotIn('status', ['cancelled', 'pending']);
+            $contractCount = $validInstallments->count();
+            $totalPurchase = $validInstallments->sum('total_price');
+            $directSales = Sale::where('customer_id', $c->id)->get();
+            $directSalesVal = $directSales->sum('total');
             $grandPurchase = $totalPurchase + $directSalesVal;
 
             $paid = $directSalesVal;
-            foreach ($c->installments as $inst) {
+            foreach ($validInstallments as $inst) {
                 $paid += $inst->payments->where('status', 'approved')->sum('amount');
             }
             $outstanding = max($grandPurchase - $paid, 0);
-            $statusStr = ($outstanding > 0 || $c->installments->where('status', 'active')->count() > 0) ? 'Active' : 'Completed';
+            $statusStr = ($outstanding > 0 || $validInstallments->where('status', 'active')->count() > 0) ? 'Active' : 'Completed';
+
+            // Determine service types and installment interest types
+            $types = [];
+            $hasInstallment = $validInstallments->count() > 0;
+            $isKm = app()->getLocale() === 'km';
+
+            // Only display Direct Sale if customer actually has standalone direct sales (and is not purely an installment contract)
+            if ($directSales->count() > 0 && !$hasInstallment) {
+                $types[] = [
+                    'label' => $isKm ? 'លក់ដាច់' : 'Direct Sale',
+                    'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                ];
+            }
+
+            if ($hasInstallment) {
+                $interestTypeNames = [
+                    'flat'          => $isKm ? 'ការប្រាក់ថេរ' : 'Flat Rate',
+                    'declining'     => $isKm ? 'ដើមថេរ ថយការ' : 'Declining Balance',
+                    'amortization'  => $isKm ? 'ថយដើម ថយការ' : 'EMI',
+                    'bullet'        => $isKm ? 'បង់តែការ' : 'Bullet',
+                    'zero_interest' => $isKm ? 'ការប្រាក់ ០%' : '0% Interest',
+                ];
+
+                foreach ($validInstallments as $vInst) {
+                    $hasSettlement = $vInst->payments->where('is_settlement', true)->count() > 0 
+                        || ($vInst->status === 'completed' && (float)$vInst->remaining_balance <= 0);
+
+                    $tKey = $vInst->interest_type ?? 'flat';
+                    $tName = $interestTypeNames[$tKey] ?? ($isKm ? 'បង់រំលស់' : 'Installment');
+
+                    if ($hasSettlement && (float)$vInst->remaining_balance <= 0) {
+                        $types[] = [
+                            'label' => ($isKm ? 'បង់ផ្តាច់ (' : 'Pay-Off (') . $tName . ')',
+                            'class' => 'bg-amber-50 text-amber-700 border-amber-200'
+                        ];
+                    } else {
+                        $types[] = [
+                            'label' => ($isKm ? 'បង់រំលស់ (' : 'Installment (') . $tName . ')',
+                            'class' => 'bg-blue-50 text-blue-700 border-blue-200'
+                        ];
+                    }
+                }
+            }
 
             $customerList->push((object)[
                 'name'          => $c->name,
                 'phone'         => $c->phone ?? '-',
                 'contracts'     => $contractCount,
+                'service_types' => $types,
                 'total_purchase'=> $grandPurchase,
                 'paid'          => $paid,
                 'outstanding'   => $outstanding,
@@ -590,15 +657,33 @@ class ReportController extends Controller
         $lowStock = Product::where('stock', '<=', 5)->count();
 
         foreach ($products as $prod) {
-            $soldInSales = DB::table('sale_items')->where('product_id', $prod->id)->sum('quantity');
-            $soldInInstallments = DB::table('installments')->where('product_id', $prod->id)->count();
+            $soldInSales = (int) DB::table('sale_items')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sale_items.product_id', $prod->id)
+                ->whereBetween('sales.sale_date', [$startDate, $endDate])
+                ->sum('sale_items.quantity');
+
+            $soldInInstallments = (int) DB::table('installments')
+                ->where('product_id', $prod->id)
+                ->whereNotIn('status', ['cancelled', 'pending'])
+                ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
+                ->count();
+
             $prod->sold_qty = $soldInSales + $soldInInstallments;
 
             $revInSales = (float) DB::table('sale_items')
-                ->where('product_id', $prod->id)
-                ->selectRaw('SUM(quantity * price + COALESCE(tax_amount, 0)) as total_sum')
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sale_items.product_id', $prod->id)
+                ->whereBetween('sales.sale_date', [$startDate, $endDate])
+                ->selectRaw('SUM(sale_items.quantity * sale_items.price + COALESCE(sale_items.tax_amount, 0)) as total_sum')
                 ->value('total_sum');
-            $revInInst = DB::table('installments')->where('product_id', $prod->id)->sum('total_price');
+
+            $revInInst = (float) DB::table('installments')
+                ->where('product_id', $prod->id)
+                ->whereNotIn('status', ['cancelled', 'pending'])
+                ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
+                ->sum('total_price');
+
             $prod->total_revenue = $revInSales + $revInInst;
         }
 
@@ -782,74 +867,58 @@ class ReportController extends Controller
     }
 
     /**
-     * 10. Product Return Report (របាយការណ៍ដកហូត / យកទំនិញមកវិញ)
-     */
-    public function returnReport(Request $request)
-    {
-        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
-        $search = trim($request->search ?? '');
-
-        $query = Installment::with(['customer', 'product', 'returnedByUser', 'payments' => function($q) {
-            $q->where('status', 'approved');
-        }])
-        ->where('status', 'returned')
-        ->where(function($q) use ($startDate, $endDate) {
-            $q->whereBetween(DB::raw('COALESCE(DATE(returned_at), DATE(updated_at))'), [$startDate, $endDate]);
-        });
-
-        if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->whereHas('customer', function($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                })
-                ->orWhereHas('product', function($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                ->orWhere('id', 'like', "%" . ltrim($search, '0') . "%");
-            });
-        }
-
-        $returns = $query->latest('returned_at')->latest('updated_at')->get();
-
-        $totalReturned = $returns->count();
-        $totalRestocked = $returns->where('return_restock', 1)->count();
-        $totalNotRestocked = $totalReturned - $totalRestocked;
-        
-        $totalContractValue = $returns->sum('total_price');
-        $totalPaidBeforeReturn = 0;
-        foreach ($returns as $r) {
-            $totalPaidBeforeReturn += (float)$r->down_payment + (float)$r->payments->sum('amount');
-        }
-        $totalVoidedBalance = max($totalContractValue - $totalPaidBeforeReturn, 0);
-
-        return view('admin.reports.return', compact(
-            'returns', 'startDate', 'endDate', 'filter', 'search',
-            'totalReturned', 'totalRestocked', 'totalNotRestocked',
-            'totalContractValue', 'totalPaidBeforeReturn', 'totalVoidedBalance'
-        ));
-    }
-
-    /**
      * 11. Overdue & Aging Report (របាយការណ៍បង់យឺត / ហួសកាលកំណត់)
      */
     public function overdueReport(Request $request)
     {
-        [$startDate, $endDate, $filter] = $this->resolveDateRange($request);
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+        $filter = $request->filter;
         $agingFilter = $request->aging; // '1-7', '8-30', '30+'
 
         $query = Installment::with(['customer', 'product', 'payments'])
-            ->whereIn('status', ['active', 'ongoing'])
-            ->where('remaining_balance', '>', 0)
-            ->whereNotNull('next_due_date')
-            ->whereDate('next_due_date', '<', today());
+            ->whereIn('status', ['active', 'ongoing', 'overdue'])
+            ->where('remaining_balance', '>', 0);
 
-        if ($request->filled('start_date') || $request->filled('end_date')) {
-            $query->whereBetween(DB::raw('DATE(next_due_date)'), [$startDate, $endDate]);
-        }
+        $candidates = $query->get();
 
-        $installments = $query->get();
+        $allOverdue = $candidates->filter(function ($inst) use ($startDate, $endDate, $request) {
+            $days = $inst->daysLate();
+            if ($days <= 0) {
+                // Check next_due_date fallback
+                if ($inst->next_due_date && Carbon::parse($inst->next_due_date)->startOfDay()->lt(today()->startOfDay())) {
+                    $days = max((int) Carbon::parse($inst->next_due_date)->startOfDay()->diffInDays(today()->startOfDay()), 1);
+                } else {
+                    return false;
+                }
+            }
+
+            // If start_date / end_date filtered, check against earliest unpaid due date
+            $earliestDueDate = null;
+            if ($inst->next_due_date) {
+                $earliestDueDate = Carbon::parse($inst->next_due_date)->startOfDay();
+            }
+            try {
+                $schedule = $inst->getPaymentSchedule();
+                foreach ($schedule as $row) {
+                    if ($row['status'] !== 'paid') {
+                        $earliestDueDate = Carbon::parse($row['due_date'])->startOfDay();
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {}
+
+            if ($earliestDueDate) {
+                if ($request->filled('start_date') && $earliestDueDate->lt(Carbon::parse($startDate)->startOfDay())) {
+                    return false;
+                }
+                if ($request->filled('end_date') && $earliestDueDate->gt(Carbon::parse($endDate)->endOfDay())) {
+                    return false;
+                }
+            }
+
+            return true;
+        })->values();
 
         $overdueList = collect();
         $bucket1To7 = 0;
@@ -858,9 +927,28 @@ class ReportController extends Controller
         $totalLateFee = 0;
         $totalOverdueBalance = 0;
 
-        foreach ($installments as $inst) {
-            $dueDate = Carbon::parse($inst->next_due_date);
-            $daysOverdue = max((int) $dueDate->diffInDays(today(), false), 1);
+        foreach ($allOverdue as $inst) {
+            $daysOverdue = $inst->daysLate();
+            $dueDate = null;
+
+            try {
+                $schedule = $inst->getPaymentSchedule();
+                foreach ($schedule as $row) {
+                    if ($row['status'] !== 'paid') {
+                        $dueDate = Carbon::parse($row['due_date'])->startOfDay();
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {}
+
+            if (!$dueDate) {
+                $dueDate = $inst->next_due_date ? Carbon::parse($inst->next_due_date)->startOfDay() : today()->subDays($daysOverdue);
+            }
+
+            if ($daysOverdue <= 0 && $dueDate) {
+                $daysOverdue = max((int) $dueDate->diffInDays(today()->startOfDay(), false), 1);
+            }
+            $daysOverdue = max($daysOverdue, 1);
 
             if ($daysOverdue <= 7) {
                 $bucket = '1-7';
@@ -877,11 +965,17 @@ class ReportController extends Controller
                 continue;
             }
 
-            // Estimate penalty or get logged penalty
-            $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
-            $dailyPenaltyRate = (float)($settings['late_payment_penalty_percent'] ?? 0.5);
-            $fixedPenalty = (float)($settings['late_payment_fixed_penalty'] ?? 0);
-            $penalty = round($fixedPenalty + (($inst->monthly_payment * $dailyPenaltyRate / 100) * $daysOverdue), 2);
+            // Calculate penalty using standard model calculation or fallback
+            $penalty = method_exists($inst, 'calculatePenalty') 
+                ? (float) $inst->calculatePenalty($daysOverdue) 
+                : 0.0;
+
+            if ($penalty <= 0) {
+                $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+                $dailyPenaltyRate = (float)($settings['late_payment_penalty_percent'] ?? 0.5);
+                $fixedPenalty = (float)($settings['late_payment_fixed_penalty'] ?? 0);
+                $penalty = round($fixedPenalty + (($inst->monthly_payment * $dailyPenaltyRate / 100) * $daysOverdue), 2);
+            }
 
             $totalLateFee += $penalty;
             $totalOverdueBalance += (float)$inst->remaining_balance;
@@ -900,7 +994,7 @@ class ReportController extends Controller
         }
 
         $overdueList = $overdueList->sortByDesc('days_overdue')->values();
-        $totalOverdueContracts = $installments->count();
+        $totalOverdueContracts = $agingFilter ? $overdueList->count() : $allOverdue->count();
 
         return view('admin.reports.overdue', compact(
             'overdueList', 'startDate', 'endDate', 'filter', 'agingFilter',
@@ -1058,32 +1152,95 @@ class ReportController extends Controller
                       ->orWhere('phone', 'like', "%{$search}%");
                 });
             }
+            // Filter only customers with activity in the selected date range:
+            $query->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+                  ->orWhereHas('sales', function($sq) use ($startDate, $endDate) {
+                      $sq->whereBetween('sale_date', [$startDate, $endDate]);
+                  })
+                  ->orWhereHas('installments', function($iq) use ($startDate, $endDate) {
+                      $iq->whereNotIn('status', ['cancelled', 'pending'])
+                         ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+                  })
+                  ->orWhereHas('installments.payments', function($pq) use ($startDate, $endDate) {
+                      $pq->where('status', 'approved')
+                         ->whereBetween('payment_date', [$startDate, $endDate]);
+                  });
+            });
+
             $customers = $query->get();
             $totalCustomers = Customer::count();
             $newCustomers = Customer::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count();
             $activeCustomers = Customer::whereHas('installments', function($q) {
-                $q->where('remaining_balance', '>', 0);
+                $q->where('status', 'active')
+                  ->where('remaining_balance', '>', 0);
             })->count();
             $completedCustomers = max($totalCustomers - $activeCustomers, 0);
 
             $customerList = collect();
             foreach ($customers as $c) {
-                $contractCount = $c->installments->count();
-                $totalPurchase = $c->installments->sum('total_price');
-                $directSalesVal = Sale::where('customer_id', $c->id)->sum('total');
+                $validInstallments = $c->installments->whereNotIn('status', ['cancelled', 'pending']);
+                $contractCount = $validInstallments->count();
+                $totalPurchase = $validInstallments->sum('total_price');
+                $directSales = Sale::where('customer_id', $c->id)->get();
+                $directSalesVal = $directSales->sum('total');
                 $grandPurchase = $totalPurchase + $directSalesVal;
 
                 $paid = $directSalesVal;
-                foreach ($c->installments as $inst) {
+                foreach ($validInstallments as $inst) {
                     $paid += $inst->payments->where('status', 'approved')->sum('amount');
                 }
                 $outstanding = max($grandPurchase - $paid, 0);
-                $statusStr = ($outstanding > 0 || $c->installments->where('status', 'active')->count() > 0) ? 'Active' : 'Completed';
+                $statusStr = ($outstanding > 0 || $validInstallments->where('status', 'active')->count() > 0) ? 'Active' : 'Completed';
+
+                // Determine service types and installment interest types
+                $types = [];
+                $hasInstallment = $validInstallments->count() > 0;
+                $isKm = app()->getLocale() === 'km';
+
+                // Only display Direct Sale if customer actually has standalone direct sales (and is not purely an installment contract)
+                if ($directSales->count() > 0 && !$hasInstallment) {
+                    $types[] = [
+                        'label' => $isKm ? 'លក់ដាច់' : 'Direct Sale',
+                        'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    ];
+                }
+
+                if ($hasInstallment) {
+                    $interestTypeNames = [
+                        'flat'          => $isKm ? 'ការប្រាក់ថេរ' : 'Flat Rate',
+                        'declining'     => $isKm ? 'ដើមថេរ ថយការ' : 'Declining Balance',
+                        'amortization'  => $isKm ? 'ថយដើម ថយការ' : 'EMI',
+                        'bullet'        => $isKm ? 'បង់តែការ' : 'Bullet',
+                        'zero_interest' => $isKm ? 'ការប្រាក់ ០%' : '0% Interest',
+                    ];
+
+                    foreach ($validInstallments as $vInst) {
+                        $hasSettlement = $vInst->payments->where('is_settlement', true)->count() > 0 
+                            || ($vInst->status === 'completed' && (float)$vInst->remaining_balance <= 0);
+
+                        $tKey = $vInst->interest_type ?? 'flat';
+                        $tName = $interestTypeNames[$tKey] ?? ($isKm ? 'បង់រំលស់' : 'Installment');
+
+                        if ($hasSettlement && (float)$vInst->remaining_balance <= 0) {
+                            $types[] = [
+                                'label' => ($isKm ? 'បង់ផ្តាច់ (' : 'Pay-Off (') . $tName . ')',
+                                'class' => 'bg-amber-50 text-amber-700 border-amber-200'
+                            ];
+                        } else {
+                            $types[] = [
+                                'label' => ($isKm ? 'បង់រំលស់ (' : 'Installment (') . $tName . ')',
+                                'class' => 'bg-blue-50 text-blue-700 border-blue-200'
+                            ];
+                        }
+                    }
+                }
 
                 $customerList->push((object)[
                     'name'          => $c->name,
                     'phone'         => $c->phone ?? '-',
                     'contracts'     => $contractCount,
+                    'service_types' => $types,
                     'total_purchase'=> $grandPurchase,
                     'paid'          => $paid,
                     'outstanding'   => $outstanding,
@@ -1108,15 +1265,33 @@ class ReportController extends Controller
             $lowStock = Product::where('stock', '<=', 5)->count();
 
             foreach ($products as $prod) {
-                $soldInSales = DB::table('sale_items')->where('product_id', $prod->id)->sum('quantity');
-                $soldInInstallments = DB::table('installments')->where('product_id', $prod->id)->count();
+                $soldInSales = (int) DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->where('sale_items.product_id', $prod->id)
+                    ->whereBetween('sales.sale_date', [$startDate, $endDate])
+                    ->sum('sale_items.quantity');
+
+                $soldInInstallments = (int) DB::table('installments')
+                    ->where('product_id', $prod->id)
+                    ->whereNotIn('status', ['cancelled', 'pending'])
+                    ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
+                    ->count();
+
                 $prod->sold_qty = $soldInSales + $soldInInstallments;
 
                 $revInSales = (float) DB::table('sale_items')
-                    ->where('product_id', $prod->id)
-                    ->selectRaw('SUM(quantity * price + COALESCE(tax_amount, 0)) as total_sum')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->where('sale_items.product_id', $prod->id)
+                    ->whereBetween('sales.sale_date', [$startDate, $endDate])
+                    ->selectRaw('SUM(sale_items.quantity * sale_items.price + COALESCE(sale_items.tax_amount, 0)) as total_sum')
                     ->value('total_sum');
-                $revInInst = DB::table('installments')->where('product_id', $prod->id)->sum('total_price');
+
+                $revInInst = (float) DB::table('installments')
+                    ->where('product_id', $prod->id)
+                    ->whereNotIn('status', ['cancelled', 'pending'])
+                    ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])
+                    ->sum('total_price');
+
                 $prod->total_revenue = $revInSales + $revInInst;
             }
 
@@ -1133,6 +1308,8 @@ class ReportController extends Controller
 
             if ($statusFilter) {
                 $query->where('status', $statusFilter);
+            } else {
+                $query->whereNotIn('status', ['cancelled', 'pending']);
             }
 
             $installments = $query->latest()->get();
@@ -1140,7 +1317,7 @@ class ReportController extends Controller
             $activeCount = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'active')->count();
             $completedCount = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'completed')->count();
             $overdueCount = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'active')->where('next_due_date', '<', today())->count();
-            $totalOutstanding = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->whereIn('status', ['active', 'pending'])->sum('remaining_balance');
+            $totalOutstanding = Installment::whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate])->where('status', 'active')->sum('remaining_balance');
 
             $installmentList = collect();
             foreach ($installments as $inst) {

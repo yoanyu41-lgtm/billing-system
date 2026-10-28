@@ -51,4 +51,21 @@ class StockMovementController extends Controller
 
         return view('admin.stock_movements.index', compact('movements', 'suggestions'));
     }
+
+    public function destroy(StockMovement $stockMovement)
+    {
+        $user = auth()->user();
+        $isAdmin = strtolower($user->role ?? '') === 'admin' 
+            || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('admin')));
+
+        if (!$isAdmin) {
+            abort(403, 'Only administrators can delete stock movement records.');
+        }
+
+        $stockMovement->delete();
+
+        return redirect()->back()->with('success', app()->getLocale() === 'km' 
+            ? 'បានលុបប្រវត្តិស្តុកជោគជ័យ។' 
+            : 'Stock movement record deleted successfully.');
+    }
 }

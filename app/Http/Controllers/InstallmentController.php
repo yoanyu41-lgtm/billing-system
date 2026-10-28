@@ -137,7 +137,12 @@ class InstallmentController extends Controller
         $monthlyPayment = $preview['first_month_payment'];
         $remainingBalance = $preview['total_repayment'];
 
-        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $interestType, $duration, $monthlyPayment, $remainingBalance) {
+        $user = auth()->user();
+
+        // All newly created installments require admin approval (start with pending status)
+        $initialStatus = 'pending';
+
+        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $interestType, $duration, $monthlyPayment, $remainingBalance, $initialStatus) {
             $inst = Installment::create([
                 'customer_id' => $request->customer_id,
                 'product_id' => $request->product_id,
@@ -151,52 +156,29 @@ class InstallmentController extends Controller
                 'duration_months' => $duration,
                 'monthly_payment' => $monthlyPayment,
                 'remaining_balance' => $remainingBalance,
+                'status' => $initialStatus,
                 'created_by' => auth()->id(),
                 'next_due_date' => now()->addMonth()->toDateString(),
-            ]);
-
-            // Deduct product stock and log stock movement
-            $product->decrement('stock', 1);
-            $product->checkLowStockAlert();
-
-            StockMovement::create([
-                'product_id' => $product->id,
-                'type'       => 'out',
-                'quantity'   => 1,
-                'related_id' => $inst->id,
-                'note'       => 'Installment Contract #INS-' . str_pad($inst->id, 3, '0', STR_PAD_LEFT),
             ]);
 
             return $inst;
         });
 
-        // Send welcoming Telegram message with contract if customer is linked
         $customer = Customer::find($request->customer_id);
-        if ($customer && !empty($customer->telegram_id)) {
-            $contractDownloadLink = route('public.installments.download-contract', $installment->id);
-            $khmerAmount = number_format($installment->total_price, 2);
-            $khmerMonthly = number_format($installment->monthly_payment, 2);
-            
-            $msg = "📄 *កិច្ចសន្យាបង់រំលស់ថ្មី / New Installment Contract*\n\n"
-                . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
-                . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$product->name}* ត្រូវបានបង្កើតឡើងដោយជោគជ័យនៅក្នុងប្រព័ន្ធ។\n"
-                . "• លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
-                . "• តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
-                . "• ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"
-                . "• រយៈពេលបង់រំលស់៖ *{$installment->duration_months} ខែ*\n\n"
-                . "សូមលោកអ្នកទាញយកឯកសារកិច្ចសន្យាបង់រំលស់ផ្លូវការជា PDF ទីនេះ៖ [ទាញយកកិច្ចសន្យា PDF]({$contractDownloadLink})";
 
-            app(TelegramService::class)->sendToCustomer($customer->id, $msg);
-        }
-
+        // Notify that installment plan requires admin approval
         \App\Models\Notification::createSystemNotification(
-            'installment', 'New installment contract',
-            'New installment contract created for customer: ' . ($customer ? $customer->name : 'Unknown'),
-            'file-text', 'orange',
+            'installment', 'Installment requires approval',
+            'New installment contract #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ' created by ' . ($user->name ?? 'User') . ' requires admin approval.',
+            'clock', 'amber',
             route('installments.show', $installment)
         );
 
-        return redirect()->route('installments.index')->with('success', 'Installment created successfully.');
+        $successMsg = app()->getLocale() === 'km' 
+            ? 'គម្រោងបង់រំលស់ត្រូវបានបង្កើតរួចរាល់ និងកំពុងរង់ចាំការឯកភាពពី Admin (Pending Approval)។' 
+            : 'Installment created successfully and is awaiting Admin approval.';
+
+        return redirect()->route('installments.index')->with('success', $successMsg);
     }
 
     public function show(Installment $installment)
@@ -563,8 +545,8 @@ class InstallmentController extends Controller
                 }
             }
 
-            // Handle status change to/from cancelled
-            if ($oldStatus !== 'cancelled' && $newStatus === 'cancelled') {
+            // Handle status change to/from cancelled (only adjust stock if it was active)
+            if ($oldStatus === 'active' && $newStatus === 'cancelled') {
                 $prod = Product::find($oldProductId);
                 if ($prod) {
                     $prod->increment('stock', 1);
@@ -576,7 +558,7 @@ class InstallmentController extends Controller
                         'note'       => 'Cancelled Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
                     ]);
                 }
-            } elseif ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
+            } elseif ($oldStatus === 'cancelled' && $newStatus === 'active') {
                 $prod = Product::find($newProductId);
                 if ($prod) {
                     $prod->decrement('stock', 1);
@@ -601,7 +583,7 @@ class InstallmentController extends Controller
     {
         Gate::authorize('delete-installment');
         DB::transaction(function () use ($installment) {
-            if ($installment->status !== 'cancelled' && $installment->product_id) {
+            if ($installment->status === 'active' && $installment->product_id) {
                 $product = Product::find($installment->product_id);
                 if ($product) {
                     $product->increment('stock', 1);
@@ -651,7 +633,8 @@ class InstallmentController extends Controller
     public function scheduleIndex(Request $request)
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product');
+        $query = Installment::with('customer', 'product')
+            ->where('status', '!=', 'pending');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
@@ -680,7 +663,8 @@ class InstallmentController extends Controller
     public function contractIndex(Request $request)
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product');
+        $query = Installment::with('customer', 'product')
+            ->where('status', '!=', 'cancelled');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
@@ -737,6 +721,20 @@ class InstallmentController extends Controller
     public function printContract(Installment $installment)
     {
         Gate::authorize('manage-installment', $installment);
+
+        if ($installment->status === 'cancelled') {
+            $msg = app()->getLocale() === 'km'
+                ? 'គម្រោងបង់រំលស់នេះត្រូវបានបដិសេធ (Cancelled) មិនអាចបោះពុម្ពកិច្ចសន្យាបានទេ។'
+                : 'This installment plan has been rejected/cancelled and cannot be printed.';
+            return redirect()->route('installments.show', $installment)->with('error', $msg);
+        }
+
+        if ($installment->status === 'pending') {
+            $msg = app()->getLocale() === 'km'
+                ? 'គម្រោងបង់រំលស់នេះកំពុងរង់ចាំការឯកភាពពី Admin (Pending Approval)។ សូម Admin ឯកភាពជាមុនសិន ទើបអាចបោះពុម្ពកិច្ចសន្យាបាន។'
+                : 'This installment plan is pending approval. Admin must approve the contract before it can be printed.';
+            return redirect()->route('installments.show', $installment)->with('error', $msg);
+        }
         
         $customer = $installment->customer;
         $product = $installment->product;
@@ -1094,179 +1092,121 @@ class InstallmentController extends Controller
         return redirect()->route('customers.trash', ['tab' => 'installments'])->with('success', 'Installment permanently deleted.');
     }
 
-    public function returnIndex(Request $request)
+    /**
+     * Admin approves a pending installment plan.
+     */
+    public function approve(Installment $installment)
     {
         $user = auth()->user();
-        if (!$user->hasRole('Admin') && !$user->can('installments.view')) {
-            abort(403);
+        $isAdmin = strtolower($user->role ?? '') === 'admin' 
+            || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('admin')));
+
+        if (!$isAdmin) {
+            abort(403, 'Only administrators can approve installment contracts.');
         }
 
-        $search = $request->get('search');
-
-        $query = Installment::with(['customer', 'product', 'user', 'returnedByUser'])
-            ->where('status', 'returned');
-
-        if (!in_array($user->role, ['admin', 'staff'])) {
-            $query->where('created_by', $user->id);
-        }
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('customer', function ($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                })
-                ->orWhereHas('product', function ($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                })
-                ->orWhere('id', 'like', "%" . ltrim($search, '0') . "%");
-            });
-        }
-
-        $installments = $query->latest('returned_at')->latest('id')->paginate(10)->withQueryString();
-        $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
-
-        $returnedCount = $installments->total();
-
-        // Active installments available to return (for the + Add Return modal)
-        $availableInstallmentsQuery = Installment::with(['customer', 'product'])
-            ->whereIn('status', ['active', 'ongoing'])
-            ->where('remaining_balance', '>', 0);
-        if (!in_array($user->role, ['admin', 'staff'])) {
-            $availableInstallmentsQuery->where('created_by', $user->id);
-        }
-        $availableInstallments = $availableInstallmentsQuery->latest('id')->get();
-
-        return view('installments.return-index', compact('installments', 'exchangeRate', 'returnedCount', 'availableInstallments'));
-    }
-
-    public function processReturn(Request $request, Installment $installment)
-    {
-        Gate::authorize('manage-installment', $installment);
-
-        if ($installment->status === 'returned') {
+        if ($installment->status !== 'pending') {
             return redirect()->back()->with('error', app()->getLocale() === 'km' 
-                ? 'កិច្ចសន្យានេះត្រូវបានដកហូត/ប្រគល់ទំនិញរួចរាល់ហើយ!' 
-                : 'This installment plan has already been returned/repossessed.');
+                ? 'គម្រោងបង់រំលស់នេះមិនស្ថិតក្នុងស្ថានភាពរង់ចាំការឯកភាពឡើយ។' 
+                : 'This installment plan is not pending approval.');
         }
-
-        $request->validate([
-            'return_date'    => 'required|date',
-            'return_reason'  => 'nullable|string|max:1000',
-            'restock'        => 'nullable|boolean',
-        ]);
-
-        $restock = $request->boolean('restock', true);
-        $returnDate = $request->return_date ? \Carbon\Carbon::parse($request->return_date) : now();
-        $reason = $request->return_reason;
-
-        // Auto ensure columns exist in installments table before starting transaction (DDL causes implicit commit)
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
-            try {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE installments MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'active'");
-            } catch (\Throwable $e) {}
-
-            try {
-                \Illuminate\Support\Facades\Schema::table('installments', function (\Illuminate\Database\Schema\Blueprint $table) {
-                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
-                        $table->dateTime('returned_at')->nullable()->after('status');
-                    }
-                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_by')) {
-                        $table->unsignedBigInteger('returned_by')->nullable()->after('returned_at');
-                    }
-                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'return_reason')) {
-                        $table->text('return_reason')->nullable()->after('returned_by');
-                    }
-                    if (!\Illuminate\Support\Facades\Schema::hasColumn('installments', 'return_restock')) {
-                        $table->boolean('return_restock')->default(true)->after('return_reason');
-                    }
-                });
-            } catch (\Throwable $e) {}
-        }
-
-        DB::transaction(function () use ($installment, $restock, $returnDate, $reason) {
-            // 1. Update installment status
-            $installmentData = [
-                'status'            => 'returned',
-                'remaining_balance' => 0.00,
-            ];
-
-            if (\Illuminate\Support\Facades\Schema::hasColumn('installments', 'returned_at')) {
-                $installmentData['returned_at']    = $returnDate;
-                $installmentData['returned_by']    = auth()->id();
-                $installmentData['return_reason']  = $reason;
-                $installmentData['return_restock'] = $restock;
-            }
-
-            $installment->update($installmentData);
-
-            // 2. Put product back to stock if requested
-            if ($restock && $installment->product_id) {
-                $product = Product::find($installment->product_id);
-                if ($product) {
-                    $product->increment('stock', 1);
-                    StockMovement::create([
-                        'product_id' => $product->id,
-                        'type'       => 'in',
-                        'quantity'   => 1,
-                        'related_id' => $installment->id,
-                        'note'       => 'Return/Repossess Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ($reason ? ' - ' . $reason : ''),
-                    ]);
-                }
-            }
-
-            // 3. System Notification
-            \App\Models\Notification::createSystemNotification(
-                'installment', 'Product Returned / Repossessed',
-                'Customer ' . ($installment->customer?->name ?? 'N/A') . ' returned item for Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
-                'undo', 'amber',
-                route('installments.show', $installment)
-            );
-        });
-
-        $msg = app()->getLocale() === 'km' 
-            ? 'បានទទួលទំនិញមកវិញ និងបិទបញ្ចប់កិច្ចសន្យាដោយជោគជ័យ' . ($restock ? ' (ទំនិញត្រូវបានបញ្ចូលក្នុងស្តុកវិញ)' : '') 
-            : 'Product returned successfully and contract closed' . ($restock ? ' (Item restored to stock)' : '');
-
-        return redirect()->back()->with('success', $msg);
-    }
-
-    public function printReturnCertificate(Installment $installment)
-    {
-        Gate::authorize('manage-installment', $installment);
-
-        if ($installment->status !== 'returned') {
-            $errorMsg = app()->getLocale() === 'km' 
-                ? 'កិច្ចសន្យានេះមិនមែនជាប្រភេទដកហូត ឬប្រគល់ទំនិញមកវិញឡើយ។' 
-                : 'This installment plan has not been returned.';
-            return redirect()->route('installments.show', $installment)->with('error', $errorMsg);
-        }
-
-        $installment->load(['customer', 'product', 'returnedByUser', 'payments' => function ($q) {
-            $q->where('status', 'approved')->orderBy('payment_date')->orderBy('id');
-        }]);
 
         $customer = $installment->customer;
         $product = $installment->product;
 
-        $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
-        $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+        if ($product && $product->stock <= 0) {
+            return redirect()->back()->with('error', app()->getLocale() === 'km' 
+                ? 'ទំនិញនេះអស់ពីស្តុកហើយ មិនអាចឯកភាពបានទេ។' 
+                : 'This product is out of stock and cannot be approved.');
+        }
 
-        // Sum of all approved payments before return
-        $totalPaid = $installment->payments->sum('amount');
+        DB::transaction(function () use ($installment, $product) {
+            $installment->update([
+                'status' => 'active',
+            ]);
 
-        // Payment Schedule to compare
-        $schedule = $installment->getPaymentSchedule();
+            // Deduct product stock upon Admin approval
+            if ($product) {
+                $product->decrement('stock', 1);
+                $product->checkLowStockAlert();
 
-        return view('installments.return-certificate', compact(
-            'installment',
-            'customer',
-            'product',
-            'totalPaid',
-            'schedule',
-            'settings',
-            'exchangeRate'
-        ));
+                StockMovement::create([
+                    'product_id' => $product->id,
+                    'type'       => 'out',
+                    'quantity'   => 1,
+                    'related_id' => $installment->id,
+                    'note'       => 'Installment Contract #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ' (Approved)',
+                ]);
+            }
+        });
+
+        // Send welcoming Telegram message with contract if customer is linked
+        if ($customer && !empty($customer->telegram_id)) {
+            $contractDownloadLink = route('public.installments.download-contract', $installment->id);
+            $khmerAmount = number_format($installment->total_price, 2);
+            $khmerMonthly = number_format($installment->monthly_payment, 2);
+            
+            $msg = "📄 *កិច្ចសន្យាបង់រំលស់ត្រូវបានឯកភាព / Installment Contract Approved*\n\n"
+                . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
+                . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$product->name}* ត្រូវបាន Admin ឯកភាពអនុម័តរួចរាល់ហើយ។\n"
+                . "• លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
+                . "• តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
+                . "• ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"
+                . "• រយៈពេលបង់រំលស់៖ *{$installment->duration_months} ខែ*\n\n"
+                . "សូមលោកអ្នកទាញយកឯកសារកិច្ចសន្យាបង់រំលស់ផ្លូវការជា PDF ទីនេះ៖ [ទាញយកកិច្ចសន្យា PDF]({$contractDownloadLink})";
+
+            app(TelegramService::class)->sendToCustomer($customer->id, $msg);
+        }
+
+        // Notify Creator / System that plan is approved
+        \App\Models\Notification::createSystemNotification(
+            'installment', 'Installment Approved',
+            'Installment contract #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ' has been approved by ' . ($user->name ?? 'Admin') . '.',
+            'check-circle', 'emerald',
+            route('installments.show', $installment)
+        );
+
+        return redirect()->back()->with('success', app()->getLocale() === 'km' 
+            ? 'គម្រោងបង់រំលស់ត្រូវបាន Admin ឯកភាពដោយជោគជ័យ។' 
+            : 'Installment contract approved successfully.');
+    }
+
+    /**
+     * Admin rejects a pending installment plan.
+     */
+    public function reject(Request $request, Installment $installment)
+    {
+        $user = auth()->user();
+        $isAdmin = strtolower($user->role ?? '') === 'admin' 
+            || (method_exists($user, 'hasRole') && ($user->hasRole('Admin') || $user->hasRole('admin')));
+
+        if (!$isAdmin) {
+            abort(403, 'Only administrators can reject installment contracts.');
+        }
+
+        if ($installment->status !== 'pending') {
+            return redirect()->back()->with('error', app()->getLocale() === 'km' 
+                ? 'គម្រោងបង់រំលស់នេះមិនស្ថិតក្នុងស្ថានភាពរង់ចាំការឯកភាពឡើយ។' 
+                : 'This installment plan is not pending approval.');
+        }
+
+        DB::transaction(function () use ($installment) {
+            $installment->update([
+                'status' => 'cancelled',
+            ]);
+        });
+
+        // Notify creator / system
+        \App\Models\Notification::createSystemNotification(
+            'installment', 'Installment Rejected',
+            'Installment contract #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ' was rejected by ' . ($user->name ?? 'Admin') . '.',
+            'times-circle', 'rose',
+            route('installments.show', $installment)
+        );
+
+        return redirect()->back()->with('success', app()->getLocale() === 'km' 
+            ? 'គម្រោងបង់រំលស់ត្រូវបានបដិសេធដោយជោគជ័យ។' 
+            : 'Installment contract rejected successfully.');
     }
 }
+

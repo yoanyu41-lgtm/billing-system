@@ -90,6 +90,16 @@
                     <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required placeholder="example@domain.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs font-mono">
                 </div>
 
+                <!-- Telegram Chat ID -->
+                <div>
+                    <label for="telegram_id" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-sky-500">✈️</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'Telegram Chat ID (សម្រាប់ទទួលដំណឹង)' : 'Telegram Chat ID (For Alerts)' }}</span>
+                    </label>
+                    <input type="text" name="telegram_id" id="telegram_id" value="{{ old('telegram_id', $user->telegram_id) }}" placeholder="e.g. 123456789" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs font-mono">
+                    <p class="text-[10px] text-slate-400 mt-1">{{ app()->getLocale() === 'km' ? 'លេខសម្គាល់ Telegram សម្រាប់ទទួលសារ Alert ពេលមានអ្នក Register ថ្មី' : 'Your Telegram User ID to receive new registration alerts' }}</p>
+                </div>
+
                 <!-- Password (Optional on edit) -->
                 <div>
                     <label for="password" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
@@ -109,6 +119,20 @@
                     <select name="role" id="role" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
                         <option value="Admin" {{ $currentRole === 'admin' ? 'selected' : '' }}>Admin (អ្នកគ្រប់គ្រងទូទៅ)</option>
                         <option value="Staff" {{ $currentRole !== 'admin' ? 'selected' : '' }}>Staff (បុគ្គលិក)</option>
+                    </select>
+                </div>
+
+                <!-- Account Status Selection -->
+                <div>
+                    <label for="status" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-indigo-600">⚡</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'ស្ថានភាពគណនី (Status)' : 'Account Status' }} <span class="text-rose-500">*</span></span>
+                    </label>
+                    @php $currentStatus = old('status', $user->status ?? 'active'); @endphp
+                    <select name="status" id="status" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs">
+                        <option value="active" {{ $currentStatus === 'active' ? 'selected' : '' }}>✅ សកម្ម (Active / Approved)</option>
+                        <option value="pending" {{ $currentStatus === 'pending' ? 'selected' : '' }}>⏳ រង់ចាំអនុម័ត (Pending Approval)</option>
+                        <option value="suspended" {{ $currentStatus === 'suspended' ? 'selected' : '' }}>⛔ ផ្អាកដំណើរការ (Suspended)</option>
                     </select>
                 </div>
             </div>

@@ -141,29 +141,39 @@
 
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <?php if($installment->status === 'active' || $installment->status === 'ongoing'): ?>
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                            <?php if(in_array($installment->status, ['active', 'approved', 'ongoing'])): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fas fa-check-circle text-xs text-emerald-600"></i>
                                     <?php echo e(__('app.active')); ?>
 
                                 </span>
-                            <?php elseif($installment->status === 'completed' || $installment->status === 'paid'): ?>
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                            <?php elseif($installment->status === 'pending'): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fas fa-clock text-xs text-amber-600"></i>
+                                    <?php echo e(__('app.pending')); ?>
+
+                                </span>
+                            <?php elseif(in_array($installment->status, ['completed', 'paid'])): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                    <i class="fas fa-check-double text-xs text-blue-600"></i>
                                     <?php echo e(__('app.completed')); ?>
 
                                 </span>
                             <?php elseif($installment->status === 'returned'): ?>
-                                <span class="px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full bg-rose-100 text-rose-800 border border-rose-200">
-                                    <i class="fas fa-undo-alt text-[10px]"></i>
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    <i class="fas fa-undo-alt text-xs text-rose-600"></i>
                                     <?php echo e(__('app.returned')); ?>
 
                                 </span>
-                            <?php elseif($installment->status === 'cancelled'): ?>
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                            <?php elseif(in_array($installment->status, ['cancelled', 'failed', 'rejected'])): ?>
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-red-50 text-red-700 border border-red-200">
+                                    <i class="fas fa-times-circle text-xs text-red-600"></i>
                                     <?php echo e(__('app.cancelled')); ?>
 
                                 </span>
                             <?php else: ?>
-                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                                <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                                    <i class="fas fa-info-circle text-xs text-gray-500"></i>
                                     <?php echo e(__('app.' . $installment->status) !== 'app.' . $installment->status ? __('app.' . $installment->status) : $installment->status); ?>
 
                                 </span>
@@ -185,7 +195,7 @@
                                         'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                     ],
                                     'amortization' => [
-                                        'label' => $isKm ? 'ការរំលស់ថយដើមថយការ' : 'Amortization',
+                                        'label' => $isKm ? 'ការរំលស់ថយដើមថយការ' : 'Declining Balance / EMI',
                                         'sub' => $isKm ? '' : '',
                                         'class' => 'bg-purple-50 text-purple-700 border-purple-200'
                                     ],
@@ -209,6 +219,24 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end items-center gap-1.5">
+                                <?php if(auth()->user()->role === 'admin' && $installment->status === 'pending'): ?>
+                                    
+                                    <form method="POST" action="<?php echo e(route('installments.approve', $installment)); ?>" class="inline-block" onsubmit="return confirm('<?php echo e(app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់ឯកភាពគម្រោងបង់រំលស់នេះមែនទេ?' : 'Are you sure you want to approve this installment plan?'); ?>')">
+                                        <?php echo csrf_field(); ?>
+                                        <button type="submit" class="p-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-900 rounded-lg transition duration-150 shadow-xs border border-emerald-200" title="<?php echo e(app()->getLocale() === 'km' ? 'ឯកភាពគម្រោង (Approve)' : 'Approve Plan'); ?>">
+                                            <i class="fas fa-check text-sm"></i>
+                                        </button>
+                                    </form>
+
+                                    
+                                    <form method="POST" action="<?php echo e(route('installments.reject', $installment)); ?>" class="inline-block" onsubmit="return confirm('<?php echo e(app()->getLocale() === 'km' ? 'តើអ្នកប្រាកដជាចង់បដិសេធគម្រោងបង់រំលស់នេះ ហើយបញ្ចូលទំនិញចូលក្នុងស្តុកវិញមែនទេ?' : 'Are you sure you want to reject this plan and return item to stock?'); ?>')">
+                                        <?php echo csrf_field(); ?>
+                                        <button type="submit" class="p-2 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:text-rose-900 rounded-lg transition duration-150 shadow-xs border border-rose-200" title="<?php echo e(app()->getLocale() === 'km' ? 'បដិសេធ (Reject)' : 'Reject Plan'); ?>">
+                                            <i class="fas fa-times text-sm"></i>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+
                                 <a href="<?php echo e(route('installments.show', $installment)); ?>" class="p-2 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 rounded-lg transition duration-150" title="<?php echo e(__('app.view')); ?>">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                 </a>

@@ -26,7 +26,7 @@ class InstallmentCalculationService
             ],
             self::TYPE_AMORTIZATION => [
                 'name_km' => 'ការរំលស់ថយដើមថយការ',
-                'name_en' => 'Amortization (Annuity)',
+                'name_en' => 'Declining Balance / EMI',
                 'desc_km' => 'ទឹកប្រាក់បង់សរុបថេរស្មើគ្នាជារៀងរាល់ខែ (តាមបែបធនាគារ)',
             ],
             self::TYPE_ZERO_INTEREST => [
@@ -123,9 +123,8 @@ class InstallmentCalculationService
                     if ($m === $duration) {
                         // Month 12: Principal is exactly the remaining balance
                         $p = $balance;
-                        // Keep total monthly payment constant equal to $pmt (like Excel/banking schedule)
-                        $total = $pmt;
-                        $interest = round(max($total - $p, 0), 2);
+                        $interest = round($balance * $monthlyRate, 2);
+                        $total = round($p + $interest, 2);
                         $balance = 0.00;
                     } else {
                         $interest = round($balance * $monthlyRate, 2);
@@ -196,13 +195,14 @@ class InstallmentCalculationService
                 $monthlyTotal = round($basePrincipal + $monthlyInterest, 2);
 
                 for ($m = 1; $m <= $duration; $m++) {
-                    $p = $basePrincipal;
                     $interest = $monthlyInterest;
-                    $total = $monthlyTotal;
-
                     if ($m === $duration) {
+                        $p = $balance;
+                        $total = round($p + $interest, 2);
                         $balance = 0.00;
                     } else {
+                        $p = $basePrincipal;
+                        $total = $monthlyTotal;
                         $balance = round(max($balance - $p, 0), 2);
                     }
 

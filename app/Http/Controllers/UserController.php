@@ -28,6 +28,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'telegram_id' => 'nullable|string|max:50',
             'password' => 'required|min:6',
             'role' => 'required|string',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -43,8 +44,10 @@ class UserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'telegram_id' => $request->telegram_id,
             'password' => Hash::make($request->password),
             'role' => strtolower($roleName),
+            'status' => 'active',
             'profile_image' => $profileImagePath,
         ]);
 
@@ -66,12 +69,17 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'telegram_id' => 'nullable|string|max:50',
             'role' => 'required|string',
+            'status' => 'nullable|in:active,pending,suspended',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $data = $request->only(['name', 'email']);
+        $data = $request->only(['name', 'email', 'telegram_id']);
         $data['role'] = strtolower($request->role);
+        if ($request->filled('status')) {
+            $data['status'] = $request->status;
+        }
 
         // Handle image removal
         if ($request->input('remove_image') == '1') {
@@ -108,6 +116,22 @@ class UserController extends Controller
     {
         $user->update(['password' => Hash::make('password')]);
         return redirect()->route('admin.users.index')->with('success', 'ពាក្យសម្ងាត់ត្រូវបានកំណត់ឡើងវិញទៅជា "password"');
+    }
+
+    public function toggleStatus(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.index')->with('error', 'អ្នកមិនអាចផ្លាស់ប្តូរស្ថានភាពគណនីផ្ទាល់ខ្លួនបានទេ!');
+        }
+
+        $newStatus = $user->status === 'active' ? 'suspended' : 'active';
+        $user->update(['status' => $newStatus]);
+
+        $message = $newStatus === 'active'
+            ? "គណនីរបស់ {$user->name} ត្រូវបានអនុម័ត (Approve) ឱ្យដំណើរការជោគជ័យ!"
+            : "គណនីរបស់ {$user->name} ត្រូវបានផ្អាកដំណើរការ (Suspended)!";
+
+        return redirect()->route('admin.users.index')->with('success', $message);
     }
 
     public function restore($id)

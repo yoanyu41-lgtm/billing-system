@@ -449,16 +449,22 @@ unset($__errorArgs, $__bag); ?>
                     </div>
 
                     <!-- Submit Action Bar -->
-                    <div class="flex items-center justify-end gap-3 pt-2">
-                        <a href="<?php echo e(route('installments.index')); ?>"
-                           class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition shadow-sm">
-                            <?php echo e(__('app.cancel')); ?>
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                        <div class="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-2">
+                            <i class="fas fa-clock text-amber-600"></i>
+                            <span lang="km"><?php echo e(app()->getLocale() === 'km' ? 'គម្រោងដែលបានបង្កើតនឹងមានស្ថានភាព «រង់ចាំការឯកភាព» (Pending) ហើយតម្រូវឱ្យ Admin ចុចឯកភាពទើបចូលជាធរមាន។' : 'New installment contracts are created in Pending status and require Admin approval to be officially activated.'); ?></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <a href="<?php echo e(route('installments.index')); ?>"
+                               class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition shadow-sm">
+                                <?php echo e(__('app.cancel')); ?>
 
-                        </a>
-                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition cursor-pointer flex items-center gap-2">
-                            <i class="fas fa-check-circle"></i>
-                            <span lang="km"><?php echo e(__('app.save')); ?></span>
-                        </button>
+                            </a>
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition cursor-pointer flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i>
+                                <span lang="km"><?php echo e(__('app.save')); ?></span>
+                            </button>
+                        </div>
                     </div>
 
                 </form>

@@ -14,18 +14,6 @@
 
             </p>
         </div>
-        <div>
-            <form method="POST" action="<?php echo e(route('late-payments.due-reminders')); ?>">
-                <?php echo csrf_field(); ?>
-                <button type="submit" 
-                        onclick="return confirm('តើលោកអ្នកពិតជាចង់ផ្ញើសាររំលឹកជាភាសាខ្មែរ ទៅកាន់អតិថិជនដល់ថ្ងៃកំណត់ទាំងអស់មែនទេ?')"
-                        class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition duration-150 flex items-center gap-2 text-sm shadow-md border-0 cursor-pointer"
-                >
-                    <i class="fab fa-telegram-plane text-base"></i>
-                    <span><?php echo e(app()->getLocale() === 'km' ? 'ផ្ញើសេចក្តីជូនដំណឹងតាម Telegram' : 'Send Reminder via Telegram'); ?></span>
-                </button>
-            </form>
-        </div>
     </div>
 
     <!-- Alert Notices -->
@@ -45,7 +33,7 @@
         </div>
     <?php endif; ?>
 
-    <!-- 1. ស្វែងរក និងតម្រៀប (Search & Filter Bar) -->
+    <!-- 1. ស្វែងរក (Search Bar) -->
     <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-4">
         <form method="GET" action="<?php echo e(route('late-payments.index')); ?>" class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
             <!-- Search Text -->
@@ -56,38 +44,12 @@
                        class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
 
-            <!-- Product Filter -->
-            <div class="w-full lg:w-48">
-                <select name="product_id" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    <option value=""><?php echo e(app()->getLocale() === 'km' ? 'All Products (ផលិតផលទាំងអស់)' : 'All Products'); ?></option>
-                    <?php $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $prod): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($prod->id); ?>" <?php echo e(request('product_id') == $prod->id ? 'selected' : ''); ?>>
-                            <?php echo e($prod->name); ?>
-
-                        </option>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                </select>
-            </div>
-
-            <!-- Days Late Range Filter -->
-            <div class="w-full lg:w-48">
-                <select name="days_range" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    <option value=""><?php echo e(app()->getLocale() === 'km' ? 'All Overdue Days (ថ្ងៃយឺតទាំងអស់)' : 'All Overdue Days'); ?></option>
-                    <option value="1-7" <?php echo e(request('days_range') == '1-7' ? 'selected' : ''); ?>>1 - 7 <?php echo e(app()->getLocale() === 'km' ? 'ថ្ងៃ' : 'Days'); ?></option>
-                    <option value="8-15" <?php echo e(request('days_range') == '8-15' ? 'selected' : ''); ?>>8 - 15 <?php echo e(app()->getLocale() === 'km' ? 'ថ្ងៃ' : 'Days'); ?></option>
-                    <option value="16+" <?php echo e(request('days_range') == '16+' ? 'selected' : ''); ?>>16+ <?php echo e(app()->getLocale() === 'km' ? 'ថ្ងៃឡើងទៅ' : 'Days'); ?></option>
-                </select>
-            </div>
-
             <!-- Buttons -->
             <div class="flex items-center gap-2">
                 <button type="submit" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition flex items-center gap-2">
                     <i class="fas fa-search text-xs"></i>
                     <span>Search</span>
                 </button>
-                <a href="<?php echo e(route('late-payments.index')); ?>" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition text-center">
-                    Reset
-                </a>
             </div>
         </form>
     </div>

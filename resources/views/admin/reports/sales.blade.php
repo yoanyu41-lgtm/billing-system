@@ -137,7 +137,7 @@
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'លេខវិក្កយបត្រ' : 'Invoice Number' }}</th>
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'កាលបរិច្ឆេទ' : 'Date' }}</th>
                             <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'អតិថិជន' : 'Customer' }}</th>
-                            <th class="py-3.5 px-4 font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'មុខទំនិញ' : 'Product' }}</th>
+                            <th class="py-3.5 px-4 font-bold" style="min-width: 200px; max-width: 280px; width: 260px;">{{ app()->getLocale() === 'km' ? 'មុខទំនិញ' : 'Product' }}</th>
                             <th class="py-3.5 px-4 text-center font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'ចំនួន' : 'Qty' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'តម្លៃឯកតា' : 'Unit Price' }}</th>
                             <th class="py-3.5 px-4 text-right font-bold whitespace-nowrap">{{ app()->getLocale() === 'km' ? 'បញ្ចុះតម្លៃ' : 'Discount' }}</th>
@@ -159,8 +159,10 @@
                             <td class="py-3.5 px-4 font-semibold text-slate-900">
                                 {{ $item->customer }}
                             </td>
-                            <td class="py-3.5 px-4 text-slate-700">
-                                {{ $item->product }}
+                            <td class="py-3.5 px-4 text-slate-700" style="min-width: 200px; max-width: 280px; width: 260px; white-space: normal;">
+                                <div style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; word-break: break-word;" title="{{ $item->product }}">
+                                    {{ $item->product }}
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 text-center font-bold text-slate-800">
                                 {{ $item->quantity }}
@@ -174,27 +176,27 @@
                             <td class="py-3.5 px-4 text-right font-black text-slate-900">
                                 ${{ number_format($item->total, 2) }}
                             </td>
-                            <td class="py-3.5 px-4 text-center">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 @if($item->sale_type === 'Direct')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'លក់ដាច់' : 'Direct' }}
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'បង់រំលស់' : 'Installment' }}
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3.5 px-4 text-slate-700 font-medium">
+                            <td class="py-3.5 px-4 text-slate-700 font-medium whitespace-nowrap">
                                 {{ $item->cashier }}
                             </td>
-                            <td class="py-3.5 px-4 text-center">
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                 @if(strtolower($item->status) === 'completed' || strtolower($item->status) === 'paid')
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#dcfce7] text-[#16a34a] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'បានបញ្ចប់' : 'Completed' }}
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7]">
+                                    <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e0f2fe] text-[#0284c7] whitespace-nowrap">
                                         {{ app()->getLocale() === 'km' ? 'សកម្ម' : 'Active' }}
                                     </span>
                                 @endif

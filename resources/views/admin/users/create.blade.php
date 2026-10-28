@@ -85,6 +85,16 @@
                     <input type="email" name="email" id="email" value="{{ old('email') }}" required placeholder="example@domain.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs font-mono">
                 </div>
 
+                <!-- Telegram Chat ID -->
+                <div>
+                    <label for="telegram_id" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <span class="text-sky-500">✈️</span>
+                        <span>{{ app()->getLocale() === 'km' ? 'Telegram Chat ID (សម្រាប់ទទួលដំណឹង)' : 'Telegram Chat ID (For Alerts)' }}</span>
+                    </label>
+                    <input type="text" name="telegram_id" id="telegram_id" value="{{ old('telegram_id') }}" placeholder="e.g. 123456789" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-2xs font-mono">
+                    <p class="text-[10px] text-slate-400 mt-1">{{ app()->getLocale() === 'km' ? 'លេខសម្គាល់ Telegram សម្រាប់ទទួលសារ Alert ពេលមានអ្នក Register ថ្មី' : 'Your Telegram User ID to receive new registration alerts' }}</p>
+                </div>
+
                 <!-- Password -->
                 <div>
                     <label for="password" class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
