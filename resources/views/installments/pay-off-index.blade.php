@@ -42,7 +42,7 @@
     @if(session('error'))
         <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm">{{ session('error') }}</div>
     @endif
-    @if ($errors->any())
+    @if(isset($errors) && $errors->any())
         <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm">
             <ul class="list-disc pl-5 space-y-1">
                 @foreach ($errors->all() as $error)
@@ -107,9 +107,18 @@
                             <div class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</div>
                         </td>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
-                                {{ $installment->product?->name ?? 'N/A' }}
-                            </div>
+                            @if($installment->items && $installment->items->count() > 1)
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->products_summary }}">
+                                    {{ $installment->items->first()->product?->name ?? 'N/A' }}
+                                </div>
+                                <div class="text-[11px] text-indigo-600 font-medium">
+                                    +{{ $installment->items->count() - 1 }} {{ app()->getLocale() === 'km' ? 'មុខទៀត' : 'more' }}
+                                </div>
+                            @else
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                    {{ $installment->product?->name ?? 'N/A' }}
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900">{{ $installment->duration_months }} {{ __('app.duration_unit') }}</div>
@@ -193,7 +202,7 @@
             <form method="POST" action="{{ route('installments.pay-off', $installment) }}" id="payoff-form-{{ $installment->id }}" class="p-6 space-y-4">
                 @csrf
                 @php
-                    $initPayoffType = $defaultPayoffType ?? 'principal_only';
+                    $initPayoffType = $installment->configured_payoff_type ?? $defaultPayoffType ?? 'principal_only';
                 @endphp
                 <input type="hidden" name="installment_id" value="{{ $installment->id }}">
                 <input type="hidden" name="payoff_type" id="payoff_type_{{ $installment->id }}" value="{{ $initPayoffType }}">

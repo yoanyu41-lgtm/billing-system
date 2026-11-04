@@ -588,39 +588,58 @@
             <!-- Product Information -->
             <div class="card-box">
                 <div class="card-header-bar">
-                    <i class="fas fa-laptop"></i> {{ $L('ព័ត៌មានផលិតផល (Product Details)', 'PRODUCT DETAILS') }}
+                    <i class="fas fa-boxes-stacked"></i> {{ $L('ព័ត៌មានផលិតផល (Product Details)', 'PRODUCT DETAILS') }}
+                    @if($installment->items && $installment->items->count() > 1)
+                        <span style="margin-left: auto; font-size: 8.5px; font-weight: 700; color: #000;">({{ $installment->items->count() }} មុខទំនិញ)</span>
+                    @endif
                 </div>
                 <div class="card-body">
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('ឈ្មោះផលិតផល', 'Product Name') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productName }}</div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('លេខកូដទំនិញ', 'Product Code') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productCode }}</div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('ប្រភេទផលិតផល', 'Category') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productCategory }}</div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('ម៉ាកយីហោ', 'Brand') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productBrand }}</div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('ស្ថានភាពទំនិញ', 'Condition') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productCondition }}</div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label">{{ $L('ការធានា', 'Warranty') }}</div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value">{{ $productWarranty }}</div>
-                    </div>
+                    @if($installment->items && $installment->items->count() > 1)
+                        <div style="display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">
+                            @foreach($installment->items as $idx => $it)
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 9px; padding: 2px 0; border-bottom: 1px dashed #e2e8f0;">
+                                    <div>
+                                        <b>{{ $idx + 1 }}. {{ $it->product?->name ?? 'N/A' }}</b>
+                                        <span style="color: #666; font-size: 8.5px;">(Qty: {{ $it->quantity }} × ${{ number_format($it->price, 2) }})</span>
+                                    </div>
+                                    <div style="font-weight: 700; color: #000;">
+                                        ${{ number_format($it->total, 2) }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('ឈ្មោះផលិតផល', 'Product Name') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productName }}</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('លេខកូដទំនិញ', 'Product Code') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productCode }}</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('ប្រភេទផលិតផល', 'Category') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productCategory }}</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('ម៉ាកយីហោ', 'Brand') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productBrand }}</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('ស្ថានភាពទំនិញ', 'Condition') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productCondition }}</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label">{{ $L('ការធានា', 'Warranty') }}</div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value">{{ $productWarranty }}</div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -671,6 +690,20 @@
                         <div class="kv-label">{{ $L('រយៈពេលរំលស់', 'Duration') }}</div>
                         <div class="kv-sep">:</div>
                         <div class="kv-value">{{ $installment->duration_months }} {{ __('app.months') }}</div>
+                    </div>
+                    <div class="kv-row">
+                        <div class="kv-label">{{ $L('លក្ខខណ្ឌបង់ផ្តាច់', 'Early Payoff Policy') }}</div>
+                        <div class="kv-sep">:</div>
+                        <div class="kv-value">
+                            @php
+                                $minPayoffMonths = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                            @endphp
+                            @if($minPayoffMonths > 0)
+                                {{ $L("បង់បានយ៉ាងតិច {$minPayoffMonths} ខែ", "Minimum {$minPayoffMonths} months paid") }}
+                            @else
+                                {{ $L('អាចបង់ផ្តាច់បានគ្រប់ពេល', 'Allowed anytime') }}
+                            @endif
+                        </div>
                     </div>
                     <div class="kv-row" style="background: #f8fafc; padding: 4px 0;">
                         <div class="kv-label" style="font-weight: 800;">{{ $L('ប្រាក់ត្រូវបង់ប្រចាំខែ', 'Monthly Payment') }}</div>

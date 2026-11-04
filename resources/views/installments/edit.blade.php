@@ -158,21 +158,39 @@
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
                                     ទំនិញ / Product <span class="text-red-500">*</span>
                                 </label>
-                                <div class="relative">
-                                    <i class="fas fa-box ic-field-icon"></i>
-                                    <select name="product_id" id="productId" class="ic-input pl-9 font-medium" required>
-                                        @foreach($products as $p)
-                                            <option value="{{ $p->id }}" 
-                                                    data-price="{{ $p->price }}" 
-                                                    data-taxable="{{ $p->is_taxable ? '1' : '0' }}"
-                                                    data-taxrate="{{ $p->tax_rate }}"
-                                                    data-taxtype="{{ $p->tax_type ?? 'exclusive' }}"
-                                                    {{ old('product_id', $installment->product_id) == $p->id ? 'selected' : '' }}>
-                                                {{ $p->name }} (${{ number_format($p->price, 2) }}) - {{ __('app.stock') ?? 'Stock' }}: {{ $p->stock }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                @if($installment->items && $installment->items->count() > 1)
+                                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                        <div class="text-xs font-bold text-indigo-700 mb-1 flex items-center justify-between">
+                                            <span><i class="fas fa-boxes-stacked mr-1"></i> មានទំនិញ {{ $installment->items->count() }} មុខ</span>
+                                            <span class="text-slate-500 font-normal">({{ $installment->items->sum('quantity') }} items)</span>
+                                        </div>
+                                        <div class="text-xs text-slate-600 divide-y divide-slate-100 max-h-36 overflow-y-auto">
+                                            @foreach($installment->items as $it)
+                                                <div class="py-1.5 flex justify-between items-center">
+                                                    <span class="font-medium text-slate-800 truncate pr-2">• {{ $it->product?->name ?? 'N/A' }} ({{ $it->quantity }}x)</span>
+                                                    <span class="font-bold text-slate-700 shrink-0">${{ number_format($it->total, 2) }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="product_id" id="productId" value="{{ $installment->product_id }}">
+                                @else
+                                    <div class="relative">
+                                        <i class="fas fa-box ic-field-icon"></i>
+                                        <select name="product_id" id="productId" class="ic-input pl-9 font-medium" required>
+                                            @foreach($products as $p)
+                                                <option value="{{ $p->id }}" 
+                                                        data-price="{{ $p->price }}" 
+                                                        data-taxable="{{ $p->is_taxable ? '1' : '0' }}"
+                                                        data-taxrate="{{ $p->tax_rate }}"
+                                                        data-taxtype="{{ $p->tax_type ?? 'exclusive' }}"
+                                                        {{ old('product_id', $installment->product_id) == $p->id ? 'selected' : '' }}>
+                                                    {{ $p->name }} (${{ number_format($p->price, 2) }}) - {{ __('app.stock') ?? 'Stock' }}: {{ $p->stock }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -286,6 +304,24 @@
                                            value="{{ old('first_payment_date', $installment->first_payment_date ? \Carbon\Carbon::parse($installment->first_payment_date)->format('Y-m-d') : ($installment->next_due_date ? \Carbon\Carbon::parse($installment->next_due_date)->format('Y-m-d') : '')) }}"
                                            class="ic-input">
                                 </div>
+                            </div>
+
+                            <!-- Payoff Policy for this contract -->
+                            <div>
+                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
+                                    លក្ខខណ្ឌបង់ផ្តាច់ / Payoff Min Months
+                                </label>
+                                <div class="relative">
+                                    <i class="fas fa-hand-holding-usd ic-field-icon"></i>
+                                    <input type="number" min="0" step="1" name="payoff_min_month" id="payoffMinMonth"
+                                           value="{{ old('payoff_min_month', $installment->payoff_min_month ?? 0) }}"
+                                           class="ic-input ic-input-with-suffix font-semibold"
+                                           placeholder="0">
+                                    <span class="ic-suffix">{{ __('app.months') ?? 'mo' }}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-1" lang="km">
+                                    * ចំនួនខែអប្បបរមាត្រូវបង់មុនអនុញ្ញាតបង់ផ្តាច់ (០ = អាចបង់ផ្តាច់បានគ្រប់ពេល)
+                                </p>
                             </div>
 
                             <!-- Status -->
@@ -446,7 +482,7 @@
             }
         }
 
-        const selectedProductOption = productSelect.options[productSelect.selectedIndex];
+        const selectedProductOption = (productSelect && productSelect.tagName === 'SELECT') ? productSelect.options[productSelect.selectedIndex] : null;
         const isTaxable = selectedProductOption ? selectedProductOption.getAttribute('data-taxable') === '1' : false;
         const prodTaxRate = selectedProductOption ? parseFloat(selectedProductOption.getAttribute('data-taxrate')) || 0 : 0;
         const prodTaxType = selectedProductOption ? selectedProductOption.getAttribute('data-taxtype') : 'exclusive';
@@ -525,7 +561,7 @@
         previewRemaining.innerText = formatCurrency(remaining);
         previewMonthly.innerText = formatCurrency(monthlyPayment) + ' / ខែ';
 
-        if (customerSelect.options[customerSelect.selectedIndex]) {
+        if (customerSelect && customerSelect.options && customerSelect.options[customerSelect.selectedIndex]) {
             metaCustomerName.innerText = customerSelect.options[customerSelect.selectedIndex].text.split('(')[0].trim();
         }
         if (selectedProductOption) {

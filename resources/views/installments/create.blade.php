@@ -105,7 +105,7 @@
         background: #ffffff;
         border: 1.5px solid #cbd5e1;
         border-radius: 1rem;
-        box-shadow: 0 20px 50px rgba(15,23,42,0.12);
+        box-shadow: 0 20px 50px rgba(15,23,42,0.15);
         max-height: 18rem;
         overflow-y: auto;
         min-width: 100%;
@@ -139,6 +139,15 @@
         position: sticky;
         top: 5.5rem;
     }
+    .ic-calc-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .ic-calc-row:last-of-type { border-bottom: none; }
+
     /* ─── Plan Cards ─── */
     .plan-card {
         border: 2px solid #e2e8f0;
@@ -159,8 +168,18 @@
         background: #f5f3ff;
         box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
     }
-    .plan-card .plan-radio {
-        accent-color: #4f46e5;
+
+    /* ─── Product Item Box ─── */
+    .product-item-card {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 1rem;
+        background: #ffffff;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .product-item-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
 </style>
 
@@ -182,7 +201,7 @@
                     <span lang="km">បង្កើតកម្រោងបង់រំលស់ថ្មី</span>
                 </h1>
                 <p class="text-xs text-slate-500 mt-1" lang="km">
-                    កំណត់លក្ខខណ្ឌកិច្ចសន្យា ជ្រើសរើសអតិថិជន និង គណនាប្រាក់បង់រំលស់ប្រចាំខែ
+                    កំណត់លក្ខខណ្ឌកិច្ចសន្យា ជ្រើសរើសអតិថិជន ទំនិញច្រើនមុខ និង គណនាប្រាក់បង់រំលស់ប្រចាំខែ
                 </p>
             </div>
             
@@ -192,77 +211,121 @@
             </a>
         </div>
 
+        @if(session('error'))
+            <div class="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm flex items-center gap-2 mb-6">
+                <i class="fas fa-exclamation-circle text-red-500"></i> {{ session('error') }}
+            </div>
+        @endif
+
+        @if(isset($errors) && $errors->any())
+            <div class="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm mb-6">
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <!-- Main Form Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
             <!-- Left 2 Cols: Form -->
-            <div class="lg:col-span-2">
+            <div class="lg:col-span-2 space-y-6">
                 <form method="POST" action="{{ route('installments.store') }}" id="installmentForm">
                     @csrf
 
-                    <!-- Section 1: Customer & Product -->
+                    <!-- Section 1: Customer Selection -->
                     <div class="ic-card p-6 mb-6">
                         <div class="ic-section-label" lang="km">
-                            <i class="fas fa-users"></i>
-                            <span>ព័ត៌មានអតិថិជន និង ទំនិញ / Customer & Product</span>
+                            <i class="fas fa-user-check"></i>
+                            <span>ព័ត៌មានអតិថិជន / Customer Information</span>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <!-- Customer Selection -->
-                            <div>
-                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
-                                    អតិថិជន / Customer <span class="text-red-500">*</span>
-                                </label>
-                                <input type="hidden" name="customer_id" id="customerId" value="{{ old('customer_id') }}" required>
-                                <div class="relative customer-select-container">
-                                    <div class="relative">
-                                        <i class="fas fa-search ic-field-icon"></i>
-                                        <input type="text" id="customerSearchInput"
-                                               class="ic-input {{ $errors->has('customer_id') ? 'ic-has-error' : '' }}"
-                                               placeholder="{{ __('app.select') }} {{ __('app.customer') }}..."
-                                               autocomplete="off"
-                                               onfocus="openCustomerDropdown(this)"
-                                               oninput="filterCustomerDropdown(this)">
-                                        <button type="button" tabindex="-1" class="ic-dropdown-toggle customer-dropdown-toggle" onclick="toggleCustomerDropdown(this)">
-                                            <i class="fas fa-chevron-down customer-dropdown-arrow"></i>
-                                        </button>
-                                    </div>
-                                    <div class="customer-dropdown-menu ic-dropdown-menu hidden" style="min-width:100%;"></div>
+                        <div>
+                            <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
+                                អតិថិជន / Customer <span class="text-red-500">*</span>
+                            </label>
+                            <input type="hidden" name="customer_id" id="customerId" value="{{ old('customer_id') }}" required>
+                            
+                            <div class="relative customer-select-container">
+                                <div class="relative">
+                                    <i class="fas fa-search ic-field-icon"></i>
+                                    <input type="text" id="customerSearchInput"
+                                           class="ic-input {{ $errors->has('customer_id') ? 'ic-has-error' : '' }}"
+                                           placeholder="{{ __('app.select') }} {{ __('app.customer') }}..."
+                                           autocomplete="off"
+                                           onfocus="openCustomerDropdown(this)"
+                                           oninput="filterCustomerDropdown(this)">
+                                    <button type="button" tabindex="-1" class="ic-dropdown-toggle customer-dropdown-toggle" onclick="toggleCustomerDropdown(this)">
+                                        <i class="fas fa-chevron-down customer-dropdown-arrow"></i>
+                                    </button>
                                 </div>
-                                @error('customer_id')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
+                                <div class="customer-dropdown-menu ic-dropdown-menu hidden" style="min-width:100%;"></div>
                             </div>
 
-                            <!-- Product Selection -->
-                            <div>
-                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
-                                    ទំនិញ / Product <span class="text-red-500">*</span>
-                                </label>
-                                <input type="hidden" name="product_id" id="productId" value="{{ old('product_id') }}" required>
-                                <div class="relative product-select-container">
-                                    <div class="relative">
-                                        <i class="fas fa-search ic-field-icon"></i>
-                                        <input type="text" id="productSearchInput"
-                                               class="ic-input {{ $errors->has('product_id') ? 'ic-has-error' : '' }}"
-                                               placeholder="{{ __('app.select') }} {{ __('app.product') }}..."
-                                               autocomplete="off"
-                                               onfocus="openProductDropdown(this)"
-                                               oninput="filterProductDropdown(this)">
-                                        <button type="button" tabindex="-1" class="ic-dropdown-toggle product-dropdown-toggle" onclick="toggleProductDropdown(this)">
-                                            <i class="fas fa-chevron-down product-dropdown-arrow"></i>
-                                        </button>
+                            <!-- Selected Customer Information Badge -->
+                            <div id="selectedCustomerCard" class="hidden mt-3 p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                                        <i class="fas fa-user"></i>
                                     </div>
-                                    <div class="product-dropdown-menu ic-dropdown-menu hidden" style="min-width:100%;"></div>
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-sm" id="selectedCustomerName">-</div>
+                                        <div class="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                                            <span id="selectedCustomerPhone">-</span>
+                                            <span class="text-slate-300">•</span>
+                                            <span id="selectedCustomerCode" class="text-indigo-600 font-mono">-</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                @error('product_id')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
+                                <div id="selectedCustomerActiveBadge" class="hidden">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1.5">
+                                        <i class="fas fa-layer-group text-[10px]"></i>
+                                        <span id="selectedCustomerActiveCount">0</span> គម្រោងសកម្ម
+                                    </span>
+                                </div>
+                            </div>
+
+                            @error('customer_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Financed Products (Multi-Product Builder) -->
+                    <div class="ic-card p-6 mb-6">
+                        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-600">
+                                <i class="fas fa-boxes-stacked"></i>
+                                <span lang="km">ទំនិញបង់រំលស់ / Financed Products</span>
+                            </div>
+                            <button type="button" id="addProductRowBtn" onclick="addProductRow()"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition shadow-xs cursor-pointer">
+                                <i class="fas fa-plus"></i>
+                                <span lang="km">+ បន្ថែមទំនិញ</span>
+                            </button>
+                        </div>
+
+                        <!-- Product Rows Container -->
+                        <div id="productRowsContainer" class="space-y-3.5">
+                            <!-- Rows dynamically populated by JS -->
+                        </div>
+
+                        <!-- Products Summary Footer inside Card -->
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+                            <div class="flex items-center gap-3">
+                                <span>ចំនួនទំនិញ: <b id="totalItemsCount" class="text-slate-900 font-bold">0</b> មុខ</span>
+                                <span class="text-slate-300">|</span>
+                                <span>សរុបបរិមាណ: <b id="totalQtyCount" class="text-slate-900 font-bold">0</b> គ្រឿង</span>
+                            </div>
+                            <div class="font-semibold text-slate-700">
+                                តម្លៃទំនិញសរុប: <span id="summaryItemsTotal" class="text-indigo-600 font-bold text-sm">$0.00</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section 2: Pricing & Terms -->
+                    <!-- Section 3: Financial Terms -->
                     <div class="ic-card p-6 mb-6">
                         <div class="ic-section-label" lang="km">
                             <i class="fas fa-calculator"></i>
@@ -270,7 +333,7 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <!-- Total Price -->
+                            <!-- Total Price (Auto calculated from items) -->
                             <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
                                     {{ __('app.total_price') }} ($) <span class="text-red-500">*</span>
@@ -278,10 +341,13 @@
                                 <div class="relative">
                                     <span class="ic-prefix">$</span>
                                     <input type="number" step="0.01" min="0" name="total_price" id="totalPrice"
-                                           value="{{ old('total_price') }}" required readonly
+                                           value="{{ old('total_price', 0) }}" required readonly
                                            class="ic-input ic-input-with-prefix font-bold text-slate-900 bg-slate-100/80 cursor-not-allowed select-none {{ $errors->has('total_price') ? 'ic-has-error' : '' }}"
-                                           placeholder="0.00">
+                                           placeholder="0.00" title="គណនាដោយស្វ័យប្រវត្តិតាមបញ្ជីទំនិញខាងលើ">
                                 </div>
+                                <p class="text-[11px] text-slate-400 mt-1" lang="km">
+                                    * គណនាដោយស្វ័យប្រវត្តិតាមផលបូកតម្លៃទំនិញទាំងអស់ខាងលើ
+                                </p>
                                 @error('total_price')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
@@ -317,6 +383,35 @@
                                     <span class="ic-suffix">%</span>
                                 </div>
                                 @error('interest_rate')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <!-- Duration Months -->
+                            <div>
+                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
+                                    {{ __('app.duration_months') }} <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" min="1" name="duration_months" id="durationMonths"
+                                           value="{{ old('duration_months', 12) }}" required
+                                           class="ic-input ic-input-with-suffix font-semibold {{ $errors->has('duration_months') ? 'ic-has-error' : '' }}"
+                                           placeholder="12">
+                                    <span class="ic-suffix">{{ __('app.months') ?? 'mo' }}</span>
+                                </div>
+                                
+                                <!-- Quick Duration Buttons -->
+                                <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                                    <span class="text-[11px] font-medium text-slate-400 mr-1" lang="km">រហ័ស:</span>
+                                    @foreach([3, 6, 9, 12, 18, 24] as $m)
+                                    <button type="button" onclick="setQuickDuration({{ $m }})"
+                                            class="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition cursor-pointer">
+                                        {{ $m }} ខែ
+                                    </button>
+                                    @endforeach
+                                </div>
+
+                                @error('duration_months')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -364,37 +459,8 @@
                                 </div>
                             </div>
 
-                            <!-- Duration -->
-                            <div>
-                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
-                                    {{ __('app.duration_months') }} <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" min="1" name="duration_months" id="durationMonths"
-                                           value="{{ old('duration_months', 12) }}" required
-                                           class="ic-input ic-input-with-suffix font-semibold {{ $errors->has('duration_months') ? 'ic-has-error' : '' }}"
-                                           placeholder="12">
-                                    <span class="ic-suffix">{{ __('app.months') ?? 'mo' }}</span>
-                                </div>
-                                
-                                <!-- Quick Duration Buttons -->
-                                <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-                                    <span class="text-[11px] font-medium text-slate-400 mr-1" lang="km">រហ័ស:</span>
-                                    @foreach([3, 6, 9, 12, 18, 24] as $m)
-                                    <button type="button" onclick="setQuickDuration({{ $m }})"
-                                            class="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition cursor-pointer">
-                                        {{ $m }} ខែ
-                                    </button>
-                                    @endforeach
-                                </div>
-
-                                @error('duration_months')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
                             <!-- First Payment Date -->
-                            <div class="sm:col-span-2">
+                            <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
                                     កាលបរិច្ឆេទបង់ប្រាក់ដំបូង / First Payment Due Date
                                 </label>
@@ -404,6 +470,27 @@
                                            value="{{ old('first_payment_date', date('Y-m-d')) }}"
                                            class="ic-input">
                                 </div>
+                            </div>
+
+                            <!-- Payoff Policy for this contract -->
+                            @php
+                                $currentPayoffMin = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                            @endphp
+                            <div>
+                                <label class="block text-slate-700 text-xs font-bold mb-1.5 uppercase tracking-wide" lang="km">
+                                    លក្ខខណ្ឌបង់ផ្តាច់ / Payoff Min Months
+                                </label>
+                                <div class="relative">
+                                    <i class="fas fa-hand-holding-usd ic-field-icon"></i>
+                                    <input type="number" min="0" step="1" name="payoff_min_month" id="payoffMinMonth"
+                                           value="{{ old('payoff_min_month', $currentPayoffMin) }}"
+                                           class="ic-input ic-input-with-suffix font-semibold"
+                                           placeholder="0">
+                                    <span class="ic-suffix">{{ __('app.months') ?? 'mo' }}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-1" lang="km">
+                                    * ចំនួនខែអប្បបរមាត្រូវបង់មុនអនុញ្ញាតបង់ផ្តាច់ (០ = អាចបង់ផ្តាច់បានគ្រប់ពេល)
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -446,31 +533,31 @@
 
                     <div class="space-y-3 text-xs">
                         <div class="ic-calc-row">
-                            <span class="text-slate-500" lang="km">តម្លៃទំនិញដើម</span>
+                            <span class="text-slate-500" lang="km">តម្លៃទំនិញដើម (Subtotal)</span>
                             <span class="font-bold text-slate-900" id="previewSubtotal">$0.00</span>
                         </div>
                         <div class="ic-calc-row" id="taxRow" style="display:none;">
-                            <span class="text-slate-500">{{ __('app.tax') }} (<span id="taxRateLabel">0</span>%)</span>
+                            <span class="text-slate-500">{{ __('app.tax') }}</span>
                             <span class="font-bold text-slate-900" id="previewTax">$0.00</span>
                         </div>
                         <div class="ic-calc-row pt-2 border-t border-slate-100">
-                            <span class="font-bold text-slate-800" lang="km">តម្លៃសរុបរួម</span>
+                            <span class="font-bold text-slate-800" lang="km">តម្លៃសរុបរួម (Total Price)</span>
                             <span class="font-extrabold text-indigo-950 text-sm" id="previewTotal">$0.00</span>
                         </div>
                         <div class="ic-calc-row">
-                            <span class="text-slate-500" lang="km">ប្រាក់កក់</span>
+                            <span class="text-slate-500" lang="km">ប្រាក់កក់ (Down Payment)</span>
                             <span class="font-bold text-emerald-600" id="previewDownPayment">$0.00</span>
                         </div>
                         <div class="ic-calc-row">
-                            <span class="text-slate-500" lang="km">សមតុល្យដើម</span>
+                            <span class="text-slate-500" lang="km">សមតុល្យដើម (Principal)</span>
                             <span class="font-bold text-slate-800" id="previewPrincipal">$0.00</span>
                         </div>
                         <div class="ic-calc-row">
-                            <span class="text-slate-500" lang="km">ការប្រាក់ប្រចាំខែ</span>
+                            <span class="text-slate-500" lang="km">ការប្រាក់ប្រចាំខែ (Monthly Interest)</span>
                             <span class="font-bold text-purple-600" id="previewInterest">$0.00</span>
                         </div>
                         <div class="ic-calc-row pt-2 border-t border-slate-100">
-                            <span class="font-bold text-slate-700" lang="km">តុល្យភាពបំណុលសរុប</span>
+                            <span class="font-bold text-slate-700" lang="km">តុល្យភាពបំណុលសរុប (Total Debt)</span>
                             <span class="font-bold text-amber-600 text-sm" id="previewRemaining">$0.00</span>
                         </div>
                     </div>
@@ -492,53 +579,62 @@
 {{-- Pass Backend Data to JS --}}
 <script>
     const customersData = {!! json_encode($customers->map(fn($c) => [
-        'id' => $c->id,
-        'name' => $c->name,
-        'phone' => $c->phone ?? 'N/A',
-        'code' => $c->customer_code ?? ''
+        'id'           => $c->id,
+        'name'         => $c->name,
+        'phone'        => $c->phone ?? 'N/A',
+        'code'         => $c->customer_code ?? '',
+        'active_count' => (int) ($c->active_installments_count ?? 0)
     ])) !!};
 
     const productsData = {!! json_encode($products->map(fn($p) => [
-        'id' => $p->id,
-        'name' => $p->name,
-        'price' => (float) $p->price,
-        'code' => $p->code ?? $p->sku ?? '',
-        'stock' => (int) $p->stock,
+        'id'         => $p->id,
+        'name'       => $p->name,
+        'price'      => (float) $p->price,
+        'code'       => $p->code ?? $p->sku ?? '',
+        'stock'      => (int) $p->stock,
         'is_taxable' => (bool) ($p->is_taxable ?? false),
-        'tax_rate' => (float) ($p->tax_rate ?? 0),
-        'tax_type' => $p->tax_type ?? 'exclusive'
+        'tax_rate'   => (float) ($p->tax_rate ?? 0),
+        'tax_type'   => $p->tax_type ?? 'exclusive'
     ])) !!};
 
     const taxEnabled = {{ \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1' ? 'true' : 'false' }};
     const defaultTaxRate = {{ (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0) }};
     const exchangeRate = {{ $exchangeRate ?? 4100 }};
 
-    let selectedProduct = null;
-
-    // Elements
+    // Form elements
     const totalPriceInput = document.getElementById('totalPrice');
     const downPaymentInput = document.getElementById('downPayment');
     const interestRateInput = document.getElementById('interestRate');
     const durationInput = document.getElementById('durationMonths');
+    const interestTypeInput = document.getElementById('interestType');
+    const interestTypeDesc = document.getElementById('interestTypeDesc');
 
+    // Preview elements
     const previewSubtotal = document.getElementById('previewSubtotal');
     const previewTax = document.getElementById('previewTax');
     const previewTotal = document.getElementById('previewTotal');
     const previewDownPayment = document.getElementById('previewDownPayment');
     const taxRow = document.getElementById('taxRow');
-    const taxRateLabel = document.getElementById('taxRateLabel');
     const previewPrincipal = document.getElementById('previewPrincipal');
     const previewInterest = document.getElementById('previewInterest');
     const previewRemaining = document.getElementById('previewRemaining');
     const previewMonthly = document.getElementById('previewMonthly');
 
     function formatCurrency(val) {
-        return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    const interestTypeInput = document.getElementById('interestType');
-    const interestTypeDesc = document.getElementById('interestTypeDesc');
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
+    /* ─── Plan Cards Logic ─── */
     function selectPlan(type, el) {
         if (interestTypeInput) {
             interestTypeInput.value = type;
@@ -557,8 +653,422 @@
         }
     }
 
-    function calculateInstallment() {
-        const subtotalInput = parseFloat(totalPriceInput.value) || 0;
+    /* ─── Customer Dropdown Logic ─── */
+    function buildCustomerList(filter = '') {
+        const menu = document.querySelector('.customer-dropdown-menu');
+        const q = filter.toLowerCase().trim();
+        const list = customersData.filter(c => 
+            c.name.toLowerCase().includes(q) || 
+            c.phone.toLowerCase().includes(q) || 
+            c.code.toLowerCase().includes(q)
+        );
+
+        let html = '<div class="p-2 border-b border-slate-100 bg-slate-50"><input type="text" class="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 outline-none" placeholder="ស្វែងរកអតិថិជន..." oninput="filterCustomerDropdown(this)" onclick="event.stopPropagation()"></div>';
+        if (list.length === 0) {
+            html += '<div class="p-3 text-xs text-slate-400 text-center">មិនមានទិន្នន័យអតិថិជន</div>';
+        } else {
+            list.forEach(c => {
+                const activeBadge = c.active_count > 0 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap"><i class="fas fa-layer-group text-[9px] mr-1"></i>${c.active_count} គម្រោងសកម្ម</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-50 text-slate-500 border border-slate-200 whitespace-nowrap">អត់ទាន់មានគម្រោង</span>`;
+
+                html += `<div class="ic-option" onclick="selectCustomer(${c.id})">
+                    <div class="min-w-0 pr-2">
+                        <div class="ic-option-name font-semibold text-slate-800 truncate">${escapeHtml(c.name)}</div>
+                        <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                            <span>${escapeHtml(c.phone)}</span>
+                            ${c.code ? `<span>• ${escapeHtml(c.code)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="shrink-0">
+                        ${activeBadge}
+                    </div>
+                </div>`;
+            });
+        }
+        menu.innerHTML = html;
+    }
+
+    function openCustomerDropdown(input) {
+        closeAllDropdowns();
+        const menu = document.querySelector('.customer-dropdown-menu');
+        buildCustomerList('');
+        menu.classList.remove('hidden');
+    }
+
+    function filterCustomerDropdown(input) {
+        buildCustomerList(input.value);
+    }
+
+    function toggleCustomerDropdown(btn) {
+        const menu = document.querySelector('.customer-dropdown-menu');
+        if (menu.classList.contains('hidden')) {
+            openCustomerDropdown(document.getElementById('customerSearchInput'));
+        } else {
+            menu.classList.add('hidden');
+        }
+    }
+
+    function selectCustomer(id) {
+        const cust = customersData.find(c => c.id == id);
+        if (!cust) return;
+        document.getElementById('customerId').value = cust.id;
+        document.getElementById('customerSearchInput').value = cust.name;
+        document.querySelector('.customer-dropdown-menu').classList.add('hidden');
+
+        // Update selected customer information badge
+        const card = document.getElementById('selectedCustomerCard');
+        document.getElementById('selectedCustomerName').innerText = cust.name;
+        document.getElementById('selectedCustomerPhone').innerText = cust.phone || 'N/A';
+        document.getElementById('selectedCustomerCode').innerText = cust.code ? ('#' + cust.code) : '';
+        
+        const badgeWrap = document.getElementById('selectedCustomerActiveBadge');
+        if (cust.active_count > 0) {
+            document.getElementById('selectedCustomerActiveCount').innerText = cust.active_count;
+            badgeWrap.classList.remove('hidden');
+        } else {
+            badgeWrap.classList.add('hidden');
+        }
+        card.classList.remove('hidden');
+    }
+
+    /* ─── Multi-Product Line Items Builder ─── */
+    let itemRowCounter = 0;
+
+    function addProductRow(prefillData = null) {
+        const container = document.getElementById('productRowsContainer');
+        const rowIndex = itemRowCounter++;
+
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'product-item-card relative item-row';
+        rowDiv.setAttribute('data-row-index', rowIndex);
+
+        rowDiv.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <!-- Product Selector (6 cols on md) -->
+                <div class="md:col-span-6 relative product-select-container">
+                    <label class="block text-slate-700 text-[11px] font-bold mb-1 uppercase tracking-wider" lang="km">
+                        ទំនិញ / Product <span class="text-red-500">*</span>
+                    </label>
+                    <input type="hidden" name="items[${rowIndex}][product_id]" class="row-product-id" value="" required>
+                    
+                    <div class="relative">
+                        <i class="fas fa-box ic-field-icon"></i>
+                        <input type="text" class="ic-input row-product-search text-xs"
+                               placeholder="ជ្រើសរើសទំនិញ..."
+                               autocomplete="off"
+                               onfocus="openRowProductDropdown(this)"
+                               oninput="filterRowProductDropdown(this)">
+                        <button type="button" tabindex="-1" class="ic-dropdown-toggle" onclick="toggleRowProductDropdown(this)">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="product-dropdown-menu ic-dropdown-menu hidden" style="min-width: 100%;"></div>
+                </div>
+
+                <!-- Quantity (2 cols on md) -->
+                <div class="md:col-span-2">
+                    <label class="block text-slate-700 text-[11px] font-bold mb-1 uppercase tracking-wider" lang="km">
+                        ចំនួន / Qty <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" min="1" step="1" name="items[${rowIndex}][quantity]" value="1" required
+                               class="ic-input text-xs font-bold text-center row-quantity px-2"
+                               oninput="handleRowChange(this)">
+                    </div>
+                </div>
+
+                <!-- Unit Price (2 cols on md) -->
+                <div class="md:col-span-2">
+                    <label class="block text-slate-700 text-[11px] font-bold mb-1 uppercase tracking-wider" lang="km">
+                        តម្លៃឯកតា ($) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="ic-prefix text-xs">$</span>
+                        <input type="number" min="0" step="0.01" name="items[${rowIndex}][price]" value="0.00" required
+                               class="ic-input ic-input-with-prefix text-xs font-bold text-right row-price"
+                               placeholder="0.00"
+                               oninput="handleRowChange(this)">
+                    </div>
+                </div>
+
+                <!-- Row Subtotal & Delete Action (2 cols on md) -->
+                <div class="md:col-span-2 flex items-center justify-between gap-2">
+                    <div class="w-full">
+                        <label class="block text-slate-500 text-[11px] font-medium mb-1 uppercase tracking-wider text-right" lang="km">
+                            សរុប ($)
+                        </label>
+                        <div class="h-[38px] px-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-end font-bold text-slate-900 text-xs row-subtotal-display">
+                            $0.00
+                        </div>
+                    </div>
+                    
+                    <div class="pt-5 shrink-0">
+                        <button type="button" onclick="removeProductRow(this)"
+                                class="w-9 h-9 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-700 flex items-center justify-center transition cursor-pointer remove-row-btn"
+                                title="លុបទំនិញនេះ">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="row-stock-warning text-[11px] text-amber-600 mt-1 hidden"></div>
+        `;
+
+        container.appendChild(rowDiv);
+
+        if (prefillData) {
+            const prod = productsData.find(p => p.id == prefillData.product_id);
+            if (prod) {
+                rowDiv.querySelector('.row-product-id').value = prod.id;
+                rowDiv.querySelector('.row-product-search').value = prod.name;
+                rowDiv.querySelector('.row-quantity').value = prefillData.quantity || 1;
+                rowDiv.querySelector('.row-price').value = prefillData.price !== undefined ? Number(prefillData.price).toFixed(2) : prod.price.toFixed(2);
+            }
+        }
+
+        updateRowSubtotal(rowDiv);
+        updateAllCalculations();
+        refreshRemoveButtons();
+    }
+
+    function removeProductRow(btn) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length <= 1) {
+            alert('កិច្ចសន្យាត្រូវមានទំនិញយ៉ាងតិច ១ មុខ! / Installment requires at least 1 product.');
+            return;
+        }
+        const card = btn.closest('.item-row');
+        card.remove();
+        updateAllCalculations();
+        refreshRemoveButtons();
+    }
+
+    function refreshRemoveButtons() {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(r => {
+            const btn = r.querySelector('.remove-row-btn');
+            if (btn) {
+                if (rows.length === 1) {
+                    btn.classList.add('opacity-40', 'cursor-not-allowed');
+                } else {
+                    btn.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
+            }
+        });
+    }
+
+    function handleRowChange(input) {
+        const rowDiv = input.closest('.item-row');
+        const prodId = rowDiv.querySelector('.row-product-id').value;
+        const qtyInput = rowDiv.querySelector('.row-quantity');
+        const stockWarn = rowDiv.querySelector('.row-stock-warning');
+
+        if (prodId) {
+            const prod = productsData.find(p => p.id == prodId);
+            if (prod) {
+                const qty = parseInt(qtyInput.value) || 0;
+                if (qty > prod.stock) {
+                    stockWarn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ចំនួនលើសស្តុកដែលនៅសល់ (ស្តុកនៅសល់: ${prod.stock})`;
+                    stockWarn.classList.remove('hidden');
+                } else {
+                    stockWarn.classList.add('hidden');
+                }
+            }
+        }
+
+        updateRowSubtotal(rowDiv);
+        updateAllCalculations();
+    }
+
+    function updateRowSubtotal(rowDiv) {
+        const qty = parseInt(rowDiv.querySelector('.row-quantity').value) || 0;
+        const price = parseFloat(rowDiv.querySelector('.row-price').value) || 0;
+        const subtotal = Math.max(0, qty * price);
+        const display = rowDiv.querySelector('.row-subtotal-display');
+        if (display) {
+            display.innerText = formatCurrency(subtotal);
+        }
+    }
+
+    /* ─── Product Dropdown for each row ─── */
+    function renderRowProductList(container, keyword = '') {
+        const menu = container.querySelector('.product-dropdown-menu');
+        const q = keyword.toLowerCase().trim();
+        const list = productsData.filter(p => 
+            p.name.toLowerCase().includes(q) || 
+            p.code.toLowerCase().includes(q)
+        );
+
+        let html = '<div class="p-2 border-b border-slate-100 bg-slate-50"><input type="text" class="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 outline-none" placeholder="ស្វែងរកទំនិញ..." oninput="filterRowProductDropdown(this)" onclick="event.stopPropagation()"></div>';
+        if (list.length === 0) {
+            html += '<div class="p-3 text-xs text-slate-400 text-center">មិនមានទិន្នន័យទំនិញ</div>';
+        } else {
+            list.forEach(p => {
+                const isOutOfStock = p.stock <= 0;
+                const stockBadge = isOutOfStock
+                    ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-semibold">អស់ស្តុក</span>`
+                    : `<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium border border-emerald-100">ស្តុក: ${p.stock}</span>`;
+                
+                html += `<div class="ic-option ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}" onclick="${isOutOfStock ? `alert('ទំនិញនេះបានអស់ពីស្តុកហើយ!')` : `selectRowProduct(this, ${p.id})`}">
+                    <div class="min-w-0 pr-2">
+                        <div class="ic-option-name font-semibold text-slate-800 truncate">${escapeHtml(p.name)}</div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[11px] text-slate-400 font-mono">${p.code ? escapeHtml(p.code) : ''}</span>
+                            ${stockBadge}
+                        </div>
+                    </div>
+                    <span class="font-extrabold text-indigo-600 text-xs px-2 py-0.5 bg-indigo-50 rounded border border-indigo-100 shrink-0">$${p.price.toFixed(2)}</span>
+                </div>`;
+            });
+        }
+        menu.innerHTML = html;
+    }
+
+    function openRowProductDropdown(input) {
+        closeAllDropdowns();
+        const container = input.closest('.product-select-container');
+        const menu = container.querySelector('.product-dropdown-menu');
+        renderRowProductList(container, input.value);
+        menu.classList.remove('hidden');
+    }
+
+    function filterRowProductDropdown(input) {
+        const container = input.closest('.product-select-container');
+        renderRowProductList(container, input.value);
+    }
+
+    function toggleRowProductDropdown(btn) {
+        const container = btn.closest('.product-select-container');
+        const menu = container.querySelector('.product-dropdown-menu');
+        if (menu.classList.contains('hidden')) {
+            openRowProductDropdown(container.querySelector('.row-product-search'));
+        } else {
+            menu.classList.add('hidden');
+        }
+    }
+
+    function selectRowProduct(optionEl, prodId) {
+        const prod = productsData.find(p => p.id == prodId);
+        if (!prod) return;
+        const rowDiv = optionEl.closest('.item-row');
+        rowDiv.querySelector('.row-product-id').value = prod.id;
+        rowDiv.querySelector('.row-product-search').value = prod.name;
+        
+        // Auto prefill price if 0 or empty
+        const priceInput = rowDiv.querySelector('.row-price');
+        priceInput.value = prod.price.toFixed(2);
+
+        // Max quantity check
+        const qtyInput = rowDiv.querySelector('.row-quantity');
+        qtyInput.max = prod.stock;
+
+        rowDiv.querySelector('.product-dropdown-menu').classList.add('hidden');
+        updateRowSubtotal(rowDiv);
+        updateAllCalculations();
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.ic-dropdown-menu').forEach(m => m.classList.add('hidden'));
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.customer-select-container') && !e.target.closest('.product-select-container')) {
+            closeAllDropdowns();
+        }
+    });
+
+    /* ─── Overall Multi-Item & Installment Calculations ─── */
+    function updateAllCalculations() {
+        const rows = document.querySelectorAll('.item-row');
+        let subtotalAll = 0;
+        let totalTaxAll = 0;
+        let totalItems = 0;
+        let totalQty = 0;
+
+        rows.forEach(r => {
+            const prodId = r.querySelector('.row-product-id').value;
+            const qty = parseInt(r.querySelector('.row-quantity').value) || 0;
+            const price = parseFloat(r.querySelector('.row-price').value) || 0;
+            const rowSub = Math.max(0, qty * price);
+
+            if (prodId && qty > 0) {
+                totalItems++;
+                totalQty += qty;
+                subtotalAll += rowSub;
+
+                const prod = productsData.find(p => p.id == prodId);
+                if (taxEnabled && prod && prod.is_taxable) {
+                    const rate = prod.tax_rate > 0 ? prod.tax_rate : defaultTaxRate;
+                    if (prod.tax_type === 'inclusive') {
+                        const tax = rowSub - (rowSub / (1 + rate / 100));
+                        totalTaxAll += tax;
+                    } else {
+                        const tax = rowSub * (rate / 100);
+                        totalTaxAll += tax;
+                    }
+                }
+            }
+        });
+
+        // If exclusive tax was added, total price = subtotalAll + totalTaxAll; if inclusive, already included
+        let grandTotal = subtotalAll;
+        // Check for exclusive taxes
+        let exclusiveTax = 0;
+        rows.forEach(r => {
+            const prodId = r.querySelector('.row-product-id').value;
+            const qty = parseInt(r.querySelector('.row-quantity').value) || 0;
+            const price = parseFloat(r.querySelector('.row-price').value) || 0;
+            const rowSub = Math.max(0, qty * price);
+            if (taxEnabled && prodId) {
+                const prod = productsData.find(p => p.id == prodId);
+                if (prod && prod.is_taxable && prod.tax_type === 'exclusive') {
+                    const rate = prod.tax_rate > 0 ? prod.tax_rate : defaultTaxRate;
+                    exclusiveTax += rowSub * (rate / 100);
+                }
+            }
+        });
+        grandTotal += exclusiveTax;
+
+        document.getElementById('totalItemsCount').innerText = totalItems;
+        document.getElementById('totalQtyCount').innerText = totalQty;
+        document.getElementById('summaryItemsTotal').innerText = formatCurrency(grandTotal);
+
+        if (totalPriceInput) {
+            totalPriceInput.value = grandTotal.toFixed(2);
+        }
+
+        calculateInstallment(subtotalAll, totalTaxAll, grandTotal);
+    }
+
+    function calculateInstallment(subtotalInput, taxAmount, grandTotal) {
+        if (subtotalInput === undefined) {
+            // Read from items
+            let calculatedSub = 0;
+            let calculatedTax = 0;
+            document.querySelectorAll('.item-row').forEach(r => {
+                const prodId = r.querySelector('.row-product-id').value;
+                const qty = parseInt(r.querySelector('.row-quantity').value) || 0;
+                const price = parseFloat(r.querySelector('.row-price').value) || 0;
+                const rowSub = Math.max(0, qty * price);
+                calculatedSub += rowSub;
+                if (taxEnabled && prodId) {
+                    const prod = productsData.find(p => p.id == prodId);
+                    if (prod && prod.is_taxable) {
+                        const rate = prod.tax_rate > 0 ? prod.tax_rate : defaultTaxRate;
+                        if (prod.tax_type === 'inclusive') {
+                            calculatedTax += rowSub - (rowSub / (1 + rate / 100));
+                        } else {
+                            calculatedTax += rowSub * (rate / 100);
+                        }
+                    }
+                }
+            });
+            subtotalInput = calculatedSub;
+            taxAmount = calculatedTax;
+            grandTotal = parseFloat(totalPriceInput.value) || 0;
+        }
+
         const downPayment = parseFloat(downPaymentInput.value) || 0;
         let interestRate = parseFloat(interestRateInput.value) || 0;
         const duration = parseInt(durationInput.value) || 1;
@@ -588,25 +1098,14 @@
             interestTypeDesc.innerText = descriptions[interestType] || '';
         }
 
-        let taxAmount = 0;
-        let taxRate = 0;
-        let totalPrice = subtotalInput;
-
-        if (taxEnabled && selectedProduct && selectedProduct.is_taxable) {
-            taxRate = selectedProduct.tax_rate > 0 ? selectedProduct.tax_rate : defaultTaxRate;
-            if (selectedProduct.tax_type === 'inclusive') {
-                taxAmount = subtotalInput - (subtotalInput / (1 + taxRate / 100));
-            } else {
-                taxAmount = subtotalInput * (taxRate / 100);
-                totalPrice = subtotalInput + taxAmount;
-            }
+        if (taxAmount > 0) {
             taxRow.style.display = 'flex';
-            taxRateLabel.innerText = Number(taxRate).toFixed(0);
+            previewTax.innerText = formatCurrency(taxAmount);
         } else {
             taxRow.style.display = 'none';
         }
 
-        const principal = Math.max(0, totalPrice - downPayment);
+        const principal = Math.max(0, grandTotal - downPayment);
         const monthlyRate = interestRate / 100;
 
         let firstMonthPayment = 0;
@@ -646,16 +1145,10 @@
             firstMonthInterest = principal * monthlyRate;
             totalRemaining = firstMonthPayment * duration;
             totalInterest = Math.max(0, totalRemaining - principal);
-        } else if (interestType === 'bullet') {
-            firstMonthInterest = principal * monthlyRate;
-            firstMonthPayment = duration === 1 ? (principal + firstMonthInterest) : firstMonthInterest;
-            totalInterest = firstMonthInterest * duration;
-            totalRemaining = principal + totalInterest;
         }
 
         previewSubtotal.innerText = formatCurrency(subtotalInput);
-        previewTax.innerText = formatCurrency(taxAmount);
-        previewTotal.innerText = formatCurrency(totalPrice);
+        previewTotal.innerText = formatCurrency(grandTotal);
         previewDownPayment.innerText = formatCurrency(downPayment);
         previewPrincipal.innerText = formatCurrency(principal);
         previewInterest.innerText = formatCurrency(firstMonthInterest);
@@ -663,154 +1156,37 @@
         previewMonthly.innerText = formatCurrency(firstMonthPayment) + ' / ខែ';
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    // Customer Dropdown logic
-    function buildCustomerList(filter = '') {
-        const menu = document.querySelector('.customer-dropdown-menu');
-        const q = filter.toLowerCase().trim();
-        const list = customersData.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.code.toLowerCase().includes(q));
-
-        let html = '<div class="p-2 border-b border-slate-100 bg-slate-50"><input type="text" class="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 outline-none" placeholder="ស្វែងរកអតិថិជន..." oninput="filterCustomerDropdown(this)" onclick="event.stopPropagation()"></div>';
-        if (list.length === 0) {
-            html += '<div class="p-3 text-xs text-slate-400 text-center">មិនមានទិន្នន័យអតិថិជន</div>';
-        } else {
-            list.forEach(c => {
-                html += `<div class="ic-option" onclick="selectCustomer(${c.id})">
-                    <div>
-                        <div class="ic-option-name font-semibold text-slate-800">${escapeHtml(c.name)}</div>
-                        <div class="text-[11px] text-slate-400">${escapeHtml(c.phone)}</div>
-                    </div>
-                </div>`;
-            });
-        }
-        menu.innerHTML = html;
-    }
-
-    function openCustomerDropdown(input) {
-        document.querySelectorAll('.ic-dropdown-menu').forEach(m => m.classList.add('hidden'));
-        const menu = document.querySelector('.customer-dropdown-menu');
-        buildCustomerList('');
-        menu.classList.remove('hidden');
-    }
-
-    function filterCustomerDropdown(input) {
-        buildCustomerList(input.value);
-    }
-
-    function toggleCustomerDropdown(btn) {
-        const menu = document.querySelector('.customer-dropdown-menu');
-        if (menu.classList.contains('hidden')) {
-            openCustomerDropdown(document.getElementById('customerSearchInput'));
-        } else {
-            menu.classList.add('hidden');
-        }
-    }
-
-    function selectCustomer(id) {
-        const cust = customersData.find(c => c.id == id);
-        if (!cust) return;
-        document.getElementById('customerId').value = cust.id;
-        document.getElementById('customerSearchInput').value = cust.name;
-        document.querySelector('.customer-dropdown-menu').classList.add('hidden');
-    }
-
-    // Product Dropdown logic
-    function buildProductList(filter = '') {
-        const menu = document.querySelector('.product-dropdown-menu');
-        const q = filter.toLowerCase().trim();
-        const list = productsData.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
-
-        let html = '<div class="p-2 border-b border-slate-100 bg-slate-50"><input type="text" class="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 outline-none" placeholder="ស្វែងរកទំនិញ..." oninput="filterProductDropdown(this)" onclick="event.stopPropagation()"></div>';
-        if (list.length === 0) {
-            html += '<div class="p-3 text-xs text-slate-400 text-center">មិនមានទិន្នន័យទំនិញ</div>';
-        } else {
-            list.forEach(p => {
-                const isOutOfStock = p.stock <= 0;
-                const stockBadge = isOutOfStock
-                    ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-semibold">អស់ស្តុក</span>`
-                    : `<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium border border-emerald-100">ស្តុក: ${p.stock}</span>`;
-                
-                html += `<div class="ic-option ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}" onclick="${isOutOfStock ? `alert('ទំនិញនេះបានអស់ពីស្តុកហើយ / Out of stock!')` : `selectProduct(${p.id})`}">
-                    <div>
-                        <div class="ic-option-name font-semibold text-slate-800">${escapeHtml(p.name)}</div>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span class="text-[11px] text-slate-400">${p.code ? 'Code: ' + escapeHtml(p.code) : ''}</span>
-                            ${stockBadge}
-                        </div>
-                    </div>
-                    <span class="font-extrabold text-indigo-600 text-xs px-2 py-0.5 bg-indigo-50 rounded border border-indigo-100">$${p.price.toFixed(2)}</span>
-                </div>`;
-            });
-        }
-        menu.innerHTML = html;
-    }
-
-    function openProductDropdown(input) {
-        document.querySelectorAll('.ic-dropdown-menu').forEach(m => m.classList.add('hidden'));
-        const menu = document.querySelector('.product-dropdown-menu');
-        buildProductList('');
-        menu.classList.remove('hidden');
-    }
-
-    function filterProductDropdown(input) {
-        buildProductList(input.value);
-    }
-
-    function toggleProductDropdown(btn) {
-        const menu = document.querySelector('.product-dropdown-menu');
-        if (menu.classList.contains('hidden')) {
-            openProductDropdown(document.getElementById('productSearchInput'));
-        } else {
-            menu.classList.add('hidden');
-        }
-    }
-
-    function selectProduct(id) {
-        const prod = productsData.find(p => p.id == id);
-        if (!prod) return;
-        selectedProduct = prod;
-        document.getElementById('productId').value = prod.id;
-        document.getElementById('productSearchInput').value = prod.name;
-        totalPriceInput.value = prod.price.toFixed(2);
-        document.querySelector('.product-dropdown-menu').classList.add('hidden');
-        calculateInstallment();
-    }
-
-    // Close dropdowns on outside click
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.customer-select-container') && !e.target.closest('.product-select-container')) {
-            document.querySelectorAll('.ic-dropdown-menu').forEach(m => m.classList.add('hidden'));
-        }
+    [downPaymentInput, interestRateInput, durationInput].forEach(el => {
+        if (el) el.addEventListener('input', () => calculateInstallment());
     });
 
-    [totalPriceInput, downPaymentInput, interestRateInput, durationInput].forEach(el => {
-        if (el) el.addEventListener('input', calculateInstallment);
+    /* ─── Initialization on Page Load ─── */
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle prefilled or old items
+        @if(old('items'))
+            const oldItems = {!! json_encode(old('items')) !!};
+            if (Array.isArray(oldItems) && oldItems.length > 0) {
+                oldItems.forEach(item => addProductRow(item));
+            } else {
+                addProductRow();
+            }
+        @elseif(old('product_id'))
+            addProductRow({
+                product_id: {{ old('product_id') }},
+                quantity: 1,
+                price: {{ old('total_price', 0) }}
+            });
+        @else
+            addProductRow();
+        @endif
+
+        // Handle customer prefill
+        @if(old('customer_id'))
+            selectCustomer({{ old('customer_id') }});
+        @endif
+
+        updateAllCalculations();
     });
-
-    // Handle old inputs if validation failed
-    @if(old('customer_id'))
-        const oldCust = customersData.find(c => c.id == {{ old('customer_id') }});
-        if (oldCust) selectCustomer(oldCust.id, oldCust.name);
-    @endif
-    @if(old('product_id'))
-        const oldProd = productsData.find(p => p.id == {{ old('product_id') }});
-        if (oldProd) {
-            selectedProduct = oldProd;
-            document.getElementById('productId').value = oldProd.id;
-            document.getElementById('productSearchInput').value = oldProd.name;
-        }
-    @endif
-
-    calculateInstallment();
 </script>
 
 @endsection

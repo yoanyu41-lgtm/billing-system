@@ -111,14 +111,26 @@
     <table class="grid-table">
         <tr>
             <td>
-                <div class="box" style="height: 120px;">
-                    <h3>ព័ត៌មានផលិតផល (PRODUCT)</h3>
-                    <table class="info-table">
-                        <tr><td class="label">ឈ្មោះទំនិញ</td><td>: <b>{{ $product->name }}</b></td></tr>
-                        <tr><td class="label">លេខកូដ</td><td>: {{ $product->code ?? '-' }}</td></tr>
-                        <tr><td class="label">ម៉ាក / Brand</td><td>: {{ $product->brand ?? '-' }}</td></tr>
-                        <tr><td class="label">ការធានា</td><td>: {{ $product->warranty ?? '-' }}</td></tr>
-                    </table>
+                <div class="box" style="min-height: 120px;">
+                    @if($installment->items && $installment->items->count() > 1)
+                        <h3>ព័ត៌មានផលិតផល ({{ $installment->items->count() }} មុខទំនិញ)</h3>
+                        <table class="info-table">
+                            @foreach($installment->items as $idx => $it)
+                                <tr>
+                                    <td class="label" style="width: 50%;">{{ $idx + 1 }}. {{ $it->product?->name ?? 'N/A' }}</td>
+                                    <td>: {{ $it->quantity }}x (${{ number_format($it->price, 2) }}) = <b>${{ number_format($it->total, 2) }}</b></td>
+                                </tr>
+                            @endforeach
+                        </table>
+                    @else
+                        <h3>ព័ត៌មានផលិតផល (PRODUCT)</h3>
+                        <table class="info-table">
+                            <tr><td class="label">ឈ្មោះទំនិញ</td><td>: <b>{{ $product->name }}</b></td></tr>
+                            <tr><td class="label">លេខកូដ</td><td>: {{ $product->code ?? '-' }}</td></tr>
+                            <tr><td class="label">ម៉ាក / Brand</td><td>: {{ $product->brand ?? '-' }}</td></tr>
+                            <tr><td class="label">ការធានា</td><td>: {{ $product->warranty ?? '-' }}</td></tr>
+                        </table>
+                    @endif
                 </div>
             </td>
             <td>
@@ -130,6 +142,16 @@
                         <tr><td class="label">ប្រាក់ដើមបង់រំលស់</td><td>: ${{ number_format($installment->total_price - $installment->down_payment, 2) }}</td></tr>
                         <tr><td class="label">ការបង់ប្រចាំខែ</td><td>: <b style="color: #1e40af;">${{ number_format($installment->monthly_payment, 2) }} / ខែ</b></td></tr>
                         <tr><td class="label">រយៈពេលបង់</td><td>: {{ $installment->duration_months }} ខែ</td></tr>
+                        <tr><td class="label">លក្ខខណ្ឌបង់ផ្តាច់</td><td>: 
+                            @php
+                                $minPayoffMonthsPdf = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                            @endphp
+                            @if($minPayoffMonthsPdf > 0)
+                                <b>បង់បានយ៉ាងតិច {{ $minPayoffMonthsPdf }} ខែ</b>
+                            @else
+                                <b>អាចបង់ផ្តាច់បានគ្រប់ពេល</b>
+                            @endif
+                        </td></tr>
                     </table>
                 </div>
             </td>

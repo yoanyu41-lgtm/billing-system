@@ -32,6 +32,9 @@ class Installment extends Model
         'returned_by',
         'return_reason',
         'return_restock',
+        'payoff_min_month',
+        'payoff_type',
+        'payoff_interest_mode',
     ];
 
     protected $attributes = [
@@ -45,6 +48,7 @@ class Installment extends Model
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'subtotal_before_tax' => 'decimal:2',
+        'payoff_min_month' => 'integer',
     ];
 
     public function customer()
@@ -55,6 +59,23 @@ class Installment extends Model
     public function product()
     {
         return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    public function items()
+    {
+        return $this->hasMany(InstallmentItem::class);
+    }
+
+    public function getProductsSummaryAttribute(): string
+    {
+        if ($this->relationLoaded('items') ? $this->items->isNotEmpty() : $this->items()->exists()) {
+            $itemNames = $this->items->map(function ($item) {
+                $name = $item->product?->name ?? 'N/A';
+                return $item->quantity > 1 ? "{$name} (x{$item->quantity})" : $name;
+            })->toArray();
+            return implode(', ', $itemNames);
+        }
+        return $this->product?->name ?? 'N/A';
     }
 
     public function user()

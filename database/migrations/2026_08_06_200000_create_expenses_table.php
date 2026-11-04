@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('expenses', function (Blueprint $table) {
-            $table->id();
-            $table->string('category')->default('Other');
-            $table->text('description')->nullable();
-            $table->decimal('amount', 12, 2)->default(0);
-            $table->date('expense_date');
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('expenses')) {
+            Schema::create('expenses', function (Blueprint $table) {
+                $table->id();
+                $table->string('category')->default('Other');
+                $table->text('description')->nullable();
+                $table->decimal('amount', 12, 2)->default(0);
+                $table->date('expense_date');
+                $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

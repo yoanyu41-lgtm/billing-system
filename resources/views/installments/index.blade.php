@@ -122,11 +122,23 @@
                             @endif
                         </td>
                         <td class="px-5 py-4">
-                            <div class="text-sm font-semibold text-gray-900 max-w-[170px] lg:max-w-[200px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
-                                {{ $installment->product?->name ?? 'N/A' }}
-                            </div>
-                            @if($installment->product?->code)
-                                <div class="text-xs text-indigo-600 font-medium mt-0.5">{{ $installment->product?->code }}</div>
+                            @if($installment->items && $installment->items->count() > 1)
+                                <div class="text-sm font-semibold text-gray-900 max-w-[170px] lg:max-w-[200px] truncate" title="{{ $installment->products_summary }}">
+                                    {{ $installment->items->first()->product?->name ?? ($installment->product?->name ?? 'N/A') }}
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100" title="{{ $installment->products_summary }}">
+                                        +{{ $installment->items->count() - 1 }} {{ app()->getLocale() === 'km' ? 'មុខទៀត' : 'more' }}
+                                    </span>
+                                    <span class="text-[11px] text-slate-400">({{ $installment->items->sum('quantity') }} items)</span>
+                                </div>
+                            @else
+                                <div class="text-sm font-semibold text-gray-900 max-w-[170px] lg:max-w-[200px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                    {{ $installment->product?->name ?? 'N/A' }}
+                                </div>
+                                @if($installment->product?->code)
+                                    <div class="text-xs text-indigo-600 font-medium mt-0.5">{{ $installment->product?->code }}</div>
+                                @endif
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">

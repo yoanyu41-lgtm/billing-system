@@ -190,7 +190,9 @@
                         </span>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1">
-                        {{ $isKm ? 'ដាក់លេខ ០ ប្រសិនបើអនុញ្ញាតឱ្យបង់ផ្តាច់បានគ្រប់ពេល' : 'Set to 0 to allow early payoff anytime without restriction' }}
+                        {{ $isKm 
+                            ? 'ដាក់លេខ ០ ប្រសិនបើអនុញ្ញាតឱ្យបង់ផ្តាច់បានគ្រប់ពេល។ ចំណាំ៖ ការកំណត់នេះត្រូវបានរក្សាទុកជាប់ជាមួយកិច្ចសន្យានីមួយៗនៅពេលបង្កើត (គម្រោងចាស់ៗរក្សាទុកតាមកិច្ចសន្យាដើមដដែល មិនផ្លាស់ប្តូរឡើយ)។' 
+                            : 'Set to 0 to allow early payoff anytime without restriction. Note: Each contract snapshots its own payoff policy upon creation; changes here only affect future contracts.' }}
                     </p>
                 </div>
             </div>

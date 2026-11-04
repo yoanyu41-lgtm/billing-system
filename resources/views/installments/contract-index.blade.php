@@ -123,9 +123,18 @@
                             <div class="text-xs text-gray-400">#INS-{{ str_pad($installment->id, 3, '0', STR_PAD_LEFT) }}</div>
                         </td>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
-                                {{ $installment->product?->name ?? 'N/A' }}
-                            </div>
+                            @if($installment->items && $installment->items->count() > 1)
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->products_summary }}">
+                                    {{ $installment->items->first()->product?->name ?? 'N/A' }}
+                                </div>
+                                <div class="text-[11px] text-indigo-600 font-medium">
+                                    +{{ $installment->items->count() - 1 }} {{ app()->getLocale() === 'km' ? 'មុខទៀត' : 'more' }}
+                                </div>
+                            @else
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                    {{ $installment->product?->name ?? 'N/A' }}
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ format_currency($installment->total_price) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">

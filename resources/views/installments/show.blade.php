@@ -131,27 +131,68 @@
 
             <!-- Product Card -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div class="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
-                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
-                        <i class="fas fa-desktop"></i>
+                <div class="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
+                            <i class="fas fa-boxes-stacked"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-base">{{ __('app.product_details') }}</h3>
+                            <p class="text-xs text-gray-500">{{ __('app.financed_asset') }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 text-base">{{ __('app.product_details') }}</h3>
-                        <p class="text-xs text-gray-500">{{ __('app.financed_asset') }}</p>
-                    </div>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.model_name') }}</div>
-                        <div class="text-sm font-semibold text-gray-800">{{ $installment->product?->name ?? 'N/A' }}</div>
-                    </div>
-                    @if($installment->product?->code)
-                    <div>
-                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.item_code') }}</div>
-                        <div class="text-sm font-semibold text-indigo-600">{{ $installment->product?->code }}</div>
-                    </div>
+                    @if($installment->items && $installment->items->count() > 1)
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {{ $installment->items->count() }} មុខទំនិញ
+                        </span>
                     @endif
                 </div>
+
+                @if($installment->items && $installment->items->count() > 0)
+                    <div class="space-y-3">
+                        @foreach($installment->items as $idx => $item)
+                            <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-bold text-slate-900 truncate">
+                                            {{ $item->product?->name ?? 'N/A' }}
+                                        </div>
+                                        <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                            @if($item->product?->code)
+                                                <span class="font-mono text-indigo-600 font-medium">#{{ $item->product->code }}</span>
+                                                <span>•</span>
+                                            @endif
+                                            <span>Qty: <b>{{ $item->quantity }}</b> × ${{ number_format($item->price, 2) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <div class="text-sm font-extrabold text-slate-800">
+                                            ${{ number_format($item->total, 2) }}
+                                        </div>
+                                        @if($item->tax_amount > 0)
+                                            <div class="text-[10px] text-slate-400">
+                                                (Tax: ${{ number_format($item->tax_amount, 2) }})
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.model_name') }}</div>
+                            <div class="text-sm font-semibold text-gray-800">{{ $installment->product?->name ?? 'N/A' }}</div>
+                        </div>
+                        @if($installment->product?->code)
+                        <div>
+                            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{{ __('app.item_code') }}</div>
+                            <div class="text-sm font-semibold text-indigo-600">{{ $installment->product?->code }}</div>
+                        </div>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -210,6 +251,23 @@
                                     <span class="text-xs block font-semibold {{ ($installment->remaining_balance <= 0 || $installment->remaining_months <= 0) ? 'text-emerald-600' : 'text-amber-600' }}">
                                         {{ app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 months left' : $installment->remaining_months . ' ' . __('app.months') . ' left') }}
                                     </span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium">{{ $isKm ? 'លក្ខខណ្ឌបង់ផ្តាច់' : 'Early Payoff Policy' }}</td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">
+                                    @php
+                                        $minM = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                                    @endphp
+                                    @if($minM > 0)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            {{ $isKm ? "បង់បានយ៉ាងតិច {$minM} ខែ" : "Min {$minM} months paid" }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            {{ $isKm ? 'អាចបង់ផ្តាច់បានគ្រប់ពេល' : 'Allowed anytime' }}
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                             <tr class="bg-indigo-50/60 hover:bg-indigo-50">

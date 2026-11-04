@@ -595,40 +595,60 @@
             <!-- Product Information -->
             <div class="card-box">
                 <div class="card-header-bar">
-                    <i class="fas fa-laptop"></i> <?php echo e($L('ព័ត៌មានផលិតផល (Product Details)', 'PRODUCT DETAILS')); ?>
+                    <i class="fas fa-boxes-stacked"></i> <?php echo e($L('ព័ត៌មានផលិតផល (Product Details)', 'PRODUCT DETAILS')); ?>
 
+                    <?php if($installment->items && $installment->items->count() > 1): ?>
+                        <span style="margin-left: auto; font-size: 8.5px; font-weight: 700; color: #000;">(<?php echo e($installment->items->count()); ?> មុខទំនិញ)</span>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body">
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('ឈ្មោះផលិតផល', 'Product Name')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productName); ?></div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('លេខកូដទំនិញ', 'Product Code')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productCode); ?></div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('ប្រភេទផលិតផល', 'Category')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productCategory); ?></div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('ម៉ាកយីហោ', 'Brand')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productBrand); ?></div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('ស្ថានភាពទំនិញ', 'Condition')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productCondition); ?></div>
-                    </div>
-                    <div class="kv-row">
-                        <div class="kv-label"><?php echo e($L('ការធានា', 'Warranty')); ?></div>
-                        <div class="kv-sep">:</div>
-                        <div class="kv-value"><?php echo e($productWarranty); ?></div>
-                    </div>
+                    <?php if($installment->items && $installment->items->count() > 1): ?>
+                        <div style="display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">
+                            <?php $__currentLoopData = $installment->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 9px; padding: 2px 0; border-bottom: 1px dashed #e2e8f0;">
+                                    <div>
+                                        <b><?php echo e($idx + 1); ?>. <?php echo e($it->product?->name ?? 'N/A'); ?></b>
+                                        <span style="color: #666; font-size: 8.5px;">(Qty: <?php echo e($it->quantity); ?> × $<?php echo e(number_format($it->price, 2)); ?>)</span>
+                                    </div>
+                                    <div style="font-weight: 700; color: #000;">
+                                        $<?php echo e(number_format($it->total, 2)); ?>
+
+                                    </div>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('ឈ្មោះផលិតផល', 'Product Name')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productName); ?></div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('លេខកូដទំនិញ', 'Product Code')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productCode); ?></div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('ប្រភេទផលិតផល', 'Category')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productCategory); ?></div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('ម៉ាកយីហោ', 'Brand')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productBrand); ?></div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('ស្ថានភាពទំនិញ', 'Condition')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productCondition); ?></div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-label"><?php echo e($L('ការធានា', 'Warranty')); ?></div>
+                            <div class="kv-sep">:</div>
+                            <div class="kv-value"><?php echo e($productWarranty); ?></div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -680,6 +700,22 @@
                         <div class="kv-label"><?php echo e($L('រយៈពេលរំលស់', 'Duration')); ?></div>
                         <div class="kv-sep">:</div>
                         <div class="kv-value"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.months')); ?></div>
+                    </div>
+                    <div class="kv-row">
+                        <div class="kv-label"><?php echo e($L('លក្ខខណ្ឌបង់ផ្តាច់', 'Early Payoff Policy')); ?></div>
+                        <div class="kv-sep">:</div>
+                        <div class="kv-value">
+                            <?php
+                                $minPayoffMonths = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                            ?>
+                            <?php if($minPayoffMonths > 0): ?>
+                                <?php echo e($L("បង់បានយ៉ាងតិច {$minPayoffMonths} ខែ", "Minimum {$minPayoffMonths} months paid")); ?>
+
+                            <?php else: ?>
+                                <?php echo e($L('អាចបង់ផ្តាច់បានគ្រប់ពេល', 'Allowed anytime')); ?>
+
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <div class="kv-row" style="background: #f8fafc; padding: 4px 0;">
                         <div class="kv-label" style="font-weight: 800;"><?php echo e($L('ប្រាក់ត្រូវបង់ប្រចាំខែ', 'Monthly Payment')); ?></div>

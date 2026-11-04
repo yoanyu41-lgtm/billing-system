@@ -23,7 +23,7 @@ class InstallmentController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product');
+        $query = Installment::with('customer', 'product', 'items.product');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -33,6 +33,9 @@ class InstallmentController extends Controller
                         ->orWhere('phone', 'like', "%{$search}%");
                 })
                 ->orWhereHas('product', function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('items.product', function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%");
                 })
                 ->orWhere('status', 'like', "%{$search}%");
@@ -73,63 +76,123 @@ class InstallmentController extends Controller
     public function create()
     {
         $customers = Customer::where('type', 'installment')
-            ->whereDoesntHave('installments')
+            ->withCount(['installments as active_installments_count' => function ($q) {
+                $q->whereIn('status', ['active', 'pending']);
+            }])
             ->orderBy('name')
             ->get();
-        $products = Product::where('is_active', true)->orderBy('name')->get();
+        $products = Product::where('is_active', true)->where('stock', '>', 0)->orderBy('name')->get();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
         return view('installments.create', compact('customers', 'products', 'exchangeRate'));
     }
 
     public function store(Request $request)
     {
+        $items = $request->items;
+        if (empty($items) && $request->filled('product_id')) {
+            $items = [
+                [
+                    'product_id' => $request->product_id,
+                    'quantity'   => 1,
+                    'price'      => $request->total_price,
+                ]
+            ];
+            $request->merge(['items' => $items]);
+        }
+
+        if (empty($items) || !is_array($items)) {
+            return back()->withInput()->with('error', 'សូមជ្រើសរើសទំនិញយ៉ាងតិច ១ មុខ។');
+        }
+
         $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'product_id' => 'required|exists:products,id',
-            'total_price' => 'required|numeric|min:0',
-            'down_payment' => 'required|numeric|min:0|lte:total_price',
-            'interest_rate' => 'nullable|numeric|min:0',
-            'interest_type' => 'nullable|string|in:flat,declining,amortization,zero_interest',
-            'duration_months' => 'required|integer|min:1',
+            'customer_id'        => 'required|exists:customers,id',
+            'down_payment'       => 'required|numeric|min:0',
+            'interest_rate'      => 'nullable|numeric|min:0',
+            'interest_type'      => 'nullable|string|in:flat,declining,amortization,zero_interest',
+            'duration_months'    => 'required|integer|min:1',
+            'items'              => 'nullable|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.price'      => 'required|numeric|min:0',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
-
-        if ($product->stock <= 0) {
-            return back()->withInput()->with('error', __('app.out_of_stock') ?? 'This product is out of stock.');
+        // Check stock availability for all products
+        foreach ($items as $it) {
+            $prod = Product::find($it['product_id']);
+            if (!$prod || $prod->stock < (int)$it['quantity']) {
+                $pName = $prod ? $prod->name : 'N/A';
+                $available = $prod ? $prod->stock : 0;
+                return back()->withInput()->with('error', "ទំនិញ {$pName} មិនមានស្តុកគ្រប់គ្រាន់ទេ (នៅសល់តែ {$available})។");
+            }
         }
 
         // Get tax settings
         $taxEnabled = \App\Models\Setting::where('key', 'tax_enabled')->value('value') === '1';
         $defaultTaxRate = (float) (\App\Models\Setting::where('key', 'default_tax_rate')->value('value') ?? 0);
-        
-        // Calculate tax on total price if applicable
-        $subtotalBeforeTax = $request->total_price;
-        $taxAmount = 0;
-        $taxRate = 0;
-        
-        if ($taxEnabled && $product->is_taxable) {
-            // Use product-specific tax rate if set, otherwise use default
-            $taxRate = $product->tax_rate > 0 ? $product->tax_rate : $defaultTaxRate;
-            
-            // Calculate tax based on tax type
-            if ($product->tax_type === 'inclusive') {
-                // Tax is already included in price, extract it
-                $taxAmount = $subtotalBeforeTax - ($subtotalBeforeTax / (1 + $taxRate / 100));
-                $subtotalBeforeTax = $request->total_price - $taxAmount;
-                $totalPrice = $request->total_price;
+
+        $totalPrice = 0;
+        $subtotalBeforeTax = 0;
+        $totalTaxAmount = 0;
+        $itemsData = [];
+
+        foreach ($items as $it) {
+            $prod = Product::find($it['product_id']);
+            $qty = max((int) $it['quantity'], 1);
+            $unitPrice = (float) $it['price'];
+            $itemSubtotal = $unitPrice * $qty;
+
+            $itemTaxRate = 0;
+            $itemTaxAmount = 0;
+
+            if ($taxEnabled && $prod->is_taxable) {
+                $itemTaxRate = $prod->tax_rate > 0 ? (float) $prod->tax_rate : $defaultTaxRate;
+                if ($prod->tax_type === 'inclusive') {
+                    $itemTaxAmount = $itemSubtotal - ($itemSubtotal / (1 + $itemTaxRate / 100));
+                    $itemBeforeTax = $itemSubtotal - $itemTaxAmount;
+                    $itemTotal = $itemSubtotal;
+                } else {
+                    $itemTaxAmount = $itemSubtotal * ($itemTaxRate / 100);
+                    $itemBeforeTax = $itemSubtotal;
+                    $itemTotal = $itemSubtotal + $itemTaxAmount;
+                }
             } else {
-                // Tax is exclusive (default), add it on top
-                $taxAmount = $subtotalBeforeTax * ($taxRate / 100);
-                $totalPrice = $subtotalBeforeTax + $taxAmount;
+                $itemBeforeTax = $itemSubtotal;
+                $itemTotal = $itemSubtotal;
             }
-        } else {
-            $totalPrice = $subtotalBeforeTax;
+
+            $subtotalBeforeTax += $itemBeforeTax;
+            $totalTaxAmount += $itemTaxAmount;
+            $totalPrice += $itemTotal;
+
+            $itemsData[] = [
+                'product_id' => $prod->id,
+                'quantity'   => $qty,
+                'price'      => $unitPrice,
+                'tax_rate'   => $itemTaxRate,
+                'tax_amount' => round($itemTaxAmount, 2),
+                'total'      => round($itemTotal, 2),
+            ];
         }
+
         $downPayment = (float) $request->down_payment;
+        if ($downPayment > $totalPrice) {
+            return back()->withInput()->with('error', 'ប្រាក់កក់ដំបូងមិនអាចធំជាងតម្លៃទំនិញសរុបបានទេ។');
+        }
+
         $interestRate = (float) ($request->interest_rate ?? 0);
         $interestType = $request->interest_type ?: \App\Services\InstallmentCalculationService::TYPE_FLAT;
         $duration = (int) $request->duration_months;
+
+        // Snapshot current payoff policy/settings at contract creation time
+        $payoffMinMonth = $request->filled('payoff_min_month')
+            ? (int) $request->payoff_min_month
+            : (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+        $payoffType = $request->filled('payoff_type')
+            ? $request->payoff_type
+            : (\App\Models\Setting::where('key', 'default_payoff_type')->value('value') ?? 'principal_only');
+        $payoffInterestMode = $request->filled('payoff_interest_mode')
+            ? $request->payoff_interest_mode
+            : (\App\Models\Setting::where('key', 'payoff_interest_mode')->value('value') ?? 'one_month');
 
         $principal = max($totalPrice - $downPayment, 0);
         $preview = \App\Services\InstallmentCalculationService::calculatePreview($principal, $interestRate, $duration, $interestType);
@@ -142,24 +205,34 @@ class InstallmentController extends Controller
         // All newly created installments require admin approval (start with pending status)
         $initialStatus = 'pending';
 
-        $installment = DB::transaction(function () use ($request, $product, $totalPrice, $subtotalBeforeTax, $taxRate, $taxAmount, $downPayment, $interestRate, $interestType, $duration, $monthlyPayment, $remainingBalance, $initialStatus) {
+        $primaryProductId = $itemsData[0]['product_id'] ?? null;
+        $overallTaxRate = $subtotalBeforeTax > 0 ? round(($totalTaxAmount / $subtotalBeforeTax) * 100, 2) : 0;
+
+        $installment = DB::transaction(function () use ($request, $primaryProductId, $itemsData, $totalPrice, $subtotalBeforeTax, $overallTaxRate, $totalTaxAmount, $downPayment, $interestRate, $interestType, $duration, $monthlyPayment, $remainingBalance, $initialStatus, $payoffMinMonth, $payoffType, $payoffInterestMode) {
             $inst = Installment::create([
-                'customer_id' => $request->customer_id,
-                'product_id' => $request->product_id,
-                'total_price' => $totalPrice,
-                'subtotal_before_tax' => $subtotalBeforeTax,
-                'tax_rate' => $taxRate,
-                'tax_amount' => $taxAmount,
-                'down_payment' => $downPayment,
-                'interest_rate' => $interestRate,
-                'interest_type' => $interestType,
-                'duration_months' => $duration,
-                'monthly_payment' => $monthlyPayment,
-                'remaining_balance' => $remainingBalance,
-                'status' => $initialStatus,
-                'created_by' => auth()->id(),
-                'next_due_date' => now()->addMonth()->toDateString(),
+                'customer_id'          => $request->customer_id,
+                'product_id'           => $primaryProductId,
+                'total_price'          => round($totalPrice, 2),
+                'subtotal_before_tax'  => round($subtotalBeforeTax, 2),
+                'tax_rate'             => $overallTaxRate,
+                'tax_amount'           => round($totalTaxAmount, 2),
+                'down_payment'         => $downPayment,
+                'interest_rate'        => $interestRate,
+                'interest_type'        => $interestType,
+                'duration_months'      => $duration,
+                'payoff_min_month'     => $payoffMinMonth,
+                'payoff_type'          => $payoffType,
+                'payoff_interest_mode' => $payoffInterestMode,
+                'monthly_payment'      => $monthlyPayment,
+                'remaining_balance'    => $remainingBalance,
+                'status'               => $initialStatus,
+                'created_by'           => auth()->id(),
+                'next_due_date'        => now()->addMonth()->toDateString(),
             ]);
+
+            foreach ($itemsData as $itData) {
+                $inst->items()->create($itData);
+            }
 
             return $inst;
         });
@@ -184,7 +257,7 @@ class InstallmentController extends Controller
     public function show(Installment $installment)
     {
         Gate::authorize('manage-installment', $installment);
-        $installment->load('customer', 'product');
+        $installment->load('customer', 'product', 'items.product');
         $schedule = $installment->getPaymentSchedule();
         $paymentMethods = PaymentMethod::getAvailable();
         $exchangeRate = (float) (\App\Models\Setting::where('key', 'exchange_rate')->value('value') ?? 4100);
@@ -212,7 +285,7 @@ class InstallmentController extends Controller
             }
         }
 
-        $query = Installment::with('customer', 'product')->where('status', 'active');
+        $query = Installment::with('customer', 'product', 'items.product')->where('status', 'active');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
             $query->where('created_by', $user->id);
@@ -235,9 +308,10 @@ class InstallmentController extends Controller
 
         $defaultInterestMode = \App\Models\Setting::where('key', 'payoff_interest_mode')->value('value') ?? 'one_month';
         $defaultPayoffType = \App\Models\Setting::where('key', 'default_payoff_type')->value('value') ?? 'principal_only';
+        $globalMinMonth = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
 
         // Pre-compute payoff (outstanding principal), scheduled remaining, and interest options for each plan.
-        $installments->getCollection()->transform(function ($installment) use ($defaultInterestMode) {
+        $installments->getCollection()->transform(function ($installment) use ($defaultInterestMode, $defaultPayoffType, $globalMinMonth) {
             $installment->payoff_amount = $installment->outstandingPrincipal();
 
             // Calculate exact remaining balance from payment schedule (matches schedule page)
@@ -267,15 +341,24 @@ class InstallmentController extends Controller
 
             $installment->interest_one_month = $oneMonthInterest;
             $installment->interest_all_remaining = $allRemainingInterest;
-            $installment->default_interest_amount = ($defaultInterestMode === 'all_remaining_months')
+
+            // Use contract-specific interest mode, fallback to global setting
+            $targetMode = $installment->payoff_interest_mode ?: $defaultInterestMode;
+            $installment->default_interest_amount = ($targetMode === 'all_remaining_months')
                 ? $allRemainingInterest
                 : $oneMonthInterest;
 
-            // Check minimum eligible month condition
-            $minMonth = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+            // Check contract-specific minimum eligible month condition, fallback to global setting
+            $minMonth = $installment->payoff_min_month !== null
+                ? (int) $installment->payoff_min_month
+                : $globalMinMonth;
+
             $paidMonths = $installment->paid_months;
             $installment->is_payoff_eligible = ($minMonth <= 0) || ($paidMonths >= $minMonth);
             $installment->payoff_min_required_month = $minMonth;
+
+            // Use contract-specific payoff type, fallback to global setting
+            $installment->configured_payoff_type = $installment->payoff_type ?: $defaultPayoffType;
 
             // Overdue days & late fee calculation for Pay Off
             $daysLate = $installment->daysLate();
@@ -326,13 +409,16 @@ class InstallmentController extends Controller
                 ->with('error', __('app.installment_not_active'));
         }
 
-        // Validate minimum paid month rule
-        $minMonth = (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+        // Validate minimum paid month rule based on contract's own payoff_min_month
+        $minMonth = $installment->payoff_min_month !== null
+            ? (int) $installment->payoff_min_month
+            : (int) (\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+
         $paidMonths = $installment->paid_months;
         if ($minMonth > 0 && $paidMonths < $minMonth) {
             $msg = app()->getLocale() === 'km'
-                ? "អតិថិជនមិនទាន់អាចបង់ផ្តាច់បានទេ! តាមគោលការណ៍ត្រូវបង់យ៉ាងតិច {$minMonth} ខែជាមុនសិន (បច្ចុប្បន្នបង់បាន {$paidMonths} ខែ)។"
-                : "Not eligible for early payoff yet! Policy requires minimum {$minMonth} months paid (currently {$paidMonths} months).";
+                ? "អតិថិជនមិនទាន់អាចបង់ផ្តាច់បានទេ! តាមកិច្ចសន្យាត្រូវបង់យ៉ាងតិច {$minMonth} ខែជាមុនសិន (បច្ចុប្បន្នបង់បាន {$paidMonths} ខែ)។"
+                : "Not eligible for early payoff yet! Contract terms require minimum {$minMonth} months paid (currently {$paidMonths} months).";
             return redirect()->back()->with('error', $msg);
         }
 
@@ -505,6 +591,15 @@ class InstallmentController extends Controller
         if ($request->product_id) {
             $updateData['product_id'] = $request->product_id;
         }
+        if ($request->has('payoff_min_month')) {
+            $updateData['payoff_min_month'] = $request->payoff_min_month !== null ? (int)$request->payoff_min_month : 0;
+        }
+        if ($request->filled('payoff_type')) {
+            $updateData['payoff_type'] = $request->payoff_type;
+        }
+        if ($request->filled('payoff_interest_mode')) {
+            $updateData['payoff_interest_mode'] = $request->payoff_interest_mode;
+        }
         if ($request->first_payment_date) {
             $updateData['first_payment_date'] = $request->first_payment_date;
             $updateData['next_due_date'] = $request->first_payment_date;
@@ -582,18 +677,35 @@ class InstallmentController extends Controller
     public function destroy(Installment $installment)
     {
         Gate::authorize('delete-installment');
+        $installment->load('items.product');
         DB::transaction(function () use ($installment) {
-            if ($installment->status === 'active' && $installment->product_id) {
-                $product = Product::find($installment->product_id);
-                if ($product) {
-                    $product->increment('stock', 1);
-                    StockMovement::create([
-                        'product_id' => $product->id,
-                        'type'       => 'in',
-                        'quantity'   => 1,
-                        'related_id' => $installment->id,
-                        'note'       => 'Deleted Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
-                    ]);
+            if ($installment->status === 'active') {
+                if ($installment->items->isNotEmpty()) {
+                    foreach ($installment->items as $it) {
+                        $p = $it->product;
+                        if ($p) {
+                            $p->increment('stock', $it->quantity);
+                            StockMovement::create([
+                                'product_id' => $p->id,
+                                'type'       => 'in',
+                                'quantity'   => $it->quantity,
+                                'related_id' => $installment->id,
+                                'note'       => 'Deleted Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                            ]);
+                        }
+                    }
+                } elseif ($installment->product_id) {
+                    $product = Product::find($installment->product_id);
+                    if ($product) {
+                        $product->increment('stock', 1);
+                        StockMovement::create([
+                            'product_id' => $product->id,
+                            'type'       => 'in',
+                            'quantity'   => 1,
+                            'related_id' => $installment->id,
+                            'note'       => 'Deleted Installment #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT),
+                        ]);
+                    }
                 }
             }
             $installment->delete();
@@ -633,7 +745,7 @@ class InstallmentController extends Controller
     public function scheduleIndex(Request $request)
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product')
+        $query = Installment::with('customer', 'product', 'items.product')
             ->where('status', '!=', 'pending');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
@@ -650,6 +762,9 @@ class InstallmentController extends Controller
                 ->orWhereHas('product', function($pq) use ($search) {
                     $pq->where('name', 'like', "%{$search}%");
                 })
+                ->orWhereHas('items.product', function($ipq) use ($search) {
+                    $ipq->where('name', 'like', "%{$search}%");
+                })
                 ->orWhere('id', 'like', "%" . ltrim($search, '#INS-') . "%");
             });
         }
@@ -663,7 +778,7 @@ class InstallmentController extends Controller
     public function contractIndex(Request $request)
     {
         $user = auth()->user();
-        $query = Installment::with('customer', 'product')
+        $query = Installment::with('customer', 'product', 'items.product')
             ->where('status', '!=', 'cancelled');
 
         if (!in_array($user->role, ['admin', 'staff'])) {
@@ -679,6 +794,9 @@ class InstallmentController extends Controller
                 })
                 ->orWhereHas('product', function($pq) use ($search) {
                     $pq->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('items.product', function($ipq) use ($search) {
+                    $ipq->where('name', 'like', "%{$search}%");
                 })
                 ->orWhere('id', 'like', "%" . ltrim($search, '#INS-') . "%");
             });
@@ -736,6 +854,7 @@ class InstallmentController extends Controller
             return redirect()->route('installments.show', $installment)->with('error', $msg);
         }
         
+        $installment->load('items.product');
         $customer = $installment->customer;
         $product = $installment->product;
         $guarantor = $customer->guarantors()->first(); // Get first guarantor if exists
@@ -901,6 +1020,7 @@ class InstallmentController extends Controller
 
     public function publicDownloadContract(Installment $installment)
     {
+        $installment->load('items.product');
         $customer = $installment->customer;
         $product = $installment->product;
         $guarantor = $customer->guarantors()->first();
@@ -943,6 +1063,7 @@ class InstallmentController extends Controller
             return redirect()->route('installments.show', $installment)->with('error', $errorMsg);
         }
 
+        $installment->load('items.product');
         $customer = $installment->customer;
         $product = $installment->product;
         
@@ -1112,21 +1233,51 @@ class InstallmentController extends Controller
         }
 
         $customer = $installment->customer;
-        $product = $installment->product;
+        $installment->load('items.product');
 
-        if ($product && $product->stock <= 0) {
-            return redirect()->back()->with('error', app()->getLocale() === 'km' 
-                ? 'ទំនិញនេះអស់ពីស្តុកហើយ មិនអាចឯកភាពបានទេ។' 
-                : 'This product is out of stock and cannot be approved.');
+        // Check stock availability
+        if ($installment->items->isNotEmpty()) {
+            foreach ($installment->items as $it) {
+                $p = $it->product;
+                if ($p && $p->stock < $it->quantity) {
+                    return redirect()->back()->with('error', app()->getLocale() === 'km' 
+                        ? "ទំនិញ {$p->name} មិនមានស្តុកគ្រប់គ្រាន់ទេ (នៅសល់តែ {$p->stock}) មិនអាចឯកភាពបានទេ។" 
+                        : "Product {$p->name} has insufficient stock ({$p->stock} available) and cannot be approved.");
+                }
+            }
+        } else {
+            $product = $installment->product;
+            if ($product && $product->stock <= 0) {
+                return redirect()->back()->with('error', app()->getLocale() === 'km' 
+                    ? 'ទំនិញនេះអស់ពីស្តុកហើយ មិនអាចឯកភាពបានទេ។' 
+                    : 'This product is out of stock and cannot be approved.');
+            }
         }
 
-        DB::transaction(function () use ($installment, $product) {
+        DB::transaction(function () use ($installment) {
             $installment->update([
                 'status' => 'active',
             ]);
 
             // Deduct product stock upon Admin approval
-            if ($product) {
+            if ($installment->items->isNotEmpty()) {
+                foreach ($installment->items as $it) {
+                    $p = $it->product;
+                    if ($p) {
+                        $p->decrement('stock', $it->quantity);
+                        $p->checkLowStockAlert();
+
+                        StockMovement::create([
+                            'product_id' => $p->id,
+                            'type'       => 'out',
+                            'quantity'   => $it->quantity,
+                            'related_id' => $installment->id,
+                            'note'       => 'Installment Contract #INS-' . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . ' (Approved)',
+                        ]);
+                    }
+                }
+            } elseif ($installment->product) {
+                $product = $installment->product;
                 $product->decrement('stock', 1);
                 $product->checkLowStockAlert();
 
@@ -1145,10 +1296,11 @@ class InstallmentController extends Controller
             $contractDownloadLink = route('public.installments.download-contract', $installment->id);
             $khmerAmount = number_format($installment->total_price, 2);
             $khmerMonthly = number_format($installment->monthly_payment, 2);
+            $productNameText = $installment->items->isNotEmpty() ? $installment->products_summary : ($installment->product?->name ?? 'ទំនិញ');
             
             $msg = "📄 *កិច្ចសន្យាបង់រំលស់ត្រូវបានឯកភាព / Installment Contract Approved*\n\n"
                 . "សូមជម្រាបជូនអតិថិជន *{$customer->name}*៖\n"
-                . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$product->name}* ត្រូវបាន Admin ឯកភាពអនុម័តរួចរាល់ហើយ។\n"
+                . "គម្រោងបង់រំលស់សម្រាប់ផលិតផល *{$productNameText}* ត្រូវបាន Admin ឯកភាពអនុម័តរួចរាល់ហើយ។\n"
                 . "• លេខកិច្ចសន្យា៖ *#INS-" . str_pad($installment->id, 3, '0', STR_PAD_LEFT) . "*\n"
                 . "• តម្លៃសរុប៖ *$" . $khmerAmount . "*\n"
                 . "• ត្រូវបង់ប្រចាំខែ៖ *$" . $khmerMonthly . "*\n"

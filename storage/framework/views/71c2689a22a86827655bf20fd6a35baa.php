@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>កិច្ចសន្យាបង់រំលោះ #INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?></title>
+    <style>
+        body { 
+            font-family: 'Khmer UI', 'khmeros', 'DejaVu Sans', sans-serif;
+            margin: 0; 
+            padding: 15px; 
+            font-size: 11px; 
+            color: #1f2937; 
+            line-height: 1.5;
+        }
+        .top { width: 100%; border-bottom: 2px solid #1e40af; padding-bottom: 10px; }
+        .top td { vertical-align: top; }
+        .company-name { font-size: 16px; font-weight: bold; color: #1e40af; }
+        .muted { color: #6b7280; font-size: 10px; }
+        .title { text-align: center; font-size: 16px; font-weight: bold; color: #1e40af; margin-top: 10px; }
+        .meta-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .meta-table td { padding: 4px 6px; border: 1px solid #1e40af; font-size: 10px; }
+        .meta-table .lbl { background: #eff6ff; font-weight: bold; }
+        .section-title { font-weight: bold; color: #1e40af; margin: 12px 0 5px; border-bottom: 1px solid #dbeafe; padding-bottom: 2px; font-size: 12px; }
+        
+        .grid-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .grid-table td { width: 50%; vertical-align: top; padding: 0 10px 0 0; }
+        .box { border: 1px solid #e5e7eb; padding: 8px; border-radius: 4px; background-color: #fafafa; }
+        .box h3 { font-size: 11px; margin: 0 0 5px 0; color: #1e40af; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+        
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table td { padding: 3px 0; border: none; font-size: 10px; }
+        .info-table .label { color: #6b7280; width: 110px; }
+        
+        table.schedule-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        table.schedule-table th { background: #1e40af; color: #fff; padding: 5px; font-size: 10px; text-align: center; font-weight: bold; }
+        table.schedule-table td { padding: 4px; border: 1px solid #e5e7eb; text-align: center; font-size: 9px; }
+        .right { text-align: right !important; }
+        .center { text-align: center !important; }
+        
+        .terms { font-size: 11px; color: #4b5563; line-height: 1.6; }
+        .terms p { font-weight: bold; margin: 5px 0 2px 0; color: #1f2937; }
+        .terms ol { margin: 0 0 5px 15px; padding: 0; }
+        .terms li { margin-bottom: 2px; }
+        
+        .signatures { width: 100%; margin-top: 25px; border-collapse: collapse; }
+        .signatures td { width: 50%; text-align: center; vertical-align: top; }
+        .sig-line { border-top: 1px dashed #9ca3af; margin: 35px auto 5px; width: 180px; }
+        .thanks { text-align: center; color: #1e40af; margin-top: 20px; font-size: 10px; font-weight: bold; }
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <?php
+        $companyName = $settings['company_name_km'] ?? $settings['company_name'] ?? 'CityTech Computer';
+        $companyPhone = $settings['company_phone'] ?? '';
+        $companyAddress = $settings['company_address_km'] ?? $settings['company_address'] ?? '';
+        $companyEmail = $settings['company_email'] ?? '';
+        $exchangeRate = (float) ($settings['exchange_rate'] ?? 4100);
+    ?>
+
+    
+    <table class="top">
+        <tr>
+            <td style="width: 60%;">
+                <div class="company-name"><?php echo e($companyName); ?></div>
+                <?php if($companyAddress): ?><div class="muted">អាសយដ្ឋាន: <?php echo e($companyAddress); ?></div><?php endif; ?>
+                <?php if($companyPhone): ?><div class="muted">ទូរស័ព្ទ: <?php echo e($companyPhone); ?></div><?php endif; ?>
+                <?php if($companyEmail): ?><div class="muted">អ៊ីមែល: <?php echo e($companyEmail); ?></div><?php endif; ?>
+            </td>
+            <td style="width: 40%;">
+                <div class="title" style="margin: 0; font-size: 14px;">កិច្ចសន្យាបង់រំលស់ផលិតផល</div>
+                <table class="meta-table" style="width: 100%;">
+                    <tr><td class="lbl">លេខកិច្ចសន្យា</td><td>#INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?>-<?php echo e(date('Y', strtotime($installment->created_at))); ?></td></tr>
+                    <tr><td class="lbl">កាលបរិច្ឆេទ</td><td><?php echo e(\Carbon\Carbon::parse($installment->created_at)->format('d-m-Y')); ?></td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">📋 ព័ត៌មានភាគីកិច្ចសន្យា</div>
+    <table class="grid-table">
+        <tr>
+            <td>
+                <div class="box">
+                    <h3>ភាគីទី១ - អ្នកលក់ (SELLER)</h3>
+                    <table class="info-table">
+                        <tr><td class="label">ឈ្មោះក្រុមហ៊ុន</td><td>: <b><?php echo e($companyName); ?></b></td></tr>
+                        <tr><td class="label">លេខទូរស័ព្ទ</td><td>: <?php echo e($companyPhone); ?></td></tr>
+                        <tr><td class="label">អាសយដ្ឋាន</td><td>: <?php echo e($companyAddress); ?></td></tr>
+                    </table>
+                </div>
+            </td>
+            <td>
+                <div class="box">
+                    <h3>ភាគីទី២ - អ្នកទិញ (BUYER)</h3>
+                    <table class="info-table">
+                        <tr><td class="label">ឈ្មោះអតិថិជន</td><td>: <b><?php echo e($customer->name); ?></b></td></tr>
+                        <tr><td class="label">ភេទ</td><td>: <?php echo e($customer->gender === 'female' ? 'ស្រី' : 'ប្រុស'); ?></td></tr>
+                        <tr><td class="label">លេខទូរស័ព្ទ</td><td>: <?php echo e($customer->phone); ?></td></tr>
+                        <tr><td class="label">អាសយដ្ឋាន</td><td>: <?php echo e($customer->address ?? '-'); ?></td></tr>
+                        <?php if($guarantor): ?>
+                        <tr><td class="label">អ្នកធានា</td><td>: <?php echo e($guarantor->name); ?> (<?php echo e($guarantor->phone); ?>)</td></tr>
+                        <?php endif; ?>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">💵 ព័ត៌មានផលិតផល និងហិរញ្ញវត្ថុ</div>
+    <table class="grid-table">
+        <tr>
+            <td>
+                <div class="box" style="min-height: 120px;">
+                    <?php if($installment->items && $installment->items->count() > 1): ?>
+                        <h3>ព័ត៌មានផលិតផល (<?php echo e($installment->items->count()); ?> មុខទំនិញ)</h3>
+                        <table class="info-table">
+                            <?php $__currentLoopData = $installment->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $it): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <tr>
+                                    <td class="label" style="width: 50%;"><?php echo e($idx + 1); ?>. <?php echo e($it->product?->name ?? 'N/A'); ?></td>
+                                    <td>: <?php echo e($it->quantity); ?>x ($<?php echo e(number_format($it->price, 2)); ?>) = <b>$<?php echo e(number_format($it->total, 2)); ?></b></td>
+                                </tr>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </table>
+                    <?php else: ?>
+                        <h3>ព័ត៌មានផលិតផល (PRODUCT)</h3>
+                        <table class="info-table">
+                            <tr><td class="label">ឈ្មោះទំនិញ</td><td>: <b><?php echo e($product->name); ?></b></td></tr>
+                            <tr><td class="label">លេខកូដ</td><td>: <?php echo e($product->code ?? '-'); ?></td></tr>
+                            <tr><td class="label">ម៉ាក / Brand</td><td>: <?php echo e($product->brand ?? '-'); ?></td></tr>
+                            <tr><td class="label">ការធានា</td><td>: <?php echo e($product->warranty ?? '-'); ?></td></tr>
+                        </table>
+                    <?php endif; ?>
+                </div>
+            </td>
+            <td>
+                <div class="box" style="height: 120px;">
+                    <h3>ព័ត៌មានហិរញ្ញវត្ថុ (FINANCIALS)</h3>
+                    <table class="info-table">
+                        <tr><td class="label">តម្លៃសរុប</td><td>: <b>$<?php echo e(number_format($installment->total_price, 2)); ?></b></td></tr>
+                        <tr><td class="label">ប្រាក់កក់មុន</td><td>: $<?php echo e(number_format($installment->down_payment, 2)); ?></td></tr>
+                        <tr><td class="label">ប្រាក់ដើមបង់រំលស់</td><td>: $<?php echo e(number_format($installment->total_price - $installment->down_payment, 2)); ?></td></tr>
+                        <tr><td class="label">ការបង់ប្រចាំខែ</td><td>: <b style="color: #1e40af;">$<?php echo e(number_format($installment->monthly_payment, 2)); ?> / ខែ</b></td></tr>
+                        <tr><td class="label">រយៈពេលបង់</td><td>: <?php echo e($installment->duration_months); ?> ខែ</td></tr>
+                        <tr><td class="label">លក្ខខណ្ឌបង់ផ្តាច់</td><td>: 
+                            <?php
+                                $minPayoffMonthsPdf = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                            ?>
+                            <?php if($minPayoffMonthsPdf > 0): ?>
+                                <b>បង់បានយ៉ាងតិច <?php echo e($minPayoffMonthsPdf); ?> ខែ</b>
+                            <?php else: ?>
+                                <b>អាចបង់ផ្តាច់បានគ្រប់ពេល</b>
+                            <?php endif; ?>
+                        </td></tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">📅 កាលវិភាគនៃការទូទាត់ប្រាក់ (PAYMENT SCHEDULE)</div>
+    <table class="schedule-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;">ខែទី</th>
+                <th>ថ្ងៃត្រូវបង់ប្រាក់</th>
+                <th class="right">ប្រាក់ដើម ($)</th>
+                <th class="right">ការប្រាក់ ($)</th>
+                <th class="right">ទឹកប្រាក់សរុបត្រូវបង់ ($)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $__currentLoopData = $paymentSchedule; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $row): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <tr>
+                <td class="center"><?php echo e($row['month']); ?></td>
+                <td class="center"><?php echo e($row['date']); ?></td>
+                <td class="right">$<?php echo e(number_format($row['principal'], 2)); ?></td>
+                <td class="right">$<?php echo e(number_format($row['interest'], 2)); ?></td>
+                <td class="right" style="font-weight: bold; color: #1e40af;">$<?php echo e(number_format($row['total'], 2)); ?></td>
+            </tr>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <div class="section-title">📜 លក្ខខណ្ឌទូទៅនៃកិច្ចសន្យា (TERMS & CONDITIONS)</div>
+    <div class="terms">
+        <?php if(isset($contractTerms) && $contractTerms->count()): ?>
+            <?php $__currentLoopData = $contractTerms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $term): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <p><?php echo e($term->title_km); ?>:</p>
+            <ol>
+                <?php $__currentLoopData = $term->linesKm(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $line): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($line); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ol>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        <?php else: ?>
+            <p>មាត្រា១ - កាតព្វកិច្ចអ្នកទិញ៖</p>
+            <ol>
+                <li>អ្នកទិញព្រមព្រៀងបង់ប្រាក់ប្រចាំខែតាមកាលវិភាគដែលបានកំណត់ក្នុងកិច្ចសន្យានេះឱ្យបានត្រឹមត្រូវ។</li>
+                <li>រក្សាផលិតផលឱ្យបានល្អ មិនត្រូវយកទៅលក់ កែច្នៃ ឬបញ្ចាំមុនពេលបង់ប្រាក់គ្រប់ចំនួនឡើយ។</li>
+            </ol>
+            
+            <p>មាត្រា២ - ការយឺតយ៉ាវ និងការពិន័យ៖</p>
+            <ol>
+                <li>ការបង់ប្រាក់យឺតយ៉ាវចាប់ពី ៦ថ្ងៃ ឡើងទៅ នឹងត្រូវរងការពិន័យជាប្រាក់ចំនួន $5 ក្នុងមួយថ្ងៃ។</li>
+                <li>ការបង់ប្រាក់យឺតយ៉ាវលើសពី ៣០ថ្ងៃ ហាងមានសិទ្ធិដកហូតផលិតផលមកវិញដោយគ្មានការសងប្រាក់កក់ឡើយ។</li>
+            </ol>
+
+            <p>មាត្រា៣ - កម្មសិទ្ធិផលិតផល៖</p>
+            <ol>
+                <li>ផលិតផលនៅតែជាកម្មសិទ្ធិស្របច្បាប់របស់ហាង រហូតដល់អតិថិជនបានទូទាត់ប្រាក់គ្រប់ចំនួនជោគជ័យ។</li>
+            </ol>
+        <?php endif; ?>
+    </div>
+
+    <p style="text-align: center; margin: 15px 0; font-size: 10px;">
+        យើងខ្ញុំភាគីទាំងអស់ បានអាន យល់ និងព្រមព្រៀងតាមលក្ខខណ្ឌទាំងអស់ដែលមានក្នុងកិច្ចសន្យានេះ។
+    </p>
+
+    <table class="signatures" style="width: 100%;">
+        <tr>
+            <td style="width: <?php echo e($guarantor ? '33%' : '50%'); ?>;">
+                <p><b>ហត្ថលេខា និងមេដៃអ្នកលក់ (SELLER)</b></p>
+                <div class="sig-line"></div>
+                <p>កាលបរិច្ឆេទ: ____/____/_______</p>
+            </td>
+            <td style="width: <?php echo e($guarantor ? '33%' : '50%'); ?>;">
+                <p><b>ហត្ថលេខា និងមេដៃអ្នកទិញ (BUYER)</b></p>
+                <div class="sig-line"></div>
+                <p>ឈ្មោះ: <b><?php echo e($customer->name); ?></b></p>
+                <p>កាលបរិច្ឆេទ: ____/____/_______</p>
+            </td>
+            <?php if($guarantor): ?>
+            <td style="width: 33%;">
+                <p><b>ហត្ថលេខា និងមេដៃអ្នកធានា (GUARANTOR)</b></p>
+                <div class="sig-line"></div>
+                <p>ឈ្មោះ: <b><?php echo e($guarantor->name); ?></b></p>
+                <p>កាលបរិច្ឆេទ: ____/____/_______</p>
+            </td>
+            <?php endif; ?>
+        </tr>
+    </table>
+
+    <div class="thanks">
+        សូមអរគុណសម្រាប់ការគាំទ្រ និងការប្រើប្រាស់សេវាកម្មរបស់យើងខ្ញុំ!
+    </div>
+</body>
+</html>
+<?php /**PATH E:\billing-system\resources\views/installments/contract_pdf.blade.php ENDPATH**/ ?>

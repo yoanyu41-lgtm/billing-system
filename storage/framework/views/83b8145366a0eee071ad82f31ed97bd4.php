@@ -136,27 +136,70 @@
 
             <!-- Product Card -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <div class="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
-                    <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
-                        <i class="fas fa-desktop"></i>
+                <div class="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">
+                            <i class="fas fa-boxes-stacked"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-base"><?php echo e(__('app.product_details')); ?></h3>
+                            <p class="text-xs text-gray-500"><?php echo e(__('app.financed_asset')); ?></p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 text-base"><?php echo e(__('app.product_details')); ?></h3>
-                        <p class="text-xs text-gray-500"><?php echo e(__('app.financed_asset')); ?></p>
-                    </div>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.model_name')); ?></div>
-                        <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->product?->name ?? 'N/A'); ?></div>
-                    </div>
-                    <?php if($installment->product?->code): ?>
-                    <div>
-                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.item_code')); ?></div>
-                        <div class="text-sm font-semibold text-indigo-600"><?php echo e($installment->product?->code); ?></div>
-                    </div>
+                    <?php if($installment->items && $installment->items->count() > 1): ?>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            <?php echo e($installment->items->count()); ?> មុខទំនិញ
+                        </span>
                     <?php endif; ?>
                 </div>
+
+                <?php if($installment->items && $installment->items->count() > 0): ?>
+                    <div class="space-y-3">
+                        <?php $__currentLoopData = $installment->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <div class="p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-bold text-slate-900 truncate">
+                                            <?php echo e($item->product?->name ?? 'N/A'); ?>
+
+                                        </div>
+                                        <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                            <?php if($item->product?->code): ?>
+                                                <span class="font-mono text-indigo-600 font-medium">#<?php echo e($item->product->code); ?></span>
+                                                <span>•</span>
+                                            <?php endif; ?>
+                                            <span>Qty: <b><?php echo e($item->quantity); ?></b> × $<?php echo e(number_format($item->price, 2)); ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <div class="text-sm font-extrabold text-slate-800">
+                                            $<?php echo e(number_format($item->total, 2)); ?>
+
+                                        </div>
+                                        <?php if($item->tax_amount > 0): ?>
+                                            <div class="text-[10px] text-slate-400">
+                                                (Tax: $<?php echo e(number_format($item->tax_amount, 2)); ?>)
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.model_name')); ?></div>
+                            <div class="text-sm font-semibold text-gray-800"><?php echo e($installment->product?->name ?? 'N/A'); ?></div>
+                        </div>
+                        <?php if($installment->product?->code): ?>
+                        <div>
+                            <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5"><?php echo e(__('app.item_code')); ?></div>
+                            <div class="text-sm font-semibold text-indigo-600"><?php echo e($installment->product?->code); ?></div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -217,6 +260,25 @@
                                         <?php echo e(app()->getLocale() === 'km' ? ($installment->remaining_months <= 0 ? 'នៅសល់ ០ ខែ' : 'នៅសល់ ' . $installment->remaining_months . ' ខែ') : ($installment->remaining_months <= 0 ? '0 months left' : $installment->remaining_months . ' ' . __('app.months') . ' left')); ?>
 
                                     </span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50/70">
+                                <td class="px-5 py-3.5 text-gray-500 font-medium"><?php echo e($isKm ? 'លក្ខខណ្ឌបង់ផ្តាច់' : 'Early Payoff Policy'); ?></td>
+                                <td class="px-5 py-3.5 text-right font-bold text-gray-900">
+                                    <?php
+                                        $minM = $installment->payoff_min_month !== null ? (int)$installment->payoff_min_month : (int)(\App\Models\Setting::where('key', 'payoff_min_month')->value('value') ?? 0);
+                                    ?>
+                                    <?php if($minM > 0): ?>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <?php echo e($isKm ? "បង់បានយ៉ាងតិច {$minM} ខែ" : "Min {$minM} months paid"); ?>
+
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <?php echo e($isKm ? 'អាចបង់ផ្តាច់បានគ្រប់ពេល' : 'Allowed anytime'); ?>
+
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <tr class="bg-indigo-50/60 hover:bg-indigo-50">

@@ -107,9 +107,18 @@
                             </div>
                         </td>
                         <td class="px-3.5 py-3 text-sm font-medium text-gray-900">
-                            <div class="max-w-[140px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
-                                {{ $installment->product?->name ?? 'N/A' }}
-                            </div>
+                            @if($installment->items && $installment->items->count() > 1)
+                                <div class="max-w-[140px] truncate" title="{{ $installment->products_summary }}">
+                                    {{ $installment->items->first()->product?->name ?? 'N/A' }}
+                                </div>
+                                <div class="text-[11px] text-indigo-600 font-medium">
+                                    +{{ $installment->items->count() - 1 }} {{ app()->getLocale() === 'km' ? 'មុខទៀត' : 'more' }}
+                                </div>
+                            @else
+                                <div class="max-w-[140px] truncate" title="{{ $installment->product?->name ?? 'N/A' }}">
+                                    {{ $installment->product?->name ?? 'N/A' }}
+                                </div>
+                            @endif
                         </td>
                         <td class="px-3.5 py-3 whitespace-nowrap">
                             @php

@@ -109,10 +109,21 @@
                             </div>
                         </td>
                         <td class="px-3.5 py-3 text-sm font-medium text-gray-900">
-                            <div class="max-w-[140px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
-                                <?php echo e($installment->product?->name ?? 'N/A'); ?>
+                            <?php if($installment->items && $installment->items->count() > 1): ?>
+                                <div class="max-w-[140px] truncate" title="<?php echo e($installment->products_summary); ?>">
+                                    <?php echo e($installment->items->first()->product?->name ?? 'N/A'); ?>
 
-                            </div>
+                                </div>
+                                <div class="text-[11px] text-indigo-600 font-medium">
+                                    +<?php echo e($installment->items->count() - 1); ?> <?php echo e(app()->getLocale() === 'km' ? 'មុខទៀត' : 'more'); ?>
+
+                                </div>
+                            <?php else: ?>
+                                <div class="max-w-[140px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
+                                    <?php echo e($installment->product?->name ?? 'N/A'); ?>
+
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td class="px-3.5 py-3 whitespace-nowrap">
                             <?php

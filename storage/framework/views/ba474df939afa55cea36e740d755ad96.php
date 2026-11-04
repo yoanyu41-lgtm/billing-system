@@ -40,7 +40,7 @@
     <?php if(session('error')): ?>
         <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm"><?php echo e(session('error')); ?></div>
     <?php endif; ?>
-    <?php if($errors->any()): ?>
+    <?php if(isset($errors) && $errors->any()): ?>
         <div class="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 shadow-sm">
             <ul class="list-disc pl-5 space-y-1">
                 <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -108,10 +108,21 @@
                             <div class="text-xs text-gray-400">#INS-<?php echo e(str_pad($installment->id, 3, '0', STR_PAD_LEFT)); ?></div>
                         </td>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            <div class="max-w-[150px] lg:max-w-[170px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
-                                <?php echo e($installment->product?->name ?? 'N/A'); ?>
+                            <?php if($installment->items && $installment->items->count() > 1): ?>
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="<?php echo e($installment->products_summary); ?>">
+                                    <?php echo e($installment->items->first()->product?->name ?? 'N/A'); ?>
 
-                            </div>
+                                </div>
+                                <div class="text-[11px] text-indigo-600 font-medium">
+                                    +<?php echo e($installment->items->count() - 1); ?> <?php echo e(app()->getLocale() === 'km' ? 'មុខទៀត' : 'more'); ?>
+
+                                </div>
+                            <?php else: ?>
+                                <div class="max-w-[150px] lg:max-w-[170px] truncate" title="<?php echo e($installment->product?->name ?? 'N/A'); ?>">
+                                    <?php echo e($installment->product?->name ?? 'N/A'); ?>
+
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-semibold text-gray-900"><?php echo e($installment->duration_months); ?> <?php echo e(__('app.duration_unit')); ?></div>
@@ -199,7 +210,7 @@
             <form method="POST" action="<?php echo e(route('installments.pay-off', $installment)); ?>" id="payoff-form-<?php echo e($installment->id); ?>" class="p-6 space-y-4">
                 <?php echo csrf_field(); ?>
                 <?php
-                    $initPayoffType = $defaultPayoffType ?? 'principal_only';
+                    $initPayoffType = $installment->configured_payoff_type ?? $defaultPayoffType ?? 'principal_only';
                 ?>
                 <input type="hidden" name="installment_id" value="<?php echo e($installment->id); ?>">
                 <input type="hidden" name="payoff_type" id="payoff_type_<?php echo e($installment->id); ?>" value="<?php echo e($initPayoffType); ?>">
