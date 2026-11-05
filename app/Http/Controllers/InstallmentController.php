@@ -342,8 +342,8 @@ class InstallmentController extends Controller
             $installment->interest_one_month = $oneMonthInterest;
             $installment->interest_all_remaining = $allRemainingInterest;
 
-            // Use contract-specific interest mode, fallback to global setting
-            $targetMode = $installment->payoff_interest_mode ?: $defaultInterestMode;
+            // Interest mode: use current active global setting from Settings, fallback to contract snapshot
+            $targetMode = $defaultInterestMode ?: ($installment->payoff_interest_mode ?: 'one_month');
             $installment->default_interest_amount = ($targetMode === 'all_remaining_months')
                 ? $allRemainingInterest
                 : $oneMonthInterest;
@@ -357,8 +357,8 @@ class InstallmentController extends Controller
             $installment->is_payoff_eligible = ($minMonth <= 0) || ($paidMonths >= $minMonth);
             $installment->payoff_min_required_month = $minMonth;
 
-            // Use contract-specific payoff type, fallback to global setting
-            $installment->configured_payoff_type = $installment->payoff_type ?: $defaultPayoffType;
+            // Payoff type: use current active global setting from Settings, fallback to contract snapshot
+            $installment->configured_payoff_type = $defaultPayoffType ?: ($installment->payoff_type ?: 'principal_only');
 
             // Overdue days & late fee calculation for Pay Off
             $daysLate = $installment->daysLate();
