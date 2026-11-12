@@ -115,7 +115,7 @@
                 {{ app()->getLocale() === 'km' ? 'បញ្ជីប្រតិបត្តិការបង់ផ្តាច់' : 'Settlement Transaction List' }}
             </h2>
             <span class="text-xs text-slate-500 font-semibold">
-                {{ app()->getLocale() === 'km' ? 'សរុប:' : 'Total:' }} {{ $settlements->count() ?: $completedInstallments->count() }}
+                {{ app()->getLocale() === 'km' ? 'សរុប:' : 'Total:' }} {{ $settlements->count() }}
             </span>
         </div>
 
